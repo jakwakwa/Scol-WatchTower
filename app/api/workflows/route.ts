@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDatabaseClient } from "@/app/utils";
 import { workflows } from "@/db/schema";
 import { z } from "zod";
+import { getTemporalClient } from "@/lib/temporal";
+import { onboardingWorkflow } from "@/temporal/workflows";
 
 // Schema for creating a workflow (define locally if not available in validations yet)
 const createWorkflowSchema = z.object({
@@ -96,6 +98,22 @@ export async function POST(request: NextRequest) {
 			.returning();
 
 		const newWorkflow = newWorkflowResults[0];
+
+		if (!newWorkflow) {
+			throw new Error("Failed to create workflow record");
+		}
+
+		// Trigger Temporal Workflow
+		try {
+			const client = await getTemporalClient();
+			await client.workflow.start(onboardingWorkflow, {
+				args: [{ leadId: newWorkflow.leadId, workflowId: newWorkflow.id }],
+				taskQueue: "onboarding-queue",
+				workflowId: `onboarding-${newWorkflow.id}`,
+			});
+		} catch (temporalError) {
+			console.error("Failed to start Temporal workflow:", temporalError);
+		}
 
 		return NextResponse.json({ workflow: newWorkflow }, { status: 201 });
 	} catch (error) {
