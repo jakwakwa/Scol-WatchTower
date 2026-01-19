@@ -14,7 +14,7 @@ interface StatsCardProps {
 }
 
 const iconColorClasses = {
-	amber: "bg-amber-500/20 text-amber-400",
+	amber: "bg-stone-500/20 text-stone-400",
 	green: "bg-emerald-500/20 text-emerald-400",
 	blue: "bg-blue-500/20 text-blue-400",
 	purple: "bg-purple-500/20 text-purple-400",
@@ -32,7 +32,7 @@ export function StatsCard({
 	return (
 		<div
 			className={cn(
-				"group relative overflow-hidden rounded-2xl border border-white/5 bg-card/50 backdrop-blur-sm p-6",
+				"group relative overflow-hidden rounded-2xl border border-sidebar-border bg-card/50 backdrop-blur-sm p-6",
 				"shadow-xl shadow-black/5",
 				"transition-all duration-300 hover:bg-card/70 hover:border-white/10 hover:shadow-2xl hover:-translate-y-1",
 				className,
@@ -80,7 +80,7 @@ export function StatsCard({
 			</div>
 
 			{/* Bottom accent line */}
-			<div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-amber-500/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+			<div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-stone-500/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 		</div>
 	);
 }

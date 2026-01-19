@@ -1,19 +1,57 @@
 "use client";
 
-import { useState } from "react";
+import * as React from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
+import { cn } from "@/lib/utils";
+import {
+	RiAlertLine,
+	RiArrowDownSLine,
+	RiArrowUpSLine,
 	RiCheckLine,
+	RiFlowChart,
+	RiMore2Fill,
 	RiTimeLine,
 	RiUserLine,
-	RiAlertLine,
-	RiExpandUpDownLine,
-	RiCloseLine,
+	RiCodeSSlashLine,
 } from "@remixicon/react";
-import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
+import {
+	flexRender,
+	getCoreRowModel,
+	getSortedRowModel,
+	useReactTable,
+	type ColumnDef,
+	type SortingState,
+} from "@tanstack/react-table";
+import { DataTable } from "@/components/ui/data-table";
 
-// Types
-interface WorkflowRow {
+// --- Types ---
+
+export interface WorkflowRow {
 	id: number;
 	clientName: string;
 	stage: 1 | 2 | 3 | 4;
@@ -30,12 +68,7 @@ interface WorkflowRow {
 	payload?: Record<string, unknown>;
 }
 
-const stageLabels = {
-	1: "Lead Capture",
-	2: "Quotation",
-	3: "Verification",
-	4: "Integration",
-};
+// --- Components ---
 
 const statusConfig = {
 	pending: { label: "Pending", color: "secondary", icon: RiTimeLine },
@@ -56,59 +89,7 @@ const statusConfig = {
 	timeout: { label: "Timeout", color: "destructive", icon: RiAlertLine },
 } as const;
 
-// Workflow Stage Indicator
-interface WorkflowStageIndicatorProps {
-	currentStage: 1 | 2 | 3 | 4;
-	compact?: boolean;
-}
-
-export function WorkflowStageIndicator({
-	currentStage,
-	compact = false,
-}: WorkflowStageIndicatorProps) {
-	const stages = [1, 2, 3, 4] as const;
-
-	return (
-		<div className="flex items-center gap-1">
-			{stages.map((stage, index) => (
-				<div key={stage} className="flex items-center">
-					<div
-						className={cn(
-							"flex items-center justify-center rounded-full font-medium transition-all",
-							compact ? "h-6 w-6 text-xs" : "h-8 w-8 text-sm",
-							stage < currentStage && "bg-emerald-500/20 text-emerald-400",
-							stage === currentStage &&
-								"bg-amber-500/20 text-amber-400 ring-2 ring-amber-500/30",
-							stage > currentStage && "bg-white/5 text-muted-foreground",
-						)}
-					>
-						{stage < currentStage ? (
-							<RiCheckLine className={compact ? "h-3 w-3" : "h-4 w-4"} />
-						) : (
-							stage
-						)}
-					</div>
-					{index < stages.length - 1 && (
-						<div
-							className={cn(
-								"h-0.5 transition-colors",
-								compact ? "w-3" : "w-6",
-								stage < currentStage ? "bg-emerald-500/40" : "bg-white/10",
-							)}
-						/>
-					)}
-				</div>
-			))}
-		</div>
-	);
-}
-
-// Status Badge with optional pulse animation
-interface StatusBadgeProps {
-	status: keyof typeof statusConfig;
-}
-
-export function StatusBadge({ status }: StatusBadgeProps) {
+export function StatusBadge({ status }: { status: WorkflowRow["status"] }) {
 	const config = statusConfig[status];
 	const Icon = config.icon;
 	const hasPulse = "pulse" in config && config.pulse;
@@ -126,21 +107,245 @@ export function StatusBadge({ status }: StatusBadgeProps) {
 	);
 }
 
-// Main Workflow Table
-interface WorkflowTableProps {
-	workflows: WorkflowRow[];
-	onViewPayload?: (workflow: WorkflowRow) => void;
+export function WorkflowStageIndicator({
+	currentStage,
+	compact = false,
+}: {
+	currentStage: 1 | 2 | 3 | 4;
+	compact?: boolean;
+}) {
+	const stages = [1, 2, 3, 4] as const;
+
+	return (
+		<div className="flex items-center gap-1">
+			{stages.map((stage) => (
+				<div key={`stage-w-${stage}`} className="flex items-center">
+					<div
+						className={cn(
+							"flex items-center justify-center rounded-full font-medium transition-all",
+							compact ? "h-6 w-6 text-[10px]" : "h-8 w-8 text-xs",
+							stage < currentStage && "bg-emerald-500/20 text-emerald-400",
+							stage === currentStage &&
+								"bg-stone-500/20 text-stone-400 ring-2 ring-stone-500/30",
+							stage > currentStage && "bg-white/5 text-muted-foreground",
+						)}
+					>
+						{stage < currentStage ? (
+							<RiCheckLine className={compact ? "h-3 w-3" : "h-4 w-4"} />
+						) : (
+							stage
+						)}
+					</div>
+					{stages.indexOf(stage) < stages.length - 1 && (
+						<div
+							className={cn(
+								"h-0.5 transition-colors",
+								compact ? "w-2" : "w-4",
+								stage < currentStage ? "bg-emerald-500/40" : "bg-white/10",
+							)}
+						/>
+					)}
+				</div>
+			))}
+		</div>
+	);
 }
 
-export function WorkflowTable({
-	workflows,
-	onViewPayload,
-}: WorkflowTableProps) {
-	const [expandedId, setExpandedId] = useState<number | null>(null);
+// --- Table Columns ---
+
+export const columns: ColumnDef<WorkflowRow>[] = [
+	{
+		id: "select",
+		header: ({ table }) => (
+			<Checkbox
+				checked={
+					table.getIsAllPageRowsSelected() ||
+					(table.getIsSomePageRowsSelected() && "indeterminate")
+				}
+				onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+				aria-label="Select all"
+				className="translate-y-0.5"
+			/>
+		),
+		cell: ({ row }) => (
+			<Checkbox
+				checked={row.getIsSelected()}
+				onCheckedChange={(value) => row.toggleSelected(!!value)}
+				aria-label="Select row"
+				className="translate-y-0.5"
+			/>
+		),
+		enableSorting: false,
+		enableHiding: false,
+	},
+	{
+		accessorKey: "clientName",
+		header: ({ column }) => (
+			<Button
+				variant="ghost"
+				className="-ml-4 hover:bg-transparent hover:text-foreground"
+				onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+			>
+				Client
+				{column.getIsSorted() === "asc" ? (
+					<RiArrowUpSLine className="ml-2 h-4 w-4" />
+				) : column.getIsSorted() === "desc" ? (
+					<RiArrowDownSLine className="ml-2 h-4 w-4" />
+				) : (
+					<RiArrowDownSLine className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
+				)}
+			</Button>
+		),
+		cell: ({ row }) => (
+			<div className="flex flex-col">
+				<span className="font-medium text-foreground">
+					{row.original.clientName}
+				</span>
+				<span className="text-xs text-muted-foreground">
+					#{row.original.id}
+				</span>
+			</div>
+		),
+	},
+	{
+		accessorKey: "stage",
+		header: "Progress",
+		cell: ({ row }) => (
+			<WorkflowStageIndicator currentStage={row.original.stage} compact />
+		),
+	},
+	{
+		accessorKey: "status",
+		header: "Status",
+		cell: ({ row }) => <StatusBadge status={row.original.status} />,
+	},
+	{
+		accessorKey: "currentAgent",
+		header: "Agent",
+		cell: ({ row }) => (
+			<code className="rounded bg-white/5 px-2 py-0.5 text-xs text-muted-foreground font-mono">
+				{row.original.currentAgent || "—"}
+			</code>
+		),
+	},
+	{
+		accessorKey: "startedAt",
+		header: ({ column }) => (
+			<Button
+				variant="ghost"
+				className="-ml-4 hover:bg-transparent hover:text-foreground"
+				onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+			>
+				Started
+				{column.getIsSorted() === "asc" ? (
+					<RiArrowUpSLine className="ml-2 h-4 w-4" />
+				) : column.getIsSorted() === "desc" ? (
+					<RiArrowDownSLine className="ml-2 h-4 w-4" />
+				) : (
+					<RiArrowDownSLine className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
+				)}
+			</Button>
+		),
+		cell: ({ row }) => (
+			<span className="text-sm text-muted-foreground">
+				{formatRelativeTime(row.original.startedAt)}
+			</span>
+		),
+	},
+	{
+		id: "actions",
+		cell: ({ row, table }) => {
+			const meta = table.options.meta as {
+				onViewPayload: (data: WorkflowRow) => void;
+			};
+			return (
+				<DropdownMenu>
+					<DropdownMenuTrigger asChild>
+						<Button
+							variant="ghost"
+							size="icon"
+							className="h-8 w-8 hover:bg-white/10"
+						>
+							<RiMore2Fill className="h-4 w-4" />
+						</Button>
+					</DropdownMenuTrigger>
+					<DropdownMenuContent align="end" className="w-[180px]">
+						<DropdownMenuLabel>Actions</DropdownMenuLabel>
+						<DropdownMenuItem className="cursor-pointer">
+							<RiFlowChart className="mr-2 h-4 w-4" />
+							View Workflow
+						</DropdownMenuItem>
+						<DropdownMenuSeparator />
+						<DropdownMenuItem
+							className="cursor-pointer text-stone-400 focus:text-stone-300"
+							onClick={() => meta?.onViewPayload(row.original)}
+						>
+							<RiCodeSSlashLine className="mr-2 h-4 w-4" />
+							View Payload
+						</DropdownMenuItem>
+					</DropdownMenuContent>
+				</DropdownMenu>
+			);
+		},
+	},
+];
+
+// --- Sub-components ---
+
+function PayloadDialog({
+	workflow,
+	open,
+	onOpenChange,
+}: {
+	workflow: WorkflowRow | null;
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
+}) {
+	if (!workflow) return null;
+
+	return (
+		<Dialog open={open} onOpenChange={onOpenChange}>
+			<DialogContent className="max-w-2xl border-white/10 bg-zinc-950/95 backdrop-blur-xl">
+				<DialogHeader>
+					<DialogTitle className="flex items-center gap-2">
+						<RiCodeSSlashLine className="h-5 w-5 text-stone-400" />
+						Workflow Payload
+					</DialogTitle>
+					<DialogDescription>
+						Raw data for {workflow.clientName} (ID: #{workflow.id})
+					</DialogDescription>
+				</DialogHeader>
+				<div className="relative mt-4">
+					<div className="max-h-[60vh] overflow-auto rounded-xl bg-black/50 p-6 border border-white/5">
+						<pre className="text-xs text-zinc-400 font-mono leading-relaxed">
+							{JSON.stringify(workflow.payload || {}, null, 2)}
+						</pre>
+					</div>
+				</div>
+			</DialogContent>
+		</Dialog>
+	);
+}
+
+// --- Main Component ---
+
+interface WorkflowTableProps {
+	workflows: WorkflowRow[];
+}
+
+export function WorkflowTable({ workflows }: WorkflowTableProps) {
+	const [selectedWorkflow, setSelectedWorkflow] =
+		React.useState<WorkflowRow | null>(null);
+	const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+
+	const handleViewPayload = React.useCallback((workflow: WorkflowRow) => {
+		setSelectedWorkflow(workflow);
+		setIsDialogOpen(true);
+	}, []);
 
 	if (workflows.length === 0) {
 		return (
-			<div className="rounded-2xl border border-white/5 bg-card/50 p-12 text-center">
+			<div className="rounded-2xl border border-sidebar-border bg-card/50 p-12 text-center">
 				<RiFlowChart className="mx-auto h-12 w-12 text-muted-foreground/50" />
 				<h3 className="mt-4 text-lg font-medium">No workflows yet</h3>
 				<p className="mt-2 text-sm text-muted-foreground">
@@ -151,117 +356,26 @@ export function WorkflowTable({
 	}
 
 	return (
-		<div className="rounded-2xl border border-white/5 bg-card/50 overflow-hidden">
-			<div className="overflow-x-auto">
-				<table className="w-full">
-					<thead>
-						<tr className="border-b border-white/5 bg-white/[0.02]">
-							<th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-								Client
-							</th>
-							<th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-								Progress
-							</th>
-							<th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-								Status
-							</th>
-							<th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-								Agent
-							</th>
-							<th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-								Started
-							</th>
-							<th className="px-6 py-4 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
-								Actions
-							</th>
-						</tr>
-					</thead>
-					<tbody className="divide-y divide-white/5">
-						{workflows.map((workflow) => (
-							<>
-								<tr
-									key={workflow.id}
-									className={cn(
-										"transition-colors hover:bg-white/[0.02]",
-										expandedId === workflow.id && "bg-white/[0.02]",
-									)}
-								>
-									<td className="px-6 py-4">
-										<div className="font-medium">{workflow.clientName}</div>
-										<div className="text-sm text-muted-foreground">
-											#{workflow.id}
-										</div>
-									</td>
-									<td className="px-6 py-4">
-										<WorkflowStageIndicator
-											currentStage={workflow.stage}
-											compact
-										/>
-									</td>
-									<td className="px-6 py-4">
-										<StatusBadge status={workflow.status} />
-									</td>
-									<td className="px-6 py-4">
-										<code className="rounded bg-white/5 px-2 py-1 text-xs text-muted-foreground">
-											{workflow.currentAgent || "—"}
-										</code>
-									</td>
-									<td className="px-6 py-4 text-sm text-muted-foreground">
-										{formatRelativeTime(workflow.startedAt)}
-									</td>
-									<td className="px-6 py-4 text-right">
-										<button
-											onClick={() =>
-												setExpandedId(
-													expandedId === workflow.id ? null : workflow.id,
-												)
-											}
-											className={cn(
-												"inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors",
-												"text-muted-foreground hover:bg-white/5 hover:text-foreground",
-											)}
-										>
-											<RiExpandUpDownLine className="h-4 w-4" />
-										</button>
-									</td>
-								</tr>
+		<div className="w-full space-y-4">
+			<DataTable
+				columns={columns}
+				data={workflows}
+				meta={{
+					onViewPayload: handleViewPayload,
+				}}
+			/>
 
-								{/* Expanded row with JSON payload */}
-								{expandedId === workflow.id && workflow.payload && (
-									<tr key={`${workflow.id}-expanded`}>
-										<td colSpan={6} className="bg-black/20 px-6 py-4">
-											<div className="flex items-start justify-between">
-												<div>
-													<h4 className="text-sm font-medium mb-2">
-														Workflow Payload
-													</h4>
-													<pre className="rounded-lg bg-black/40 p-4 text-xs text-muted-foreground overflow-x-auto">
-														{JSON.stringify(workflow.payload, null, 2)}
-													</pre>
-												</div>
-												<button
-													onClick={() => setExpandedId(null)}
-													className="text-muted-foreground hover:text-foreground"
-												>
-													<RiCloseLine className="h-5 w-5" />
-												</button>
-											</div>
-										</td>
-									</tr>
-								)}
-							</>
-						))}
-					</tbody>
-				</table>
-			</div>
+			<PayloadDialog
+				workflow={selectedWorkflow}
+				open={isDialogOpen}
+				onOpenChange={setIsDialogOpen}
+			/>
 		</div>
 	);
 }
 
-// Import the icon we forgot
-import { RiFlowChart } from "@remixicon/react";
+// --- Utils ---
 
-// Helper function
 function formatRelativeTime(date: Date): string {
 	const now = new Date();
 	const diff = now.getTime() - date.getTime();

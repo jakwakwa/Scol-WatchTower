@@ -53,7 +53,7 @@ export function AgentStatusCard({ agent, onClick }: AgentStatusCardProps) {
 		<div
 			onClick={onClick}
 			className={cn(
-				"group relative overflow-hidden rounded-2xl border border-white/5 bg-card/50 backdrop-blur-sm p-6",
+				"group relative overflow-hidden rounded-2xl border border-sidebar-border bg-card/50 backdrop-blur-sm p-6",
 				"shadow-xl shadow-black/5",
 				"transition-all duration-300",
 				onClick &&
@@ -88,7 +88,7 @@ export function AgentStatusCard({ agent, onClick }: AgentStatusCardProps) {
 
 			{/* Task type badge */}
 			<div className="mt-4">
-				<span className="inline-flex items-center rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-400">
+				<span className="inline-flex items-center rounded-full bg-stone-500/10 px-2.5 py-1 text-xs font-medium text-stone-400">
 					{formatTaskType(agent.taskType)}
 				</span>
 			</div>

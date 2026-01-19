@@ -24,7 +24,7 @@ export function DashboardLayout({
 			<main className="pl-64 transition-all duration-300">
 				{/* Header */}
 				{(title || actions) && (
-					<header className="sticky top-0 z-30 border-b border-white/5 bg-background/80 backdrop-blur-xl">
+					<header className="sticky top-0 z-30 border-b border-sidebar-border bg-background/80 backdrop-blur-xl">
 						<div className="flex h-20 items-center justify-between px-8">
 							<div>
 								{title && (
@@ -95,7 +95,7 @@ export function GlassCard({
 	return (
 		<div
 			className={cn(
-				"rounded-2xl border border-white/5 bg-card/50 backdrop-blur-sm p-6",
+				"rounded-2xl border border-sidebar-border bg-card/50 backdrop-blur-sm p-6",
 				"shadow-xl shadow-black/5",
 				hover &&
 					"transition-all duration-300 hover:bg-card/70 hover:border-white/10 hover:shadow-2xl hover:-translate-y-1",

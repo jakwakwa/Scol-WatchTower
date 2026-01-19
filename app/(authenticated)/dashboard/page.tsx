@@ -119,7 +119,7 @@ export default function DashboardPage() {
 			description="Monitor your onboarding workflows in real-time"
 			actions={
 				<Link href="/dashboard/leads/new">
-					<Button className="gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600">
+					<Button className="gap-2 bg-gradient-to-r from-stone-500 to-stone-500 hover:from-stone-600 hover:to-stone-600">
 						<RiUserAddLine className="h-4 w-4" />
 						New Lead
 					</Button>
@@ -180,7 +180,7 @@ export default function DashboardPage() {
 				{/* Activity Feed */}
 				<div className="lg:col-span-1">
 					<DashboardSection title="Recent Activity">
-						<div className="rounded-2xl border border-white/5 bg-card/50 p-4">
+						<div className="rounded-2xl border border-sidebar-border bg-card/50 p-4">
 							<ActivityFeed events={mockActivity} maxItems={5} />
 						</div>
 					</DashboardSection>

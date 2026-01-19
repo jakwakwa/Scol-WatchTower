@@ -38,8 +38,8 @@ const eventConfig: Record<
 	},
 	agent_dispatch: {
 		icon: RiRobot2Line,
-		color: "text-amber-400",
-		bgColor: "bg-amber-500/20",
+		color: "text-stone-400",
+		bgColor: "bg-stone-500/20",
 	},
 	agent_callback: {
 		icon: RiCheckLine,
@@ -53,8 +53,8 @@ const eventConfig: Record<
 	},
 	timeout: {
 		icon: RiTimeLine,
-		color: "text-orange-400",
-		bgColor: "bg-orange-500/20",
+		color: "text-stone-400",
+		bgColor: "bg-stone-500/20",
 	},
 	error: { icon: RiAlertLine, color: "text-red-400", bgColor: "bg-red-500/20" },
 };
