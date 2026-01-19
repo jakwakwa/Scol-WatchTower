@@ -3,6 +3,8 @@ import { getDatabaseClient } from "@/app/utils";
 import { workflows, workflowEvents } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
+import { getTemporalClient } from "@/lib/temporal";
+import { agentCallbackReceived } from "@/temporal/signals";
 
 // Schema for Zapier callback
 const zapierCallbackSchema = z.object({
@@ -27,6 +29,7 @@ const zapierCallbackSchema = z.object({
 	]),
 	payload: z.string().optional(), // JSON string
 	actorId: z.string().optional(),
+	decision: z.record(z.string(), z.any()).optional(), // Structured decision data
 });
 
 /**
@@ -35,15 +38,6 @@ const zapierCallbackSchema = z.object({
  */
 export async function POST(request: NextRequest) {
 	try {
-		const db = await getDatabaseClient();
-
-		if (!db) {
-			return NextResponse.json(
-				{ error: "Database connection failed" },
-				{ status: 500 },
-			);
-		}
-
 		const body = await request.json();
 		const validation = zapierCallbackSchema.safeParse(body);
 
@@ -59,25 +53,63 @@ export async function POST(request: NextRequest) {
 
 		const data = validation.data;
 
-		// 1. Log the event
-		await db.insert(workflowEvents).values({
-			workflowId: data.workflowId,
-			eventType: data.eventType,
-			payload: data.payload,
-			actorId: data.actorId || "zapier_webhook",
-			actorType: "system",
-			createdAt: new Date(), // schema default might handle this, but explicit is fine
-		} as any);
+		// 1. Log the event to DB (Audit Trail)
+		const db = await getDatabaseClient();
+		if (db) {
+			await db.insert(workflowEvents).values({
+				workflowId: data.workflowId,
+				eventType: data.eventType,
+				payload: data.payload,
+				actorId: data.actorId || "zapier_webhook",
+				actorType: "system",
+				createdAt: new Date(),
+			} as any);
 
-		// 2. Update workflow status if provided
-		if (data.status) {
-			await db
-				.update(workflows)
-				.set({
-					status: data.status,
-					updatedAt: new Date(), // assuming updatedAt exists or we rely on trigger/default
-				} as any)
-				.where(eq(workflows.id, data.workflowId));
+			// Update workflow status if provided
+			if (data.status) {
+				await db
+					.update(workflows)
+					.set({
+						status: data.status,
+						updatedAt: new Date(),
+					} as any)
+					.where(eq(workflows.id, data.workflowId));
+			}
+		}
+
+		// 2. Signal Temporal Workflow
+		// If this is an agent callback, we need to unblock the Temporal workflow
+		if (data.eventType === "agent_callback") {
+			try {
+				const client = await getTemporalClient();
+				const temporalWorkflowId = `onboarding-${data.workflowId}`;
+				const handle = client.workflow.getHandle(temporalWorkflowId);
+
+				// Parse decision data if it's in the payload string or separate field
+				let decisionData = data.decision;
+				if (!decisionData && data.payload) {
+					try {
+						decisionData = JSON.parse(data.payload);
+					} catch (e) {
+						console.warn("Could not parse payload as JSON for decision data");
+					}
+				}
+
+				await handle.signal(agentCallbackReceived, {
+					agentId: data.actorId || "unknown_agent",
+					status: data.status || "completed",
+					decision: decisionData || {},
+					timestamp: new Date().toISOString(),
+				});
+
+				console.log(
+					`[API] Signaled Temporal workflow ${temporalWorkflowId} with agent callback`,
+				);
+			} catch (temporalError) {
+				console.error("Failed to signal Temporal workflow:", temporalError);
+				// We don't fail the request because DB update succeeded, but we should log it
+				// In production, we might want to return 500 or retry
+			}
 		}
 
 		return NextResponse.json({ success: true }, { status: 200 });

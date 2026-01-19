@@ -59,33 +59,36 @@ This stage replaces the internal manual review with an **External Async Pattern*
 **AI Pre-Screening:** As documents are uploaded via GCS Presigned URLs , an AI model analyses bank statements for fraud indicators (font inconsistencies, metadata mismatches).
 
 
-2. **The "Verification Agent" Dispatch:**
+2. **The "Audit Agent" Dispatch:**
 * Instead of simply flagging the data in a database, Temporal constructs a **Verification Payload** containing the confidence score, specific "hallucination risks", and document links.
+- it needd to construct a specific Quotation ( Estimate ) document that is sent
+- the human in this loop is not within the Nextjs system but external to the which a zapier action can handle - plus temporal need to track the state of the document ( signed / not signed?  sent, received by external client etc. )
+- the external human signal need require this e-sign the document and send it back to the system - it cannot progress without this
+ to the human to the external client for approval
 
 
-* This payload is POSTed to a specific Zapier Webhook URL.
-
-
-3. **Human Task (External):**
+3. **External Agent Risk Analysis**
+* Runs in tandem with the previous step 
+* Response is sent to the system and alerts the Risk Manager ( a User in this platform)
 * The Zapier Agent routes this task based on logic (e.g., "If Risk Score > 80, alert Senior Risk Manager via Slack; else, email Junior Analyst").
-* The human interacts with the Zapier Interface to approve/reject or request more info.
+* This payload is POSTed to a specific Zapier Webhook URL back to the Next.js API
+The Agent formats the human's decision into a strict JSON structure and sends it back to the Next.js endpoint.
 
+4. **The Human Verification Signal:**
 
-4. **The Truth Signal:**
-* The Agent formats the human's decision into a strict JSON structure and sends it back to the Next.js endpoint.
+* The human need to verify the AI response that the nextjs ui process the payload that creates the Receipt documents already populated and can be modified by the human AE (ANother human User Role internal to the app) and make adjustments that determine the signal to the system
+* accepting the the completed document and sending it back to the system constructs a **Verification Payload** containing the confidence score, specific "hallucination risks", and document links
+* The human approve, reject, or defer the decision back to the system
+
 
 
 
 ### 2.4 Stage 4: System Integration & Handover
 
 * 
-**Sync:** Upon receiving the "Approved" JSON signal, Temporal executes the final sync activities to the legacy V24 (Debit Orders) and V27 (Real-Time Clearing) platforms.
-
-
+**Sync:** Upon receiving the "Approved" JSON signal, Temporal executes the final sync activities. (for now a placeholder "signal" that can be viewed in a workflow instance) - Temporal need the AE, the external signature, and Risk Officer humans all to signal their approval independently before the workflow can complete 
 * 
 **Context:** The AI generates a "Client Context" summary (personality, preferences) and logs it for the Training Team, ensuring a warm handover.
-
-
 
 ---
 
