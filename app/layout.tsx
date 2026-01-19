@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, DM_Sans } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 
 import "./globals.css";
+
+const dmSans = DM_Sans({subsets:['latin'],variable:'--font-sans'});
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
@@ -18,7 +20,7 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="en">
+      <html lang="en" className={dmSans.variable}>
         <body className={`bg-rich-black overscroll-none ${inter.className}`}>
           {children}
         </body>

@@ -4,12 +4,6 @@ A Next.js application that demonstrates how to use the [Turso](https://turso.tec
 
 ![Turso Per User Starter Template](/app/opengraph-image.png)
 
-## Demo
-
-The app below uses a database per user, and is powered by Turso.
-
-[https://turso-per-user-starter.vercel.app](https://turso-per-user-starter.vercel.app)
-
 ## Get Started
 
 Deploy your own Turso powered platform in a few easy steps...
@@ -63,7 +57,7 @@ Start building your Turso powered platform in a few simple steps...
 
    ```bash
    cp .env.example .env
-   npm install
+   bun install
    ```
 
    </details>
@@ -115,10 +109,10 @@ Start building your Turso powered platform in a few simple steps...
    Run the following:
 
    ```bash
-   npm run db:migrate
+   bun run db:migrate
    ```
 
-   > If you make changes to `db/schema.ts`, make sure to run `npm run db:generate` to create the migrations, and `npm run db:migrate` to apply them.
+   > If you make changes to `db/schema.ts`, make sure to run `bun run db:generate` to create the migrations, and `bun run db:migrate` to apply them.
 
    </details>
 
@@ -159,7 +153,7 @@ Start building your Turso powered platform in a few simple steps...
    Run the following:
 
    ```bash
-   npm run dev
+   bun run dev
    ```
 
    Now open [http://localhost:3000](http://localhost:3000) with your browser to try out the app!
