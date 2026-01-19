@@ -2,6 +2,88 @@
 trigger: always_on
 ---
 
+Add clerkMiddleware() to your app
+clerkMiddleware()` grants you access to user authentication state throughout your app.
+
+Important
+
+If you're using Next.js ≤15, name your file middleware.ts instead of proxy.ts. The code itself remains the same; only the filename changes.
+
+Create a proxy.ts file.
+
+If you're using the /src directory, create proxy.ts in the /src directory.
+If you're not using the /src directory, create proxy.ts in the root directory.
+In your proxy.ts file, export the clerkMiddleware() helper:
+
+proxy.ts
+
+import { clerkMiddleware } from '@clerk/nextjs/server'
+
+export default clerkMiddleware()
+
+export const config = {
+  matcher: [
+    // Skip Next.js internals and all static files, unless found in search params
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    // Always run for API routes
+    '/(api|trpc)(.*)',
+  ],
+}
+By default, clerkMiddleware() will not protect any routes. All routes are public and you must opt-in to protection for routes. See the clerkMiddleware() reference to learn how to require authentication for specific routes.
+
+Add <ClerkProvider> and Clerk components to your app
+Add the 
+<ClerkProvider>
+ component to your app's layout. This component provides Clerk's authentication context to your app.
+Copy and paste the following file into your layout.tsx file. This creates a header with Clerk's 
+prebuilt components
+ to allow users to sign in and out.
+app/layout.tsx
+
+import type { Metadata } from 'next'
+import {
+  ClerkProvider,
+  SignInButton,
+  SignUpButton,
+  SignedIn,
+  SignedOut,
+  UserButton,
+} from '@clerk/nextjs'
+import { Geist, Geist_Mono } from 'next/font/google'
+import './globals.css'
+16 lines collapsed
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode
+}>) {
+  return (
+    <ClerkProvider>
+      <html lang="en">
+        <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+          <header className="flex justify-end items-center p-4 gap-4 h-16">
+            <SignedOut>
+              <SignInButton />
+              <SignUpButton>
+                <button className="bg-[#6c47ff] text-white rounded-full font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 cursor-pointer">
+                  Sign Up
+                </button>
+              </SignUpButton>
+            </SignedOut>
+            <SignedIn>
+              <UserButton />
+            </SignedIn>
+          </header>
+          {children}
+        </body>
+      </html>
+    </ClerkProvider>
+  )
+}
+
+
+
+
 # How to use Next.js as a backend for your frontend
 @doc-version: 16.1.3
 @last-updated: 2025-10-17
