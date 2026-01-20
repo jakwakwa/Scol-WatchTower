@@ -178,3 +178,107 @@ export async function updateDbStatus(
 		})
 		.where(eq(workflows.id, workflowId));
 }
+
+// Phase 2: Platform Integration & Escalation
+
+export async function dispatchToPlatform(payload: {
+	leadId: number;
+	workflowId: number;
+	clientName?: string;
+	riskScore: number;
+	anomalies: string[];
+	documentLinks?: string[];
+}): Promise<void> {
+	console.log(
+		`[Activity] Dispatching to Platform for Workflow ${payload.workflowId}`,
+	);
+
+	let clientName = payload.clientName || "Unknown Client";
+
+	// Fetch Clean Name if not provided
+	if (!payload.clientName && payload.leadId) {
+		const db = getDatabaseClient();
+		if (db) {
+			try {
+				const leadResults = await db
+					.select()
+					.from(leads)
+					.where(eq(leads.id, payload.leadId));
+				if (leadResults.length > 0 && leadResults[0]) {
+					clientName = leadResults[0].companyName;
+				}
+			} catch (err) {
+				console.error("[Activity] Failed to fetch lead data:", err);
+			}
+		}
+	}
+
+	const webhookUrl = process.env.WEBHOOK_ZAP_RISK_ASSESSMENT_TRIGGER;
+
+	// Ensure we have a URL, otherwise log warning (or throw if critical)
+	if (!webhookUrl) {
+		console.warn(
+			"[Activity] WEBHOOK_ZAP_RISK_ASSESSMENT_TRIGGER not set. Skipping dispatch.",
+		);
+		return;
+	}
+
+	// Strict JSON Structure as per plan
+	const outboundPayload = {
+		eventId: `evt_${Date.now()}`,
+		workflowId: `onboarding_${payload.workflowId}`,
+		taskType: "RISK_VERIFICATION",
+		payload: {
+			clientName: payload.clientName,
+			riskScore: payload.riskScore,
+			anomalies: payload.anomalies,
+			documentLinks: payload.documentLinks || [],
+		},
+		callbackUrl: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/workflows/${payload.workflowId}/signal`,
+	};
+
+	try {
+		const response = await fetch(webhookUrl, {
+			method: "POST",
+			body: JSON.stringify(outboundPayload),
+			headers: { "Content-Type": "application/json" },
+		});
+
+		if (!response.ok) {
+			throw new Error(`Platform dispatch failed: ${response.statusText}`);
+		}
+		console.log("[Activity] Successfully dispatched to Platform");
+	} catch (error) {
+		console.error("[Activity] Error dispatching to Platform:", error);
+		throw error;
+	}
+}
+
+export async function escalateToManagement(payload: {
+	workflowId: number;
+	leadId: number;
+	reason: string;
+}): Promise<void> {
+	console.warn(
+		`[Activity] ESCALATING Workflow ${payload.workflowId} due to: ${payload.reason}`,
+	);
+
+	// TODO: Define a specific escalation webhook in .env
+	const escalationUrl = process.env.WEBHOOK_ZAP_ESCALATION_TRIGGER;
+
+	if (!escalationUrl) {
+		console.warn("[Activity] No escalation webhook URL configured.");
+		return;
+	}
+
+	try {
+		await fetch(escalationUrl, {
+			method: "POST",
+			body: JSON.stringify(payload),
+			headers: { "Content-Type": "application/json" },
+		});
+	} catch (error) {
+		// We log but maybe don't throw, to avoid infinite retry loops on escalation failure
+		console.error("[Activity] Failed to send escalation webhook:", error);
+	}
+}
