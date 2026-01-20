@@ -12,6 +12,7 @@ import {
 	WorkflowTable,
 	ActivityFeed,
 } from "@/components/dashboard";
+import { WebhookTester } from "@/components/dashboard/webhook-tester";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
@@ -118,12 +119,15 @@ export default function DashboardPage() {
 			title="Control Tower"
 			description="Monitor your onboarding workflows in real-time"
 			actions={
-				<Link href="/dashboard/leads/new">
-					<Button className="gap-2 bg-gradient-to-r from-stone-500 to-stone-500 hover:from-stone-600 hover:to-stone-600">
-						<RiUserAddLine className="h-4 w-4" />
-						New Lead
-					</Button>
-				</Link>
+				<div className="flex items-center gap-4">
+					{process.env.TEST_HOOK === "1" && <WebhookTester />}
+					<Link href="/dashboard/leads/new">
+						<Button className="gap-2 bg-gradient-to-r from-stone-500 to-stone-500 hover:from-stone-600 hover:to-stone-600">
+							<RiUserAddLine className="h-4 w-4" />
+							New Lead
+						</Button>
+					</Link>
+				</div>
 			}
 		>
 			{/* Stats Grid */}

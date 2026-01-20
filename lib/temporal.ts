@@ -1,5 +1,7 @@
 import { Connection, Client } from "@temporalio/client";
 
+export const TEMPORAL_TASK_QUEUE = "onboarding-queue";
+
 let client: Client | undefined;
 
 export async function getTemporalClient() {

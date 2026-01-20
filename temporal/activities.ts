@@ -1,19 +1,87 @@
 import { getDatabaseClient } from "@/app/utils";
-import { workflows } from "@/db/schema";
+import { leads, workflows } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 export async function sendZapierWebhook(payload: any): Promise<void> {
+	let finalPayload = { ...payload };
 	const { leadId, stage, event } = payload;
+
+	// Enrich payload with Lead data if leadId exists
+	if (leadId) {
+		const db = getDatabaseClient();
+		if (db) {
+			try {
+				const leadResults = await db
+					.select()
+					.from(leads)
+					.where(eq(leads.id, leadId));
+				if (leadResults.length > 0) {
+					const leadData = leadResults[0];
+					finalPayload = {
+						...finalPayload,
+						companyName: leadData.companyName,
+						contactName: leadData.contactName,
+						email: leadData.email,
+						phone: leadData.phone,
+						industry: leadData.industry,
+						employeeCount: leadData.employeeCount,
+						estimatedVolume: leadData.estimatedVolume,
+						leadNotes: leadData.notes,
+					};
+					console.log(
+						`[Activity] Enriched payload with Lead data for ${leadId}`,
+					);
+				}
+			} catch (err) {
+				console.error(
+					"[Activity] Failed to fetch lead data for enrichment:",
+					err,
+				);
+			}
+		}
+	}
+
 	console.log(
 		`[Activity] Sending Zapier Webhook for Lead ${leadId} at Stage ${stage} (Event: ${event})`,
 	);
 
-	const zapierUrl = process.env.ZAPIER_CATCH_HOOK_URL;
+	let zapierUrl = process.env.ZAPIER_CATCH_HOOK_URL;
+
+	// Determine which webhook URL to use based on the event
+	switch (event) {
+		case "LEAD_CAPTURED":
+			if (process.env.WEBHOOK_ZAP_MANDATE_KICKOFF_TRIGGER) {
+				zapierUrl = process.env.WEBHOOK_ZAP_MANDATE_KICKOFF_TRIGGER;
+				console.log("[Activity] Using WEBHOOK_ZAP_MANDATE_KICKOFF_TRIGGER");
+			}
+			break;
+		case "QUOTATION_GENERATED":
+			if (process.env.WEBHOOK_ZAP_QUOTATION_TRIGGER) {
+				zapierUrl = process.env.WEBHOOK_ZAP_QUOTATION_TRIGGER;
+				console.log("[Activity] Using WEBHOOK_ZAP_QUOTATION_TRIGGER");
+			}
+			break;
+		case "RISK_VERIFICATION_REQUESTED":
+			if (process.env.WEBHOOK_ZAP_RISK_ASSESSMENT_TRIGGER) {
+				zapierUrl = process.env.WEBHOOK_ZAP_RISK_ASSESSMENT_TRIGGER;
+				console.log("[Activity] Using WEBHOOK_ZAP_RISK_ASSESSMENT_TRIGGER");
+			}
+			break;
+		case "ONBOARDING_COMPLETE":
+			if (process.env.WEBHOOK_ZAP_ONBOARDING_COMPLETE_TRIGGER) {
+				zapierUrl = process.env.WEBHOOK_ZAP_ONBOARDING_COMPLETE_TRIGGER;
+				console.log("[Activity] Using WEBHOOK_ZAP_ONBOARDING_COMPLETE_TRIGGER");
+			}
+			break;
+		default:
+			// Fallback to generic hook is handled by initial assignment
+			break;
+	}
 
 	// For development/mocking, if no URL is set, we just log and return.
 	if (!zapierUrl) {
 		console.warn(
-			"[Activity] ZAPIER_CATCH_HOOK_URL not set. Skipping real fetch.",
+			`[Activity] No Zapier webhook URL set (Event: ${event}). Skipping real fetch.`,
 		);
 		// Simulate network delay
 		await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -23,7 +91,7 @@ export async function sendZapierWebhook(payload: any): Promise<void> {
 	try {
 		const response = await fetch(zapierUrl, {
 			method: "POST",
-			body: JSON.stringify(payload),
+			body: JSON.stringify(finalPayload),
 			headers: { "Content-Type": "application/json" },
 		});
 
@@ -55,9 +123,7 @@ export async function generateQuote(
 	};
 }
 
-export async function aiRiskAnalysis(
-	leadId: number,
-): Promise<{
+export async function aiRiskAnalysis(leadId: number): Promise<{
 	riskScore: number;
 	anomalies: string[];
 	recommendedAction: string;

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDatabaseClient } from "@/app/utils";
-import { leads } from "@/db/schema";
+import { leads, workflows } from "@/db/schema";
 import { createLeadSchema } from "@/lib/validations";
+import { getTemporalClient, TEMPORAL_TASK_QUEUE } from "@/lib/temporal";
 
 /**
  * GET /api/leads
@@ -78,7 +79,37 @@ export async function POST(request: NextRequest) {
 
 		const newLead = newLeadResults[0];
 
-		return NextResponse.json({ lead: newLead }, { status: 201 });
+		// 2. Create the initial Workflow record in DB
+		const [newWorkflow] = await db
+			.insert(workflows)
+			.values({
+				leadId: newLead.id,
+				stage: 1,
+				stageName: "lead_capture",
+				status: "pending",
+				currentAgent: "system",
+			})
+			.returning();
+
+		// 3. Start the Temporal Workflow
+		try {
+			const temporalClient = await getTemporalClient();
+			await temporalClient.workflow.start("onboardingWorkflow", {
+				taskQueue: TEMPORAL_TASK_QUEUE,
+				workflowId: `onboarding-${newWorkflow.id}`,
+				args: [{ leadId: newLead.id, workflowId: newWorkflow.id }],
+			});
+			console.log(`[API] Started Temporal workflow for lead ${newLead.id}`);
+		} catch (temporalError) {
+			console.error("[API] Failed to start Temporal workflow:", temporalError);
+			// We don't fail the request, but we log it. The lead is created.
+			// You might want to update the workflow status to 'failed' here.
+		}
+
+		return NextResponse.json(
+			{ lead: newLead, workflow: newWorkflow },
+			{ status: 201 },
+		);
 	} catch (error) {
 		console.error("Error creating lead:", error);
 		const message = error instanceof Error ? error.message : "Unexpected error";

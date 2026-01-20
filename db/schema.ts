@@ -165,6 +165,36 @@ export const agents = sqliteTable("agents", {
 // Relations
 // ============================================
 
+/**
+ * Quotes table - Generated fee structures
+ */
+export const quotes = sqliteTable("quotes", {
+	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+	workflowId: integer("workflow_id")
+		.notNull()
+		.references(() => workflows.id),
+	amount: integer("amount").notNull(), // Cents
+	baseFeePercent: integer("base_fee_percent").notNull(), // Basis points (e.g. 150 = 1.5%)
+	adjustedFeePercent: integer("adjusted_fee_percent"), // Basis points
+	rationale: text("rationale"), // AI reasoning for the fee
+	status: text("status", {
+		enum: ["draft", "pending_approval", "approved", "rejected"],
+	})
+		.notNull()
+		.default("draft"),
+	generatedBy: text("generated_by").notNull().default("system"), // 'system' or 'gemini'
+	createdAt: integer("created_at", { mode: "timestamp" })
+		.notNull()
+		.$defaultFn(() => new Date()),
+	updatedAt: integer("updated_at", { mode: "timestamp" })
+		.notNull()
+		.$defaultFn(() => new Date()),
+});
+
+// ============================================
+// Relations
+// ============================================
+
 export const leadsRelations = relations(leads, ({ many }) => ({
 	workflows: many(workflows),
 }));
@@ -174,8 +204,16 @@ export const workflowsRelations = relations(workflows, ({ one, many }) => ({
 		fields: [workflows.leadId],
 		references: [leads.id],
 	}),
+	quotes: many(quotes),
 	events: many(workflowEvents),
 	callbacks: many(zapierCallbacks),
+}));
+
+export const quotesRelations = relations(quotes, ({ one }) => ({
+	workflow: one(workflows, {
+		fields: [quotes.workflowId],
+		references: [workflows.id],
+	}),
 }));
 
 export const workflowEventsRelations = relations(workflowEvents, ({ one }) => ({

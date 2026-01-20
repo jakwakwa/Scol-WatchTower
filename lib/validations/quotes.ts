@@ -1,0 +1,32 @@
+import { z } from "zod";
+
+// Helper to handle both camelCase and snake_case inputs (e.g. from Zapier)
+export const createQuoteSchema = z.preprocess(
+	(val) => {
+		if (typeof val !== "object" || val === null) return val;
+		const v = val as Record<string, unknown>;
+		return {
+			workflowId: v.workflowId ?? v.workflow_id,
+			amount: v.amount,
+			baseFeePercent: v.baseFeePercent ?? v.base_fee_percent,
+			adjustedFeePercent: v.adjustedFeePercent ?? v.adjusted_fee_percent,
+			rationale: v.rationale,
+			generatedBy: v.generatedBy ?? v.generated_by,
+		};
+	},
+	z.object({
+		workflowId: z.coerce.number().int().positive(),
+		amount: z.coerce.number().int().positive(), // Cents
+		baseFeePercent: z.coerce.number().int().positive(), // Basis points
+		adjustedFeePercent: z.coerce.number().int().positive().optional(), // Basis points
+		rationale: z.string().optional(),
+		generatedBy: z.enum(["system", "gemini"]).optional(),
+	}),
+);
+
+export const updateQuoteSchema = z.object({
+	adjustedFeePercent: z.number().int().positive().optional(),
+	status: z
+		.enum(["draft", "pending_approval", "approved", "rejected"])
+		.optional(),
+});

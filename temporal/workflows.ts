@@ -27,6 +27,9 @@ export async function onboardingWorkflow({
 	leadId,
 	workflowId,
 }: OnboardingWorkflowArgs): Promise<void> {
+	console.log(
+		`[Workflow] STARTED onboardingWorkflow for lead=${leadId} workflow=${workflowId}`,
+	);
 	// Workflow State
 	let qualityGateData: QualityGatePayload | null = null;
 	let agentDecisionData: AgentCallbackPayload | null = null;
