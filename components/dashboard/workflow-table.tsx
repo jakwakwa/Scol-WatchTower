@@ -257,6 +257,7 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 		cell: ({ row, table }) => {
 			const meta = table.options.meta as {
 				onViewPayload: (data: WorkflowRow) => void;
+				onManualOverride: (data: WorkflowRow) => void;
 			};
 			return (
 				<DropdownMenu>
@@ -283,6 +284,14 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 							<RiCodeSSlashLine className="mr-2 h-4 w-4" />
 							View Payload
 						</DropdownMenuItem>
+						<DropdownMenuSeparator />
+						<DropdownMenuItem
+							className="cursor-pointer text-amber-500 focus:text-amber-400 focus:bg-amber-500/10"
+							onClick={() => meta?.onManualOverride(row.original)}
+						>
+							<RiAlertLine className="mr-2 h-4 w-4" />
+							Force Signal
+						</DropdownMenuItem>
 					</DropdownMenuContent>
 				</DropdownMenu>
 			);
@@ -291,6 +300,144 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 ];
 
 // --- Sub-components ---
+
+import { Textarea } from "@/components/ui/textarea";
+
+function ManualOverrideDialog({
+	workflow,
+	open,
+	onOpenChange,
+}: {
+	workflow: WorkflowRow | null;
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
+}) {
+	const [payloadJson, setPayloadJson] = React.useState("");
+	const [isLoading, setIsLoading] = React.useState(false);
+	const [error, setError] = React.useState<string | null>(null);
+
+	// Reset state when dialog opens
+	React.useEffect(() => {
+		if (open && workflow) {
+			setPayloadJson(
+				JSON.stringify(
+					{
+						agentId: "human_override",
+						status: "COMPLETED",
+						decision: {
+							outcome: "APPROVED",
+							reason: "Manual admin override via Control Tower",
+						},
+						audit: {
+							humanActor: "admin", // in real app, get from auth context
+							timestamp: new Date().toISOString(),
+						},
+					},
+					null,
+					2,
+				),
+			);
+			setError(null);
+		}
+	}, [open, workflow]);
+
+	const handleOverride = async () => {
+		if (!workflow) return;
+		setIsLoading(true);
+		setError(null);
+
+		try {
+			// Validate JSON
+			let parsedPayload;
+			try {
+				parsedPayload = JSON.parse(payloadJson);
+			} catch (e) {
+				throw new Error("Invalid JSON format");
+			}
+
+			const response = await fetch(`/api/workflows/${workflow.id}/signal`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(parsedPayload), // Send strictly strictly typed or raw?
+				// API route expects either { signalName, payload } OR raw AgentCallback
+				// Since this is the "Manual Override" simulating an Agent, we send the raw AgentCallback JSON.
+			});
+
+			if (!response.ok) {
+				const data = await response.json();
+				throw new Error(data.error || "Failed to signal workflow");
+			}
+
+			onOpenChange(false);
+			// Ideally trigger a refresh of the table data here, but for now just close.
+		} catch (err: any) {
+			setError(err.message);
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	if (!workflow) return null;
+
+	return (
+		<Dialog open={open} onOpenChange={onOpenChange}>
+			<DialogContent className="max-w-xl border-white/10 bg-zinc-950/95 backdrop-blur-xl">
+				<DialogHeader>
+					<DialogTitle className="flex items-center gap-2 text-amber-500">
+						<RiAlertLine className="h-5 w-5" />
+						Force Manual Signal
+					</DialogTitle>
+					<DialogDescription>
+						Manually inject an outcome for {workflow.clientName} (ID: #
+						{workflow.id}).
+						<br />
+						<span className="text-red-400 font-medium">
+							Warning: This bypasses normal agent verification.
+						</span>
+					</DialogDescription>
+				</DialogHeader>
+
+				<div className="space-y-4 py-4">
+					<div className="space-y-2">
+						<label className="text-xs font-medium text-muted-foreground">
+							Signal Payload (JSON)
+						</label>
+						<Textarea
+							value={payloadJson}
+							onChange={(e) => setPayloadJson(e.target.value)}
+							className="font-mono text-xs h-[200px] bg-black/50 border-white/10"
+							placeholder="{...}"
+						/>
+						{error && (
+							<p className="text-xs text-red-400 flex items-center gap-1">
+								<RiAlertLine className="h-3 w-3" />
+								{error}
+							</p>
+						)}
+					</div>
+				</div>
+
+				<div className="flex justify-end gap-2">
+					<Button
+						variant="ghost"
+						onClick={() => onOpenChange(false)}
+						disabled={isLoading}
+					>
+						Cancel
+					</Button>
+					<Button
+						variant="destructive"
+						onClick={handleOverride}
+						disabled={isLoading}
+						className="gap-2"
+					>
+						{isLoading ? "Signaling..." : "Inject Signal"}
+					</Button>
+				</div>
+			</DialogContent>
+		</Dialog>
+	);
+}
 
 function PayloadDialog({
 	workflow,
@@ -336,11 +483,17 @@ interface WorkflowTableProps {
 export function WorkflowTable({ workflows }: WorkflowTableProps) {
 	const [selectedWorkflow, setSelectedWorkflow] =
 		React.useState<WorkflowRow | null>(null);
-	const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+	const [isPayloadOpen, setIsPayloadOpen] = React.useState(false);
+	const [isOverrideOpen, setIsOverrideOpen] = React.useState(false);
 
 	const handleViewPayload = React.useCallback((workflow: WorkflowRow) => {
 		setSelectedWorkflow(workflow);
-		setIsDialogOpen(true);
+		setIsPayloadOpen(true);
+	}, []);
+
+	const handleManualOverride = React.useCallback((workflow: WorkflowRow) => {
+		setSelectedWorkflow(workflow);
+		setIsOverrideOpen(true);
 	}, []);
 
 	if (workflows.length === 0) {
@@ -362,13 +515,20 @@ export function WorkflowTable({ workflows }: WorkflowTableProps) {
 				data={workflows}
 				meta={{
 					onViewPayload: handleViewPayload,
+					onManualOverride: handleManualOverride,
 				}}
 			/>
 
 			<PayloadDialog
 				workflow={selectedWorkflow}
-				open={isDialogOpen}
-				onOpenChange={setIsDialogOpen}
+				open={isPayloadOpen}
+				onOpenChange={setIsPayloadOpen}
+			/>
+
+			<ManualOverrideDialog
+				workflow={selectedWorkflow}
+				open={isOverrideOpen}
+				onOpenChange={setIsOverrideOpen}
 			/>
 		</div>
 	);
