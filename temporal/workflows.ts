@@ -13,10 +13,16 @@ import {
 	type AgentCallbackPayload,
 } from "./signals";
 
-const { sendZapierWebhook, updateDbStatus, generateQuote, aiRiskAnalysis } =
-	proxyActivities<typeof activities>({
-		startToCloseTimeout: "1 minute",
-	});
+const {
+	sendZapierWebhook,
+	updateDbStatus,
+	generateQuote,
+	aiRiskAnalysis,
+	dispatchToPlatform,
+	escalateToManagement,
+} = proxyActivities<typeof activities>({
+	startToCloseTimeout: "1 minute",
+});
 
 export interface OnboardingWorkflowArgs {
 	leadId: number;
@@ -88,20 +94,34 @@ export async function onboardingWorkflow({
 	// 3.1 AI Pre-Screening
 	const aiResult = await aiRiskAnalysis(leadId);
 
-	// 3.2 Dispatch to Zapier Audit Agent
-	await updateDbStatus(workflowId, "awaiting_human", 3); // Technically awaiting external agent
-	await sendZapierWebhook({
+	// 3.2 Dispatch to Platform (Async Webhook Pattern)
+	await updateDbStatus(workflowId, "awaiting_human", 3); // Awaiting external agent
+
+	await dispatchToPlatform({
 		leadId,
-		stage: 3,
-		event: "RISK_VERIFICATION_REQUESTED",
 		workflowId,
-		aiResult,
-		quote, // Pass quote context
+		riskScore: aiResult.riskScore,
+		anomalies: aiResult.anomalies,
 	});
 
-	// 3.3 Wait for External Agent/Human Decision
-	console.log("[Workflow] Waiting for Agent Callback signal...");
-	await condition(() => agentDecisionData !== null);
+	// 3.3 Wait for External Agent/Human Decision with Timeout
+	console.log("[Workflow] Waiting for Agent Callback signal (48h timeout)...");
+
+	const signalReceived = await condition(
+		() => agentDecisionData !== null,
+		"48 hours",
+	);
+
+	if (!signalReceived) {
+		console.error("[Workflow] Timeout waiting for Agent Callback!");
+		await updateDbStatus(workflowId, "timeout", 3);
+		await escalateToManagement({
+			workflowId,
+			leadId,
+			reason: "Risk Verification Timeout (48h) - No response from Platform",
+		});
+		return; // Stop workflow on timeout
+	}
 
 	console.log("[Workflow] Agent Callback Received!", agentDecisionData);
 
