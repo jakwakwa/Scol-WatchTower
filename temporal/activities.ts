@@ -17,20 +17,22 @@ export async function sendZapierWebhook(payload: any): Promise<void> {
 					.where(eq(leads.id, leadId));
 				if (leadResults.length > 0) {
 					const leadData = leadResults[0];
-					finalPayload = {
-						...finalPayload,
-						companyName: leadData.companyName,
-						contactName: leadData.contactName,
-						email: leadData.email,
-						phone: leadData.phone,
-						industry: leadData.industry,
-						employeeCount: leadData.employeeCount,
-						estimatedVolume: leadData.estimatedVolume,
-						leadNotes: leadData.notes,
-					};
-					console.log(
-						`[Activity] Enriched payload with Lead data for ${leadId}`,
-					);
+					if (leadData) {
+						finalPayload = {
+							...finalPayload,
+							companyName: leadData.companyName,
+							contactName: leadData.contactName,
+							email: leadData.email,
+							phone: leadData.phone,
+							industry: leadData.industry,
+							employeeCount: leadData.employeeCount,
+							estimatedVolume: leadData.estimatedVolume,
+							leadNotes: leadData.notes,
+						};
+						console.log(
+							`[Activity] Enriched payload with Lead data for ${leadId}`,
+						);
+					}
 				}
 			} catch (err) {
 				console.error(

@@ -79,6 +79,10 @@ export async function POST(request: NextRequest) {
 
 		const newLead = newLeadResults[0];
 
+		if (!newLead) {
+			throw new Error("Failed to create lead record in database");
+		}
+
 		// 2. Create the initial Workflow record in DB
 		const [newWorkflow] = await db
 			.insert(workflows)
@@ -90,6 +94,10 @@ export async function POST(request: NextRequest) {
 				currentAgent: "system",
 			})
 			.returning();
+
+		if (!newWorkflow) {
+			throw new Error("Failed to create workflow record");
+		}
 
 		// 3. Start the Temporal Workflow
 		try {

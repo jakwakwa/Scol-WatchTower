@@ -39,6 +39,8 @@ async function setupTestData() {
 			})
 			.returning();
 
+		if (!testLead) throw new Error("Failed to create test lead");
+
 		console.log("✅ Created test lead:");
 		console.log(`   ID: ${testLead.id}`);
 		console.log(`   Company: ${testLead.companyName}`);
@@ -55,6 +57,8 @@ async function setupTestData() {
 				currentAgent: "zapier_gemini_agent",
 			})
 			.returning();
+
+		if (!testWorkflow) throw new Error("Failed to create test workflow");
 
 		console.log("✅ Created test workflow:");
 		console.log(`   ID: ${testWorkflow.id}`);
