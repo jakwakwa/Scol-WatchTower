@@ -15,62 +15,11 @@ import {
 import { WebhookTester } from "@/components/dashboard/webhook-tester";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { getDatabaseClient } from "@/app/utils";
+import { workflows, leads } from "@/db/schema";
+import { desc, eq, count } from "drizzle-orm";
 
-// Demo data - will be replaced with real data from DB
-const mockStats = {
-	activeWorkflows: 12,
-	pendingApprovals: 4,
-	leadsToday: 8,
-	completionRate: 94,
-};
-
-const mockWorkflows = [
-	{
-		id: 1,
-		clientName: "TechCorp SA",
-		stage: 3 as const,
-		stageName: "verification",
-		status: "awaiting_human" as const,
-		currentAgent: "zapier_risk_agent_v2",
-		startedAt: new Date(Date.now() - 3600000 * 2),
-		payload: {
-			riskScore: 85,
-			anomalies: ["Blurred Transaction Line", "Sanctions Partial Match"],
-			documentLinks: ["https://storage.googleapis.com/..."],
-		},
-	},
-	{
-		id: 2,
-		clientName: "Financial Solutions Ltd",
-		stage: 2 as const,
-		stageName: "dynamic_quotation",
-		status: "in_progress" as const,
-		currentAgent: "zapier_doc_agent_v1",
-		startedAt: new Date(Date.now() - 3600000 * 5),
-		payload: { quoteId: "Q-2024-001", amount: 250000 },
-	},
-	{
-		id: 3,
-		clientName: "Mining Resources PTY",
-		stage: 4 as const,
-		stageName: "integration",
-		status: "completed" as const,
-		currentAgent: undefined,
-		startedAt: new Date(Date.now() - 86400000),
-		payload: { syncedAt: new Date().toISOString(), v24Status: "success" },
-	},
-	{
-		id: 4,
-		clientName: "Retail Holdings",
-		stage: 1 as const,
-		stageName: "lead_capture",
-		status: "pending" as const,
-		currentAgent: "zapier_doc_agent_v1",
-		startedAt: new Date(Date.now() - 1800000),
-		payload: { formSent: true, signatureRequested: true },
-	},
-];
-
+// Demo activity data - can be replaced with real events later
 const mockActivity = [
 	{
 		id: 1,
@@ -91,29 +40,50 @@ const mockActivity = [
 		timestamp: new Date(Date.now() - 3600000),
 		actorType: "system" as const,
 	},
-	{
-		id: 3,
-		workflowId: 3,
-		clientName: "Mining Resources PTY",
-		eventType: "agent_callback" as const,
-		description: "V24 sync completed successfully",
-		timestamp: new Date(Date.now() - 7200000),
-		actorType: "agent" as const,
-		actorId: "zapier_sync_agent_v1",
-	},
-	{
-		id: 4,
-		workflowId: 1,
-		clientName: "TechCorp SA",
-		eventType: "human_override" as const,
-		description: "Risk score manually adjusted by manager",
-		timestamp: new Date(Date.now() - 14400000),
-		actorType: "user" as const,
-		actorId: "risk_manager@company.co.za",
-	},
 ];
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+	const db = getDatabaseClient();
+	let activeWorkflows: any[] = [];
+	let workflowsCount = 0;
+	let leadsCount = 0;
+
+	if (db) {
+		try {
+			// Fetch Workflows with Lead data
+			const result = await db
+				.select({
+					id: workflows.id,
+					stage: workflows.stage,
+					stageName: workflows.stageName,
+					status: workflows.status,
+					currentAgent: workflows.currentAgent,
+					startedAt: workflows.startedAt,
+					metadata: workflows.metadata,
+					clientName: leads.companyName,
+				})
+				.from(workflows)
+				.leftJoin(leads, eq(workflows.leadId, leads.id))
+				.orderBy(desc(workflows.startedAt))
+				.limit(10);
+
+			activeWorkflows = result.map((w) => ({
+				...w,
+				// Parse metadata if it exists, otherwise use empty object
+				payload: w.metadata ? JSON.parse(w.metadata) : {},
+			}));
+
+			// Get counts
+			const wfCountResult = await db.select({ count: count() }).from(workflows);
+			workflowsCount = wfCountResult[0]?.count || 0;
+
+			const leadsCountResult = await db.select({ count: count() }).from(leads);
+			leadsCount = leadsCountResult[0]?.count || 0;
+		} catch (error) {
+			console.error("Failed to fetch dashboard data:", error);
+		}
+	}
+
 	return (
 		<DashboardLayout
 			title="Control Tower"
@@ -134,29 +104,29 @@ export default function DashboardPage() {
 			<DashboardGrid columns={4} className="mb-8">
 				<StatsCard
 					title="Active Workflows"
-					value={mockStats.activeWorkflows}
-					change={{ value: 12, trend: "up" }}
+					value={workflowsCount}
+					change={{ value: 0, trend: "neutral" }}
 					icon={RiFlowChart}
 					iconColor="amber"
 				/>
 				<StatsCard
 					title="Pending Approvals"
-					value={mockStats.pendingApprovals}
-					change={{ value: 2, trend: "down" }}
+					value={0} // TODO: Count 'awaiting_human' status
+					change={{ value: 0, trend: "neutral" }}
 					icon={RiTimeLine}
 					iconColor="purple"
 				/>
 				<StatsCard
-					title="Leads Today"
-					value={mockStats.leadsToday}
-					change={{ value: 25, trend: "up" }}
+					title="Total Leads"
+					value={leadsCount}
+					change={{ value: 0, trend: "neutral" }}
 					icon={RiUserAddLine}
 					iconColor="blue"
 				/>
 				<StatsCard
 					title="Completion Rate"
-					value={`${mockStats.completionRate}%`}
-					change={{ value: 3, trend: "up" }}
+					value="-"
+					change={{ value: 0, trend: "neutral" }}
 					icon={RiCheckDoubleLine}
 					iconColor="green"
 				/>
@@ -177,7 +147,7 @@ export default function DashboardPage() {
 							</Link>
 						}
 					>
-						<WorkflowTable workflows={mockWorkflows} />
+						<WorkflowTable workflows={activeWorkflows} />
 					</DashboardSection>
 				</div>
 
