@@ -122,7 +122,7 @@ export const columns: ColumnDef<LeadRow>[] = [
 		header: "Employees",
 		cell: ({ row }) => (
 			<div className="text-sm">
-				{row.original.employeeCount.toLocaleString()}
+				{row.original.employeeCount?.toLocaleString() || "—"}
 			</div>
 		),
 	},

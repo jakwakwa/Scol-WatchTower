@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -10,6 +11,7 @@ import {
 	DialogDescription,
 	DialogHeader,
 	DialogTitle,
+	DialogFooter,
 } from "@/components/ui/dialog";
 import {
 	DropdownMenu,
@@ -33,11 +35,15 @@ import {
 	RiArrowDownSLine,
 	RiArrowUpSLine,
 	RiCheckLine,
+	RiCloseLine,
 	RiFlowChart,
 	RiMore2Fill,
 	RiTimeLine,
 	RiUserLine,
 	RiCodeSSlashLine,
+	RiThumbUpLine,
+	RiThumbDownLine,
+	RiPauseCircleLine,
 } from "@remixicon/react";
 import {
 	flexRender,
@@ -48,11 +54,13 @@ import {
 	type SortingState,
 } from "@tanstack/react-table";
 import { DataTable } from "@/components/ui/data-table";
+import { toast } from "sonner";
 
 // --- Types ---
 
 export interface WorkflowRow {
 	id: number;
+	leadId: number;
 	clientName: string;
 	stage: 1 | 2 | 3 | 4;
 	stageName: string;
@@ -62,7 +70,8 @@ export interface WorkflowRow {
 		| "awaiting_human"
 		| "completed"
 		| "failed"
-		| "timeout";
+		| "timeout"
+		| "paused";
 	currentAgent?: string;
 	startedAt: Date;
 	payload?: Record<string, unknown>;
@@ -87,10 +96,26 @@ const statusConfig = {
 	completed: { label: "Completed", color: "success", icon: RiCheckLine },
 	failed: { label: "Failed", color: "destructive", icon: RiAlertLine },
 	timeout: { label: "Timeout", color: "destructive", icon: RiAlertLine },
+	paused: {
+		label: "Paused",
+		color: "warning",
+		icon: RiPauseCircleLine,
+		pulse: true,
+	},
 } as const;
 
 export function StatusBadge({ status }: { status: WorkflowRow["status"] }) {
 	const config = statusConfig[status];
+
+	if (!config) {
+		return (
+			<Badge variant="outline" className="gap-1.5 text-muted-foreground">
+				<RiAlertLine className="h-3 w-3" />
+				{status || "Unknown"}
+			</Badge>
+		);
+	}
+
 	const Icon = config.icon;
 	const hasPulse = "pulse" in config && config.pulse;
 
@@ -254,190 +279,80 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 	},
 	{
 		id: "actions",
+		header: "Actions",
 		cell: ({ row, table }) => {
 			const meta = table.options.meta as {
 				onViewPayload: (data: WorkflowRow) => void;
 				onManualOverride: (data: WorkflowRow) => void;
+				onQuickApprove: (data: WorkflowRow) => void;
+				onQuickReject: (data: WorkflowRow) => void;
 			};
+			const isAwaiting = row.original.status === "awaiting_human";
+
 			return (
-				<DropdownMenu>
-					<DropdownMenuTrigger asChild>
-						<Button
-							variant="ghost"
-							size="icon"
-							className="h-8 w-8 hover:bg-white/10"
-						>
-							<RiMore2Fill className="h-4 w-4" />
-						</Button>
-					</DropdownMenuTrigger>
-					<DropdownMenuContent align="end" className="w-[180px]">
-						<DropdownMenuLabel>Actions</DropdownMenuLabel>
-						<DropdownMenuItem className="cursor-pointer">
-							<RiFlowChart className="mr-2 h-4 w-4" />
-							View Workflow
-						</DropdownMenuItem>
-						<DropdownMenuSeparator />
-						<DropdownMenuItem
-							className="cursor-pointer text-stone-400 focus:text-stone-300"
-							onClick={() => meta?.onViewPayload(row.original)}
-						>
-							<RiCodeSSlashLine className="mr-2 h-4 w-4" />
-							View Payload
-						</DropdownMenuItem>
-						<DropdownMenuSeparator />
-						<DropdownMenuItem
-							className="cursor-pointer text-amber-500 focus:text-amber-400 focus:bg-amber-500/10"
-							onClick={() => meta?.onManualOverride(row.original)}
-						>
-							<RiAlertLine className="mr-2 h-4 w-4" />
-							Force Signal
-						</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
+				<div className="flex items-center gap-1">
+					{/* Quick HITL Actions - only show when awaiting human */}
+					{isAwaiting && (
+						<>
+							<Button
+								variant="ghost"
+								size="icon"
+								className="h-8 w-8 hover:bg-emerald-500/20 hover:text-emerald-400 transition-colors"
+								onClick={() => meta?.onQuickApprove(row.original)}
+								title="Approve"
+							>
+								<RiThumbUpLine className="h-4 w-4" />
+							</Button>
+							<Button
+								variant="ghost"
+								size="icon"
+								className="h-8 w-8 hover:bg-red-500/20 hover:text-red-400 transition-colors"
+								onClick={() => meta?.onQuickReject(row.original)}
+								title="Reject"
+							>
+								<RiThumbDownLine className="h-4 w-4" />
+							</Button>
+						</>
+					)}
+
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button
+								variant="ghost"
+								size="icon"
+								className="h-8 w-8 hover:bg-white/10"
+							>
+								<RiMore2Fill className="h-4 w-4" />
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end" className="w-[180px]">
+							<DropdownMenuLabel>Actions</DropdownMenuLabel>
+							<DropdownMenuItem asChild>
+								<Link
+									href={`/dashboard/workflows/${row.original.id}`}
+									className="cursor-pointer flex items-center"
+								>
+									<RiFlowChart className="mr-2 h-4 w-4" />
+									View Workflow
+								</Link>
+							</DropdownMenuItem>
+							<DropdownMenuSeparator />
+							<DropdownMenuItem
+								className="cursor-pointer text-stone-400 focus:text-stone-300"
+								onClick={() => meta?.onViewPayload(row.original)}
+							>
+								<RiCodeSSlashLine className="mr-2 h-4 w-4" />
+								View Payload
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</div>
 			);
 		},
 	},
 ];
 
 // --- Sub-components ---
-
-import { Textarea } from "@/components/ui/textarea";
-
-function ManualOverrideDialog({
-	workflow,
-	open,
-	onOpenChange,
-}: {
-	workflow: WorkflowRow | null;
-	open: boolean;
-	onOpenChange: (open: boolean) => void;
-}) {
-	const [payloadJson, setPayloadJson] = React.useState("");
-	const [isLoading, setIsLoading] = React.useState(false);
-	const [error, setError] = React.useState<string | null>(null);
-
-	// Reset state when dialog opens
-	React.useEffect(() => {
-		if (open && workflow) {
-			setPayloadJson(
-				JSON.stringify(
-					{
-						agentId: "human_override",
-						status: "COMPLETED",
-						decision: {
-							outcome: "APPROVED",
-							reason: "Manual admin override via Control Tower",
-						},
-						audit: {
-							humanActor: "admin", // in real app, get from auth context
-							timestamp: new Date().toISOString(),
-						},
-					},
-					null,
-					2,
-				),
-			);
-			setError(null);
-		}
-	}, [open, workflow]);
-
-	const handleOverride = async () => {
-		if (!workflow) return;
-		setIsLoading(true);
-		setError(null);
-
-		try {
-			// Validate JSON
-			let parsedPayload;
-			try {
-				parsedPayload = JSON.parse(payloadJson);
-			} catch (e) {
-				throw new Error("Invalid JSON format");
-			}
-
-			const response = await fetch(`/api/workflows/${workflow.id}/signal`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(parsedPayload), // Send strictly strictly typed or raw?
-				// API route expects either { signalName, payload } OR raw AgentCallback
-				// Since this is the "Manual Override" simulating an Agent, we send the raw AgentCallback JSON.
-			});
-
-			if (!response.ok) {
-				const data = await response.json();
-				throw new Error(data.error || "Failed to signal workflow");
-			}
-
-			onOpenChange(false);
-			// Ideally trigger a refresh of the table data here, but for now just close.
-		} catch (err: any) {
-			setError(err.message);
-		} finally {
-			setIsLoading(false);
-		}
-	};
-
-	if (!workflow) return null;
-
-	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-w-xl border-white/10 bg-zinc-950/95 backdrop-blur-xl">
-				<DialogHeader>
-					<DialogTitle className="flex items-center gap-2 text-amber-500">
-						<RiAlertLine className="h-5 w-5" />
-						Force Manual Signal
-					</DialogTitle>
-					<DialogDescription>
-						Manually inject an outcome for {workflow.clientName} (ID: #
-						{workflow.id}).
-						<br />
-						<span className="text-red-400 font-medium">
-							Warning: This bypasses normal agent verification.
-						</span>
-					</DialogDescription>
-				</DialogHeader>
-
-				<div className="space-y-4 py-4">
-					<div className="space-y-2">
-						<label className="text-xs font-medium text-muted-foreground">
-							Signal Payload (JSON)
-						</label>
-						<Textarea
-							value={payloadJson}
-							onChange={(e) => setPayloadJson(e.target.value)}
-							className="font-mono text-xs h-[200px] bg-black/50 border-white/10"
-							placeholder="{...}"
-						/>
-						{error && (
-							<p className="text-xs text-red-400 flex items-center gap-1">
-								<RiAlertLine className="h-3 w-3" />
-								{error}
-							</p>
-						)}
-					</div>
-				</div>
-
-				<div className="flex justify-end gap-2">
-					<Button
-						variant="ghost"
-						onClick={() => onOpenChange(false)}
-						disabled={isLoading}
-					>
-						Cancel
-					</Button>
-					<Button
-						variant="destructive"
-						onClick={handleOverride}
-						disabled={isLoading}
-						className="gap-2"
-					>
-						{isLoading ? "Signaling..." : "Inject Signal"}
-					</Button>
-				</div>
-			</DialogContent>
-		</Dialog>
-	);
-}
 
 function PayloadDialog({
 	workflow,
@@ -474,27 +389,194 @@ function PayloadDialog({
 	);
 }
 
+// --- HITL Confirmation Dialog ---
+
+function HITLConfirmDialog({
+	workflow,
+	action,
+	open,
+	onOpenChange,
+	onConfirm,
+}: {
+	workflow: WorkflowRow | null;
+	action: "approve" | "reject" | null;
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
+	onConfirm: () => Promise<void>;
+}) {
+	const [isLoading, setIsLoading] = React.useState(false);
+	const [reason, setReason] = React.useState("");
+
+	React.useEffect(() => {
+		if (open) {
+			setReason("");
+		}
+	}, [open]);
+
+	const handleConfirm = async () => {
+		setIsLoading(true);
+		try {
+			await onConfirm();
+			onOpenChange(false);
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	if (!workflow || !action) return null;
+
+	const isApprove = action === "approve";
+
+	return (
+		<Dialog open={open} onOpenChange={onOpenChange}>
+			<DialogContent className="max-w-md border-white/10 bg-zinc-950/95 backdrop-blur-xl">
+				<DialogHeader>
+					<DialogTitle
+						className={cn(
+							"flex items-center gap-2",
+							isApprove ? "text-emerald-500" : "text-red-500",
+						)}
+					>
+						{isApprove ? (
+							<RiThumbUpLine className="h-5 w-5" />
+						) : (
+							<RiThumbDownLine className="h-5 w-5" />
+						)}
+						{isApprove ? "Approve Workflow" : "Reject Workflow"}
+					</DialogTitle>
+					<DialogDescription>
+						{isApprove
+							? `Approve ${workflow.clientName}'s workflow to proceed to the next stage.`
+							: `Reject ${workflow.clientName}'s workflow. This action cannot be undone.`}
+					</DialogDescription>
+				</DialogHeader>
+
+				<div className="py-4">
+					<div className="rounded-lg border border-white/10 bg-white/5 p-4 space-y-2">
+						<div className="flex justify-between text-sm">
+							<span className="text-muted-foreground">Client</span>
+							<span className="font-medium">{workflow.clientName}</span>
+						</div>
+						<div className="flex justify-between text-sm">
+							<span className="text-muted-foreground">Stage</span>
+							<span className="font-medium">{workflow.stageName}</span>
+						</div>
+						<div className="flex justify-between text-sm">
+							<span className="text-muted-foreground">Workflow ID</span>
+							<code className="text-xs bg-black/50 px-2 py-0.5 rounded">
+								#{workflow.id}
+							</code>
+						</div>
+					</div>
+				</div>
+
+				<DialogFooter>
+					<Button
+						variant="ghost"
+						onClick={() => onOpenChange(false)}
+						disabled={isLoading}
+					>
+						Cancel
+					</Button>
+					<Button
+						variant={isApprove ? "default" : "destructive"}
+						onClick={handleConfirm}
+						disabled={isLoading}
+						className={cn(
+							"gap-2",
+							isApprove && "bg-emerald-600 hover:bg-emerald-700",
+						)}
+					>
+						{isLoading ? "Processing..." : isApprove ? "Approve" : "Reject"}
+					</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
+	);
+}
+
 // --- Main Component ---
 
 interface WorkflowTableProps {
 	workflows: WorkflowRow[];
+	onRefresh?: () => void;
 }
 
-export function WorkflowTable({ workflows }: WorkflowTableProps) {
+export function WorkflowTable({ workflows, onRefresh }: WorkflowTableProps) {
 	const [selectedWorkflow, setSelectedWorkflow] =
 		React.useState<WorkflowRow | null>(null);
 	const [isPayloadOpen, setIsPayloadOpen] = React.useState(false);
-	const [isOverrideOpen, setIsOverrideOpen] = React.useState(false);
+	const [isHITLOpen, setIsHITLOpen] = React.useState(false);
+	const [hitlAction, setHitlAction] = React.useState<
+		"approve" | "reject" | null
+	>(null);
 
 	const handleViewPayload = React.useCallback((workflow: WorkflowRow) => {
 		setSelectedWorkflow(workflow);
 		setIsPayloadOpen(true);
 	}, []);
 
-	const handleManualOverride = React.useCallback((workflow: WorkflowRow) => {
+	const handleQuickApprove = React.useCallback((workflow: WorkflowRow) => {
 		setSelectedWorkflow(workflow);
-		setIsOverrideOpen(true);
+		setHitlAction("approve");
+		setIsHITLOpen(true);
 	}, []);
+
+	const handleQuickReject = React.useCallback((workflow: WorkflowRow) => {
+		setSelectedWorkflow(workflow);
+		setHitlAction("reject");
+		setIsHITLOpen(true);
+	}, []);
+
+	const handleHITLConfirm = React.useCallback(async () => {
+		if (!selectedWorkflow || !hitlAction) return;
+
+		const payload = {
+			agentId: "human_hitl",
+			status: hitlAction === "approve" ? "COMPLETED" : "REJECTED",
+			decision: {
+				outcome: hitlAction === "approve" ? "APPROVED" : "REJECTED",
+				reason:
+					hitlAction === "approve"
+						? "Approved via Control Tower"
+						: "Rejected via Control Tower",
+			},
+			audit: {
+				humanActor: "admin",
+				timestamp: new Date().toISOString(),
+			},
+		};
+
+		try {
+			const response = await fetch(
+				`/api/workflows/${selectedWorkflow.id}/signal`,
+				{
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify(payload),
+				},
+			);
+
+			if (!response.ok) {
+				const data = await response.json();
+				throw new Error(data.error || "Failed to signal workflow");
+			}
+
+			toast.success(
+				hitlAction === "approve"
+					? `Workflow approved for ${selectedWorkflow.clientName}`
+					: `Workflow rejected for ${selectedWorkflow.clientName}`,
+				{ description: "Signal sent successfully" },
+			);
+
+			onRefresh?.();
+		} catch (err: any) {
+			toast.error("Failed to process workflow", {
+				description: err.message,
+			});
+			throw err;
+		}
+	}, [selectedWorkflow, hitlAction, onRefresh]);
 
 	if (workflows.length === 0) {
 		return (
@@ -515,7 +597,8 @@ export function WorkflowTable({ workflows }: WorkflowTableProps) {
 				data={workflows}
 				meta={{
 					onViewPayload: handleViewPayload,
-					onManualOverride: handleManualOverride,
+					onQuickApprove: handleQuickApprove,
+					onQuickReject: handleQuickReject,
 				}}
 			/>
 
@@ -525,10 +608,12 @@ export function WorkflowTable({ workflows }: WorkflowTableProps) {
 				onOpenChange={setIsPayloadOpen}
 			/>
 
-			<ManualOverrideDialog
+			<HITLConfirmDialog
 				workflow={selectedWorkflow}
-				open={isOverrideOpen}
-				onOpenChange={setIsOverrideOpen}
+				action={hitlAction}
+				open={isHITLOpen}
+				onOpenChange={setIsHITLOpen}
+				onConfirm={handleHITLConfirm}
 			/>
 		</div>
 	);

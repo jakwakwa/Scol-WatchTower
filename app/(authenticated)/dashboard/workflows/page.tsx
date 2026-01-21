@@ -7,92 +7,58 @@ import {
 	WorkflowTable,
 } from "@/components/dashboard";
 import { Button } from "@/components/ui/button";
+import { getDatabaseClient } from "@/app/utils";
+import { workflows, leads } from "@/db/schema";
+import { desc, eq } from "drizzle-orm";
+// Type import needed for WorkflowTable props
+// ensuring we match the expected shape
 
-// Extended mock data for the full workflows page
-const mockWorkflows = [
-	{
-		id: 1,
-		clientName: "TechCorp SA",
-		stage: 3 as const,
-		stageName: "verification",
-		status: "awaiting_human" as const,
-		currentAgent: "zapier_risk_agent_v2",
-		startedAt: new Date(Date.now() - 3600000 * 2),
-		payload: {
-			riskScore: 85,
-			anomalies: ["Blurred Transaction Line", "Sanctions Partial Match"],
-			documentLinks: ["https://storage.googleapis.com/..."],
-		},
-	},
-	{
-		id: 2,
-		clientName: "Financial Solutions Ltd",
-		stage: 2 as const,
-		stageName: "dynamic_quotation",
-		status: "in_progress" as const,
-		currentAgent: "zapier_doc_agent_v1",
-		startedAt: new Date(Date.now() - 3600000 * 5),
-		payload: { quoteId: "Q-2024-001", amount: 250000 },
-	},
-	{
-		id: 3,
-		clientName: "Mining Resources PTY",
-		stage: 4 as const,
-		stageName: "integration",
-		status: "completed" as const,
-		startedAt: new Date(Date.now() - 86400000),
-		payload: { syncedAt: new Date().toISOString(), v24Status: "success" },
-	},
-	{
-		id: 4,
-		clientName: "Retail Holdings",
-		stage: 1 as const,
-		stageName: "lead_capture",
-		status: "pending" as const,
-		currentAgent: "zapier_doc_agent_v1",
-		startedAt: new Date(Date.now() - 1800000),
-		payload: { formSent: true, signatureRequested: true },
-	},
-	{
-		id: 5,
-		clientName: "Logistics Partners",
-		stage: 2 as const,
-		stageName: "dynamic_quotation",
-		status: "in_progress" as const,
-		currentAgent: "zapier_doc_agent_v1",
-		startedAt: new Date(Date.now() - 3600000 * 8),
-		payload: { quoteId: "Q-2024-002", amount: 180000 },
-	},
-	{
-		id: 6,
-		clientName: "Healthcare Inc",
-		stage: 3 as const,
-		stageName: "verification",
-		status: "in_progress" as const,
-		currentAgent: "zapier_risk_agent_v2",
-		startedAt: new Date(Date.now() - 3600000 * 12),
-		payload: { riskScore: 42, anomalies: [] },
-	},
-	{
-		id: 7,
-		clientName: "Education Corp",
-		stage: 1 as const,
-		stageName: "lead_capture",
-		status: "timeout" as const,
-		currentAgent: "zapier_doc_agent_v1",
-		startedAt: new Date(Date.now() - 86400000 * 3),
-		payload: { formSent: true, signatureRequested: true, escalated: true },
-	},
-];
+export default async function WorkflowsPage() {
+	const db = getDatabaseClient();
+	let allWorkflows: any[] = [];
+	let stageStats = {
+		lead_capture: 0,
+		quotation: 0,
+		verification: 0,
+		integration: 0,
+	};
 
-const stageStats = {
-	lead_capture: mockWorkflows.filter((w) => w.stage === 1).length,
-	quotation: mockWorkflows.filter((w) => w.stage === 2).length,
-	verification: mockWorkflows.filter((w) => w.stage === 3).length,
-	integration: mockWorkflows.filter((w) => w.stage === 4).length,
-};
+	if (db) {
+		try {
+			// Fetch all workflows with Lead data
+			const result = await db
+				.select({
+					id: workflows.id,
+					stage: workflows.stage,
+					stageName: workflows.stageName,
+					status: workflows.status,
+					currentAgent: workflows.currentAgent,
+					startedAt: workflows.startedAt,
+					metadata: workflows.metadata,
+					clientName: leads.companyName,
+				})
+				.from(workflows)
+				.leftJoin(leads, eq(workflows.leadId, leads.id))
+				.orderBy(desc(workflows.startedAt));
 
-export default function WorkflowsPage() {
+			allWorkflows = result.map((w) => ({
+				...w,
+				// Parse metadata if it exists, otherwise use empty object
+				payload: w.metadata ? JSON.parse(w.metadata) : {},
+			}));
+
+			// Calculate stats
+			stageStats = {
+				lead_capture: allWorkflows.filter((w) => w.stage === 1).length,
+				quotation: allWorkflows.filter((w) => w.stage === 2).length,
+				verification: allWorkflows.filter((w) => w.stage === 3).length,
+				integration: allWorkflows.filter((w) => w.stage === 4).length,
+			};
+		} catch (error) {
+			console.error("Failed to fetch workflows:", error);
+		}
+	}
+
 	return (
 		<DashboardLayout
 			title="Workflows"
@@ -140,7 +106,7 @@ export default function WorkflowsPage() {
 
 			{/* Full workflows table */}
 			<DashboardSection title="All Workflows">
-				<WorkflowTable workflows={mockWorkflows} />
+				<WorkflowTable workflows={allWorkflows} />
 			</DashboardSection>
 		</DashboardLayout>
 	);

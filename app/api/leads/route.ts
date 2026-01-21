@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDatabaseClient } from "@/app/utils";
 import { leads, workflows } from "@/db/schema";
 import { createLeadSchema } from "@/lib/validations";
-import { getTemporalClient, TEMPORAL_TASK_QUEUE } from "@/lib/temporal";
+import { inngest } from "@/inngest";
 
 /**
  * GET /api/leads
@@ -31,7 +31,7 @@ export async function GET() {
 
 /**
  * POST /api/leads
- * Create a new lead
+ * Create a new lead and start the onboarding workflow
  */
 export async function POST(request: NextRequest) {
 	try {
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
 
 		const data = validation.data;
 
-		// Insert the new lead - using ALL fields including optional ones
+		// Insert the new lead
 		const newLeadResults = await db
 			.insert(leads)
 			.values({
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
 			throw new Error("Failed to create lead record in database");
 		}
 
-		// 2. Create the initial Workflow record in DB
+		// Create the initial Workflow record in DB
 		const [newWorkflow] = await db
 			.insert(workflows)
 			.values({
@@ -99,19 +99,15 @@ export async function POST(request: NextRequest) {
 			throw new Error("Failed to create workflow record");
 		}
 
-		// 3. Start the Temporal Workflow
+		// Start the Inngest Workflow
 		try {
-			const temporalClient = await getTemporalClient();
-			await temporalClient.workflow.start("onboardingWorkflow", {
-				taskQueue: TEMPORAL_TASK_QUEUE,
-				workflowId: `onboarding-${newWorkflow.id}`,
-				args: [{ leadId: newLead.id, workflowId: newWorkflow.id }],
+			await inngest.send({
+				name: "onboarding/started",
+				data: { leadId: newLead.id, workflowId: newWorkflow.id },
 			});
-			console.log(`[API] Started Temporal workflow for lead ${newLead.id}`);
-		} catch (temporalError) {
-			console.error("[API] Failed to start Temporal workflow:", temporalError);
-			// We don't fail the request, but we log it. The lead is created.
-			// You might want to update the workflow status to 'failed' here.
+			console.log(`[API] Started Inngest workflow for lead ${newLead.id}`);
+		} catch (inngestError) {
+			console.error("[API] Failed to start Inngest workflow:", inngestError);
 		}
 
 		return NextResponse.json(
