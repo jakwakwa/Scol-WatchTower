@@ -626,8 +626,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "zapier_callbacks": {
-      "name": "zapier_callbacks",
+    "xt_callbacks": {
+      "name": "xt_callbacks",
       "columns": {
         "id": {
           "name": "id",
@@ -717,9 +717,9 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "zapier_callbacks_workflow_id_workflows_id_fk": {
-          "name": "zapier_callbacks_workflow_id_workflows_id_fk",
-          "tableFrom": "zapier_callbacks",
+        "xt_callbacks_workflow_id_workflows_id_fk": {
+          "name": "xt_callbacks_workflow_id_workflows_id_fk",
+          "tableFrom": "xt_callbacks",
           "tableTo": "workflows",
           "columnsFrom": [
             "workflow_id"

@@ -43,7 +43,7 @@ const eventConfig: Record<
 	},
 	agent_callback: {
 		icon: RiCheckLine,
-		color: "text-emerald-400",
+		color: "text-emerald-700",
 		bgColor: "bg-emerald-500/20",
 	},
 	human_override: {
@@ -71,13 +71,15 @@ export function ActivityFeed({ events, maxItems = 10 }: ActivityFeedProps) {
 		return (
 			<div className="rounded-xl bg-white/[0.02] p-8 text-center">
 				<RiTimeLine className="mx-auto h-8 w-8 text-muted-foreground/50" />
-				<p className="mt-2 text-sm text-muted-foreground">No recent activity</p>
+				<p className="mt-2 text-[9px] text-muted-foreground">
+					No recent activity
+				</p>
 			</div>
 		);
 	}
 
 	return (
-		<div className="space-y-1">
+		<div className="space-y-1 ">
 			{displayEvents.map((event, index) => {
 				const config = eventConfig[event.eventType];
 				const Icon = config.icon;
@@ -86,7 +88,7 @@ export function ActivityFeed({ events, maxItems = 10 }: ActivityFeedProps) {
 					<div
 						key={event.id}
 						className={cn(
-							"group flex items-start gap-4 rounded-xl p-4 transition-colors",
+							"group flex items-start gap-2 rounded-xl p-2 transition-colors",
 							"hover:bg-white/[0.02]",
 						)}
 					>
@@ -94,7 +96,7 @@ export function ActivityFeed({ events, maxItems = 10 }: ActivityFeedProps) {
 						<div className="relative flex flex-col items-center">
 							<div
 								className={cn(
-									"flex h-8 w-8 items-center justify-center rounded-lg",
+									"flex h-6 w-6 items-center justify-center rounded-md",
 									config.bgColor,
 								)}
 							>
@@ -108,20 +110,22 @@ export function ActivityFeed({ events, maxItems = 10 }: ActivityFeedProps) {
 						{/* Content */}
 						<div className="flex-1 min-w-0 pt-1">
 							<div className="flex items-center gap-2">
-								<span className="font-medium">{event.clientName}</span>
-								<span className="text-xs text-muted-foreground">
+								<span className="font-medium text-sm text-primary leading-none">
+									{event.clientName}
+								</span>
+								<span className="text-[12px] text-muted-foreground">
 									#{event.workflowId}
 								</span>
 							</div>
-							<p className="text-sm text-muted-foreground mt-0.5">
+							<p className="text-[9px] truncate ellipsis line-clamp-2 whitespace-pre-line text-foreground/40 mt-0.5">
 								{event.description}
 							</p>
-							<div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+							<div className="flex items-center gap-2 mt-2 text-[9px] text-muted-foreground">
 								<span>{formatRelativeTime(event.timestamp)}</span>
 								{event.actorId && (
 									<>
 										<span>•</span>
-										<code className="rounded bg-white/5 px-1.5 py-0.5">
+										<code className="rounded text-[9px] bg-white/5 px-1.5 py-0.5">
 											{event.actorId}
 										</code>
 									</>

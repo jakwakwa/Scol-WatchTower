@@ -14,7 +14,7 @@ const quoteCallbackSchema = z.object({
 
 /**
  * POST /api/callbacks/quotes
- * Handle callback from Zapier Quote Generation
+ * Handle callback from Quote Generation
  */
 export async function POST(request: NextRequest) {
 	try {
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
 		try {
 			body = JSON.parse(rawBody);
 		} catch {
-			// Handle if Zapier sends form-data or other content types, but usually JSON
+			// Handle if  sends form-data or other content types, but usually JSON
 			return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
 		}
 
@@ -49,8 +49,8 @@ export async function POST(request: NextRequest) {
 		const data = validation.data;
 
 		// We need workflowId to resume the correct workflow.
-		// If Zapier doesn't pass it back, we might need to lookup or assume.
-		// For now, assuming it is passed back (we will add it to the payload sent TO Zapier).
+		// If  doesn't pass it back, we might need to lookup or assume.
+		// For now, assuming it is passed back (we will add it to the payload sent TO ).
 		if (!data.workflowId) {
 			console.warn(
 				"[API] Quote Callback missing workflowId - cannot resume workflow easily (unless we lookup by leadId)",

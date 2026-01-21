@@ -21,11 +21,9 @@ export interface WebhookPayload {
 }
 
 /**
- * Send webhook to Zapier with enriched lead data
+ * Send webhook to external with enriched lead data
  */
-export async function sendZapierWebhook(
-	payload: WebhookPayload,
-): Promise<void> {
+export async function sendagentWebhook(payload: WebhookPayload): Promise<void> {
 	let finalPayload = { ...payload };
 	const { leadId, stage, event } = payload;
 
@@ -61,18 +59,18 @@ export async function sendZapierWebhook(
 	}
 
 	console.log(
-		`[NotificationService] Sending Zapier Webhook: Lead ${leadId}, Stage ${stage}, Event: ${event}`,
+		`[NotificationService] Sending external Webhook: Lead ${leadId}, Stage ${stage}, Event: ${event}`,
 	);
 
-	const zapierUrl = getWebhookUrl(event);
+	const agentUrl = getWebhookUrl(event);
 
-	if (!zapierUrl) {
+	if (!agentUrl) {
 		throw new Error(
 			`[NotificationService] No webhook URL configured for event "${event}"`,
 		);
 	}
 
-	const response = await fetch(zapierUrl, {
+	const response = await fetch(agentUrl, {
 		method: "POST",
 		body: JSON.stringify(finalPayload),
 		headers: { "Content-Type": "application/json" },
@@ -80,7 +78,7 @@ export async function sendZapierWebhook(
 
 	if (!response.ok) {
 		throw new Error(
-			`Zapier webhook failed: ${response.status} ${response.statusText}`,
+			`external webhook failed: ${response.status} ${response.statusText}`,
 		);
 	}
 }
@@ -99,7 +97,7 @@ function getWebhookUrl(event: WebhookEvent): string | undefined {
 		case "ONBOARDING_COMPLETE":
 			return process.env.WEBHOOK_ZAP_ONBOARDING_COMPLETE_TRIGGER;
 		default:
-			return process.env.ZAPIER_CATCH_HOOK_URL;
+			return process.env.xt_CATCH_HOOK_URL;
 	}
 }
 

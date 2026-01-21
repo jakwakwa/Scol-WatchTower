@@ -1,4 +1,3 @@
-import { ComponentExample } from "@/components/component-example";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
@@ -11,13 +10,12 @@ export default function Page() {
 				</div>
 				<div className="flex w-full items-center justify-center my-8 gap-6 font-black bg-accent-foreground">
 					<Link href="/sign-up">
-						<Button className="text-sm">sign up</Button>
+						<Button size="lg" className="text-sm">sign up</Button>
 					</Link>
 					<Link href="/sign-in">
-						<Button className="text-sm">sign in</Button>
+						<Button size="lg" className="text-sm">sign in</Button>
 					</Link>
 				</div>
-				<ComponentExample />
 			</div>
 		</section>
 	);

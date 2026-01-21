@@ -22,8 +22,8 @@ async function reset() {
 
 	try {
 		// Delete transactional data first (dependent tables)
-		console.log("Deleting Zapier Callbacks...");
-		await db.delete(schema.zapierCallbacks);
+		console.log("Deleting external Callbacks...");
+		await db.delete(schema.agentCallbacks);
 
 		console.log("Deleting Workflow Events...");
 		await db.delete(schema.workflowEvents);

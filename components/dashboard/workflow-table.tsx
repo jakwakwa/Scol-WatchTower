@@ -166,7 +166,7 @@ export function WorkflowStageIndicator({
 							className={cn(
 								"h-0.5 transition-colors",
 								compact ? "w-2" : "w-4",
-								stage < currentStage ? "bg-emerald-500/40" : "bg-white/10",
+								stage < currentStage ? "bg-emerald-500/20" : "bg-white/10",
 							)}
 						/>
 					)}

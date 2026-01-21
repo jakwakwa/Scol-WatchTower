@@ -59,10 +59,10 @@ export const createWorkflowSchema = z.object({
 export type CreateWorkflowInput = z.infer<typeof createWorkflowSchema>;
 
 // ============================================
-// Zapier Callback Schemas
+// external Callback Schemas
 // ============================================
 
-export const zapierCallbackDecisionSchema = z.object({
+export const agentCallbackDecisionSchema = z.object({
 	outcome: z.enum(["APPROVED", "REJECTED", "PENDING_INFO"]),
 	manualOverrides: z
 		.object({
@@ -72,20 +72,20 @@ export const zapierCallbackDecisionSchema = z.object({
 		.optional(),
 });
 
-export const zapierCallbackAuditSchema = z.object({
+export const agentCallbackAuditSchema = z.object({
 	humanActor: z.string().email(),
 	timestamp: z.string().datetime(),
 });
 
-export const zapierCallbackSchema = z.object({
+export const agentCallbackSchema = z.object({
 	workflowId: z.string().or(z.number()),
 	agentId: z.string().min(1, "Agent ID is required"),
 	status: z.enum(["COMPLETED", "FAILED", "PENDING"]),
-	decision: zapierCallbackDecisionSchema.optional(),
-	audit: zapierCallbackAuditSchema.optional(),
+	decision: agentCallbackDecisionSchema.optional(),
+	audit: agentCallbackAuditSchema.optional(),
 });
 
-export type ZapierCallbackInput = z.infer<typeof zapierCallbackSchema>;
+export type agentCallbackInput = z.infer<typeof agentCallbackSchema>;
 
 // ============================================
 // Outgoing Webhook Payload Schema

@@ -54,7 +54,7 @@ async function setupTestData() {
 				stage: 2,
 				stageName: "dynamic_quotation",
 				status: "in_progress",
-				currentAgent: "zapier_gemini_agent",
+				currentAgent: "xt_gemini_agent",
 			})
 			.returning();
 

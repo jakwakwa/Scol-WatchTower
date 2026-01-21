@@ -11,7 +11,7 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { RiFlaskLine } from "@remixicon/react";
-import { testZapierWebhook } from "@/app/actions/test-webhook";
+import { testAgentWebhook } from "@/app/actions/test-webhook";
 
 import {
 	Select,
@@ -31,7 +31,7 @@ export function WebhookTester() {
 		setIsLoading(true);
 		setResult(null);
 		try {
-			const response = await testZapierWebhook(eventType);
+			const response = await testAgentWebhook(eventType);
 			setResult(response);
 		} catch (error) {
 			setResult({ success: false, message: "Client-side error" });
@@ -50,9 +50,9 @@ export function WebhookTester() {
 			</DialogTrigger>
 			<DialogContent className="sm:max-w-[425px]">
 				<DialogHeader>
-					<DialogTitle>Test Zapier Webhook</DialogTitle>
+					<DialogTitle>Test external Webhook</DialogTitle>
 					<DialogDescription>
-						Send a test event to your configured Zapier hook (if set in .env).
+						Send a test event to your configured external hook (if set in .env).
 					</DialogDescription>
 				</DialogHeader>
 				<div className="flex flex-col gap-4 py-4">

@@ -3,7 +3,7 @@
  * Use these in workflow functions for consistent webhook dispatch
  */
 import {
-	sendZapierWebhook,
+	sendagentWebhook,
 	type WebhookEvent,
 } from "@/lib/services/notification.service";
 
@@ -23,6 +23,6 @@ export interface WebhookPayload {
 export const webhookSteps = {
 	send: (payload: WebhookPayload) => ({
 		id: `webhook-stage${payload.stage}-${payload.event.toLowerCase()}`,
-		fn: () => sendZapierWebhook(payload),
+		fn: () => sendagentWebhook(payload),
 	}),
 };
