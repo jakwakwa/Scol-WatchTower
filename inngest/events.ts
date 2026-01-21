@@ -38,6 +38,17 @@ export type Events = {
 			};
 		};
 	};
+	"onboarding/quote-generated": {
+		data: {
+			workflowId: number;
+			leadId: number;
+			quote: {
+				quoteId: string;
+				amount: number;
+				terms: string;
+			};
+		};
+	};
 	"workflow/error-resolved": {
 		data: {
 			workflowId: number;

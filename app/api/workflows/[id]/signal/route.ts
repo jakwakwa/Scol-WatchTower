@@ -59,10 +59,8 @@ export async function POST(
 					name: "onboarding/quality-gate-passed",
 					data: {
 						workflowId,
-						payload: {
-							payload,
-							passedAt: new Date().toISOString(),
-						},
+						approverId: "human_reviewer", // Defaulting to generic human reviewer as specific ID isn't passed in UI signal yet
+						timestamp: new Date().toISOString(),
 					},
 				});
 			}

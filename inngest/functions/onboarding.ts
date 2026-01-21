@@ -23,16 +23,16 @@ import { analyzeRisk } from "@/lib/services/risk.service";
 import type { Events } from "../events";
 
 // Helper for safe step execution with HITL error handling
-const runSafeStep = async <T>(
+async function runSafeStep<T>(
 	step: any,
 	stepId: string,
 	operation: () => Promise<T>,
 	context: { workflowId: number; leadId: number; stage: number },
-): Promise<T | null> => {
+): Promise<T | null> {
 	try {
 		// Attempt operation
 		return await step.run(stepId, operation);
-	} catch (error: any) => {
+	} catch (error: any) {
 		const errorMessage = error instanceof Error ? error.message : String(error);
 		console.error(`[Workflow] Step ${stepId} failed:`, errorMessage);
 
@@ -64,14 +64,11 @@ const runSafeStep = async <T>(
 		);
 
 		// Wait for HITL resolution
-		const resolution = await step.waitForEvent(
-			`${stepId}-wait-resolution`,
-			{
-				event: "workflow/error-resolved",
-				timeout: "30d",
-				match: "data.workflowId",
-			},
-		);
+		const resolution = await step.waitForEvent(`${stepId}-wait-resolution`, {
+			event: "workflow/error-resolved",
+			timeout: "30d",
+			match: "data.workflowId",
+		});
 
 		if (!resolution || resolution.data.action === "cancel") {
 			// User cancelled or timeout
@@ -111,7 +108,7 @@ const runSafeStep = async <T>(
 		// Continue (skip step)
 		return null;
 	}
-};
+}
 
 export const onboardingWorkflow = inngest.createFunction(
 	{ id: "onboarding-workflow", name: "Onboarding Workflow" },
@@ -154,12 +151,39 @@ export const onboardingWorkflow = inngest.createFunction(
 			{ workflowId, leadId, stage: 2 },
 		);
 
-		// Special handling for Quote generation which returns a result object
-		const quoteResult = await step.run("stage-2-generate-quote", () =>
-			generateQuote(leadId),
+		// Special handling for Quote generation which returns a result object (or async signal)
+		const quoteReqResult = await step.run("stage-2-generate-quote-req", () =>
+			generateQuote(leadId, workflowId),
 		);
 
-		let quote = quoteResult.quote;
+		let quote;
+		const quoteResult = { ...quoteReqResult }; // copy to modify if async
+
+		if (quoteReqResult.success && quoteReqResult.async) {
+			console.log(
+				"[Workflow] Quote generation request sent. Waiting for callback...",
+			);
+			// Wait for Quote Generated event
+			const quoteEvent = await step.waitForEvent("wait-for-quote", {
+				event: "onboarding/quote-generated",
+				match: "data.workflowId",
+				timeout: "24h",
+			});
+
+			if (!quoteEvent) {
+				// Timeout
+				quoteResult.success = false;
+				quoteResult.error = "Quote generation timed out";
+			} else {
+				quote = quoteEvent.data.quote;
+				// Manually reconstruct success for downstream logic
+				quoteResult.success = true;
+				quoteResult.quote = quote;
+			}
+		} else {
+			// Sync result (legacy or if implementation changes back)
+			quote = quoteResult.quote;
+		}
 
 		// Handle Quote Error with HITL
 		if (!quoteResult.success) {
@@ -385,7 +409,7 @@ export const onboardingWorkflow = inngest.createFunction(
 					},
 				} as any;
 			}
-			
+
 			if (humanEvent.data.decision) {
 				agentEvent = {
 					data: { workflowId, decision: humanEvent.data.decision },

@@ -367,7 +367,7 @@ function PayloadDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-w-2xl border-white/10 bg-zinc-950/95 backdrop-blur-xl">
+			<DialogContent className="max-w-2xl border-white/10 bg-zinc-100 backdrop-blur-xl">
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2">
 						<RiCodeSSlashLine className="h-5 w-5 text-stone-400" />
@@ -429,7 +429,7 @@ function HITLConfirmDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-w-md border-white/10 bg-zinc-950/95 backdrop-blur-xl">
+			<DialogContent className="max-w-md border-white/10 bg-zinc-100/10 backdrop-blur-xl">
 				<DialogHeader>
 					<DialogTitle
 						className={cn(

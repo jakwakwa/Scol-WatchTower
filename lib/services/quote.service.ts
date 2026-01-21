@@ -19,13 +19,19 @@ export interface QuoteResult {
 	quote?: Quote;
 	error?: string;
 	recoverable?: boolean;
+	async?: boolean;
 }
 
 /**
  * Generate a quote for a lead using external quote service
  */
-export async function generateQuote(leadId: number): Promise<QuoteResult> {
-	console.log(`[QuoteService] Generating Quote for Lead ${leadId}`);
+export async function generateQuote(
+	leadId: number,
+	workflowId: number,
+): Promise<QuoteResult> {
+	console.log(
+		`[QuoteService] Generating Quote for Lead ${leadId}, Workflow ${workflowId}`,
+	);
 
 	const quoteServiceUrl = process.env.WEBHOOK_ZAP_QUOTE_GENERATION;
 	if (!quoteServiceUrl) {
@@ -69,11 +75,12 @@ export async function generateQuote(leadId: number): Promise<QuoteResult> {
 
 	const payload = {
 		leadId,
+		workflowId,
 		companyName: leadData.companyName,
 		industry: leadData.industry,
 		employeeCount: leadData.employeeCount,
 		estimatedVolume: leadData.estimatedVolume,
-		callbackUrl: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/quotes/callback`,
+		callbackUrl: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/callbacks/quotes`,
 	};
 
 	try {
@@ -91,23 +98,12 @@ export async function generateQuote(leadId: number): Promise<QuoteResult> {
 			};
 		}
 
-		const result = await response.json();
-
-		if (!result.quoteId || result.amount === undefined) {
-			return {
-				success: false,
-				error: `Invalid Quote Response: ${JSON.stringify(result)}`,
-				recoverable: false,
-			};
-		}
+		// We don't wait for the quote data anymore, we assume it's async.
+		// Even if Zapier returns something, we ignore it unless it's an error.
 
 		return {
 			success: true,
-			quote: {
-				quoteId: result.quoteId,
-				amount: result.amount,
-				terms: result.terms || "Standard 30-day payment terms",
-			},
+			async: true,
 		};
 	} catch (error) {
 		return {

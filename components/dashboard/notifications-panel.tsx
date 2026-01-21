@@ -25,7 +25,7 @@ export interface WorkflowNotification {
 	id: string;
 	workflowId: number;
 	clientName: string;
-	type: "awaiting" | "completed" | "failed" | "timeout" | "paused";
+	type: "awaiting" | "completed" | "failed" | "timeout" | "paused" | "error";
 	message: string;
 	timestamp: Date;
 	read: boolean;
@@ -57,6 +57,11 @@ const notificationConfig = {
 		icon: RiPauseCircleLine,
 		color: "text-amber-500",
 		bgColor: "bg-amber-500/10",
+	},
+	error: {
+		icon: RiAlertLine,
+		color: "text-red-500",
+		bgColor: "bg-red-500/10",
 	},
 };
 
@@ -125,7 +130,7 @@ export function NotificationsPanel({
 			</PopoverTrigger>
 			<PopoverContent
 				align="end"
-				className="w-[380px] border-white/10 bg-zinc-950/95 backdrop-blur-xl p-0"
+				className="w-[380px] border-white/10 bg-zinc-100/10 backdrop-blur-sm p-0"
 			>
 				{/* Header */}
 				<div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
@@ -302,7 +307,7 @@ function formatRelativeTime(date: Date): string {
 // --- Toast Helpers with Actions ---
 
 export function showWorkflowToast(
-	type: "awaiting" | "completed" | "failed" | "timeout" | "paused",
+	type: "awaiting" | "completed" | "failed" | "timeout" | "paused" | "error",
 	clientName: string,
 	workflowId: number,
 	onAction?: (action: "approve" | "reject" | "view") => void,
@@ -332,6 +337,11 @@ export function showWorkflowToast(
 			title: "Workflow Paused",
 			description: `${clientName}'s workflow is paused waiting for intervention`,
 			action: true,
+		},
+		error: {
+			title: "Workflow Error",
+			description: `${clientName}'s workflow encountered a critical error`,
+			action: false,
 		},
 	};
 
