@@ -11,8 +11,11 @@ import {
 	RiSettings4Line,
 	RiMenuFoldLine,
 	RiMenuUnfoldLine,
+	RiLayoutVerticalLine,
+	RiSignalTowerFill,
 } from "@remixicon/react";
 import { cn } from "@/lib/utils";
+import { Button } from "../ui/button";
 
 const navigation = [
 	{ name: "Overview", href: "/dashboard", icon: RiDashboardLine },
@@ -36,25 +39,22 @@ export function Sidebar() {
 		>
 			{/* Header */}
 			<div className="flex h-20 items-center justify-between px-6 border-b border-white/5">
-				<div className={cn("flex items-center gap-3", isCollapsed && "hidden")}>
-					<div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-stone-400 to-stone-500 shadow-lg shadow-stone-500/20">
-						<svg
-							viewBox="0 0 24 24"
-							fill="none"
-							className="h-6 w-6 text-white"
-							stroke="currentColor"
-							strokeWidth="2"
-						>
-							<path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-						</svg>
+				<div className={cn("flex items-center gap-1", isCollapsed && "hidden")}>
+					<div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-stone-400 to-stone-500 shadow-lg shadow-stone-500/20">
+						<RiSignalTowerFill className="h-6 w-6 text-white" />
 					</div>
-					<span className="text-lg font-bold bg-gradient-to-r from-stone-200 to-stone-400 bg-clip-text text-transparent">
+					<div className="text-base font-bold bg-linear-to-r from-stone-200 to-stone-400 bg-clip-text text-transparent">
+						Scol
+					</div>
+					<span className="text-white text-[9px] uppercase leading-[14px]">
 						Control Tower
 					</span>
 				</div>
 
 				{/* Collapse button */}
-				<button
+				<Button
+					variant="ghost"
+					size="icon"
 					onClick={() => setIsCollapsed(!isCollapsed)}
 					className={cn(
 						"flex h-9 w-9 items-center justify-center rounded-lg transition-colors",
@@ -68,11 +68,11 @@ export function Sidebar() {
 					) : (
 						<RiMenuFoldLine className="h-5 w-5" />
 					)}
-				</button>
+				</Button>
 			</div>
 
 			{/* Navigation */}
-			<nav className="flex flex-col gap-1 p-4">
+			<nav className="flex flex-col gap-[2px] p-4">
 				{navigation.map((item) => {
 					const isActive =
 						pathname === item.href ||

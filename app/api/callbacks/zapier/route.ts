@@ -5,8 +5,8 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { inngest } from "@/inngest";
 
-// Schema for Zapier callback
-const zapierCallbackSchema = z.object({
+// Schema for  callback
+const agentCallbackSchema = z.object({
 	workflowId: z.number(),
 	status: z
 		.enum([
@@ -32,13 +32,13 @@ const zapierCallbackSchema = z.object({
 });
 
 /**
- * POST /api/callbacks/zapier
- * Handle callbacks from Zapier workflows
+ * POST /api/callbacks/agent
+ * Handle callbacks from external workflows
  */
 export async function POST(request: NextRequest) {
 	try {
 		const body = await request.json();
-		const validation = zapierCallbackSchema.safeParse(body);
+		const validation = agentCallbackSchema.safeParse(body);
 
 		if (!validation.success) {
 			return NextResponse.json(
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
 				workflowId: data.workflowId,
 				eventType: data.eventType,
 				payload: data.payload,
-				actorId: data.actorId || "zapier_webhook",
+				actorId: data.actorId || "xt_webhook",
 				actorType: "system",
 				createdAt: new Date(),
 			} as any);
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
 
 		return NextResponse.json({ success: true }, { status: 200 });
 	} catch (error) {
-		console.error("Error processing Zapier callback:", error);
+		console.error("Error processing external callback:", error);
 		const message = error instanceof Error ? error.message : "Unexpected error";
 		return NextResponse.json({ error: message }, { status: 500 });
 	}

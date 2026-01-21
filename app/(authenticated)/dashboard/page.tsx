@@ -200,9 +200,9 @@ export default async function DashboardPage() {
 			</DashboardGrid>
 
 			{/* Main content grid */}
-			<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+			<div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
 				{/* Workflows Table - spans 2 columns */}
-				<div className="lg:col-span-2">
+				<div className="lg:col-span-3">
 					<DashboardSection
 						title="Active Workflows"
 						description="Real-time status of onboarding workflows"
@@ -221,7 +221,7 @@ export default async function DashboardPage() {
 				{/* Activity Feed */}
 				<div className="lg:col-span-1">
 					<DashboardSection title="Recent Activity">
-						<div className="rounded-2xl border border-sidebar-border bg-card/50 p-4">
+						<div className="rounded-2xl border border-sidebar-border bg-card/50 p-4 shadow-[0_10px_20px_1px_rgba(0,0,0,0.1)]">
 							<ActivityFeed events={recentActivity} maxItems={5} />
 						</div>
 					</DashboardSection>

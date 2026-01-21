@@ -11,12 +11,13 @@ import {
 	StatsCard,
 	AgentStatusCard,
 } from "@/components/dashboard";
+import { NotificationsPanel, type WorkflowNotification } from "@/components/dashboard/notifications-panel";
 
 // Mock agents data
 const mockAgents = [
 	{
 		id: "1",
-		agentId: "zapier_doc_agent_v1",
+		agentId: "xt_doc_agent_v1",
 		name: "Document Generator",
 		taskType: "document_generation",
 		status: "active" as const,
@@ -26,7 +27,7 @@ const mockAgents = [
 	},
 	{
 		id: "2",
-		agentId: "zapier_esign_agent_v1",
+		agentId: "xt_esign_agent_v1",
 		name: "E-Signature Handler",
 		taskType: "electronic_signature",
 		status: "active" as const,
@@ -36,7 +37,7 @@ const mockAgents = [
 	},
 	{
 		id: "3",
-		agentId: "zapier_risk_agent_v2",
+		agentId: "xt_risk_agent_v2",
 		name: "Risk Verification",
 		taskType: "risk_verification",
 		status: "active" as const,
@@ -46,7 +47,7 @@ const mockAgents = [
 	},
 	{
 		id: "4",
-		agentId: "zapier_sync_agent_v1",
+		agentId: "xt_sync_agent_v1",
 		name: "V24/V27 Sync",
 		taskType: "data_sync",
 		status: "inactive" as const,
@@ -56,7 +57,7 @@ const mockAgents = [
 	},
 	{
 		id: "5",
-		agentId: "zapier_notify_agent_v1",
+		agentId: "xt_notify_agent_v1",
 		name: "Notification Handler",
 		taskType: "notification",
 		status: "active" as const,
@@ -66,7 +67,7 @@ const mockAgents = [
 	},
 	{
 		id: "6",
-		agentId: "zapier_escalation_agent_v1",
+		agentId: "xt_escalation_agent_v1",
 		name: "Escalation Manager",
 		taskType: "notification",
 		status: "error" as const,
@@ -83,12 +84,15 @@ const stats = {
 	totalErrors: mockAgents.reduce((acc, a) => acc + a.errorCount, 0),
 };
 
-export default function AgentsPage() {
+export default function AgentsPage(
+	{ workflowNotifications }: { workflowNotifications: WorkflowNotification[] }
+) {
 	return (
 		<DashboardLayout
 			title="Agents"
-			description="Monitor your Zapier agent fleet"
+			description="Monitor your external agent fleet"
 		>
+			<NotificationsPanel notifications={workflowNotifications} />
 			{/* Agent Stats */}
 			<DashboardGrid columns={4} className="mb-8">
 				<StatsCard

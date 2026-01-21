@@ -1,6 +1,6 @@
 "use server";
 
-export async function testZapierWebhook(eventType: string = "LEAD_CAPTURED") {
+export async function testAgentWebhook(eventType: string = "LEAD_CAPTURED") {
 	// 1. Check if testing is enabled
 	if (process.env.TEST_HOOK !== "1") {
 		return {

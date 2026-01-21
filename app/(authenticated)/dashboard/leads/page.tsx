@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { getDatabaseClient } from "@/app/utils";
 import { leads } from "@/db/schema";
 import { desc } from "drizzle-orm";
+import type { WorkflowNotification } from "@/components/dashboard/notifications-panel";
 
 const statusConfig = {
 	new: { label: "New", color: "bg-blue-500/20 text-blue-400" },
@@ -21,7 +22,9 @@ const statusConfig = {
 	lost: { label: "Lost", color: "bg-red-500/20 text-red-400" },
 } as const;
 
-export default async function LeadsPage() {
+export default async function LeadsPage(
+	{ workflowNotifications }: { workflowNotifications: WorkflowNotification[] }
+) {
 	const db = getDatabaseClient();
 	let allLeads: any[] = [];
 
@@ -38,13 +41,16 @@ export default async function LeadsPage() {
 			title="Leads"
 			description="Manage your potential clients"
 			actions={
+
 				<Link href="/dashboard/leads/new">
-					<Button className="gap-2 bg-gradient-to-r from-stone-500 to-stone-500 hover:from-stone-600 hover:to-stone-600">
+					<Button className="gap-2 bg-linear-to-r from-stone-500 to-stone-500 hover:from-stone-600 hover:to-stone-600">
 						<RiUserAddLine className="h-4 w-4" />
 						New Lead
 					</Button>
 				</Link>
+
 			}
+			notifications={workflowNotifications}
 		>
 			{/* Pipeline Stats */}
 			<div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-8">

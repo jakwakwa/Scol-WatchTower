@@ -10,7 +10,7 @@
 import { inngest } from "../client";
 import { updateWorkflowStatus } from "@/lib/services/workflow.service";
 import {
-	sendZapierWebhook,
+	sendagentWebhook,
 	dispatchToPlatform,
 	escalateToManagement,
 } from "@/lib/services/notification.service";
@@ -132,7 +132,7 @@ export const onboardingWorkflow = inngest.createFunction(
 			step,
 			"stage-1-webhook",
 			() =>
-				sendZapierWebhook({
+				sendagentWebhook({
 					leadId,
 					workflowId,
 					stage: 1,
@@ -243,7 +243,7 @@ export const onboardingWorkflow = inngest.createFunction(
 				step,
 				"stage-2-quote-webhook",
 				() =>
-					sendZapierWebhook({
+					sendagentWebhook({
 						leadId,
 						workflowId,
 						stage: 2,
@@ -438,7 +438,7 @@ export const onboardingWorkflow = inngest.createFunction(
 				step,
 				"rejected-webhook",
 				() =>
-					sendZapierWebhook({
+					sendagentWebhook({
 						leadId,
 						workflowId,
 						stage: 3,
@@ -475,7 +475,7 @@ export const onboardingWorkflow = inngest.createFunction(
 			step,
 			"stage-4-complete-webhook",
 			() =>
-				sendZapierWebhook({
+				sendagentWebhook({
 					leadId,
 					workflowId,
 					stage: 4,

@@ -2,12 +2,12 @@
 
 /**
  * Test script for /api/quotes endpoint
- * Simulates Zapier webhook payload from Gemini AI
+ * Simulates external webhook payload from Gemini AI
  */
 
 const API_URL = "http://localhost:3000/api/quotes";
 
-// Sample payload matching Zapier workflow output
+// Sample payload matching external workflow output
 const testPayload = {
 	workflowId: 3,
 	amount: 750000, // $7,500 in cents

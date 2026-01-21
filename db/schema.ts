@@ -1,5 +1,5 @@
-import { text, integer, sqliteTable } from "drizzle-orm/sqlite-core";
 import { relations } from "drizzle-orm";
+import { text, integer, sqliteTable } from "drizzle-orm/sqlite-core";
 
 // ============================================
 // Core Onboarding Tables
@@ -65,7 +65,7 @@ export const workflows = sqliteTable("workflows", {
 	})
 		.notNull()
 		.default("pending"),
-	currentAgent: text("current_agent"), // e.g., "zapier_doc_agent_v1"
+	currentAgent: text("current_agent"), // e.g., "xt_doc_agent_v1"
 	agentSentAt: integer("agent_sent_at", { mode: "timestamp" }),
 	metadata: text("metadata"), // JSON string for flexible data
 	errorDetails: text("error_details"), // JSON string for error context
@@ -106,15 +106,15 @@ export const workflowEvents = sqliteTable("workflow_events", {
 });
 
 /**
- * Zapier Callbacks - Agent callback records
+ * external Callbacks - Agent callback records
  */
-export const zapierCallbacks = sqliteTable("zapier_callbacks", {
+export const agentCallbacks = sqliteTable("xt_callbacks", {
 	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
 	workflowId: integer("workflow_id")
 		.notNull()
 		.references(() => workflows.id),
 	eventId: text("event_id").notNull(), // From incoming webhook
-	agentId: text("agent_id").notNull(), // e.g., "zapier_risk_agent_v2"
+	agentId: text("agent_id").notNull(), // e.g., "xt_risk_agent_v2"
 	status: text("status", {
 		enum: ["received", "validated", "processed", "rejected", "error"],
 	})
@@ -134,11 +134,11 @@ export const zapierCallbacks = sqliteTable("zapier_callbacks", {
 });
 
 /**
- * Agent Registry - Track available Zapier agents
+ * Agent Registry - Track available external agents
  */
 export const agents = sqliteTable("agents", {
 	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
-	agentId: text("agent_id").notNull().unique(), // e.g., "zapier_risk_agent_v2"
+	agentId: text("agent_id").notNull().unique(), // e.g., "xt_risk_agent_v2"
 	name: text("name").notNull(),
 	description: text("description"),
 	webhookUrl: text("webhook_url"),
@@ -207,7 +207,7 @@ export const workflowsRelations = relations(workflows, ({ one, many }) => ({
 	}),
 	quotes: many(quotes),
 	events: many(workflowEvents),
-	callbacks: many(zapierCallbacks),
+	callbacks: many(agentCallbacks),
 }));
 
 export const quotesRelations = relations(quotes, ({ one }) => ({
@@ -224,15 +224,12 @@ export const workflowEventsRelations = relations(workflowEvents, ({ one }) => ({
 	}),
 }));
 
-export const zapierCallbacksRelations = relations(
-	zapierCallbacks,
-	({ one }) => ({
-		workflow: one(workflows, {
-			fields: [zapierCallbacks.workflowId],
-			references: [workflows.id],
-		}),
+export const agentCallbacksRelations = relations(agentCallbacks, ({ one }) => ({
+	workflow: one(workflows, {
+		fields: [agentCallbacks.workflowId],
+		references: [workflows.id],
 	}),
-);
+}));
 
 // ============================================
 // Legacy table (kept for compatibility)

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-// Helper to handle both camelCase and snake_case inputs (e.g. from Zapier)
+// Helper to handle both camelCase and snake_case inputs (e.g. from agent)
 export const createQuoteSchema = z.preprocess(
 	(val) => {
 		if (typeof val !== "object" || val === null) return val;

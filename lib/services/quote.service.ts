@@ -93,13 +93,13 @@ export async function generateQuote(
 		if (!response.ok) {
 			return {
 				success: false,
-				error: `Zapier Webhook Failed: ${response.status} ${response.statusText}`,
+				error: `external Webhook Failed: ${response.status} ${response.statusText}`,
 				recoverable: true,
 			};
 		}
 
 		// We don't wait for the quote data anymore, we assume it's async.
-		// Even if Zapier returns something, we ignore it unless it's an error.
+		// Even if external returns something, we ignore it unless it's an error.
 
 		return {
 			success: true,

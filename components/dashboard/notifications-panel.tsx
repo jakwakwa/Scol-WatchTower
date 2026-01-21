@@ -40,13 +40,13 @@ const notificationConfig = {
 	},
 	completed: {
 		icon: RiCheckLine,
-		color: "text-emerald-500",
-		bgColor: "bg-emerald-500/10",
+		color: "text-emerald-700",
+		bgColor: "bg-emerald-500/20",
 	},
 	failed: {
 		icon: RiCloseLine,
-		color: "text-red-500",
-		bgColor: "bg-red-500/10",
+		color: "text-red-300",
+		bgColor: "bg-red-800",
 	},
 	timeout: {
 		icon: RiAlertLine,
@@ -82,7 +82,7 @@ export function NotificationsPanel({
 	onAction,
 }: NotificationsPanelProps) {
 	const [isOpen, setIsOpen] = React.useState(false);
-	const unreadCount = notifications.filter((n) => !n.read).length;
+	const unreadCount = notifications?.filter((n) => !n.read).length;
 
 	const handleAction = async (
 		e: React.MouseEvent,
@@ -123,7 +123,9 @@ export function NotificationsPanel({
 							variant="destructive"
 							className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full p-0 text-[10px] animate-pulse"
 						>
-							{unreadCount > 9 ? "9+" : unreadCount}
+							<span className="text-white text-[8px]">
+								{unreadCount > 9 ? "9+" : unreadCount}
+							</span>
 						</Badge>
 					)}
 				</Button>
@@ -150,7 +152,7 @@ export function NotificationsPanel({
 
 				{/* Notifications List */}
 				<div className="max-h-[400px] overflow-y-auto">
-					{notifications.length === 0 ? (
+					{notifications?.length === 0 ? (
 						<div className="flex flex-col items-center justify-center py-12 text-center">
 							<RiNotification3Line className="h-10 w-10 text-muted-foreground/30" />
 							<p className="mt-3 text-sm text-muted-foreground">
@@ -158,16 +160,16 @@ export function NotificationsPanel({
 							</p>
 						</div>
 					) : (
-						notifications.map((notification) => {
-							const config = notificationConfig[notification.type];
+						notifications?.map((notification) => {
+							const config = notificationConfig[notification?.type];
 							const Icon = config.icon;
 
 							return (
 								<div
-									key={notification.id}
+									key={notification?.id}
 									className={cn(
 										"group relative flex gap-3 px-4 py-3 border-b border-white/5 transition-colors hover:bg-white/5",
-										!notification.read && "bg-white/[0.02]",
+										!notification?.read && "bg-white/[0.02]",
 									)}
 								>
 									{/* Main Action Button */}
@@ -177,7 +179,7 @@ export function NotificationsPanel({
 										onClick={() => onNotificationClick?.(notification)}
 									>
 										<span className="sr-only">
-											View notification from {notification.clientName}
+											View notification from {notification?.clientName}
 										</span>
 									</button>
 
@@ -195,26 +197,26 @@ export function NotificationsPanel({
 									<div className="flex-1 min-w-0 relative z-10 pointer-events-none">
 										<div className="flex items-start justify-between gap-2">
 											<p className="text-sm font-medium truncate">
-												{notification.clientName}
+												{notification?.clientName}
 											</p>
-											{!notification.read && (
+											{!notification?.read && (
 												<span className="h-2 w-2 shrink-0 rounded-full bg-blue-500" />
 											)}
 										</div>
 										<p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-											{notification.message}
+											{notification?.message}
 										</p>
 										<div className="flex items-center justify-between mt-2">
 											<span className="text-[10px] text-muted-foreground/70 flex items-center gap-1">
 												<RiTimeLine className="h-3 w-3" />
-												{formatRelativeTime(notification.timestamp)}
+												{formatRelativeTime(notification?.timestamp)}
 											</span>
 
 											{/* Actionable Buttons */}
-											{notification.actionable && (
+											{notification?.actionable && (
 												<div className="flex gap-1 pointer-events-auto">
 													{/* Approval Actions */}
-													{notification.type === "awaiting" && (
+													{notification?.type === "awaiting" && (
 														<>
 															<Button
 																variant="ghost"
@@ -239,32 +241,32 @@ export function NotificationsPanel({
 														</>
 													)}
 													{/* Error/Timeout Actions */}
-													{(notification.type === "error" ||
-														notification.type === "timeout" ||
-														notification.type === "paused") && (
-														<>
-															<Button
-																variant="ghost"
-																size="sm"
-																className="h-6 px-2 text-xs hover:bg-blue-500/20 hover:text-blue-400"
-																onClick={(e) =>
-																	handleAction(e, notification, "retry")
-																}
-															>
-																Retry
-															</Button>
-															<Button
-																variant="ghost"
-																size="sm"
-																className="h-6 px-2 text-xs hover:bg-red-500/20 hover:text-red-400"
-																onClick={(e) =>
-																	handleAction(e, notification, "cancel")
-																}
-															>
-																Cancel
-															</Button>
-														</>
-													)}
+													{(notification?.type === "error" ||
+														notification?.type === "timeout" ||
+														notification?.type === "paused") && (
+															<>
+																<Button
+																	variant="ghost"
+																	size="sm"
+																	className="h-6 px-2 text-xs hover:bg-blue-500/20 hover:text-blue-400"
+																	onClick={(e) =>
+																		handleAction(e, notification, "retry")
+																	}
+																>
+																	Retry
+																</Button>
+																<Button
+																	variant="ghost"
+																	size="sm"
+																	className="h-6 px-2 text-xs hover:bg-red-500/20 hover:text-red-400"
+																	onClick={(e) =>
+																		handleAction(e, notification, "cancel")
+																	}
+																>
+																	Cancel
+																</Button>
+															</>
+														)}
 												</div>
 											)}
 										</div>
@@ -276,7 +278,7 @@ export function NotificationsPanel({
 				</div>
 
 				{/* Footer */}
-				{notifications.length > 0 && (
+				{notifications?.length > 0 && (
 					<div className="border-t border-white/10 p-2">
 						<Button
 							variant="ghost"

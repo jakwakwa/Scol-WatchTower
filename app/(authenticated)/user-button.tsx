@@ -28,7 +28,7 @@ const GithubIcon = () => {
 
 export function UserButton() {
 	return (
-		<header>
+		<div>
 			<ClerkUserButton>
 				<ClerkUserButton.MenuItems>
 					<ClerkUserButton.Link
@@ -43,6 +43,6 @@ export function UserButton() {
 					/>
 				</ClerkUserButton.MenuItems>
 			</ClerkUserButton>
-		</header>
+		</div>
 	);
 }

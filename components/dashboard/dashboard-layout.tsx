@@ -6,6 +6,7 @@ import {
 	NotificationsPanel,
 	type WorkflowNotification,
 } from "./notifications-panel";
+import { UserButton } from "@clerk/nextjs";
 
 interface DashboardLayoutProps {
 	children: React.ReactNode;
@@ -30,21 +31,23 @@ export function DashboardLayout({
 			<main className="pl-64 transition-all duration-300">
 				{/* Header */}
 				{(title || actions || notifications) && (
-					<header className="sticky top-0 z-30 border-b border-sidebar-border bg-background/80 backdrop-blur-xl">
+					<header className="sticky top-0 z-30 border-b border-sidebar-border bg-white/30 backdrop-blur-xl">
 						<div className="flex h-20 items-center justify-between px-8">
 							<div>
 								{title && (
-									<h1 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+									<h1 className="text-xl font-bold bg-linear-to-r from-primary to-muted bg-clip-text text-transparent">
 										{title}
 									</h1>
 								)}
 								{description && (
-									<p className="text-sm text-muted-foreground mt-1">
+									<p className="text-xs text-muted-foreground/50 mt-1">
 										{description}
 									</p>
 								)}
 							</div>
+
 							<div className="flex items-center gap-3">
+								{actions}
 								<NotificationsPanel
 									notifications={notifications}
 									onMarkAllRead={async () => {
@@ -75,9 +78,11 @@ export function DashboardLayout({
 										}
 									}}
 								/>
-								{actions}
+								<UserButton />
 							</div>
+
 						</div>
+
 					</header>
 				)}
 
@@ -134,7 +139,7 @@ export function GlassCard({
 				"rounded-2xl border border-sidebar-border bg-card/50 backdrop-blur-sm p-6",
 				"shadow-xl shadow-black/5",
 				hover &&
-					"transition-all duration-300 hover:bg-card/70 hover:border-white/10 hover:shadow-2xl hover:-translate-y-1",
+				"transition-all duration-300 hover:bg-card/70 hover:border-white/10 hover:shadow-2xl hover:-translate-y-1",
 				className,
 			)}
 		>

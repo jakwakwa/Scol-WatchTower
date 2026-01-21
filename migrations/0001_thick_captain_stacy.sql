@@ -55,7 +55,7 @@ CREATE TABLE `workflows` (
 	FOREIGN KEY (`lead_id`) REFERENCES `leads`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
-CREATE TABLE `zapier_callbacks` (
+CREATE TABLE `xt_callbacks` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`workflow_id` integer NOT NULL,
 	`event_id` text NOT NULL,
