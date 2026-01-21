@@ -10,8 +10,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
-    "worker": "bun run scripts/temporal-worker.ts",
-    "start:all": "./start-all.sh"
+    "dev:all": "./setup-dev.sh"
   },
   "dependencies": {
     "@base-ui/react": "^1.1.0",
@@ -23,14 +22,11 @@
     "@remixicon/react": "^4.8.0",
     "@tailwindcss/postcss": "^4.1.18",
     "@tanstack/react-table": "^8.21.3",
-    "@temporalio/activity": "^1.14.1",
-    "@temporalio/client": "^1.14.1",
-    "@temporalio/worker": "^1.14.1",
-    "@temporalio/workflow": "^1.14.1",
     "@tursodatabase/api": "^1.8.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.1",
+    "inngest": "^3.49.3",
     "md5": "^2.3.0",
     "next": "15.5.9",
     "postcss": "^8.5.6",

@@ -3,8 +3,7 @@ import { getDatabaseClient } from "@/app/utils";
 import { workflows, workflowEvents } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { getTemporalClient } from "@/lib/temporal";
-import { agentCallbackReceived } from "@/temporal/signals";
+import { inngest } from "@/inngest";
 
 // Schema for Zapier callback
 const zapierCallbackSchema = z.object({
@@ -27,9 +26,9 @@ const zapierCallbackSchema = z.object({
 		"timeout",
 		"error",
 	]),
-	payload: z.string().optional(), // JSON string
+	payload: z.string().optional(),
 	actorId: z.string().optional(),
-	decision: z.record(z.string(), z.any()).optional(), // Structured decision data
+	decision: z.record(z.string(), z.any()).optional(),
 });
 
 /**
@@ -77,38 +76,39 @@ export async function POST(request: NextRequest) {
 			}
 		}
 
-		// 2. Signal Temporal Workflow
-		// If this is an agent callback, we need to unblock the Temporal workflow
+		// 2. Send Inngest Event to unblock waiting workflow
 		if (data.eventType === "agent_callback") {
 			try {
-				const client = await getTemporalClient();
-				const temporalWorkflowId = `onboarding-${data.workflowId}`;
-				const handle = client.workflow.getHandle(temporalWorkflowId);
-
-				// Parse decision data if it's in the payload string or separate field
+				// Parse decision data
 				let decisionData = data.decision;
 				if (!decisionData && data.payload) {
 					try {
 						decisionData = JSON.parse(data.payload);
-					} catch (e) {
+					} catch {
 						console.warn("Could not parse payload as JSON for decision data");
 					}
 				}
 
-				await handle.signal(agentCallbackReceived, {
-					agentId: data.actorId || "unknown_agent",
-					status: data.status || "completed",
-					decision: decisionData || {},
-					timestamp: new Date().toISOString(),
+				await inngest.send({
+					name: "onboarding/agent-callback",
+					data: {
+						workflowId: data.workflowId,
+						decision: {
+							agentId: data.actorId || "external",
+							outcome:
+								(decisionData?.outcome as "APPROVED" | "REJECTED") ||
+								"APPROVED",
+							reason: decisionData?.reason,
+							timestamp: new Date().toISOString(),
+						},
+					},
 				});
 
 				console.log(
-					`[API] Signaled Temporal workflow ${temporalWorkflowId} with agent callback`,
+					`[API] Sent Inngest agent callback event for workflow ${data.workflowId}`,
 				);
-			} catch (temporalError) {
-				console.error("Failed to signal Temporal workflow:", temporalError);
-				// We don't fail the request because DB update succeeded, but we should log it
-				// In production, we might want to return 500 or retry
+			} catch (inngestError) {
+				console.error("Failed to send Inngest event:", inngestError);
 			}
 		}
 

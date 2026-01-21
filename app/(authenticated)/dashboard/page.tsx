@@ -16,35 +16,13 @@ import { WebhookTester } from "@/components/dashboard/webhook-tester";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { getDatabaseClient } from "@/app/utils";
-import { workflows, leads } from "@/db/schema";
+import { workflows, leads, workflowEvents } from "@/db/schema";
 import { desc, eq, count } from "drizzle-orm";
-
-// Demo activity data - can be replaced with real events later
-const mockActivity = [
-	{
-		id: 1,
-		workflowId: 1,
-		clientName: "TechCorp SA",
-		eventType: "agent_dispatch" as const,
-		description: "Risk verification task dispatched to Zapier agent",
-		timestamp: new Date(Date.now() - 1800000),
-		actorType: "system" as const,
-		actorId: "zapier_risk_agent_v2",
-	},
-	{
-		id: 2,
-		workflowId: 2,
-		clientName: "Financial Solutions Ltd",
-		eventType: "stage_change" as const,
-		description: "Progressed to Dynamic Quotation stage",
-		timestamp: new Date(Date.now() - 3600000),
-		actorType: "system" as const,
-	},
-];
 
 export default async function DashboardPage() {
 	const db = getDatabaseClient();
 	let activeWorkflows: any[] = [];
+	let recentActivity: any[] = [];
 	let workflowsCount = 0;
 	let leadsCount = 0;
 
@@ -54,6 +32,7 @@ export default async function DashboardPage() {
 			const result = await db
 				.select({
 					id: workflows.id,
+					leadId: workflows.leadId,
 					stage: workflows.stage,
 					stageName: workflows.stageName,
 					status: workflows.status,
@@ -72,6 +51,55 @@ export default async function DashboardPage() {
 				// Parse metadata if it exists, otherwise use empty object
 				payload: w.metadata ? JSON.parse(w.metadata) : {},
 			}));
+
+			// Fetch Recent Activity
+			const activityResult = await db
+				.select({
+					id: workflowEvents.id,
+					workflowId: workflowEvents.workflowId,
+					eventType: workflowEvents.eventType,
+					timestamp: workflowEvents.timestamp,
+					actorType: workflowEvents.actorType,
+					actorId: workflowEvents.actorId,
+					clientName: leads.companyName,
+					payload: workflowEvents.payload,
+				})
+				.from(workflowEvents)
+				.innerJoin(workflows, eq(workflowEvents.workflowId, workflows.id))
+				.innerJoin(leads, eq(workflows.leadId, leads.id))
+				.orderBy(desc(workflowEvents.timestamp))
+				.limit(10);
+
+			recentActivity = activityResult.map((event) => {
+				let description = "Event occurred";
+				const payload = event.payload ? JSON.parse(event.payload) : {};
+
+				switch (event.eventType) {
+					case "stage_change":
+						description = `Workflow advanced to ${payload.toStage || "next stage"}`;
+						break;
+					case "agent_dispatch":
+						description = `Agent ${event.actorId || "System"} dispatched`;
+						break;
+					case "agent_callback":
+						description = `Agent response received`;
+						break;
+					case "human_override":
+						description = `Manual override applied`;
+						break;
+					case "error":
+						description = `Workflow error detected`;
+						break;
+					case "timeout":
+						description = `Workflow stage timed out`;
+						break;
+				}
+
+				return {
+					...event,
+					description,
+				};
+			});
 
 			// Get counts
 			const wfCountResult = await db.select({ count: count() }).from(workflows);
@@ -155,7 +183,7 @@ export default async function DashboardPage() {
 				<div className="lg:col-span-1">
 					<DashboardSection title="Recent Activity">
 						<div className="rounded-2xl border border-sidebar-border bg-card/50 p-4">
-							<ActivityFeed events={mockActivity} maxItems={5} />
+							<ActivityFeed events={recentActivity} maxItems={5} />
 						</div>
 					</DashboardSection>
 				</div>

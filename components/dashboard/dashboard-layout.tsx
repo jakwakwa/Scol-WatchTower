@@ -2,12 +2,17 @@
 
 import { Sidebar } from "./sidebar";
 import { cn } from "@/lib/utils";
+import {
+	NotificationsPanel,
+	type WorkflowNotification,
+} from "./notifications-panel";
 
 interface DashboardLayoutProps {
 	children: React.ReactNode;
 	title?: string;
 	description?: string;
 	actions?: React.ReactNode;
+	notifications?: WorkflowNotification[];
 }
 
 export function DashboardLayout({
@@ -15,6 +20,7 @@ export function DashboardLayout({
 	title,
 	description,
 	actions,
+	notifications = [],
 }: DashboardLayoutProps) {
 	return (
 		<div className="min-h-screen bg-background">
@@ -23,7 +29,7 @@ export function DashboardLayout({
 			{/* Main content */}
 			<main className="pl-64 transition-all duration-300">
 				{/* Header */}
-				{(title || actions) && (
+				{(title || actions || notifications) && (
 					<header className="sticky top-0 z-30 border-b border-sidebar-border bg-background/80 backdrop-blur-xl">
 						<div className="flex h-20 items-center justify-between px-8">
 							<div>
@@ -38,9 +44,13 @@ export function DashboardLayout({
 									</p>
 								)}
 							</div>
-							{actions && (
-								<div className="flex items-center gap-3">{actions}</div>
-							)}
+							<div className="flex items-center gap-3">
+								<NotificationsPanel
+									notifications={notifications}
+									// Handlers can be passed if needed, for now using internal/default
+								/>
+								{actions}
+							</div>
 						</div>
 					</header>
 				)}
