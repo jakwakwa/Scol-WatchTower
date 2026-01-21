@@ -66,7 +66,7 @@ interface NotificationsPanelProps {
 	onNotificationClick?: (notification: WorkflowNotification) => void;
 	onAction?: (
 		notification: WorkflowNotification,
-		action: "approve" | "reject",
+		action: "approve" | "reject" | "retry" | "cancel",
 	) => void;
 }
 
@@ -82,7 +82,7 @@ export function NotificationsPanel({
 	const handleAction = async (
 		e: React.MouseEvent,
 		notification: WorkflowNotification,
-		action: "approve" | "reject",
+		action: "approve" | "reject" | "retry" | "cancel",
 	) => {
 		e.stopPropagation();
 
@@ -206,31 +206,62 @@ export function NotificationsPanel({
 											</span>
 
 											{/* Actionable Buttons */}
-											{notification.actionable &&
-												notification.type === "awaiting" && (
-													<div className="flex gap-1 pointer-events-auto">
-														<Button
-															variant="ghost"
-															size="sm"
-															className="h-6 px-2 text-xs hover:bg-emerald-500/20 hover:text-emerald-400"
-															onClick={(e) =>
-																handleAction(e, notification, "approve")
-															}
-														>
-															Approve
-														</Button>
-														<Button
-															variant="ghost"
-															size="sm"
-															className="h-6 px-2 text-xs hover:bg-red-500/20 hover:text-red-400"
-															onClick={(e) =>
-																handleAction(e, notification, "reject")
-															}
-														>
-															Reject
-														</Button>
-													</div>
-												)}
+											{notification.actionable && (
+												<div className="flex gap-1 pointer-events-auto">
+													{/* Approval Actions */}
+													{notification.type === "awaiting" && (
+														<>
+															<Button
+																variant="ghost"
+																size="sm"
+																className="h-6 px-2 text-xs hover:bg-emerald-500/20 hover:text-emerald-400"
+																onClick={(e) =>
+																	handleAction(e, notification, "approve")
+																}
+															>
+																Approve
+															</Button>
+															<Button
+																variant="ghost"
+																size="sm"
+																className="h-6 px-2 text-xs hover:bg-red-500/20 hover:text-red-400"
+																onClick={(e) =>
+																	handleAction(e, notification, "reject")
+																}
+															>
+																Reject
+															</Button>
+														</>
+													)}
+													{/* Error/Timeout Actions */}
+													{(notification.type === "error" ||
+														notification.type === "timeout" ||
+														notification.type === "paused") && (
+														<>
+															<Button
+																variant="ghost"
+																size="sm"
+																className="h-6 px-2 text-xs hover:bg-blue-500/20 hover:text-blue-400"
+																onClick={(e) =>
+																	handleAction(e, notification, "retry")
+																}
+															>
+																Retry
+															</Button>
+															<Button
+																variant="ghost"
+																size="sm"
+																className="h-6 px-2 text-xs hover:bg-red-500/20 hover:text-red-400"
+																onClick={(e) =>
+																	handleAction(e, notification, "cancel")
+																}
+															>
+																Cancel
+															</Button>
+														</>
+													)}
+												</div>
+											)}
 										</div>
 									</div>
 								</div>

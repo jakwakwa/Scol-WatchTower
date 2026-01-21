@@ -16,7 +16,7 @@ import { WebhookTester } from "@/components/dashboard/webhook-tester";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { getDatabaseClient } from "@/app/utils";
-import { workflows, leads, workflowEvents } from "@/db/schema";
+import { workflows, leads, workflowEvents, notifications } from "@/db/schema";
 import { desc, eq, count } from "drizzle-orm";
 
 export default async function DashboardPage() {
@@ -88,7 +88,7 @@ export default async function DashboardPage() {
 						description = `Manual override applied`;
 						break;
 					case "error":
-						description = `Workflow error detected`;
+						description = `Error: ${payload.error || "Workflow error detected"}`;
 						break;
 					case "timeout":
 						description = `Workflow stage timed out`;
@@ -101,7 +101,6 @@ export default async function DashboardPage() {
 				};
 			});
 
-			// Get counts
 			const wfCountResult = await db.select({ count: count() }).from(workflows);
 			workflowsCount = wfCountResult[0]?.count || 0;
 
@@ -109,6 +108,45 @@ export default async function DashboardPage() {
 			leadsCount = leadsCountResult[0]?.count || 0;
 		} catch (error) {
 			console.error("Failed to fetch dashboard data:", error);
+		}
+	}
+
+	// Fetch notifications
+	let workflowNotifications: any[] = [];
+	if (db) {
+		try {
+			// Change import of notifications at top first!
+			// Dynamic import or separate fetch call not possible inside ReplaceFileContent easily without adding imports
+			// I will fetch notifications here assuming update of imports below
+
+			const notificationsResult = await db
+				.select({
+					id: notifications.id,
+					workflowId: notifications.workflowId,
+					type: notifications.type,
+					message: notifications.message,
+					read: notifications.read,
+					actionable: notifications.actionable,
+					createdAt: notifications.createdAt,
+					clientName: leads.companyName,
+				})
+				.from(notifications)
+				.leftJoin(leads, eq(notifications.leadId, leads.id))
+				.orderBy(desc(notifications.createdAt))
+				.limit(20);
+
+			workflowNotifications = notificationsResult.map((n) => ({
+				id: n.id.toString(),
+				workflowId: n.workflowId,
+				clientName: n.clientName || "Unknown",
+				type: n.type as any,
+				message: n.message,
+				timestamp: n.createdAt,
+				read: n.read,
+				actionable: n.actionable,
+			}));
+		} catch (error) {
+			console.error("Failed to fetch notifications:", error);
 		}
 	}
 
@@ -127,6 +165,7 @@ export default async function DashboardPage() {
 					</Link>
 				</div>
 			}
+			notifications={workflowNotifications}
 		>
 			{/* Stats Grid */}
 			<DashboardGrid columns={4} className="mb-8">

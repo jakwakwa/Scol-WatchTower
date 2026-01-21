@@ -47,7 +47,33 @@ export function DashboardLayout({
 							<div className="flex items-center gap-3">
 								<NotificationsPanel
 									notifications={notifications}
-									// Handlers can be passed if needed, for now using internal/default
+									onMarkAllRead={async () => {
+										// We ideally need an ID to mark one, or an endpoint to mark all for user
+										// For now, let's just refresh the page as a brute force or ignore
+									}}
+									onAction={async (notification, action) => {
+										if (["retry", "cancel"].includes(action)) {
+											try {
+												await fetch(
+													`/api/workflows/${notification.workflowId}/resolve-error`,
+													{
+														method: "POST",
+														body: JSON.stringify({ action }),
+														headers: { "Content-Type": "application/json" },
+													},
+												);
+
+												// Also mark notification read
+												await fetch(`/api/notifications/${notification.id}`, {
+													method: "PATCH",
+												});
+
+												window.location.reload(); // Refresh to update UI
+											} catch (e) {
+												console.error("Action failed", e);
+											}
+										}
+									}}
 								/>
 								{actions}
 							</div>

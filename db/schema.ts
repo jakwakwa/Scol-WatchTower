@@ -68,6 +68,7 @@ export const workflows = sqliteTable("workflows", {
 	currentAgent: text("current_agent"), // e.g., "zapier_doc_agent_v1"
 	agentSentAt: integer("agent_sent_at", { mode: "timestamp" }),
 	metadata: text("metadata"), // JSON string for flexible data
+	errorDetails: text("error_details"), // JSON string for error context
 	startedAt: integer("started_at", { mode: "timestamp" })
 		.notNull()
 		.$defaultFn(() => new Date()),
@@ -242,3 +243,30 @@ export const todos = sqliteTable("todos", {
 	description: text("description").notNull(),
 	completed: integer("completed", { mode: "boolean" }).notNull().default(false),
 });
+
+/**
+ * Notifications table - Control Tower UI alerts
+ */
+export const notifications = sqliteTable("notifications", {
+	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+	workflowId: integer("workflow_id").references(() => workflows.id),
+	leadId: integer("lead_id").references(() => leads.id),
+	type: text("type", {
+		enum: ["awaiting", "completed", "failed", "timeout", "paused", "error"],
+	}).notNull(),
+	title: text("title").notNull(),
+	message: text("message").notNull(),
+	actionable: integer("actionable", { mode: "boolean" }).default(true),
+	read: integer("read", { mode: "boolean" }).notNull().default(false),
+	errorDetails: text("error_details"), // JSON with error context
+	createdAt: integer("created_at", { mode: "timestamp" })
+		.notNull()
+		.$defaultFn(() => new Date()),
+});
+
+// Update workflows table to include error_details
+// Note: This is an additive change to the existing schema definition
+// We need to modify the existing workflows table definition in line 45-75
+// but since I can't look back at the file content in this tool call,
+// I will rely on the mulit_replace or just append the notifications table here
+// and use a separate call to update the workflows table.

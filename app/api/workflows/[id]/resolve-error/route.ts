@@ -1,0 +1,39 @@
+import { inngest } from "@/inngest/client";
+import { NextRequest, NextResponse } from "next/server";
+
+export async function POST(
+	request: NextRequest,
+	{ params }: { params: Promise<{ id: string }> },
+) {
+	const { id } = await params;
+	const workflowId = parseInt(id);
+
+	if (isNaN(workflowId)) {
+		return NextResponse.json({ error: "Invalid Workflow ID" }, { status: 400 });
+	}
+
+	try {
+		const body = await request.json();
+		const { action } = body;
+
+		if (!["retry", "cancel", "continue"].includes(action)) {
+			return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+		}
+
+		await inngest.send({
+			name: "workflow/error-resolved",
+			data: {
+				workflowId,
+				action,
+			},
+		});
+
+		return NextResponse.json({ success: true, action });
+	} catch (error) {
+		console.error("Failed to resolve workflow error:", error);
+		return NextResponse.json(
+			{ error: "Failed to process resolution" },
+			{ status: 500 },
+		);
+	}
+}

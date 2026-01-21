@@ -14,14 +14,27 @@ export interface Quote {
 /**
  * Generate a quote for a lead using external quote service
  */
-export async function generateQuote(leadId: number): Promise<Quote> {
+export interface QuoteResult {
+	success: boolean;
+	quote?: Quote;
+	error?: string;
+	recoverable?: boolean;
+}
+
+/**
+ * Generate a quote for a lead using external quote service
+ */
+export async function generateQuote(leadId: number): Promise<QuoteResult> {
 	console.log(`[QuoteService] Generating Quote for Lead ${leadId}`);
 
 	const quoteServiceUrl = process.env.WEBHOOK_ZAP_QUOTE_GENERATION;
 	if (!quoteServiceUrl) {
-		throw new Error(
-			"[QuoteService] WEBHOOK_ZAP_QUOTE_GENERATION not configured",
-		);
+		console.error("[QuoteService] WEBHOOK_ZAP_QUOTE_GENERATION not configured");
+		return {
+			success: false,
+			error: "Configuration Error: WEBHOOK_ZAP_QUOTE_GENERATION missing",
+			recoverable: true,
+		};
 	}
 
 	// Fetch lead data
@@ -38,12 +51,20 @@ export async function generateQuote(leadId: number): Promise<Quote> {
 			}
 		} catch (err) {
 			console.error("[QuoteService] Failed to fetch lead:", err);
-			throw err;
+			return {
+				success: false,
+				error: `Database Error: ${err instanceof Error ? err.message : String(err)}`,
+				recoverable: true,
+			};
 		}
 	}
 
 	if (!leadData) {
-		throw new Error(`[QuoteService] Lead ${leadId} not found`);
+		return {
+			success: false,
+			error: `Lead ${leadId} not found`,
+			recoverable: false,
+		};
 	}
 
 	const payload = {
@@ -55,29 +76,44 @@ export async function generateQuote(leadId: number): Promise<Quote> {
 		callbackUrl: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/quotes/callback`,
 	};
 
-	const response = await fetch(quoteServiceUrl, {
-		method: "POST",
-		body: JSON.stringify(payload),
-		headers: { "Content-Type": "application/json" },
-	});
+	try {
+		const response = await fetch(quoteServiceUrl, {
+			method: "POST",
+			body: JSON.stringify(payload),
+			headers: { "Content-Type": "application/json" },
+		});
 
-	if (!response.ok) {
-		throw new Error(
-			`Quote service failed: ${response.status} ${response.statusText}`,
-		);
+		if (!response.ok) {
+			return {
+				success: false,
+				error: `Zapier Webhook Failed: ${response.status} ${response.statusText}`,
+				recoverable: true,
+			};
+		}
+
+		const result = await response.json();
+
+		if (!result.quoteId || result.amount === undefined) {
+			return {
+				success: false,
+				error: `Invalid Quote Response: ${JSON.stringify(result)}`,
+				recoverable: false,
+			};
+		}
+
+		return {
+			success: true,
+			quote: {
+				quoteId: result.quoteId,
+				amount: result.amount,
+				terms: result.terms || "Standard 30-day payment terms",
+			},
+		};
+	} catch (error) {
+		return {
+			success: false,
+			error: `Network Error: ${error instanceof Error ? error.message : String(error)}`,
+			recoverable: true,
+		};
 	}
-
-	const result = await response.json();
-
-	if (!result.quoteId || result.amount === undefined) {
-		throw new Error(
-			`[QuoteService] Invalid response: ${JSON.stringify(result)}`,
-		);
-	}
-
-	return {
-		quoteId: result.quoteId,
-		amount: result.amount,
-		terms: result.terms || "Standard 30-day payment terms",
-	};
 }
