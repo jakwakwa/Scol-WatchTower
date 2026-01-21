@@ -80,14 +80,12 @@ export async function sendZapierWebhook(payload: any): Promise<void> {
 			break;
 	}
 
-	// For development/mocking, if no URL is set, we just log and return.
+	// FAIL LOUDLY: No more silent skipping. If URL is not set, throw an error.
 	if (!zapierUrl) {
-		console.warn(
-			`[Activity] No Zapier webhook URL set (Event: ${event}). Skipping real fetch.`,
+		throw new Error(
+			`[Activity] FATAL: No Zapier webhook URL configured for event "${event}". ` +
+				`Set the appropriate WEBHOOK_ZAP_* environment variable.`,
 		);
-		// Simulate network delay
-		await new Promise((resolve) => setTimeout(resolve, 1000));
-		return;
 	}
 
 	try {
@@ -114,15 +112,80 @@ export async function generateQuote(
 ): Promise<{ quoteId: string; amount: number; terms: string }> {
 	console.log(`[Activity] Generating Dynamic Quote for Lead ${leadId}`);
 
-	// Simulate complex calculation engine
-	await new Promise((resolve) => setTimeout(resolve, 2000));
+	const quoteServiceUrl = process.env.WEBHOOK_ZAP_QUOTE_GENERATION;
 
-	// Mock response
-	return {
-		quoteId: `Q-${Date.now()}`,
-		amount: Math.floor(Math.random() * 1000000) + 50000, // Random amount between 50k and 1M
-		terms: "Standard 30-day payment terms",
+	// FAIL LOUDLY: No more mock data. Require a real quote service.
+	if (!quoteServiceUrl) {
+		throw new Error(
+			`[Activity] FATAL: No quote generation service configured. ` +
+				`Set WEBHOOK_ZAP_QUOTE_GENERATION environment variable.`,
+		);
+	}
+
+	// Fetch lead data to send to quote generation service
+	const db = getDatabaseClient();
+	let leadData = null;
+	if (db) {
+		try {
+			const leadResults = await db
+				.select()
+				.from(leads)
+				.where(eq(leads.id, leadId));
+			if (leadResults.length > 0) {
+				leadData = leadResults[0];
+			}
+		} catch (err) {
+			console.error("[Activity] Failed to fetch lead data for quote:", err);
+			throw err;
+		}
+	}
+
+	if (!leadData) {
+		throw new Error(
+			`[Activity] Lead ${leadId} not found for quote generation.`,
+		);
+	}
+
+	const payload = {
+		leadId,
+		companyName: leadData.companyName,
+		industry: leadData.industry,
+		employeeCount: leadData.employeeCount,
+		estimatedVolume: leadData.estimatedVolume,
+		callbackUrl: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/quotes/callback`,
 	};
+
+	try {
+		const response = await fetch(quoteServiceUrl, {
+			method: "POST",
+			body: JSON.stringify(payload),
+			headers: { "Content-Type": "application/json" },
+		});
+
+		if (!response.ok) {
+			throw new Error(
+				`Quote service failed with status ${response.status}: ${response.statusText}`,
+			);
+		}
+
+		const result = await response.json();
+
+		// Expect the quote service to return { quoteId, amount, terms }
+		if (!result.quoteId || result.amount === undefined) {
+			throw new Error(
+				`[Activity] Quote service returned invalid response: ${JSON.stringify(result)}`,
+			);
+		}
+
+		return {
+			quoteId: result.quoteId,
+			amount: result.amount,
+			terms: result.terms || "Standard 30-day payment terms",
+		};
+	} catch (error) {
+		console.error("[Activity] Error calling quote generation service:", error);
+		throw error;
+	}
 }
 
 export async function aiRiskAnalysis(leadId: number): Promise<{
@@ -132,28 +195,83 @@ export async function aiRiskAnalysis(leadId: number): Promise<{
 }> {
 	console.log(`[Activity] Performing AI Risk Analysis for Lead ${leadId}`);
 
-	// Simulate AI processing time
-	await new Promise((resolve) => setTimeout(resolve, 3000));
+	const aiServiceUrl = process.env.WEBHOOK_ZAP_AI_RISK_ANALYSIS;
 
-	// Mock data - in reality this would call Google Cloud Document AI or similar
-	const riskScore = Math.floor(Math.random() * 100);
-	let recommendedAction = "APPROVE";
-	const anomalies: string[] = [];
-
-	if (riskScore > 80) {
-		recommendedAction = "REJECT";
-		anomalies.push("High fraud probability detected");
-		anomalies.push("Inconsistent font usage in bank statement");
-	} else if (riskScore > 50) {
-		recommendedAction = "MANUAL_REVIEW";
-		anomalies.push("Suspicious transaction volume");
+	// FAIL LOUDLY: No more mock data. Require a real AI service.
+	if (!aiServiceUrl) {
+		throw new Error(
+			`[Activity] FATAL: No AI risk analysis service configured. ` +
+				`Set WEBHOOK_ZAP_AI_RISK_ANALYSIS environment variable.`,
+		);
 	}
 
-	return {
-		riskScore,
-		anomalies,
-		recommendedAction,
+	// Fetch lead data to send to AI service
+	const db = getDatabaseClient();
+	let leadData = null;
+	if (db) {
+		try {
+			const leadResults = await db
+				.select()
+				.from(leads)
+				.where(eq(leads.id, leadId));
+			if (leadResults.length > 0) {
+				leadData = leadResults[0];
+			}
+		} catch (err) {
+			console.error(
+				"[Activity] Failed to fetch lead data for AI analysis:",
+				err,
+			);
+			throw err;
+		}
+	}
+
+	if (!leadData) {
+		throw new Error(
+			`[Activity] Lead ${leadId} not found for AI risk analysis.`,
+		);
+	}
+
+	const payload = {
+		leadId,
+		companyName: leadData.companyName,
+		industry: leadData.industry,
+		employeeCount: leadData.employeeCount,
+		estimatedVolume: leadData.estimatedVolume,
+		callbackUrl: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/risk-analysis/callback`,
 	};
+
+	try {
+		const response = await fetch(aiServiceUrl, {
+			method: "POST",
+			body: JSON.stringify(payload),
+			headers: { "Content-Type": "application/json" },
+		});
+
+		if (!response.ok) {
+			throw new Error(
+				`AI risk analysis service failed with status ${response.status}: ${response.statusText}`,
+			);
+		}
+
+		const result = await response.json();
+
+		// Expect the AI service to return { riskScore, anomalies, recommendedAction }
+		if (result.riskScore === undefined) {
+			throw new Error(
+				`[Activity] AI service returned invalid response: ${JSON.stringify(result)}`,
+			);
+		}
+
+		return {
+			riskScore: result.riskScore,
+			anomalies: result.anomalies || [],
+			recommendedAction: result.recommendedAction || "MANUAL_REVIEW",
+		};
+	} catch (error) {
+		console.error("[Activity] Error calling AI risk analysis service:", error);
+		throw error;
+	}
 }
 
 export async function updateDbStatus(
@@ -215,12 +333,12 @@ export async function dispatchToPlatform(payload: {
 
 	const webhookUrl = process.env.WEBHOOK_ZAP_RISK_ASSESSMENT_TRIGGER;
 
-	// Ensure we have a URL, otherwise log warning (or throw if critical)
+	// FAIL LOUDLY: No more silent skipping.
 	if (!webhookUrl) {
-		console.warn(
-			"[Activity] WEBHOOK_ZAP_RISK_ASSESSMENT_TRIGGER not set. Skipping dispatch.",
+		throw new Error(
+			`[Activity] FATAL: WEBHOOK_ZAP_RISK_ASSESSMENT_TRIGGER not configured. ` +
+				`Cannot dispatch to platform without this webhook URL.`,
 		);
-		return;
 	}
 
 	// Strict JSON Structure as per plan
@@ -263,22 +381,31 @@ export async function escalateToManagement(payload: {
 		`[Activity] ESCALATING Workflow ${payload.workflowId} due to: ${payload.reason}`,
 	);
 
-	// TODO: Define a specific escalation webhook in .env
 	const escalationUrl = process.env.WEBHOOK_ZAP_ESCALATION_TRIGGER;
 
+	// FAIL LOUDLY: No more silent skipping for escalations.
 	if (!escalationUrl) {
-		console.warn("[Activity] No escalation webhook URL configured.");
-		return;
+		throw new Error(
+			`[Activity] FATAL: WEBHOOK_ZAP_ESCALATION_TRIGGER not configured. ` +
+				`Cannot escalate workflow without this webhook URL.`,
+		);
 	}
 
 	try {
-		await fetch(escalationUrl, {
+		const response = await fetch(escalationUrl, {
 			method: "POST",
 			body: JSON.stringify(payload),
 			headers: { "Content-Type": "application/json" },
 		});
+
+		if (!response.ok) {
+			throw new Error(
+				`Escalation webhook failed with status ${response.status}: ${response.statusText}`,
+			);
+		}
+		console.log("[Activity] Successfully sent escalation webhook");
 	} catch (error) {
-		// We log but maybe don't throw, to avoid infinite retry loops on escalation failure
 		console.error("[Activity] Failed to send escalation webhook:", error);
+		throw error;
 	}
 }
