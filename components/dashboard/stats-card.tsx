@@ -1,0 +1,118 @@
+import { cn } from "@/lib/utils";
+import type { RemixiconComponentType } from "@remixicon/react";
+
+interface StatsCardProps {
+	title: string;
+	value: string | number;
+	change?: {
+		value: number;
+		trend: "up" | "down" | "neutral";
+	};
+	icon: RemixiconComponentType;
+	iconColor?: "amber" | "green" | "blue" | "purple" | "red";
+	className?: string;
+}
+
+const iconColorClasses = {
+	amber: "bg-stone-500/20 text-stone-400",
+	green: "bg-emerald-500/30 text-teal-700",
+	blue: "bg-blue-500/20 text-blue-400",
+	purple: "bg-purple-500/20 text-purple-400",
+	red: "bg-red-500/20 text-red-400",
+};
+
+export function StatsCard({
+	title,
+	value,
+	change,
+	icon: Icon,
+	iconColor = "amber",
+	className,
+}: StatsCardProps) {
+	return (
+		<div
+			className={cn(
+				"group relative overflow-hidden rounded-2xl border border-sidebar-border bg-card/50 backdrop-blur-sm p-6",
+				"shadow-xl shadow-black/5",
+				"transition-all duration-300 hover:bg-card/70 hover:border-white/10 hover:shadow-2xl hover:-translate-y-1",
+				className,
+			)}
+		>
+			{/* Background gradient effect */}
+			<div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent" />
+
+			{/* Content */}
+			<div className="relative flex items-start justify-between">
+				<div className="space-y-2">
+					<p className="text-sm font-medium text-muted-foreground">{title}</p>
+					<p className="text-3xl font-bold tracking-tight">{value}</p>
+
+					{change && (
+						<div className="flex items-center gap-1.5">
+							<span
+								className={cn(
+									"text-xs font-medium",
+									change.trend === "up" && "text-teal-700",
+									change.trend === "down" && "text-red-400",
+									change.trend === "neutral" && "text-muted-foreground",
+								)}
+							>
+								{change.trend === "up" && "↑"}
+								{change.trend === "down" && "↓"}
+								{change.value > 0 ? "+" : ""}
+								{change.value}%
+							</span>
+							<span className="text-xs text-muted-foreground">
+								vs last week
+							</span>
+						</div>
+					)}
+				</div>
+
+				<div
+					className={cn(
+						"flex h-12 w-12 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110",
+						iconColorClasses[iconColor],
+					)}
+				>
+					<Icon className="h-6 w-6" />
+				</div>
+			</div>
+
+			{/* Bottom accent line */}
+			<div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-stone-500/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+		</div>
+	);
+}
+
+// Compact version for sidebar or smaller areas
+interface StatsCardCompactProps {
+	label: string;
+	value: string | number;
+	icon: RemixiconComponentType;
+	iconColor?: keyof typeof iconColorClasses;
+}
+
+export function StatsCardCompact({
+	label,
+	value,
+	icon: Icon,
+	iconColor = "amber",
+}: StatsCardCompactProps) {
+	return (
+		<div className="flex items-center gap-3 rounded-xl bg-white/[0.02] p-3">
+			<div
+				className={cn(
+					"flex h-10 w-10 items-center justify-center rounded-lg",
+					iconColorClasses[iconColor],
+				)}
+			>
+				<Icon className="h-5 w-5" />
+			</div>
+			<div>
+				<p className="text-xs font-medium text-muted-foreground">{label}</p>
+				<p className="text-lg font-bold">{value}</p>
+			</div>
+		</div>
+	);
+}

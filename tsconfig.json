@@ -1,20 +1,28 @@
 {
   "compilerOptions": {
     "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
+      "ESNext",
+      "DOM"
     ],
+    "target": "ESNext",
+    "module": "Preserve",
+    "moduleDetection": "force",
+    "jsx": "preserve",
     "allowJs": true,
-    "skipLibCheck": true,
-    "strict": false,
-    "noEmit": true,
-    "esModuleInterop": true,
-    "module": "esnext",
     "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noPropertyAccessFromIndexSignature": false,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve",
     "incremental": true,
     "plugins": [
       {
@@ -23,18 +31,81 @@
     ],
     "paths": {
       "@/*": [
-        "./*"
+        "./*",
+        "./components/*",
+        "./lib/*",
+        "./hooks/*",
+        "./app/*",
+        "./store/*",
+        "./config/*",
+        "./prisma/*",
+        "./scripts/*",
+        "./tests/*",
+        "./styles/*"
+      ],
+      "components/ui/*": [
+        "./components/ui/*",
+        "./components/new/*"
       ]
-    },
-    "target": "ES2017"
+    }
+  },
+  "ts-node": {
+    "compilerOptions": {
+      "module": "commonjs"
+    }
   },
   "include": [
     "next-env.d.ts",
+    "*.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    "**/*.css",
+    ".next/dev/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    ".mdc",
+    ".md",
+    ".css",
+    ".scss",
+    ".sass",
+    ".less",
+    ".styl",
+    ".stylus",
+    ".pcss",
+    ".postcss",
+    ".configig",
+    ".cursor",
+    ".cursorrules",
+    ".cursorignore",
+    ".cursorignorerules",
+    ".cursorignorecursorrules",
+    ".cursorignorecursorrules",
+    "/docs",
+    "/public",
+    "/styles",
+    "/styles/globals.css",
+    "/styles/globals.css.map",
+    "/styles/globals.css.map",
+    "**/*.disabled",
+    ".yml",
+    ".yaml",
+    ".json",
+    ".jsonc",
+    ".jsonrc",
+    ".json5",
+    ".mjs",
+    ".mts",
+    ".cts",
+    ".mtsx",
+    ".ctsx",
+    ".mjs",
+    ".mts",
+    "node_modules",
+    ".next",
+    "tests",
+    "**/*.test.*",
+    "**/*.spec.*",
+    "vitest.config.ts"
   ]
 }
