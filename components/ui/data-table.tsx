@@ -45,9 +45,9 @@ export function DataTable<TData, TValue>({
 
 	return (
 		<div className="w-full space-y-4">
-			<div className="rounded-2xl border border-sidebar-border bg-card/50 shadow-[0_15px_20px_rgba(0,0,0,0.1)] overflow-hidden backdrop-blur-sm">
+			<div className="rounded-2xl border border-sidebar-border bg-card/90 shadow-[0_15px_20px_rgba(0,0,0,0.1)] overflow-hidden backdrop-blur-sm">
 				<Table>
-					<TableHeader className="bg-white/2">
+					<TableHeader className="bg-sidebar/50">
 						{table.getHeaderGroups().map((headerGroup) => (
 							<TableRow
 								key={headerGroup.id}
@@ -57,7 +57,7 @@ export function DataTable<TData, TValue>({
 									return (
 										<TableHead
 											key={header.id}
-											className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+											className="px-3 py-2 text-xs font-semibold text-white/80 uppercase tracking-wider"
 										>
 											{header.isPlaceholder
 												? null
