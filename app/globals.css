@@ -11,17 +11,17 @@
 
 :root {
   --background: oklch(89.826% 0.01199 231.984);
-  --foreground: oklch(54.029% 0.02801 282.882 / 0.818);
-  --card: oklch(98.07% 0.00523 248.366);
+  --foreground: oklch(60.682% 0.07053 189.381 / 0.49);
+  --card: oklch(100% 0.00011 271.152);
   --card-foreground: oklch(71.439% 0.03764 285.386 / 0.109);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(27.067% 0.00921 285.728);
-  --primary: oklch(68.032% 0.10259 98.191 / 0.906);
+  --primary: oklch(74.564% 0.02684 97.25 / 0.906);
   --primary-foreground: oklch(0.99 0.02 95);
   --secondary: oklch(0.967 0.001 286.375);
   --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted: oklch(59.277% 0.05791 259.955 / 0.302);
-  --muted-foreground: oklch(71.916% 0.02153 216.441);
+  --muted: oklch(61.761% 0.03489 261.697 / 0.758);
+  --muted-foreground: oklch(76.342% 0.04722 293.555);
   --accent: oklch(78.288% 0.05411 70.612);
   --accent-foreground: oklch(0.99 0.02 95);
   --destructive: oklch(63.615% 0.19395 21.82);

@@ -6,7 +6,7 @@ import {
 	NotificationsPanel,
 	type WorkflowNotification,
 } from "./notifications-panel";
-import { UserButton, ClerkProvider } from "@clerk/nextjs";
+import { UserButton } from "@clerk/nextjs";
 import { useState } from "react";
 
 interface DashboardLayoutProps {
@@ -81,9 +81,9 @@ export function DashboardLayout({
 										}
 									}}
 								/>
-								<ClerkProvider>
+								<div suppressHydrationWarning>
 									<UserButton />
-								</ClerkProvider>
+								</div>
 							</div>
 
 						</div>
