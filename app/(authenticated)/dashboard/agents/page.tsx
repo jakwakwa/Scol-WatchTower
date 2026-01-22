@@ -91,8 +91,9 @@ export default function AgentsPage(
 		<DashboardLayout
 			title="Agents"
 			description="Monitor your external agent fleet"
+			notifications={workflowNotifications}
 		>
-			<NotificationsPanel notifications={workflowNotifications} />
+
 			{/* Agent Stats */}
 			<DashboardGrid columns={4} className="mb-8">
 				<StatsCard

@@ -22,8 +22,8 @@ interface Agent {
 const statusConfig = {
 	active: {
 		label: "Active",
-		color: "text-emerald-400",
-		bgColor: "bg-emerald-500/20",
+		color: "text-teal-700",
+		bgColor: "bg-teal-500/40",
 		icon: RiCheckLine,
 	},
 	inactive: {
@@ -57,7 +57,7 @@ export function AgentStatusCard({ agent, onClick }: AgentStatusCardProps) {
 				"shadow-xl shadow-black/5",
 				"transition-all duration-300",
 				onClick &&
-					"cursor-pointer hover:bg-card/70 hover:border-white/10 hover:shadow-2xl hover:-translate-y-1",
+				"cursor-pointer hover:bg-card/70 hover:border-white/10 hover:shadow-2xl hover:-translate-y-1",
 			)}
 		>
 			{/* Status indicator dot */}

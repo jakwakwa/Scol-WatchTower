@@ -43,7 +43,7 @@ const statusConfig: Record<string, { label: string; color: string }> = {
 	qualified: { label: "Qualified", color: "bg-stone-500/20 text-stone-400" },
 	proposal: { label: "Proposal", color: "bg-stone-500/20 text-stone-400" },
 	negotiation: { label: "Negotiation", color: "bg-pink-500/20 text-pink-400" },
-	won: { label: "Won", color: "bg-emerald-500/20 text-emerald-400" },
+	won: { label: "Won", color: "bg-emerald-500/20 text-teal-700" },
 	lost: { label: "Lost", color: "bg-red-500/20 text-red-400" },
 };
 
@@ -79,6 +79,7 @@ export const columns: ColumnDef<LeadRow>[] = [
 		header: ({ column }) => (
 			<Button
 				variant="ghost"
+				size="xs"
 				className="-ml-4 hover:bg-transparent hover:text-foreground"
 				onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
 			>
@@ -98,7 +99,23 @@ export const columns: ColumnDef<LeadRow>[] = [
 	},
 	{
 		accessorKey: "contactName",
-		header: "Contact",
+		header: ({ column }) => (
+			<Button
+				variant="ghost"
+				size="xs"
+				className="-ml-4 hover:bg-transparent hover:text-foreground"
+				onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+			>
+				Contact
+				{column.getIsSorted() === "asc" ? (
+					<RiArrowUpSLine className="ml-2 h-4 w-4" />
+				) : column.getIsSorted() === "desc" ? (
+					<RiArrowDownSLine className="ml-2 h-4 w-4" />
+				) : (
+					<RiArrowDownSLine className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
+				)}
+			</Button>
+		),
 		cell: ({ row }) => (
 			<div>
 				<div className="text-sm">{row.original.contactName}</div>
@@ -110,7 +127,23 @@ export const columns: ColumnDef<LeadRow>[] = [
 	},
 	{
 		accessorKey: "industry",
-		header: "Industry",
+		header: ({ column }) => (
+			<Button
+				variant="ghost"
+				size="xs"
+				className="-ml-4 hover:bg-transparent hover:text-foreground"
+				onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+			>
+				Industry
+				{column.getIsSorted() === "asc" ? (
+					<RiArrowUpSLine className="ml-2 h-4 w-4" />
+				) : column.getIsSorted() === "desc" ? (
+					<RiArrowDownSLine className="ml-2 h-4 w-4" />
+				) : (
+					<RiArrowDownSLine className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
+				)}
+			</Button>
+		),
 		cell: ({ row }) => (
 			<div className="text-sm text-muted-foreground">
 				{row.original.industry}
@@ -119,7 +152,23 @@ export const columns: ColumnDef<LeadRow>[] = [
 	},
 	{
 		accessorKey: "employeeCount",
-		header: "Employees",
+		header: ({ column }) => (
+			<Button
+				variant="ghost"
+				size="xs"
+				className="-ml-4 hover:bg-transparent hover:text-foreground"
+				onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+			>
+				Employees
+				{column.getIsSorted() === "asc" ? (
+					<RiArrowUpSLine className="ml-2 h-4 w-4" />
+				) : column.getIsSorted() === "desc" ? (
+					<RiArrowDownSLine className="ml-2 h-4 w-4" />
+				) : (
+					<RiArrowDownSLine className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
+				)}
+			</Button>
+		),
 		cell: ({ row }) => (
 			<div className="text-sm">
 				{row.original.employeeCount?.toLocaleString() || "—"}
@@ -128,7 +177,23 @@ export const columns: ColumnDef<LeadRow>[] = [
 	},
 	{
 		accessorKey: "status",
-		header: "Status",
+		header: ({ column }) => (
+			<Button
+				variant="ghost"
+				size="xs"
+				className="-ml-4 hover:bg-transparent hover:text-foreground"
+				onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+			>
+				Status
+				{column.getIsSorted() === "asc" ? (
+					<RiArrowUpSLine className="ml-2 h-4 w-4" />
+				) : column.getIsSorted() === "desc" ? (
+					<RiArrowDownSLine className="ml-2 h-4 w-4" />
+				) : (
+					<RiArrowDownSLine className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
+				)}
+			</Button>
+		),
 		cell: ({ row }) => {
 			const config = statusConfig[row.original.status] || {
 				label: row.original.status,

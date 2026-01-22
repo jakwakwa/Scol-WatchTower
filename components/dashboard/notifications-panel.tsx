@@ -41,7 +41,7 @@ const notificationConfig = {
 	completed: {
 		icon: RiCheckLine,
 		color: "text-emerald-700",
-		bgColor: "bg-emerald-500/20",
+		bgColor: "bg-teal-500/40",
 	},
 	failed: {
 		icon: RiCloseLine,
@@ -82,7 +82,13 @@ export function NotificationsPanel({
 	onAction,
 }: NotificationsPanelProps) {
 	const [isOpen, setIsOpen] = React.useState(false);
+	const [isMounted, setIsMounted] = React.useState(false);
 	const unreadCount = notifications?.filter((n) => !n.read).length;
+
+	// Delay rendering until after hydration to prevent Radix UI aria-controls ID mismatch
+	React.useEffect(() => {
+		setIsMounted(true);
+	}, []);
 
 	const handleAction = async (
 		e: React.MouseEvent,
@@ -108,6 +114,29 @@ export function NotificationsPanel({
 			toast.error("Failed to process action");
 		}
 	};
+
+	// Render a non-interactive placeholder during SSR to prevent hydration mismatch
+	if (!isMounted) {
+		return (
+			<Button
+				variant="ghost"
+				size="icon"
+				className="relative h-9 w-9 hover:bg-white/10"
+			>
+				<RiNotification3Line className="h-5 w-5" />
+				{unreadCount > 0 && (
+					<Badge
+						variant="destructive"
+						className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full p-0 text-[10px] animate-pulse"
+					>
+						<span className="text-white text-[8px]">
+							{unreadCount > 9 ? "9+" : unreadCount}
+						</span>
+					</Badge>
+				)}
+			</Button>
+		);
+	}
 
 	return (
 		<Popover open={isOpen} onOpenChange={setIsOpen}>
@@ -221,7 +250,7 @@ export function NotificationsPanel({
 															<Button
 																variant="ghost"
 																size="sm"
-																className="h-6 px-2 text-xs hover:bg-emerald-500/20 hover:text-emerald-400"
+																className="h-6 px-2 text-xs hover:bg-teal-500/40 hover:text-teal-700"
 																onClick={(e) =>
 																	handleAction(e, notification, "approve")
 																}
@@ -289,7 +318,7 @@ export function NotificationsPanel({
 					</div>
 				)}
 			</PopoverContent>
-		</Popover>
+		</Popover >
 	);
 }
 

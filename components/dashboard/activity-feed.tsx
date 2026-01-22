@@ -23,7 +23,7 @@ interface ActivityEvent {
 	eventType: EventType;
 	description: string;
 	timestamp: Date;
-	actorType: "user" | "agent" | "system";
+	actorType: "user" | "agent" | "platform";
 	actorId?: string;
 }
 
@@ -44,7 +44,7 @@ const eventConfig: Record<
 	agent_callback: {
 		icon: RiCheckLine,
 		color: "text-emerald-700",
-		bgColor: "bg-emerald-500/20",
+		bgColor: "bg-teal-500/40",
 	},
 	human_override: {
 		icon: RiUserLine,

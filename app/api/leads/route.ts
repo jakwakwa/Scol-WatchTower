@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
 				stage: 1,
 				stageName: "lead_capture",
 				status: "pending",
-				currentAgent: "system",
+				currentAgent: "platform",
 			})
 			.returning();
 

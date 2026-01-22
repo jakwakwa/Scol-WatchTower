@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -8,10 +7,8 @@ import {
 	RiUserAddLine,
 	RiFlowChart,
 	RiRobot2Line,
-	RiSettings4Line,
 	RiMenuFoldLine,
 	RiMenuUnfoldLine,
-	RiLayoutVerticalLine,
 	RiSignalTowerFill,
 } from "@remixicon/react";
 import { cn } from "@/lib/utils";
@@ -21,13 +18,12 @@ const navigation = [
 	{ name: "Overview", href: "/dashboard", icon: RiDashboardLine },
 	{ name: "Leads", href: "/dashboard/leads", icon: RiUserAddLine },
 	{ name: "Workflows", href: "/dashboard/workflows", icon: RiFlowChart },
-	{ name: "Agents", href: "/dashboard/agents", icon: RiRobot2Line },
-	{ name: "Settings", href: "/dashboard/settings", icon: RiSettings4Line },
+	{ name: "Agents", href: "/dashboard/agents", icon: RiRobot2Line }
 ];
 
-export function Sidebar() {
+export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean; setIsCollapsed: React.Dispatch<React.SetStateAction<boolean>> }) {
 	const pathname = usePathname();
-	const [isCollapsed, setIsCollapsed] = useState(false);
+
 
 	return (
 		<aside

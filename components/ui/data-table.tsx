@@ -45,9 +45,9 @@ export function DataTable<TData, TValue>({
 
 	return (
 		<div className="w-full space-y-4">
-			<div className="rounded-2xl border border-sidebar-border bg-card/50 overflow-hidden backdrop-blur-sm">
+			<div className="rounded-2xl border border-sidebar-border bg-card/50 shadow-[0_15px_20px_rgba(0,0,0,0.1)] overflow-hidden backdrop-blur-sm">
 				<Table>
-					<TableHeader className="bg-white/[0.02]">
+					<TableHeader className="bg-white/2">
 						{table.getHeaderGroups().map((headerGroup) => (
 							<TableRow
 								key={headerGroup.id}
@@ -57,14 +57,14 @@ export function DataTable<TData, TValue>({
 									return (
 										<TableHead
 											key={header.id}
-											className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+											className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground"
 										>
 											{header.isPlaceholder
 												? null
 												: flexRender(
-														header.column.columnDef.header,
-														header.getContext(),
-													)}
+													header.column.columnDef.header,
+													header.getContext(),
+												)}
 										</TableHead>
 									);
 								})}
@@ -77,10 +77,10 @@ export function DataTable<TData, TValue>({
 								<TableRow
 									key={row.id}
 									data-state={row.getIsSelected() && "selected"}
-									className="group border-sidebar-border hover:bg-white/[0.04] transition-all duration-200"
+									className="group border-sidebar-border hover:bg-white/4 transition-all duration-200"
 								>
 									{row.getVisibleCells().map((cell) => (
-										<TableCell key={cell.id} className="px-6 py-4">
+										<TableCell key={cell.id} className="px-3 py-4">
 											{flexRender(
 												cell.column.columnDef.cell,
 												cell.getContext(),

@@ -20,7 +20,7 @@ export const createQuoteSchema = z.preprocess(
 		baseFeePercent: z.coerce.number().int().positive(), // Basis points
 		adjustedFeePercent: z.coerce.number().int().positive().optional(), // Basis points
 		rationale: z.string().optional(),
-		generatedBy: z.enum(["system", "gemini"]).optional(),
+		generatedBy: z.enum(["platform", "gemini"]).optional(),
 	}),
 );
 
