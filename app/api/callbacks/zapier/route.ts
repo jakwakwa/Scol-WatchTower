@@ -8,7 +8,7 @@ import { inngest } from '@/inngest';
 // Schema for  callback
 const agentCallbackSchema = z.object({
     workflowId: z.coerce.number().int(),
-    status: z.enum(['pending', 'in_progress', 'awaiting_human', 'completed', 'failed', 'timeout']).optional(),
+    status: z.string().optional(), // Relaxed from enum to allow "Approved" etc.
     eventType: z.enum(['stage_change', 'agent_dispatch', 'agent_callback', 'human_override', 'timeout', 'error']),
     payload: z.string().optional(),
     actorId: z.string().optional(),
@@ -49,15 +49,20 @@ export async function POST(request: NextRequest) {
                 createdAt: new Date(),
             } as any);
 
-            // Update workflow status if provided
+            // Update workflow status if provided and valid
             if (data.status) {
-                await db
-                    .update(workflows)
-                    .set({
-                        status: data.status,
-                        updatedAt: new Date(),
-                    } as any)
-                    .where(eq(workflows.id, data.workflowId));
+                const validStatuses = ['pending', 'in_progress', 'awaiting_human', 'completed', 'failed', 'timeout'];
+                const normalizedStatus = data.status.toLowerCase();
+
+                if (validStatuses.includes(normalizedStatus)) {
+                    await db
+                        .update(workflows)
+                        .set({
+                            status: normalizedStatus as any,
+                            updatedAt: new Date(),
+                        })
+                        .where(eq(workflows.id, data.workflowId));
+                }
             }
         }
 
