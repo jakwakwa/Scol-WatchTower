@@ -621,7 +621,7 @@ export function WorkflowTable({ workflows, onRefresh }: WorkflowTableProps) {
 
 	if (workflows.length === 0) {
 		return (
-			<div className="rounded-2xl border border-sidebar-border bg-card/50 p-12 text-center">
+			<div className="rounded-2xl border border-sidebar-border bg-card/90 p-12 text-center">
 				<RiFlowChart className="mx-auto h-12 w-12 text-muted-foreground/50" />
 				<h3 className="mt-4 text-lg font-medium">No workflows yet</h3>
 				<p className="mt-2 text-sm text-muted-foreground">
