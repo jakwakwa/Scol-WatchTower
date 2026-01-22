@@ -49,21 +49,7 @@ export async function POST(request: NextRequest) {
                 createdAt: new Date(),
             } as any);
 
-            // Update workflow status if provided and valid
-            if (data.status) {
-                const validStatuses = ['pending', 'in_progress', 'awaiting_human', 'completed', 'failed', 'timeout'];
-                const normalizedStatus = data.status.toLowerCase();
-
-                if (validStatuses.includes(normalizedStatus)) {
-                    await db
-                        .update(workflows)
-                        .set({
-                            status: normalizedStatus as any,
-                            updatedAt: new Date(),
-                        })
-                        .where(eq(workflows.id, data.workflowId));
-                }
-            }
+            // Log event (status update removed as handled by workflow)
         }
 
         // 2. Send Inngest Event to unblock waiting workflow
