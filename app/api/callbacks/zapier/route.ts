@@ -7,7 +7,7 @@ import { inngest } from '@/inngest';
 
 // Schema for  callback
 const agentCallbackSchema = z.object({
-    workflowId: z.number(),
+    workflowId: z.coerce.number().int(),
     status: z.enum(['pending', 'in_progress', 'awaiting_human', 'completed', 'failed', 'timeout']).optional(),
     eventType: z.enum(['stage_change', 'agent_dispatch', 'agent_callback', 'human_override', 'timeout', 'error']),
     payload: z.string().optional(),
