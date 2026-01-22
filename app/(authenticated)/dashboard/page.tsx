@@ -12,22 +12,14 @@ import {
 	ActivityFeed,
 } from "@/components/dashboard";
 import { Button } from "@/components/ui/button";
-import dynamic from "next/dynamic";
-
-// Dynamic imports with ssr: false to prevent hydration mismatches
-// Radix UI components generate non-deterministic IDs that differ between server/client
-const WorkflowTable = dynamic(
-	() => import("@/components/dashboard/workflow-table").then((mod) => mod.WorkflowTable),
-	{ ssr: false }
-);
-const WebhookTester = dynamic(
-	() => import("@/components/dashboard/webhook-tester").then((mod) => mod.WebhookTester),
-	{ ssr: false }
-);
 import Link from "next/link";
 import { getDatabaseClient } from "@/app/utils";
 import { workflows, leads, workflowEvents, notifications } from "@/db/schema";
 import { desc, eq, count } from "drizzle-orm";
+import {
+	DynamicWorkflowTable as WorkflowTable,
+	DynamicWebhookTester as WebhookTester,
+} from "@/components/dashboard/dynamic-components";
 
 export default async function DashboardPage() {
 	const db = getDatabaseClient();
