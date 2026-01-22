@@ -1,4 +1,4 @@
-import { Inngest, EventSchemas } from "inngest";
+import { EventSchemas, Inngest } from "inngest";
 import type { Events } from "./events";
 
 /**
@@ -7,5 +7,6 @@ import type { Events } from "./events";
  */
 export const inngest = new Inngest({
 	id: "stratcol-onboard",
+	eventKey: process.env.INNGEST_EVENT_KEY,
 	schemas: new EventSchemas().fromRecord<Events>(),
 });
