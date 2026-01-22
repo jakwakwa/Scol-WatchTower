@@ -1,0 +1,116 @@
+{
+    "$schema": "https://mintlify.com/docs.json",
+    "theme": "mint",
+    "name": "SC Onboard Zaps",
+    "colors": {
+        "primary": "#16A34A",
+        "light": "#07C983",
+        "dark": "#15803D"
+    },
+    "favicon": "/favicon.svg",
+    "navigation": {
+        "tabs": [
+            {
+                "tab": "Guides",
+                "groups": [
+                    {
+                        "group": "Getting started",
+                        "pages": [
+                            "index",
+                            "quickstart",
+                            "development"
+                        ]
+                    },
+                    {
+                        "group": "Customization",
+                        "pages": [
+                            "essentials/settings",
+                            "essentials/navigation"
+                        ]
+                    },
+                    {
+                        "group": "Writing content",
+                        "pages": [
+                            "essentials/markdown",
+                            "essentials/code",
+                            "essentials/images",
+                            "essentials/reusable-snippets"
+                        ]
+                    },
+                    {
+                        "group": "AI tools",
+                        "pages": [
+                            "ai-tools/cursor",
+                            "ai-tools/antigravity"
+                        ]
+                    }
+                ]
+            },
+            {
+                "tab": "API reference",
+                "groups": [
+                    {
+                        "group": "API documentation",
+                        "pages": [
+                            "api-reference/introduction"
+                        ]
+                    },
+                    {
+                        "group": "Endpoint examples",
+                        "pages": [
+                            "api-reference/endpoint/get",
+                            "api-reference/endpoint/create",
+                            "api-reference/endpoint/delete",
+                            "api-reference/endpoint/webhook"
+                        ]
+                    }
+                ]
+            }
+        ],
+        "global": {
+            "anchors": [
+                {
+                    "anchor": "Documentation",
+                    "href": "https://mintlify.com/docs",
+                    "icon": "book-open-cover"
+                },
+                {
+                    "anchor": "Blog",
+                    "href": "https://mintlify.com/blog",
+                    "icon": "newspaper"
+                }
+            ]
+        }
+    },
+    "logo": {
+        "light": "/assets/logo/logo-1x.png",
+        "dark": "/assets/logo/logo-1x.png"
+    },
+    "navbar": {
+        "links": [
+            {
+                "label": "Support",
+                "href": "mailto:[EMAIL_ADDRESS]"
+            }
+        ],
+        "primary": {
+            "type": "button",
+            "label": "Dashboard",
+            "href": "https://dashboard.mintlify.com"
+        }
+    },
+    "contextual": {
+        "options": [
+            "copy",
+            "view",
+            "mcp",
+            "cursor",
+            "vscode"
+        ]
+    },
+    "footer": {
+        "socials": {
+            "github": "https://github.com/jakwakawa"
+        }
+    }
+}
