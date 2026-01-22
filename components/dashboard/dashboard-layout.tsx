@@ -6,7 +6,8 @@ import {
 	NotificationsPanel,
 	type WorkflowNotification,
 } from "./notifications-panel";
-import { UserButton } from "@clerk/nextjs";
+import { UserButton, ClerkProvider } from "@clerk/nextjs";
+import { useState } from "react";
 
 interface DashboardLayoutProps {
 	children: React.ReactNode;
@@ -23,12 +24,14 @@ export function DashboardLayout({
 	actions,
 	notifications = [],
 }: DashboardLayoutProps) {
+
+	const [isCollapsed, setIsCollapsed] = useState(false);
 	return (
 		<div className="min-h-screen bg-background">
-			<Sidebar />
+			<Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
 
 			{/* Main content */}
-			<main className="pl-64 transition-all duration-300">
+			<main className={cn(`pl-64 transition-all duration-300`, isCollapsed && "pl-20")}>
 				{/* Header */}
 				{(title || actions || notifications) && (
 					<header className="sticky top-0 z-30 border-b border-sidebar-border bg-white/30 backdrop-blur-xl">
@@ -40,7 +43,7 @@ export function DashboardLayout({
 									</h1>
 								)}
 								{description && (
-									<p className="text-xs text-muted-foreground/50 mt-1">
+									<p className="text-sm text-muted-foreground mt-1">
 										{description}
 									</p>
 								)}
@@ -78,7 +81,9 @@ export function DashboardLayout({
 										}
 									}}
 								/>
-								<UserButton />
+								<ClerkProvider>
+									<UserButton />
+								</ClerkProvider>
 							</div>
 
 						</div>

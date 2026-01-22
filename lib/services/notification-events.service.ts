@@ -22,7 +22,7 @@ export interface LogEventParams {
 		| "timeout"
 		| "error";
 	payload: object;
-	actorType?: "user" | "agent" | "system";
+	actorType?: "user" | "agent" | "platform";
 	actorId?: string;
 }
 
@@ -79,7 +79,7 @@ export async function logWorkflowEvent(params: LogEventParams): Promise<void> {
 			workflowId: params.workflowId,
 			eventType: params.eventType,
 			payload: JSON.stringify(params.payload),
-			actorType: params.actorType || "system",
+			actorType: params.actorType || "platform",
 			actorId: params.actorId,
 			timestamp: new Date(),
 		});

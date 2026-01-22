@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
 				eventType: data.eventType,
 				payload: data.payload,
 				actorId: data.actorId || "xt_webhook",
-				actorType: "system",
+				actorType: "platform",
 				createdAt: new Date(),
 			} as any);
 

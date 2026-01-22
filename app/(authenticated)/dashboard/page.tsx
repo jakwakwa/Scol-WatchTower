@@ -79,7 +79,7 @@ export default async function DashboardPage() {
 						description = `Workflow advanced to ${payload.toStage || "next stage"}`;
 						break;
 					case "agent_dispatch":
-						description = `Agent ${event.actorId || "System"} dispatched`;
+						description = `Agent ${event.actorId || "platform"} dispatched`;
 						break;
 					case "agent_callback":
 						description = `Agent response received`;

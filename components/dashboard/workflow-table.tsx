@@ -65,13 +65,13 @@ export interface WorkflowRow {
 	stage: 1 | 2 | 3 | 4;
 	stageName: string;
 	status:
-		| "pending"
-		| "in_progress"
-		| "awaiting_human"
-		| "completed"
-		| "failed"
-		| "timeout"
-		| "paused";
+	| "pending"
+	| "in_progress"
+	| "awaiting_human"
+	| "completed"
+	| "failed"
+	| "timeout"
+	| "paused";
 	currentAgent?: string;
 	startedAt: Date;
 	payload?: Record<string, unknown>;
@@ -149,9 +149,9 @@ export function WorkflowStageIndicator({
 						className={cn(
 							"flex items-center justify-center rounded-full font-medium transition-all",
 							compact ? "h-6 w-6 text-[10px]" : "h-8 w-8 text-xs",
-							stage < currentStage && "bg-emerald-500/20 text-emerald-400",
+							stage < currentStage && "bg-teal-500/40 text-teal-700",
 							stage === currentStage &&
-								"bg-stone-500/20 text-stone-400 ring-2 ring-stone-500/30",
+							"bg-stone-500/20 text-stone-400 ring-2 ring-stone-500/30",
 							stage > currentStage && "bg-white/5 text-muted-foreground",
 						)}
 					>
@@ -166,7 +166,7 @@ export function WorkflowStageIndicator({
 							className={cn(
 								"h-0.5 transition-colors",
 								compact ? "w-2" : "w-4",
-								stage < currentStage ? "bg-emerald-500/20" : "bg-white/10",
+								stage < currentStage ? "bg-teal-500/40" : "bg-white/10",
 							)}
 						/>
 					)}
@@ -208,6 +208,7 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 		header: ({ column }) => (
 			<Button
 				variant="ghost"
+				size="xs"
 				className="-ml-4 hover:bg-transparent hover:text-foreground"
 				onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
 			>
@@ -234,19 +235,58 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 	},
 	{
 		accessorKey: "stage",
-		header: "Progress",
+		header: () => (
+			<span
+				className="-ml-4 font-light hover:bg-transparent hover:text-foreground"
+			>
+				Stage
+
+			</span>
+		),
 		cell: ({ row }) => (
 			<WorkflowStageIndicator currentStage={row.original.stage} compact />
 		),
 	},
 	{
 		accessorKey: "status",
-		header: "Status",
+		header: ({ column }) => (
+			<Button
+				variant="ghost"
+				size="xs"
+				className="-ml-4 hover:bg-transparent hover:text-foreground"
+				onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+			>
+				Status
+				{column.getIsSorted() === "asc" ? (
+					<RiArrowUpSLine className="ml-2 h-4 w-4" />
+				) : column.getIsSorted() === "desc" ? (
+					<RiArrowDownSLine className="ml-2 h-4 w-4" />
+				) : (
+					<RiArrowDownSLine className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
+				)}
+			</Button>
+		),
 		cell: ({ row }) => <StatusBadge status={row.original.status} />,
 	},
 	{
 		accessorKey: "currentAgent",
-		header: "Agent",
+		header: ({ column }) => (
+			<Button
+				variant="ghost"
+				size="xs"
+				className="-ml-4 hover:bg-transparent hover:text-foreground"
+				onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+			>
+				Agent
+				{column.getIsSorted() === "asc" ? (
+					<RiArrowUpSLine className="ml-2 h-4 w-4" />
+				) : column.getIsSorted() === "desc" ? (
+					<RiArrowDownSLine className="ml-2 h-4 w-4" />
+				) : (
+					<RiArrowDownSLine className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
+				)}
+			</Button>
+		),
 		cell: ({ row }) => (
 			<code className="rounded bg-white/5 px-2 py-0.5 text-xs text-muted-foreground font-mono">
 				{row.original.currentAgent || "—"}
@@ -258,6 +298,7 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 		header: ({ column }) => (
 			<Button
 				variant="ghost"
+				size="xs"
 				className="-ml-4 hover:bg-transparent hover:text-foreground"
 				onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
 			>
@@ -279,7 +320,7 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 	},
 	{
 		id: "actions",
-		header: "Actions",
+		header: () => <span className="-ml-4 font-light text-xs uppercase">Actions</span>,
 		cell: ({ row, table }) => {
 			const meta = table.options.meta as {
 				onViewPayload: (data: WorkflowRow) => void;
@@ -297,7 +338,7 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 							<Button
 								variant="ghost"
 								size="icon"
-								className="h-8 w-8 hover:bg-emerald-500/20 hover:text-emerald-400 transition-colors"
+								className="h-8 w-8 hover:bg-teal-500/40 hover:text-teal-700 transition-colors"
 								onClick={() => meta?.onQuickApprove(row.original)}
 								title="Approve"
 							>

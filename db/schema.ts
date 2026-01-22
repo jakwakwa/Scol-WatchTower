@@ -97,9 +97,9 @@ export const workflowEvents = sqliteTable("workflow_events", {
 	toStage: integer("to_stage"),
 	payload: text("payload"), // JSON string
 	actorId: text("actor_id"), // Clerk user ID or agent ID
-	actorType: text("actor_type", { enum: ["user", "agent", "system"] })
+	actorType: text("actor_type", { enum: ["user", "agent", "platform"] })
 		.notNull()
-		.default("system"),
+		.default("platform"),
 	timestamp: integer("timestamp", { mode: "timestamp" })
 		.notNull()
 		.$defaultFn(() => new Date()),
@@ -183,7 +183,7 @@ export const quotes = sqliteTable("quotes", {
 	})
 		.notNull()
 		.default("draft"),
-	generatedBy: text("generated_by").notNull().default("system"), // 'system' or 'gemini'
+	generatedBy: text("generated_by").notNull().default("platform"), // 'system' or 'gemini'
 	createdAt: integer("created_at", { mode: "timestamp" })
 		.notNull()
 		.$defaultFn(() => new Date()),

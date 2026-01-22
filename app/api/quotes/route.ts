@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
 				baseFeePercent: data.baseFeePercent,
 				adjustedFeePercent: data.adjustedFeePercent,
 				rationale: data.rationale,
-				generatedBy: data.generatedBy || "system",
+				generatedBy: data.generatedBy || "platform",
 				status: "draft",
 			})
 			.returning();
