@@ -30,18 +30,19 @@ export async function testAgentWebhook(eventType: string = 'LEAD_CAPTURED') {
         // Construct payload based on event type to match real Temporal activities
         let payload: any = {
             event: eventType,
-            leadId: 123,
-            workflowId: 456,
+            leadId: 1411,
+            workflowId: 4256,
             stage: eventType === 'LEAD_CAPTURED' ? 1 : 2,
             isTest: true,
+            industry: 'Retail',
             timestamp: new Date().toISOString(),
             // Simulated enriched data
-            companyName: 'Hoërskool Moreleta Park',
-            contactName: 'Kobus Hartman',
-            email: 'john@demo.com',
-            phone: '082 333 4444',
+            companyName: 'Special K Qoutes',
+            contactName: 'Jane Doe',
+            email: 'jane@demo.com',
+            phone: '0823334444',
             country: 'ZA',
-            estimatedVolume: 'R 1 200 000',
+            estimatedVolume: '200000',
         };
 
         if (eventType === 'QUOTATION_GENERATED') {
