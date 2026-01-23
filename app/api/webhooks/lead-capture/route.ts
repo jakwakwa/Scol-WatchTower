@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
         // 5. Trigger Inngest
         // We use the existing 'onboarding/started' event which expects { leadId, workflowId }
         await inngest.send({
-            name: 'onboarding/started',
+            name: 'onboarding/lead.created',
             data: {
                 leadId: newLead.id,
                 workflowId: newWorkflow.id,
