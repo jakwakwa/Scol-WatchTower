@@ -1,6 +1,6 @@
 ---
-title: 'Reader Intro'
-description: 'is a "Zero-Middleware" onboarding automation platform designed to manage lead lifecycles, risk assessment, and contract workflows.'
+title: "summary"
+description: "is a "Zero-Middleware" onboarding automation platform designed to manage lead lifecycles, risk assessment, and contract workflows."
 ---
 
 ## Overview
@@ -41,10 +41,10 @@ The system has recently transitioned from a Zapier-dependent architecture to a d
 
 The platform follows a modern event-driven architecture:
 
-1.  **Ingestion**: Leads are captured via Google Forms, which trigger a Google Apps Script to POST data directly to `/api/webhooks/lead-capture`.
-2.  **Orchestration**: The API triggers an Inngest workflow (`inngest/functions/onboarding.ts`).
-3.  **Verification**: The workflow performs immediate veto checks against the database and blocklists.
-4.  **State Management**: The workflow manages the lead's state (e.g., waiting for contract signing via `/api/webhooks/contract-signed`) without polling.
+1. **Ingestion**: Leads are captured via Google Forms, which trigger a Google Apps Script to POST data directly to `/api/webhooks/lead-capture`.
+2. **Orchestration**: The API triggers an Inngest workflow (`inngest/functions/onboarding.ts`).
+3. **Verification**: The workflow performs immediate veto checks against the database and blocklists.
+4. **State Management**: The workflow manages the lead's state (e.g., waiting for contract signing via `/api/webhooks/contract-signed`) without polling.
 
 ## Getting Started
 
@@ -56,35 +56,31 @@ The platform follows a modern event-driven architecture:
 
 ### Installation
 
-1.  **Clone the repository**
+1. **Clone the repository**
 
-    ```bash
-    git clone [https://github.com/jakwakwa/scol-watchtower.git](https://github.com/jakwakwa/scol-watchtower.git)
-    cd scol-watchtower
-    ```
+   ```bash
+   git clone [https://github.com/jakwakwa/scol-watchtower.git](https://github.com/jakwakwa/scol-watchtower.git)
+   cd scol-watchtower
+   ```
+2. **Install dependencies**
 
-2.  **Install dependencies**
+   ```bash
+   bun install
+   # or
+   npm install
+   ```
+3. **Environment Configuration** Copy the example environment file and fill in your credentials:
 
-    ```bash
-    bun install
-    # or
-    npm install
-    ```
+   ```bash
+   cp .env.example .env.local
+   ```
 
-3.  **Environment Configuration**
-    Copy the example environment file and fill in your credentials:
+   _You will need API keys for Clerk, Turso, and your Inngest signing key (if running in production)._
+4. **Database Setup** Push the schema to your Turso database:
 
-    ```bash
-    cp .env.example .env.local
-    ```
-
-    _You will need API keys for Clerk, Turso, and your Inngest signing key (if running in production)._
-
-4.  **Database Setup**
-    Push the schema to your Turso database:
-    ```bash
-    bun run db:migrate
-    ```
+   ```bash
+   bun run db:migrate
+   ```
 
 ### Running the Project
 
