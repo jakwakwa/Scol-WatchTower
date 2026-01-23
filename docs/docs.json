@@ -19,14 +19,12 @@
           "project/exec-summary"
         ]
       },
-       {
+      {
         "group": "Guides",
         "icon": "angles-up",
         "tag": "changelog",
         "expanded": true,
-        "pages": [
-          "guides/intor-to-watchtower"
-        ]
+        "pages": []
       },
       {
         "group": "API reference",
@@ -45,7 +43,8 @@
               "api-reference/endpoint/delete",
               "api-reference/endpoint/webhook"
             ]
-          }
+          },
+          "guides/intor-to-watchtower"
         ]
       }
     ]
