@@ -22,6 +22,18 @@
             ]
           },
           {
+            "group": "Project Updates",
+            "pages": [
+              "exec-summary"
+            ]
+          },
+          {
+            "group": "Project Updates",
+            "pages": [
+              "exec-summary"
+            ]
+          },
+          {
             "group": "Customization",
             "pages": [
               "essentials/settings",
@@ -102,15 +114,15 @@
   },
   "contextual": {
     "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
+      "copy",
+      "view",
+      "chatgpt",
+      "claude",
+      "perplexity",
+      "mcp",
+      "cursor",
+      "vscode"
+    ]
   },
   "footer": {
     "socials": {
