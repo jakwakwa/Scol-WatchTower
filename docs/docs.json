@@ -25,6 +25,15 @@
     },
     "groups": [
       {
+        "group": "Project Updates",
+        "icon": "angles-up",
+        "tag": "changelog",
+        "expanded": true,
+        "pages": [
+          "exec-summary"
+        ]
+      },
+      {
         "group": "Guides",
         "pages": [
           {
@@ -34,12 +43,6 @@
               "index",
               "quickstart",
               "development"
-            ]
-          },
-          {
-            "group": "Project Updates",
-            "pages": [
-              "exec-summary"
             ]
           },
           {
