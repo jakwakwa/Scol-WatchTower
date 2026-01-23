@@ -197,7 +197,7 @@ export const columns: ColumnDef<LeadRow>[] = [
 		cell: ({ row }) => {
 			const config = statusConfig[row.original.status] || {
 				label: row.original.status,
-				color: "bg-white/10 text-muted-foreground",
+				color: "bg-secondary/10 text-muted-foreground",
 			};
 			return (
 				<span
@@ -221,7 +221,7 @@ export const columns: ColumnDef<LeadRow>[] = [
 							<Button
 								variant="ghost"
 								size="icon"
-								className="h-8 w-8 hover:bg-white/10"
+								className="h-8 w-8 hover:bg-secondary/10"
 							>
 								<RiMoreLine className="h-4 w-4" />
 							</Button>

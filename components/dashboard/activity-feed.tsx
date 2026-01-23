@@ -69,7 +69,7 @@ export function ActivityFeed({ events, maxItems = 10 }: ActivityFeedProps) {
 
 	if (displayEvents.length === 0) {
 		return (
-			<div className="rounded-xl bg-white/[0.02] p-8 text-center">
+			<div className="rounded-xl bg-secondary/[0.02] p-8 text-center">
 				<RiTimeLine className="mx-auto h-8 w-8 text-muted-foreground/50" />
 				<p className="mt-2 text-[9px] text-muted-foreground">
 					No recent activity
@@ -89,7 +89,7 @@ export function ActivityFeed({ events, maxItems = 10 }: ActivityFeedProps) {
 						key={event.id}
 						className={cn(
 							"group flex items-start gap-2 rounded-xl p-2 transition-colors",
-							"hover:bg-white/[0.02]",
+							"hover:bg-secondary/[0.02]",
 						)}
 					>
 						{/* Timeline connector */}
@@ -103,7 +103,7 @@ export function ActivityFeed({ events, maxItems = 10 }: ActivityFeedProps) {
 								<Icon className={cn("h-4 w-4", config.color)} />
 							</div>
 							{index < displayEvents.length - 1 && (
-								<div className="absolute top-10 h-full w-px bg-white/5" />
+								<div className="absolute top-10 h-full w-px bg-secondary/5" />
 							)}
 						</div>
 
@@ -125,7 +125,7 @@ export function ActivityFeed({ events, maxItems = 10 }: ActivityFeedProps) {
 								{event.actorId && (
 									<>
 										<span>•</span>
-										<code className="rounded text-[9px] bg-white/5 px-1.5 py-0.5">
+										<code className="rounded text-[9px] bg-secondary/5 px-1.5 py-0.5">
 											{event.actorId}
 										</code>
 									</>
@@ -153,7 +153,7 @@ export function CompactTimeline({ events }: CompactTimelineProps) {
 	return (
 		<div className="relative space-y-4 pl-6">
 			{/* Vertical line */}
-			<div className="absolute left-2.5 top-2 bottom-2 w-px bg-white/10" />
+			<div className="absolute left-2.5 top-2 bottom-2 w-px bg-secondary/10" />
 
 			{events.map((event) => {
 				const config = eventConfig[event.eventType];

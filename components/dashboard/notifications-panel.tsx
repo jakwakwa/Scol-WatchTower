@@ -121,7 +121,7 @@ export function NotificationsPanel({
 			<Button
 				variant="ghost"
 				size="icon"
-				className="relative h-9 w-9 hover:bg-white/10"
+				className="relative h-9 w-9 hover:bg-secondary/10"
 			>
 				<RiNotification3Line className="h-5 w-5" />
 				{unreadCount > 0 && (
@@ -144,7 +144,7 @@ export function NotificationsPanel({
 				<Button
 					variant="ghost"
 					size="icon"
-					className="relative h-9 w-9 hover:bg-white/10"
+					className="relative h-9 w-9 hover:bg-secondary/10"
 				>
 					<RiNotification3Line className="h-5 w-5" />
 					{unreadCount > 0 && (
@@ -161,10 +161,10 @@ export function NotificationsPanel({
 			</PopoverTrigger>
 			<PopoverContent
 				align="end"
-				className="w-[380px] border-white/10 bg-zinc-100/10 backdrop-blur-sm p-0"
+				className="w-[380px] border-secondary/10 bg-zinc-100/10 backdrop-blur-sm p-0"
 			>
 				{/* Header */}
-				<div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+				<div className="flex items-center justify-between border-b border-secondary/10 px-4 py-3">
 					<h3 className="text-sm font-semibold">Notifications</h3>
 					{unreadCount > 0 && (
 						<Button
@@ -197,8 +197,8 @@ export function NotificationsPanel({
 								<div
 									key={notification?.id}
 									className={cn(
-										"group relative flex gap-3 px-4 py-3 border-b border-white/5 transition-colors hover:bg-white/5",
-										!notification?.read && "bg-white/[0.02]",
+										"group relative flex gap-3 px-4 py-3 border-b border-secondary/5 transition-colors hover:bg-secondary/5",
+										!notification?.read && "bg-secondary/[0.02]",
 									)}
 								>
 									{/* Main Action Button */}
@@ -308,7 +308,7 @@ export function NotificationsPanel({
 
 				{/* Footer */}
 				{notifications?.length > 0 && (
-					<div className="border-t border-white/10 p-2">
+					<div className="border-t border-secondary/10 p-2">
 						<Button
 							variant="ghost"
 							className="w-full h-8 text-xs text-muted-foreground hover:text-foreground"

@@ -152,7 +152,7 @@ export function WorkflowStageIndicator({
 							stage < currentStage && "bg-teal-500/40 text-teal-700",
 							stage === currentStage &&
 							"bg-stone-500/20 text-stone-400 ring-2 ring-stone-500/30",
-							stage > currentStage && "bg-white/5 text-muted-foreground",
+							stage > currentStage && "bg-secondary/5 text-muted-foreground",
 						)}
 					>
 						{stage < currentStage ? (
@@ -166,7 +166,7 @@ export function WorkflowStageIndicator({
 							className={cn(
 								"h-0.5 transition-colors",
 								compact ? "w-2" : "w-4",
-								stage < currentStage ? "bg-teal-500/40" : "bg-white/10",
+								stage < currentStage ? "bg-teal-500/40" : "bg-secondary/10",
 							)}
 						/>
 					)}
@@ -288,7 +288,7 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 			</Button>
 		),
 		cell: ({ row }) => (
-			<code className="rounded bg-white/5 px-2 py-0.5 text-xs text-muted-foreground font-mono">
+			<code className="rounded bg-secondary/5 px-2 py-0.5 text-xs text-muted-foreground font-mono">
 				{row.original.currentAgent || "—"}
 			</code>
 		),
@@ -361,7 +361,7 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 							<Button
 								variant="ghost"
 								size="icon"
-								className="h-8 w-8 hover:bg-white/10"
+								className="h-8 w-8 hover:bg-secondary/10"
 							>
 								<RiMore2Fill className="h-4 w-4" />
 							</Button>
@@ -408,7 +408,7 @@ function PayloadDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-w-2xl border-white/10 bg-zinc-100 backdrop-blur-xl">
+			<DialogContent className="max-w-2xl border-secondary/10 bg-zinc-100 backdrop-blur-xl">
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2">
 						<RiCodeSSlashLine className="h-5 w-5 text-stone-400" />
@@ -419,7 +419,7 @@ function PayloadDialog({
 					</DialogDescription>
 				</DialogHeader>
 				<div className="relative mt-4">
-					<div className="max-h-[60vh] overflow-auto rounded-xl bg-black/50 p-6 border border-white/5">
+					<div className="max-h-[60vh] overflow-auto rounded-xl bg-black/50 p-6 border border-secondary/5">
 						<pre className="text-xs text-zinc-400 font-mono leading-relaxed">
 							{JSON.stringify(workflow.payload || {}, null, 2)}
 						</pre>
@@ -470,7 +470,7 @@ function HITLConfirmDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-w-md border-white/10 bg-zinc-100/10 backdrop-blur-xl">
+			<DialogContent className="max-w-md border-secondary/10 bg-zinc-100/10 backdrop-blur-xl">
 				<DialogHeader>
 					<DialogTitle
 						className={cn(
@@ -493,7 +493,7 @@ function HITLConfirmDialog({
 				</DialogHeader>
 
 				<div className="py-4">
-					<div className="rounded-lg border border-white/10 bg-white/5 p-4 space-y-2">
+					<div className="rounded-lg border border-secondary/10 bg-secondary/5 p-4 space-y-2">
 						<div className="flex justify-between text-sm">
 							<span className="text-muted-foreground">Client</span>
 							<span className="font-medium">{workflow.clientName}</span>

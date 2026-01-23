@@ -51,13 +51,13 @@ export function DataTable<TData, TValue>({
 						{table.getHeaderGroups().map((headerGroup) => (
 							<TableRow
 								key={headerGroup.id}
-								className="hover:bg-transparent border-white/5"
+								className="hover:bg-transparent border-secondary/5"
 							>
 								{headerGroup.headers.map((header) => {
 									return (
 										<TableHead
 											key={header.id}
-											className="px-3 py-2 text-xs font-semibold text-white/80 uppercase tracking-wider"
+											className="px-3 py-2 text-xs font-semibold text-secondary/80 uppercase tracking-wider"
 										>
 											{header.isPlaceholder
 												? null
@@ -77,7 +77,7 @@ export function DataTable<TData, TValue>({
 								<TableRow
 									key={row.id}
 									data-state={row.getIsSelected() && "selected"}
-									className="group border-sidebar-border hover:bg-white/4 transition-all duration-200"
+									className="group border-sidebar-border hover:bg-secondary/4 transition-all duration-200"
 								>
 									{row.getVisibleCells().map((cell) => (
 										<TableCell key={cell.id} className="px-3 py-4">

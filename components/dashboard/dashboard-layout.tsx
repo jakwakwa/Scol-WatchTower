@@ -27,7 +27,7 @@ export function DashboardLayout({
 
 	const [isCollapsed, setIsCollapsed] = useState(false);
 	return (
-		<div className="min-h-screen bg-background">
+		<div className="min-h-screen bg-linear-to-br from-primary/30 via-zinc-700/20 to-black/90 ">
 			<Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
 
 			{/* Main content */}
@@ -144,7 +144,7 @@ export function GlassCard({
 				"rounded-2xl border border-sidebar-border bg-card/90 backdrop-blur-sm p-6",
 				"shadow-xl shadow-black/5",
 				hover &&
-				"transition-all duration-300 hover:bg-card/70 hover:border-white/10 hover:shadow-2xl hover:-translate-y-1",
+				"transition-all duration-300 hover:bg-card/70 hover:border-secondary/10 hover:shadow-2xl hover:-translate-y-1",
 				className,
 			)}
 		>

@@ -1,22 +1,15 @@
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Features } from "@/components/landing/features";
+import { Footer } from "@/components/landing/footer";
+import { Hero } from "@/components/landing/hero";
+import { TrustedBy } from "@/components/landing/trusted-by";
 
 export default function Page() {
 	return (
-		<section>
-			<div className="w-full flex justify-between items-center flex-col px-4 md:px-8 lg:px-16  lg:max-w-4xl  mx-auto">
-				<div className="text-display text-5xl font-black text-center my-8">
-					Welcome
-				</div>
-				<div className="flex w-full items-center justify-center my-8 gap-6 font-black bg-accent-foreground">
-					<Link href="/sign-up">
-						<Button size="lg" className="text-sm">sign up</Button>
-					</Link>
-					<Link href="/sign-in">
-						<Button size="lg" className="text-sm">sign in</Button>
-					</Link>
-				</div>
-			</div>
-		</section>
+		<main className="min-h-screen bg-linear-to-br from-zinc-700 via-rich-black/20 to-black/90 overflow-x-hidden selection:bg-accent selection:text-accent-foreground">
+			<Hero />
+			<TrustedBy />
+			<Features />
+			<Footer />
+		</main>
 	);
 }

@@ -61,8 +61,8 @@ export default async function LeadsPage(
 						<div
 							key={status}
 							className={cn(
-								"rounded-xl bg-white/[0.02] border border-sidebar-border p-4 text-center",
-								"transition-colors hover:bg-white/[0.04]",
+								"rounded-xl bg-secondary/[0.02] border border-sidebar-border p-4 text-center",
+								"transition-colors hover:bg-secondary/[0.04]",
 							)}
 						>
 							<p className="text-2xl font-bold">{count}</p>
