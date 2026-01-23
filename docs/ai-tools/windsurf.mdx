@@ -1,10 +1,10 @@
 ---
-title: "Windsurf setup"
-description: "Configure Windsurf for your documentation workflow"
-icon: "water"
+title: 'Windsurf setup'
+description: 'Configure Windsurf for your documentation workflow'
+icon: 'water'
 ---
 
-Configure Windsurf's Cascade AI assistant to help you write and maintain documentation. This guide shows how to set up Windsurf specifically for your Mintlify documentation workflow.
+Configure Windsurf's Cascade AI assistant to help you write and maintain documentation. This guide shows how to set up Windsurf specifically for your Control Tower Onboard documentation workflow.
 
 ## Prerequisites
 
@@ -18,12 +18,12 @@ Create workspace rules that provide Windsurf with context about your documentati
 Create `.windsurf/rules.md` in your project root:
 
 ````markdown
-# Mintlify technical writing rule
+# Control Tower Onboard technical writing rule
 
 ## Project context
 
-- This is a documentation project on the Mintlify platform
-- We use MDX files with YAML frontmatter  
+- This is a documentation project on the Control Tower Onboard platform
+- We use MDX files with YAML frontmatter
 - Navigation is configured in `docs.json`
 - We follow technical writing best practices
 
@@ -42,18 +42,18 @@ Every page must start with frontmatter:
 
 ```yaml
 ---
-title: "Clear, specific title"
-description: "Concise description for SEO and navigation"
+title: 'Clear, specific title'
+description: 'Concise description for SEO and navigation'
 ---
 ```
 
-## Mintlify components
+## Control Tower Onboard components
 
 ### Callouts
 
 - `<Note>` for helpful supplementary information
 - `<Warning>` for important cautions and breaking changes
-- `<Tip>` for best practices and expert advice  
+- `<Tip>` for best practices and expert advice
 - `<Info>` for neutral contextual information
 - `<Check>` for success confirmations
 
@@ -80,7 +80,7 @@ description: "Concise description for SEO and navigation"
 
 ## API documentation requirements
 
-- Document all parameters with `<ParamField>` 
+- Document all parameters with `<ParamField>`
 - Show response structure with `<ResponseField>`
 - Include both success and error examples
 - Use `<Expandable>` for nested object properties

@@ -28,12 +28,6 @@
             ]
           },
           {
-            "group": "Project Updates",
-            "pages": [
-              "exec-summary"
-            ]
-          },
-          {
             "group": "Customization",
             "pages": [
               "essentials/settings",
