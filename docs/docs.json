@@ -23,10 +23,10 @@
         }
       ]
     },
-    "tabs": [
+    "groups": [
       {
-        "tab": "Guides",
-        "groups": [
+        "group": "Guides",
+        "pages": [
           {
             "group": "Getting started",
             "icon": "1",
@@ -69,8 +69,8 @@
         ]
       },
       {
-        "tab": "API reference",
-        "groups": [
+        "group": "API reference",
+        "pages": [
           {
             "group": "API documentation",
             "pages": [
