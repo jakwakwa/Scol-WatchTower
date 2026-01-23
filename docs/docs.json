@@ -33,8 +33,7 @@
             "pages": [
               "index",
               "quickstart",
-              "development",
-              "intro-to-watchtower"
+              "development"
             ]
           },
           {
