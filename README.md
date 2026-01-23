@@ -1,6 +1,4 @@
-# Turso Per User Starter
-
-A Next.js application that demonstrates how to use the [Turso](https://turso.tech) Platform's API to create a database per user.
+# SCOL Watchtower Platform
 
 ![Watch Tower](/app/opengraph-image.png)
 
