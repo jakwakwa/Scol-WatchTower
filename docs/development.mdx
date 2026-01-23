@@ -3,20 +3,17 @@ title: 'Development'
 description: 'Preview changes locally to update your docs'
 ---
 
-<Info>
-  **Prerequisites**:
-  - Node.js version 19 or higher
-  - A docs repository with a `docs.json` file
-</Info>
+<Info>**Prerequisites**: - Node.js version 19 or higher - A docs repository with a `docs.json` file</Info>
 
-Follow these steps to install and run Mintlify on your operating system.
+Follow these steps to install and run on your operating system.
 
 <Steps>
-<Step title="Install the Mintlify CLI">
+<Step title="Install the Control Tower Onboard CLI">
 
 ```bash
-npm i -g mint
+bun i
 ```
+
 </Step>
 
 <Step title="Preview locally">
@@ -34,24 +31,24 @@ A local preview of your documentation will be available at `http://localhost:300
 
 ## Custom ports
 
-By default, Mintlify uses port 3000. You can customize the port Mintlify runs on by using the `--port` flag. For example, to run Mintlify on port 3333, use this command:
+By default, Control Tower Onboarduses port 3000. You can customize the port Control Tower Onboardruns on by using the `--port` flag. For example, to run Control Tower Onboardon port 3333, use this command:
 
 ```bash
 mint dev --port 3333
 ```
 
-If you attempt to run Mintlify on a port that's already in use, it will use the next available port:
+If you attempt to run Control Tower Onboard on a port that's already in use, it will use the next available port:
 
 ```md
 Port 3000 is already in use. Trying 3001 instead.
 ```
 
-## Mintlify versions
+## Control Tower Onboard versions
 
 Please note that each CLI release is associated with a specific version of Mintlify. If your local preview does not align with the production version, please update the CLI:
 
 ```bash
-npm mint update
+bun mint update
 ```
 
 ## Validating links
@@ -67,7 +64,11 @@ mint broken-links
 If the deployment is successful, you should see the following:
 
 <Frame>
-  <img src="/images/checks-passed.png" alt="Screenshot of a deployment confirmation message that says All checks have passed." style={{ borderRadius: '0.5rem' }} />
+    <img
+        src="/images/checks-passed.png"
+        alt="Screenshot of a deployment confirmation message that says All checks have passed."
+        style={{ borderRadius: '0.5rem' }}
+    />
 </Frame>
 
 ## Code formatting
@@ -80,9 +81,10 @@ We suggest using extensions on your IDE to recognize and format MDX. If you're a
   <Accordion title='Error: Could not load the "sharp" module using the darwin-arm64 runtime'>
 
     This may be due to an outdated version of node. Try the following:
-    1. Remove the currently-installed version of the CLI: `npm remove -g mint`
+    1. Remove the currently-installed version of the CLI: `bun remove -g mint`
     2. Upgrade to Node v19 or higher.
-    3. Reinstall the CLI: `npm i -g mint`
+    3. Reinstall the CLI: `bun i -g mint`
+
   </Accordion>
 
   <Accordion title="Issue: Encountering an unknown error">
