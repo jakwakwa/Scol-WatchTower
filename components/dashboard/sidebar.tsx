@@ -34,17 +34,19 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean;
 			)}
 		>
 			{/* Header */}
-			<div className="flex h-20 items-center justify-between px-6 border-b border-white/5">
+			<div className="flex h-20 items-center justify-between px-6 border-b border-secondary/5">
 				<div className={cn("flex items-center gap-1", isCollapsed && "hidden")}>
-					<div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-stone-400 to-stone-500 shadow-lg shadow-stone-500/20">
-						<RiSignalTowerFill className="h-6 w-6 text-white" />
+
+					<div className="flex h-14 w-40 mt-4 items-center flex-col justify-center rounded-md bg-linear-to-br from-stone-900/30 to-primary/20 shadow-lg shadow-stone-900/40">
+						<RiSignalTowerFill className="h-6 w-6 text-muted-foreground" />
+
+						<div className="text-base font-bold bg-linear-to-r from-primary to-primary/90 bg-clip-text text-transparent">
+							Scol
+						</div>
+						<span className="text-white/50 text-[9px] uppercase leading-[14px]">
+							Control Tower
+						</span>
 					</div>
-					<div className="text-base font-bold bg-linear-to-r from-stone-200 to-stone-400 bg-clip-text text-transparent">
-						Scol
-					</div>
-					<span className="text-white text-[9px] uppercase leading-[14px]">
-						Control Tower
-					</span>
 				</div>
 
 				{/* Collapse button */}
@@ -54,7 +56,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean;
 					onClick={() => setIsCollapsed(!isCollapsed)}
 					className={cn(
 						"flex h-9 w-9 items-center justify-center rounded-lg transition-colors",
-						"hover:bg-white/5 text-muted-foreground hover:text-foreground",
+						"hover:bg-secondary/5 text-muted-foreground hover:text-foreground",
 						isCollapsed && "mx-auto",
 					)}
 					aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -82,7 +84,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean;
 								"group relative flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200",
 								isActive
 									? "bg-gradient-to-r from-stone-500/20 to-stone-500/10 text-primary"
-									: "text-muted-foreground hover:bg-white/5 hover:text-foreground",
+									: "text-muted-foreground hover:bg-secondary/5 hover:text-foreground",
 								isCollapsed && "justify-center px-0",
 							)}
 						>

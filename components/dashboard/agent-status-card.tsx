@@ -29,7 +29,7 @@ const statusConfig = {
 	inactive: {
 		label: "Idle",
 		color: "text-muted-foreground",
-		bgColor: "bg-white/5",
+		bgColor: "bg-secondary/5",
 		icon: RiTimeLine,
 	},
 	error: {
@@ -57,7 +57,7 @@ export function AgentStatusCard({ agent, onClick }: AgentStatusCardProps) {
 				"shadow-xl shadow-black/5",
 				"transition-all duration-300",
 				onClick &&
-				"cursor-pointer hover:bg-card/70 hover:border-white/10 hover:shadow-2xl hover:-translate-y-1",
+				"cursor-pointer hover:bg-card/70 hover:border-secondary/10 hover:shadow-2xl hover:-translate-y-1",
 			)}
 		>
 			{/* Status indicator dot */}
@@ -94,7 +94,7 @@ export function AgentStatusCard({ agent, onClick }: AgentStatusCardProps) {
 			</div>
 
 			{/* Stats */}
-			<div className="mt-4 grid grid-cols-2 gap-4 pt-4 border-t border-white/5">
+			<div className="mt-4 grid grid-cols-2 gap-4 pt-4 border-t border-secondary/5">
 				<div>
 					<p className="text-xs text-muted-foreground">Callbacks</p>
 					<p className="text-lg font-bold">{agent.callbackCount}</p>
@@ -131,7 +131,7 @@ export function AgentStatusRow({ agent }: AgentStatusRowProps) {
 	const config = statusConfig[agent.status];
 
 	return (
-		<div className="flex items-center gap-4 p-4 rounded-xl bg-white/[0.02] hover:bg-white/[0.04] transition-colors">
+		<div className="flex items-center gap-4 p-4 rounded-xl bg-secondary/[0.02] hover:bg-secondary/[0.04] transition-colors">
 			<div
 				className={cn(
 					"h-2 w-2 rounded-full",

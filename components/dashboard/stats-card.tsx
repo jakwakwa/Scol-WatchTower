@@ -34,12 +34,12 @@ export function StatsCard({
 			className={cn(
 				"group relative overflow-hidden rounded-2xl border border-sidebar-border bg-card/50 backdrop-blur-sm p-6",
 				"shadow-xl shadow-black/5",
-				"transition-all duration-300 hover:bg-card/70 hover:border-white/10 hover:shadow-2xl hover:-translate-y-1",
+				"transition-all duration-300 hover:bg-card/70 hover:border-secondary/10 hover:shadow-2xl hover:-translate-y-1",
 				className,
 			)}
 		>
 			{/* Background gradient effect */}
-			<div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent" />
+			<div className="absolute inset-0 bg-gradient-to-br from-secondary/[0.02] to-transparent" />
 
 			{/* Content */}
 			<div className="relative flex items-start justify-between">
@@ -100,7 +100,7 @@ export function StatsCardCompact({
 	iconColor = "amber",
 }: StatsCardCompactProps) {
 	return (
-		<div className="flex items-center gap-3 rounded-xl bg-white/[0.02] p-3">
+		<div className="flex items-center gap-3 rounded-xl bg-secondary/[0.02] p-3">
 			<div
 				className={cn(
 					"flex h-10 w-10 items-center justify-center rounded-lg",
