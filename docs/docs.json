@@ -19,6 +19,15 @@
           "project/exec-summary"
         ]
       },
+       {
+        "group": "Guides",
+        "icon": "angles-up",
+        "tag": "changelog",
+        "expanded": true,
+        "pages": [
+          "project/exec-summary"
+        ]
+      },
       {
         "group": "API reference",
         "pages": [
