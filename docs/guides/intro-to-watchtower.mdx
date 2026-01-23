@@ -1,0 +1,43 @@
+---
+title: "Intro to Watchtower"
+description: "SCOL Watchtower introduction (README)"
+sidebarTitle: "introduction-to-watchtower"
+icon: "star-shooting"
+---
+
+### Step 1: Set up your local environment
+
+<AccordionGroup>
+  <Accordion title="Clone your docs locally" icon="copy">
+    The system has recently transitioned from a Zapier-dependent architecture to a direct event-driven model. This shift centralises state management within [Inngest](https://www.inngest.com/) workflows, eliminates external dependencies for core logic, and enables direct communication between capture sources (Google Forms/Apps Script) and the Next.js backend.
+  </Accordion>
+  <Accordion title="Start the preview server" icon="rectangle-terminal">
+    1. Install the Control Tower Onboard CLI: `bun i -g mint` 2. Navigate to your docs directory and run: `mint dev`
+    3. Open `http://localhost:3000` to see your docs live! <Tip>
+         Your preview updates automatically as you edit files.
+       </Tip>
+  </Accordion>
+</AccordionGroup>
+
+<CardGroup cols={2}>
+  <Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
+    Learn MDX syntax and start writing your documentation.
+  </Card>
+  <Card title="Customize style" icon="palette" href="/essentials/settings">
+    Make your docs match your brand perfectly.
+  </Card>
+  <Card title="Add code examples" icon="square-code" href="/essentials/code">
+    Include syntax-highlighted code blocks.
+  </Card>
+  <Card title="API documentation" icon="code" href="/api-reference/introduction">
+    Auto-generate API docs from OpenAPI specs.
+  </Card>
+</CardGroup>
+
+<Note>
+  - **Zero-Middleware Architecture**: Direct ingestion of webhooks from Google Apps Script, removing Zapier entirely to reduce latency and costs.
+  - **Event-Driven Workflows**: Complex business logic (onboarding, verification, signing) is orchestrated via Inngest, with clear domain events like `onboarding/lead.created` and `contract/signed`.
+  - **Deterministic Verification**: Replaces probabilistic AI voting with a strict, hierarchical veto system using a local blocklist (`mock_blacklist.json`).
+  - **Direct Lead Capture**: Secure HTTP endpoints (`/api/webhooks/lead-capture`) handle form submissions directly.
+  - **Real-time Dashboard**: A comprehensive
+</Note>
