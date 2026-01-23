@@ -2,7 +2,15 @@
   "name": "stratcol-onboard-ai",
   "version": "0.0.0",
   "private": false,
-  "scripts": {
+  "scripts": {   Linting and checking validity of types ...
+ ⨯ ESLint: Failed to load config "next/core-web-vitals" to extend from. Referenced from: /vercel/path0/.eslintrc.json
+   Collecting page data ...
+unhandledRejection [Error: Incompatible React versions: The "react" and "react-dom" packages must have the exact same version. Instead got:
+  - react:      19.2.3
+  - react-dom:  19.2.1
+Learn more: https://react.dev/warnings/version-mismatch] {
+  type: 'Error'
+}
     "dev": "next dev --turbo",
     "build": "next build",
     "start": "next start",
@@ -34,7 +42,7 @@
     "radix-ui": "^1.4.3",
     "react": "19.2.3",
     "react-day-picker": "^9.11.3",
-    "react-dom": "19.2.1",
+    "react-dom": "19.2.3",
     "react-hook-form": "^7.62.0",
     "react-markdown": "^10.1.0",
     "react-resizable-panels": "^4.4.1",
