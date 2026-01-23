@@ -29,6 +29,7 @@
         "groups": [
           {
             "group": "Getting started",
+            "icon": "1",
             "pages": [
               "index",
               "quickstart",
