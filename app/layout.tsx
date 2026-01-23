@@ -9,7 +9,7 @@ const dmSans = DM_Sans({ subsets: ['latin'], variable: '--font-sans' });
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
 export const metadata: Metadata = {
-	title: "Turso Per User Starter",
+	title: "SCOL WatchTower -Onboarding Ai",
 	description: "Database per user starter with Turso, Clerk, and SQLite",
 };
 
