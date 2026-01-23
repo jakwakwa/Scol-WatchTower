@@ -19,24 +19,21 @@ The system has recently transitioned from a Zapier-dependent architecture to a d
 ## Tech Stack
 
 **Core Framework**
-
-- **Framework**: [Next.js 15](https://nextjs.org/) (App Router, Turbo)
-- **Language**: [TypeScript](https://www.typescriptlang.org/)
-- **Package Manager**: Bun (recommended) or Node.js
+-   **Framework**: [Next.js 15](https://nextjs.org/) (App Router, Turbo)
+-   **Language**: [TypeScript](https://www.typescriptlang.org/)
+-   **Package Manager**: Bun (recommended) or Node.js
 
 **Backend & Data**
-
-- **Database**: [Turso](https://turso.tech/) (LibSQL)
-- **ORM**: [Drizzle ORM](https://orm.drizzle.team/)
-- **Auth**: [Clerk](https://clerk.com/)
-- **Background Jobs**: [Inngest](https://www.inngest.com/)
+-   **Database**: [Turso](https://turso.tech/) (LibSQL)
+-   **ORM**: [Drizzle ORM](https://orm.drizzle.team/)
+-   **Auth**: [Clerk](https://clerk.com/)
+-   **Background Jobs**: [Inngest](https://www.inngest.com/)
 
 **Frontend & UI**
-
-- **Styling**: [Tailwind CSS 4](https://tailwindcss.com/)
-- **Components**: [Shadcn UI](https://ui.shadcn.com/)
-- **Icons**: Remix Icons
-- **Visualisation**: Recharts
+-   **Styling**: [Tailwind CSS 4](https://tailwindcss.com/)
+-   **Components**: [Shadcn UI](https://ui.shadcn.com/)
+-   **Icons**: Remix Icons
+-   **Visualisation**: Recharts
 
 ## Architecture
 
@@ -51,21 +48,19 @@ The platform follows a modern event-driven architecture:
 
 ### Prerequisites
 
-- **Node.js** (v20+) or **Bun** (v1.0+)
-- **Turso CLI** (for database management)
-- **Clerk Account** (for authentication)
+-   **Node.js** (v20+) or **Bun** (v1.0+)
+-   **Turso CLI** (for database management)
+-   **Clerk Account** (for authentication)
 
 ### Installation
 
 1.  **Clone the repository**
-
     ```bash
     git clone [https://github.com/jakwakwa/scol-watchtower.git](https://github.com/jakwakwa/scol-watchtower.git)
     cd scol-watchtower
     ```
 
 2.  **Install dependencies**
-
     ```bash
     bun install
     # or
@@ -74,12 +69,10 @@ The platform follows a modern event-driven architecture:
 
 3.  **Environment Configuration**
     Copy the example environment file and fill in your credentials:
-
     ```bash
     cp .env.example .env.local
     ```
-
-    _You will need API keys for Clerk, Turso, and your Inngest signing key (if running in production)._
+    *You will need API keys for Clerk, Turso, and your Inngest signing key (if running in production).*
 
 4.  **Database Setup**
     Push the schema to your Turso database:
@@ -93,4 +86,3 @@ You can start the development server using the standard Next.js command:
 
 ```bash
 bun dev
-```
