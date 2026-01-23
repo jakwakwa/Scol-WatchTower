@@ -22,7 +22,7 @@ const approvalSchema = z.object({
 /**
  * POST /api/leads/approval
  *
- * Handles callbacks from Zapier.
+ * Handles callbacks from external platforms.
  * Depending on the payload and the current state of the workflow (if we could check),
  * it sends either a "Quote Generated" event or a "Quality Gate Passed" event.
  *
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
             // Case: Quote Generated
             eventName = 'onboarding/quote-generated';
             eventData.quote = {
-                quoteId: data.quoteId || 'generated-via-zapier',
+                quoteId: data.quoteId || 'generated-via-external',
                 amount: data.amount || 0,
                 terms: data.terms || 'Standard terms',
             };
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
             eventName = 'onboarding/quality-gate-passed';
             eventData.result = {
                 approved: true,
-                approver: data.approver || 'Zapier Webhook',
+                approver: data.approver || 'External Webhook',
                 comments: data.comments || 'Approved via external callback',
                 timestamp: new Date().toISOString(),
             };
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
                     // Likely waiting for Quote (Stage 2 processing)
                     eventName = 'onboarding/quote-generated';
                     eventData.quote = {
-                        quoteId: 'inferred-via-zapier',
+                        quoteId: 'inferred-via-external',
                         amount: 0,
                         terms: 'Standard terms (Inferred)',
                     };
@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
                     eventName = 'onboarding/quality-gate-passed';
                     eventData.result = {
                         approved: true,
-                        approver: 'Zapier Webhook (Inferred)',
+                        approver: 'External Webhook (Inferred)',
                         comments: 'Approved via external callback (Inferred)',
                         timestamp: new Date().toISOString(),
                     };
@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
                     eventName = 'onboarding/quality-gate-passed';
                     eventData.result = {
                         approved: true,
-                        approver: data.approver || 'Zapier Webhook',
+                        approver: data.approver || 'External Webhook',
                         comments: data.comments || 'Approved via external callback',
                         timestamp: new Date().toISOString(),
                     };
