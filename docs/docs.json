@@ -24,7 +24,7 @@
         "icon": "angles-up",
         "tag": "changelog",
         "expanded": true,
-        "pages": []
+        "pages": ["guides/intro-to-watchtower"]
       },
       {
         "group": "API reference",
