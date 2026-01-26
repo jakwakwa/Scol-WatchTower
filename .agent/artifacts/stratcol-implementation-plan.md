@@ -37,60 +37,41 @@ All SOP steps have been successfully implemented. The system is now a fully func
 ### Workflow Stages
 
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                    STRATCOL ONBOARDING SAGA                             │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                         │
-│  STAGE 1: Lead Capture & Commitment                                     │
-│  ├── Blacklist veto check                                               │
-│  ├── Webhook notification                                               │
-│  └── ITC Credit Check                                                   │
-│       └── Score < 600 → AUTO-DECLINE                                    │
-│                                                                         │
-│  STAGE 2: Dynamic Quotation & Quality Gating                            │
-│  ├── Generate Legal Pack / Quote                                        │
-│  └── Wait for Contract Signed (7-day timeout)                           │
-│                                                                         │
-│  STAGE 3: Intelligent Verification (Digital Forensic Lab)               │
-│  ├── Wait for FICA Documents (14-day timeout)                           │
-│  ├── AI FICA Verification (Vercel AI SDK)                               │
-│  │    ├── Bank Statement Analysis                                       │
-│  │    ├── Risk Flag Detection                                           │
-│  │    └── AI Trust Score Calculation                                    │
-│  └── Human Risk Review (HITL)                                           │
-│       ├── AI Score ≥ 80% → AUTO-APPROVE                                 │
-│       └── AI Score < 80% → Paula (Risk Manager) Reviews                 │
-│                                                                         │
-│  STAGE 4: Integration & V24 Handover                                    │
-│  ├── Create V24 Client Profile                                          │
-│  ├── Schedule Training Session                                          │
-│  └── Send Welcome Pack Email                                            │
-│                                                                         │
-└─────────────────────────────────────────────────────────────────────────┘
+A["STAGE 1: Lead Capture & Commitment"] --> B["Blacklist veto check"]
+B --> C["Webhook notification"]
+C --> D["ITC Credit Check"]
+D -->|Score < 600| E["AUTO-DECLINE"]
+D --> F["STAGE 2: Dynamic Quotation & Quality Gating"]
+F --> G["Generate Legal Pack / Quote"]
+G --> H["Wait for Contract Signed (7-day timeout)"]
+H --> I["STAGE 3: Intelligent Verification (Digital Forensic Lab)"]
+I --> J["Wait for FICA Documents (14-day timeout)"]
+J --> K["AI FICA Verification (Vercel AI SDK)"]
+K --> L["Bank Statement Analysis"]
+K --> M["Risk Flag Detection"]
+K --> N["AI Trust Score Calculation"]
+N -->|AI Score ≥ 80%| O["AUTO-APPROVE"]
+N -->|AI Score < 80%| P["Human Risk Review (Paula)"]
+O --> Q["STAGE 4: Integration & V24 Handover"]
+P --> Q
+Q --> R["Create V24 Client Profile"]
+R --> S["Schedule Training Session"]
+S --> T["Send Welcome Pack Email"]
 ```
 
 ### Event Flow
 
 ```
-onboarding/lead.created
-        ↓
-   ITC Check
-        ↓
-itc/check.completed → [if failed] → DECLINE
-        ↓
-   Generate Quote
-        ↓
-contract/signed (wait up to 7 days)
-        ↓
-upload/fica.received (wait up to 14 days)
-        ↓
-fica/analysis.completed
-        ↓
-risk/decision.received (if AI < 80%)
-        ↓
-v24/client.created
-        ↓
-   ✅ COMPLETE
+A["onboarding/lead.created"] --> B["ITC Check"]
+B --> C["itc/check.completed"]
+C -->|if failed| D["DECLINE"]
+C --> E["Generate Quote"]
+E --> F["contract/signed (wait up to 7 days)"]
+F --> G["upload/fica.received (wait up to 14 days)"]
+G --> H["fica/analysis.completed"]
+H --> I["risk/decision.received (if AI < 80%)"]
+I --> J["v24/client.created"]
+J --> K["✅ COMPLETE"]
 ```
 
 ---
