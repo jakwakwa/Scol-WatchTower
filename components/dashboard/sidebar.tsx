@@ -85,14 +85,14 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean;
 							className={cn(
 								"group relative flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200",
 								isActive
-									? "bg-gradient-to-r from-stone-500/20 to-stone-500/10 text-primary"
+									? "bg-linear-to-r from-stone-500/20 to-stone-500/10 text-primary"
 									: "text-muted-foreground hover:bg-secondary/5 hover:text-foreground",
 								isCollapsed && "justify-center px-0",
 							)}
 						>
 							{/* Active indicator */}
 							{isActive && (
-								<div className="absolute left-0 h-8 w-1 rounded-r-full bg-gradient-to-b from-stone-400 to-stone-500" />
+								<div className="absolute left-0 h-8 w-1 rounded-r-full bg-linear-to-b from-stone-400 to-stone-500" />
 							)}
 
 							<item.icon
@@ -120,7 +120,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean;
 			<div className="absolute bottom-0 left-0 right-0 border-t border-sidebar-border p-4">
 				<div
 					className={cn(
-						"flex items-center gap-3 rounded-xl bg-gradient-to-r from-stone-500/10 to-stone-500/5 p-3",
+						"flex items-center gap-3 rounded-xl bg-linear-to-r from-stone-500/10 to-stone-500/5 p-3",
 						isCollapsed && "justify-center p-2",
 					)}
 				>
