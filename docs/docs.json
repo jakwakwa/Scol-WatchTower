@@ -11,22 +11,6 @@
   "navigation": {
     "groups": [
       {
-        "group": "Project",
-        "icon": "angles-up",
-        "tag": "changelog",
-        "expanded": true,
-        "pages": [
-          "project/exec-summary"
-        ]
-      },
-      {
-        "group": "Guides",
-        "icon": "angles-up",
-        "tag": "changelog",
-        "expanded": true,
-        "pages": ["guides/intro-to-watchtower"]
-      },
-      {
         "group": "API reference",
         "pages": [
           {
@@ -43,8 +27,7 @@
               "api-reference/endpoint/delete",
               "api-reference/endpoint/webhook"
             ]
-          },
-          "guides/intor-to-watchtower"
+          }
         ]
       }
     ]
