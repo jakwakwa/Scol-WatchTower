@@ -20,7 +20,7 @@ export default function RootLayout({
 }>) {
 	return (
 		<ClerkProvider>
-			<html lang="en" className={dmSans.variable}>
+			<html lang="en" className={dmSans.variable} suppressHydrationWarning>
 				<body className={`bg-rich-black overscroll-none ${inter.className}`} suppressHydrationWarning>
 					{children}
 				</body>

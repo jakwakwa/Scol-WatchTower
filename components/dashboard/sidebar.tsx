@@ -10,6 +10,7 @@ import {
 	RiMenuFoldLine,
 	RiMenuUnfoldLine,
 	RiSignalTowerFill,
+	RiShieldCheckLine,
 } from "@remixicon/react";
 import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
@@ -18,7 +19,8 @@ const navigation = [
 	{ name: "Overview", href: "/dashboard", icon: RiDashboardLine },
 	{ name: "Leads", href: "/dashboard/leads", icon: RiUserAddLine },
 	{ name: "Workflows", href: "/dashboard/workflows", icon: RiFlowChart },
-	{ name: "Agents", href: "/dashboard/agents", icon: RiRobot2Line }
+	{ name: "Risk Review", href: "/dashboard/risk-review", icon: RiShieldCheckLine },
+	{ name: "Agents", href: "/dashboard/agents", icon: RiRobot2Line },
 ];
 
 export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean; setIsCollapsed: React.Dispatch<React.SetStateAction<boolean>> }) {
