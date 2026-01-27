@@ -12,12 +12,14 @@ import { cn } from "@/lib/utils";
 
 interface LeadFormData {
 	companyName: string;
+	registrationNumber: string;
 	contactName: string;
 	email: string;
 	phone: string;
 	industry: string;
 	employeeCount: string;
 	estimatedVolume: string;
+	mandateType: string;
 	notes: string;
 }
 
@@ -40,14 +42,35 @@ export function LeadForm({
 
 	const [formData, setFormData] = useState<LeadFormData>({
 		companyName: initialData?.companyName || "",
+		registrationNumber: initialData?.registrationNumber || "",
 		contactName: initialData?.contactName || "",
 		email: initialData?.email || "",
 		phone: initialData?.phone || "",
 		industry: initialData?.industry || "",
+		mandateType: initialData?.mandateType || "",
 		employeeCount: initialData?.employeeCount || "",
 		estimatedVolume: initialData?.estimatedVolume || "",
 		notes: initialData?.notes || "",
 	});
+
+	// Check if Mockaroo test mode is enabled
+	const isMockarooTestMode = process.env.NEXT_PUBLIC_USE_MOCKAROO_CREDIT_CHECK === "true";
+
+	// Fill form with test data for Mockaroo testing
+	const fillTestData = () => {
+		setFormData({
+			companyName: "Test Company (Pty) Ltd",
+			registrationNumber: "2024/123456/07",
+			contactName: "John Test",
+			email: "john.test@testcompany.co.za",
+			phone: "+27 82 123 4567",
+			industry: "Financial Services",
+			mandateType: "debit_order",
+			employeeCount: "50",
+			estimatedVolume: "R500,000",
+			notes: "Mockaroo test lead - auto-generated for credit check testing",
+		});
+	};
 
 	const updateField = (field: keyof LeadFormData, value: string) => {
 		setFormData((prev) => ({ ...prev, [field]: value }));
@@ -115,6 +138,24 @@ export function LeadForm({
 
 	return (
 		<form onSubmit={handleSubmit} className="space-y-8">
+			{/* Test Mode Banner */}
+			{isMockarooTestMode && (
+				<div className="flex items-center justify-between p-4 rounded-lg border border-amber-500/30 bg-amber-500/10">
+					<div className="flex items-center gap-2">
+						<span className="text-amber-400 text-sm font-medium">🧪 Mockaroo Test Mode</span>
+					</div>
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						onClick={fillTestData}
+						className="border-amber-500/50 text-amber-400 hover:bg-amber-500/20"
+					>
+						Fill Test Data
+					</Button>
+				</div>
+			)}
+
 			{/* Company Information */}
 			<GlassCard>
 				<h3 className="text-lg font-semibold mb-6">Company Information</h3>
@@ -131,6 +172,16 @@ export function LeadForm({
 						{errors.companyName && (
 							<p className="text-xs text-red-400">{errors.companyName}</p>
 						)}
+					</div>
+
+					<div className="space-y-2">
+						<Label htmlFor="registrationNumber">CIPC Registration Number</Label>
+						<Input
+							id="registrationNumber"
+							value={formData.registrationNumber}
+							onChange={(e) => updateField("registrationNumber", e.target.value)}
+							placeholder="e.g., 2024/123456/07"
+						/>
 					</div>
 
 					<div className="space-y-2">
@@ -154,16 +205,30 @@ export function LeadForm({
 						/>
 					</div>
 
-					<div className="space-y-2">
-						<Label htmlFor="estimatedVolume">Estimated Monthly Volume</Label>
-						<Input
-							id="estimatedVolume"
-							value={formData.estimatedVolume}
-							onChange={(e) => updateField("estimatedVolume", e.target.value)}
-							placeholder="e.g., R500,000"
-						/>
-					</div>
+					<Input
+						id="estimatedVolume"
+						value={formData.estimatedVolume}
+						onChange={(e) => updateField("estimatedVolume", e.target.value)}
+						placeholder="e.g., R500,000"
+					/>
 				</div>
+
+				<div className="space-y-2">
+					<Label htmlFor="mandateType">Mandate Type</Label>
+					<select
+						id="mandateType"
+						value={formData.mandateType}
+						onChange={(e) => updateField("mandateType", e.target.value)}
+						className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+					>
+						<option value="">Select Mandate Type</option>
+						<option value="debit_order">Debit Order</option>
+						<option value="eft_collection">EFT Collection</option>
+						<option value="realtime_clearing">Realtime Clearing</option>
+						<option value="managed_collection">Managed Collection</option>
+					</select>
+				</div>
+
 			</GlassCard>
 
 			{/* Contact Information */}
@@ -246,6 +311,6 @@ export function LeadForm({
 					{isEditing ? "Save Changes" : "Create Lead"}
 				</Button>
 			</div>
-		</form>
+		</form >
 	);
 }

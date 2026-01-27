@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
 	Popover,
@@ -73,6 +74,7 @@ interface NotificationsPanelProps {
 		notification: WorkflowNotification,
 		action: "approve" | "reject" | "retry" | "cancel",
 	) => void;
+	onDelete?: (notification: WorkflowNotification) => void;
 }
 
 export function NotificationsPanel({
@@ -80,6 +82,7 @@ export function NotificationsPanel({
 	onMarkAllRead,
 	onNotificationClick,
 	onAction,
+	onDelete,
 }: NotificationsPanelProps) {
 	const [isOpen, setIsOpen] = React.useState(false);
 	const [isMounted, setIsMounted] = React.useState(false);
@@ -98,18 +101,9 @@ export function NotificationsPanel({
 		e.stopPropagation();
 
 		try {
-			onAction?.(notification, action);
-			toast.success(
-				action === "approve"
-					? `Approved workflow for ${notification.clientName}`
-					: `Rejected workflow for ${notification.clientName}`,
-				{
-					action: {
-						label: "View",
-						onClick: () => onNotificationClick?.(notification),
-					},
-				},
-			);
+			await onAction?.(notification, action);
+			// Toast is handled by the caller or we can add it here if needed
+			// Removing the generic success toast here as it might be confusing for retry/cancel
 		} catch (err) {
 			toast.error("Failed to process action");
 		}
@@ -228,9 +222,22 @@ export function NotificationsPanel({
 											<p className="text-sm font-medium truncate">
 												{notification?.clientName}
 											</p>
-											{!notification?.read && (
-												<span className="h-2 w-2 shrink-0 rounded-full bg-blue-500" />
-											)}
+											<div className="flex items-center gap-2">
+												{!notification?.read && (
+													<span className="h-2 w-2 shrink-0 rounded-full bg-blue-500" />
+												)}
+												<button
+													type="button"
+													onClick={(e) => {
+														e.stopPropagation();
+														onDelete?.(notification);
+													}}
+													className="text-muted-foreground/40 hover:text-red-400 transition-colors cursor-pointer pointer-events-auto p-1"
+												>
+													<RiCloseLine className="h-4 w-4" />
+													<span className="sr-only">Dismiss</span>
+												</button>
+											</div>
 										</div>
 										<p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
 											{notification?.message}
@@ -250,7 +257,7 @@ export function NotificationsPanel({
 															<Button
 																variant="ghost"
 																size="sm"
-																className="h-6 px-2 text-xs hover:bg-teal-500/40 hover:text-teal-700"
+																className="h-6 px-2 text-xs hover:bg-teal-500/40 hover:text-teal-200"
 																onClick={(e) =>
 																	handleAction(e, notification, "approve")
 																}
@@ -309,12 +316,14 @@ export function NotificationsPanel({
 				{/* Footer */}
 				{notifications?.length > 0 && (
 					<div className="border-t border-secondary/10 p-2">
-						<Button
-							variant="ghost"
-							className="w-full h-8 text-xs text-muted-foreground hover:text-foreground"
-						>
-							View all notifications
-						</Button>
+						<Link href="/dashboard/notifications">
+							<Button
+								variant="ghost"
+								className="w-full h-8 text-xs text-muted-foreground hover:text-foreground"
+							>
+								View all notifications
+							</Button>
+						</Link>
 					</div>
 				)}
 			</PopoverContent>

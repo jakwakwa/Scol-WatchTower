@@ -22,7 +22,7 @@ interface Agent {
 const statusConfig = {
 	active: {
 		label: "Active",
-		color: "text-teal-700",
+		color: "text-teal-200",
 		bgColor: "bg-teal-500/40",
 		icon: RiCheckLine,
 	},

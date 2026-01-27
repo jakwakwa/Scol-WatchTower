@@ -18,7 +18,7 @@ const statusConfig = {
 	qualified: { label: "Qualified", color: "bg-stone-500/20 text-stone-400" },
 	proposal: { label: "Proposal", color: "bg-stone-500/20 text-stone-400" },
 	negotiation: { label: "Negotiation", color: "bg-pink-500/20 text-pink-400" },
-	won: { label: "Won", color: "bg-teal-500/40 text-teal-700" },
+	won: { label: "Won", color: "bg-teal-500/40 text-teal-200" },
 	lost: { label: "Lost", color: "bg-red-500/20 text-red-400" },
 } as const;
 

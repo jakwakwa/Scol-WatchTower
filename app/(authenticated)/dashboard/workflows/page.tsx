@@ -30,9 +30,7 @@ export default async function WorkflowsPage() {
 				.select({
 					id: workflows.id,
 					stage: workflows.stage,
-					stageName: workflows.stageName,
 					status: workflows.status,
-					currentAgent: workflows.currentAgent,
 					startedAt: workflows.startedAt,
 					metadata: workflows.metadata,
 					clientName: leads.companyName,
