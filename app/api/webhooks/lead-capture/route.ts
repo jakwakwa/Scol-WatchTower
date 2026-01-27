@@ -49,16 +49,20 @@ export async function POST(request: NextRequest) {
         // Returning * is supported in Postgres/SQLite via Drizzle
         const [newLead] = await db
             .insert(leads)
-            .values({
-                companyName: data.companyName,
-                contactName: data.contactName,
-                email: data.email,
-                phone: data.phone,
-                industry: data.industry,
-                employeeCount: data.employeeCount,
-                estimatedVolume: data.estimatedVolume,
-                status: 'new',
-            })
+            .values([
+                {
+                    companyName: data.companyName,
+                    contactName: data.contactName,
+                    email: data.email,
+                    phone: data.phone,
+                    industry: data.industry,
+                    employeeCount: data.employeeCount,
+                    mandateVolume: data.estimatedVolume
+                        ? parseInt(data.estimatedVolume.toString().replace(/[^0-9]/g, ''))
+                        : 0,
+                    status: 'new',
+                },
+            ])
             .returning();
 
         if (!newLead) {
@@ -68,12 +72,13 @@ export async function POST(request: NextRequest) {
         // 4. Create Workflow
         const [newWorkflow] = await db
             .insert(workflows)
-            .values({
-                leadId: newLead.id,
-                stage: 1,
-                stageName: 'lead_capture',
-                status: 'pending',
-            })
+            .values([
+                {
+                    leadId: newLead.id,
+                    stage: 1,
+                    status: 'pending',
+                },
+            ])
             .returning();
 
         if (!newWorkflow) {

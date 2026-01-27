@@ -58,17 +58,19 @@ export async function POST(request: NextRequest) {
         // Insert the new lead
         const newLeadResults = await db
             .insert(leads)
-            .values({
-                companyName: data.companyName,
-                contactName: data.contactName,
-                email: data.email,
-                phone: data.phone,
-                industry: data.industry,
-                employeeCount: data.employeeCount,
-                estimatedVolume: data.estimatedVolume,
-                notes: data.notes,
-                status: 'new',
-            })
+            .values([
+                {
+                    companyName: data.companyName,
+                    contactName: data.contactName,
+                    email: data.email,
+                    phone: data.phone,
+                    industry: data.industry,
+                    employeeCount: data.employeeCount,
+                    mandateVolume: data.estimatedVolume ? parseInt(data.estimatedVolume.replace(/[^0-9]/g, '')) : 0,
+                    notes: data.notes,
+                    status: 'new',
+                },
+            ])
             .returning();
 
         const newLead = newLeadResults[0];
@@ -80,13 +82,14 @@ export async function POST(request: NextRequest) {
         // Create the initial Workflow record in DB
         const [newWorkflow] = await db
             .insert(workflows)
-            .values({
-                leadId: newLead.id,
-                stage: 1,
-                stageName: 'lead_capture',
-                status: 'pending',
-                currentAgent: 'platform',
-            })
+            .values([
+                {
+                    leadId: newLead.id,
+                    stage: 1,
+                    status: 'pending',
+                    // Removed fields not in schema: stageName, currentAgent
+                },
+            ])
             .returning();
 
         if (!newWorkflow) {
