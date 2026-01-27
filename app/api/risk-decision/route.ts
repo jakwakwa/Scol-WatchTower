@@ -88,12 +88,12 @@ export async function POST(request: NextRequest) {
         await db.insert(workflowEvents).values({
             workflowId,
             eventType: 'human_override',
-            fromStage: workflow.stage,
-            toStage: workflow.stage,
             payload: JSON.stringify({
                 decision: decision.outcome,
                 reason: decision.reason,
                 conditions: decision.conditions,
+                fromStage: workflow.stage,
+                toStage: workflow.stage, // No stage change implied yet
             }),
             actorId: userId,
             actorType: 'user',
@@ -167,9 +167,7 @@ export async function GET(request: NextRequest) {
                 workflowId: w.id,
                 leadId: w.leadId,
                 stage: w.stage,
-                stageName: w.stageName,
                 startedAt: w.startedAt,
-                currentAgent: w.currentAgent,
             })),
         });
     } catch (error) {
