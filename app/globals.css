@@ -3,11 +3,7 @@
 
 @import "shadcn/tailwind.css";
 
-@tailwind base;
-
 @custom-variant dark (&:is(.dark *));
-@tailwind components;
-@tailwind utilities;
 
 :root {
   --background: rgb(41, 43, 51);
@@ -24,7 +20,8 @@
   --muted-foreground: oklch(72.123% 0.02814 102.437 / 0.897);
   --accent: oklch(68.583% 0.04495 71.592);
   --accent-foreground: oklch(80.997% 0.01678 95.297);
-  --destructive: oklch(63.615% 0.19395 21.82);
+  --destructive: oklch(54.212% 0.19042 24.025 / 0.421);
+  --destructive-foreground: rgb(235, 127, 132);
   --border: oklch(27.935% 0.04031 283.483 / 0.651);
   --input: oklch(78.093% 0.0212 285.846 / 0.575);
   --ring: oklch(64.507% 0.06102 284.554);
@@ -60,6 +57,7 @@
   --accent: oklch(0.77 0.16 70);
   --accent-foreground: oklch(0.28 0.07 46);
   --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(59.9% 40.95 20.49);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.552 0.016 285.938);
@@ -97,6 +95,7 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
