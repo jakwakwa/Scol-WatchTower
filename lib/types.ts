@@ -187,11 +187,11 @@ export const ITCCheckResultSchema = z.object({
 
 export type ITCCheckResult = z.infer<typeof ITCCheckResultSchema>;
 
-// ITC Score thresholds
+// ITC Score thresholds (adjusted for Mockaroo 0-400 range)
 export const ITC_THRESHOLDS = {
-    AUTO_APPROVE: 700, // Score >= 700: Fast-track approval
-    MANUAL_REVIEW: 600, // Score 600-699: Manual review required
-    AUTO_DECLINE: 600, // Score < 600: Automatic decline (or enhanced DD)
+    AUTO_APPROVE: 350, // Score >= 350: Fast-track approval
+    MANUAL_REVIEW: 200, // Score 200-349: Manual review required
+    AUTO_DECLINE: 200, // Score < 200: Automatic decline
 } as const;
 
 // ============================================
