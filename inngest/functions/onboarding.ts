@@ -19,7 +19,7 @@ import { inngest } from '../client';
 import { NonRetriableError } from 'inngest';
 import blacklist from '../data/mock_blacklist.json';
 import { updateWorkflowStatus } from '@/lib/services/workflow.service';
-import { sendagentWebhook, dispatchToPlatform, escalateToManagement } from '@/lib/services/notification.service';
+import { dispatchToPlatform, escalateToManagement } from '@/lib/services/notification.service';
 import { createWorkflowNotification, logWorkflowEvent } from '@/lib/services/notification-events.service';
 import { generateQuote } from '@/lib/services/quote.service';
 import { performITCCheck, shouldAutoDecline } from '@/lib/services/itc.service';
@@ -141,19 +141,7 @@ export const onboardingWorkflow = inngest.createFunction(
             stage: 1,
         });
 
-        // Notify external systems about new lead
-        await runSafeStep(
-            step,
-            'stage-1-webhook',
-            () =>
-                sendagentWebhook({
-                    leadId,
-                    workflowId,
-                    stage: 1,
-                    event: 'LEAD_CAPTURED',
-                }),
-            { workflowId, leadId, stage: 1 },
-        );
+        // (Zapier webhooks removed - using direct Inngest events)
 
         // ================================================================
         // STEP: ITC Credit Check (SOP Step 2.1)
@@ -281,22 +269,8 @@ export const onboardingWorkflow = inngest.createFunction(
             }
         }
 
-        // Send quote webhook
-        if (quote) {
-            await runSafeStep(
-                step,
-                'stage-2-quote-webhook',
-                () =>
-                    sendagentWebhook({
-                        leadId,
-                        workflowId,
-                        stage: 2,
-                        event: 'QUOTATION_GENERATED',
-                        quote,
-                    }),
-                { workflowId, leadId, stage: 2 },
-            );
-        }
+        // Quote generated - continue with Stage 3
+        // (Zapier webhooks removed - using direct Inngest events)
 
         // Wait for Contract Signing
         await runSafeStep(
@@ -597,20 +571,7 @@ export const onboardingWorkflow = inngest.createFunction(
             stage: 4,
         });
 
-        // Final webhook notification
-        await runSafeStep(
-            step,
-            'stage-4-complete-webhook',
-            () =>
-                sendagentWebhook({
-                    leadId,
-                    workflowId,
-                    stage: 4,
-                    event: 'ONBOARDING_COMPLETE',
-                    v24Reference: v24Result.v24Reference,
-                }),
-            { workflowId, leadId, stage: 4 },
-        );
+        // (Zapier webhooks removed - using direct Inngest events)
 
         console.log('[Workflow] COMPLETED successfully!');
 
