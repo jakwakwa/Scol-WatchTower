@@ -7,10 +7,13 @@
  * Features:
  * - Bank statement analysis with risk flag detection
  * - Accountant letter verification
- * - Structured output via Zod schemas
+ * - Structured output via Zod schemas (generateObject)
  * - AI trust scoring for auto-approval decisions
+ * - Multi-model strategy: Gemini 2.0 Flash for complex analysis
  */
 
+import { generateObject } from 'ai';
+import { getThinkingModel, isAIConfigured, AI_CONFIG } from '@/lib/ai/models';
 import {
     type FicaDocumentAnalysis,
     type AccountantLetterAnalysis,
@@ -20,10 +23,9 @@ import {
     AI_TRUST_THRESHOLDS,
 } from '@/lib/types';
 
-// Note: In production, uncomment the AI SDK imports
-// import { generateObject } from 'ai';
-// import { google } from '@ai-sdk/google-vertex';
-// import { openai } from '@ai-sdk/openai';
+// ============================================
+// Types
+// ============================================
 
 export interface AnalyzeBankStatementOptions {
     /** PDF content as base64 or text extracted from bank statement */
@@ -44,6 +46,13 @@ export interface AnalyzeAccountantLetterOptions {
     workflowId: number;
 }
 
+// ============================================
+// Configuration is imported from @/lib/ai/models
+
+// ============================================
+// Bank Statement Analysis
+// ============================================
+
 /**
  * Analyze a bank statement using AI
  */
@@ -52,15 +61,12 @@ export async function analyzeBankStatement(options: AnalyzeBankStatementOptions)
 
     console.log(`[FicaAI] Analyzing bank statement for workflow ${workflowId}`);
 
-    // Check if AI service is configured
-    const aiProvider = process.env.AI_PROVIDER; // 'google-vertex' | 'openai'
-    const useRealAI = aiProvider && (process.env.GOOGLE_VERTEX_PROJECT || process.env.OPENAI_API_KEY);
-
-    if (useRealAI) {
+    if (isAIConfigured()) {
         try {
             return await analyzeWithAI(content, contentType, facilityApplication);
         } catch (err) {
-            console.warn('[FicaAI] AI analysis failed, falling back to mock:', err);
+            console.error('[FicaAI] AI analysis failed:', err);
+            console.warn('[FicaAI] Falling back to mock analysis');
         }
     }
 
@@ -76,41 +82,74 @@ async function analyzeWithAI(
     contentType: 'base64' | 'text',
     facilityApplication?: Partial<FacilityApplication>,
 ): Promise<FicaDocumentAnalysis> {
-    // This would use Vercel AI SDK in production
-    // Example implementation:
-    /*
-	const { object } = await generateObject({
-		model: google('gemini-1.5-pro'), // or openai('gpt-4-turbo')
-		schema: FicaDocumentAnalysisSchema,
-		prompt: `
-			You are a FICA compliance analyst. Analyze this bank statement and extract 
-			structured data for risk assessment.
-			
-			${facilityApplication ? `
-			Verify against this facility application:
-			- Company Name: ${facilityApplication.companyName}
-			- Account Number: ${facilityApplication.bankingDetails?.accountNumber}
-			` : ''}
-			
-			Bank Statement Content:
-			${contentType === 'base64' ? '[Base64 PDF - extract text first]' : content}
-			
-			Focus on:
-			1. Extracting account holder name and number
-			2. Calculating average daily balance
-			3. Counting dishonoured/bounced transactions
-			4. Identifying risk flags (irregular deposits, gambling, etc.)
-			5. Assessing cash flow consistency
-			6. Verifying name matches the application
-		`,
-	});
-	
-	return object;
-	*/
+    const verificationContext = facilityApplication
+        ? `
+VERIFICATION CONTEXT:
+Verify the bank statement against this facility application:
+- Company Name: ${facilityApplication.companyName || 'Not provided'}
+- Account Number: ${facilityApplication.bankingDetails?.accountNumber || 'Not provided'}
+- Bank Name: ${facilityApplication.bankingDetails?.bankName || 'Not provided'}
 
-    // For now, throw to fall back to mock
-    throw new Error('AI SDK not configured');
+Check if the account holder name matches the company name and flag any discrepancies.
+`
+        : '';
+
+    const prompt = `You are a FICA (Financial Intelligence Centre Act) compliance analyst for a South African financial services company. Analyze this bank statement and extract structured data for risk assessment.
+
+${verificationContext}
+
+BANK STATEMENT CONTENT:
+${contentType === 'base64' ? 'Note: Content is base64 encoded. Decode and analyze.' : content}
+
+ANALYSIS REQUIREMENTS:
+1. Extract account holder name and account number
+2. Identify the bank name and branch code
+3. Determine the statement period (start and end dates)
+4. Calculate financial metrics:
+   - Opening and closing balances
+   - Average daily balance
+   - Total credits and debits
+   - Number of dishonoured/bounced transactions
+5. Assess income regularity (REGULAR, IRREGULAR, SEASONAL, or UNKNOWN)
+6. Identify the primary income source
+7. Calculate a cash flow score (0-100)
+8. Detect risk flags with severity levels:
+   - BOUNCED_DEBIT: Multiple bounced debit orders
+   - GAMBLING: Transactions to gambling sites/casinos
+   - IRREGULAR_DEPOSITS: Unusual large deposits
+   - CASH_INTENSIVE: High proportion of cash transactions
+   - OVERDRAFT: Frequent overdraft usage
+   - UNUSUAL_TRANSFERS: Suspicious transfers
+9. Verify name and account number match the application
+10. Generate an AI trust score (0-100) based on overall financial health
+11. Provide a summary and recommendation (APPROVE, APPROVE_WITH_CONDITIONS, MANUAL_REVIEW, or DECLINE)
+
+Be thorough but concise. Flag any concerning patterns immediately.`;
+
+    console.log('[FicaAI] Calling AI model for analysis...');
+
+    const { object } = await generateObject({
+        model: getThinkingModel(),
+        schema: FicaDocumentAnalysisSchema,
+        schemaName: 'FicaDocumentAnalysis',
+        schemaDescription:
+            'Structured analysis of a South African bank statement for FICA compliance and risk assessment',
+        prompt,
+        temperature: AI_CONFIG.ANALYSIS_TEMPERATURE,
+    });
+
+    console.log(`[FicaAI] AI analysis complete:`, {
+        aiTrustScore: object.aiTrustScore,
+        recommendation: object.recommendation,
+        riskFlagsCount: object.riskFlags.length,
+    });
+
+    return object;
 }
+
+// ============================================
+// Accountant Letter Analysis
+// ============================================
 
 /**
  * Analyze an accountant letter using AI
@@ -122,21 +161,60 @@ export async function analyzeAccountantLetter(
 
     console.log(`[FicaAI] Analyzing accountant letter for workflow ${workflowId}`);
 
-    // Check if AI service is configured
-    const useRealAI = process.env.AI_PROVIDER && (process.env.GOOGLE_VERTEX_PROJECT || process.env.OPENAI_API_KEY);
-
-    if (useRealAI) {
+    if (isAIConfigured()) {
         try {
-            // Would use real AI similar to bank statement analysis
-            throw new Error('AI SDK not configured');
+            return await analyzeAccountantLetterWithAI(content, contentType, facilityApplication);
         } catch (err) {
-            console.warn('[FicaAI] AI analysis failed, falling back to mock:', err);
+            console.error('[FicaAI] AI analysis failed:', err);
+            console.warn('[FicaAI] Falling back to mock analysis');
         }
     }
 
-    // Mock analysis
     return generateMockAccountantLetterAnalysis(facilityApplication);
 }
+
+/**
+ * Analyze accountant letter with real AI
+ */
+async function analyzeAccountantLetterWithAI(
+    content: string,
+    contentType: 'base64' | 'text',
+    facilityApplication?: Partial<FacilityApplication>,
+): Promise<AccountantLetterAnalysis> {
+    const prompt = `You are a FICA compliance analyst. Analyze this accountant's letterhead letter and extract verification data.
+
+CLIENT CONTEXT:
+- Company Name: ${facilityApplication?.companyName || 'Not provided'}
+
+LETTER CONTENT:
+${contentType === 'base64' ? 'Note: Content is base64 encoded. Decode and analyze.' : content}
+
+ANALYSIS REQUIREMENTS:
+1. Extract practitioner name and practice number (CA(SA) number)
+2. Verify letterhead authenticity indicators
+3. Extract the letter date
+4. Confirm client name matches the application
+5. Assess business standing (GOOD, CONCERNING, POOR, or UNKNOWN)
+6. Extract annual turnover if mentioned
+7. Note years in business
+8. List any concerns mentioned
+9. Determine verification confidence (0-100)`;
+
+    const { object } = await generateObject({
+        model: getThinkingModel(),
+        schema: AccountantLetterAnalysisSchema,
+        schemaName: 'AccountantLetterAnalysis',
+        schemaDescription: 'Structured analysis of an accountant verification letter',
+        prompt,
+        temperature: AI_CONFIG.ANALYSIS_TEMPERATURE,
+    });
+
+    return object;
+}
+
+// ============================================
+// Mock Implementations
+// ============================================
 
 /**
  * Generate mock bank statement analysis for testing
@@ -149,7 +227,7 @@ function generateMockBankStatementAnalysis(facilityApplication?: Partial<Facilit
     const isHighRisk = companyName.toLowerCase().includes('risk') || companyName.toLowerCase().includes('decline');
     const isLowRisk = companyName.toLowerCase().includes('approve') || companyName.toLowerCase().includes('good');
 
-    const riskFlags = [];
+    const riskFlags: FicaDocumentAnalysis['riskFlags'] = [];
     let aiTrustScore = 75;
 
     if (isHighRisk) {
@@ -170,7 +248,6 @@ function generateMockBankStatementAnalysis(facilityApplication?: Partial<Facilit
             },
         );
     } else if (!isLowRisk) {
-        // Medium risk - add one minor flag
         aiTrustScore = 72;
         riskFlags.push({
             type: 'CASH_INTENSIVE' as const,
@@ -183,40 +260,27 @@ function generateMockBankStatementAnalysis(facilityApplication?: Partial<Facilit
     }
 
     const analysis: FicaDocumentAnalysis = {
-        // Account information
         accountHolderName: companyName,
         accountNumber: accountNumber,
         bankName: 'First National Bank',
         branchCode: '250655',
         accountType: 'Business Current',
-
-        // Statement period
         periodStart: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
         periodEnd: new Date().toISOString().slice(0, 10),
-
-        // Financial metrics
         openingBalance: 125000_00,
         closingBalance: 142500_00,
         averageDailyBalance: 135000_00,
         totalCredits: 450000_00,
         totalDebits: 432500_00,
         dishonours: isHighRisk ? 3 : 0,
-
-        // Cash flow analysis
         incomeRegularity: isHighRisk ? 'IRREGULAR' : 'REGULAR',
         primaryIncomeSource: 'Business Revenue',
         cashFlowScore: isHighRisk ? 45 : 85,
-
-        // Risk assessment
         riskFlags,
         aiTrustScore,
         analysisConfidence: 88,
-
-        // Verification
         nameMatchVerified: true,
         accountMatchVerified: true,
-
-        // AI commentary
         summary: isHighRisk
             ? 'Bank statement shows concerning patterns including multiple dishonoured debits and irregular deposits. Manual review strongly recommended.'
             : isLowRisk
@@ -256,13 +320,17 @@ function generateMockAccountantLetterAnalysis(
         clientName: companyName,
         letterheadAuthentic: true,
         businessStanding: 'GOOD',
-        annualTurnover: 5400000_00, // R5.4M
+        annualTurnover: 5400000_00,
         yearsInBusiness: 8,
         concerns: [],
         verified: true,
         confidence: 85,
     };
 }
+
+// ============================================
+// Result Helpers
+// ============================================
 
 /**
  * Determine if analysis allows auto-approval
@@ -296,14 +364,12 @@ export function calculateCombinedRiskScore(
     bankAnalysis: FicaDocumentAnalysis,
     accountantAnalysis?: AccountantLetterAnalysis,
 ): number {
-    // Weight: Bank statement 70%, Accountant letter 30%
     const bankWeight = 0.7;
     const accountantWeight = 0.3;
 
     let score = bankAnalysis.aiTrustScore * bankWeight;
 
     if (accountantAnalysis) {
-        // Convert accountant analysis to a score
         let accountantScore = 50;
         if (accountantAnalysis.verified) accountantScore += 20;
         if (accountantAnalysis.letterheadAuthentic) accountantScore += 15;
@@ -312,7 +378,6 @@ export function calculateCombinedRiskScore(
 
         score += Math.min(accountantScore, 100) * accountantWeight;
     } else {
-        // No accountant letter - use bank score for full weight
         score = bankAnalysis.aiTrustScore;
     }
 
