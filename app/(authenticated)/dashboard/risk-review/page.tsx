@@ -1,340 +1,168 @@
 "use client";
 
-import * as React from "react";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-    RiskReviewQueue,
-    RiskReviewDetail,
-    type RiskReviewItem,
-} from "@/components/dashboard/risk-review";
+import { useDashboardStore } from "@/lib/dashboard-store";
+import { useEffect, useState } from "react";
+import { DashboardLayout } from "@/components/dashboard"; // Using wrapper for consistency
+import { GlassCard } from "@/components/dashboard";
 import {
     RiShieldCheckLine,
-    RiRefreshLine,
-    RiFilterLine,
+    RiAlertLine,
+    RiCheckboxCircleLine,
+    RiTimeLine,
     RiSearchLine,
+    RiFilter3Line
 } from "@remixicon/react";
-import { toast } from "sonner";
-import useSWR from "swr";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { RiskBadge, StatusBadge } from "@/components/ui/status-badge";
+import Link from "next/link";
+import { PageMeta } from "@/components/dashboard/page-meta"; // Ensure metadata is set
 
-// ============================================
-// Fetcher for SWR
-// ============================================
-
-const fetcher = async (url: string) => {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error("Failed to fetch");
-    return res.json();
-};
-
-// ============================================
-// Page Component
-// ============================================
+// Mock data until API is wired
+const MOCK_RISK_ASSESSMENTS = [
+    {
+        id: "1",
+        companyName: "Durban Logistics Holdings",
+        regNumber: "2024/009012/07",
+        riskLevel: "medium",
+        score: 65,
+        flaggedItems: ["Directors Mismatch", "Bank Account Verification Pending"],
+        status: "pending_review",
+        date: "2024-05-15",
+    },
+    {
+        id: "2",
+        companyName: "Cape Trade Solutions",
+        regNumber: "2024/001234/07",
+        riskLevel: "low",
+        score: 92,
+        flaggedItems: [],
+        status: "approved",
+        date: "2024-05-14",
+    },
+    {
+        id: "3",
+        companyName: "Garden Route Trading",
+        regNumber: "2024/011223/07",
+        riskLevel: "high",
+        score: 35,
+        flaggedItems: ["CIPC Status Inactive", "Judgments Found"],
+        status: "rejected",
+        date: "2024-05-12",
+    }
+];
 
 export default function RiskReviewPage() {
-    const router = useRouter();
-    const [selectedItem, setSelectedItem] = React.useState<RiskReviewItem | null>(
-        null
-    );
-    const [detailOpen, setDetailOpen] = React.useState(false);
+    const [searchTerm, setSearchTerm] = useState("");
 
-    // Fetch pending reviews from API
-    const { data, error, isLoading, mutate } = useSWR<{
-        count: number;
-        workflows: Array<{
-            workflowId: number;
-            leadId: number;
-            stage: number;
-            stageName: string;
-            startedAt: string;
-            currentAgent?: string;
-        }>;
-    }>("/api/risk-decision", fetcher, {
-        refreshInterval: 30000, // Refresh every 30 seconds
-    });
-
-    // Transform API data to RiskReviewItem format
-    // In production, you'd fetch more details from another endpoint
-    const reviewItems: RiskReviewItem[] = React.useMemo(() => {
-        if (!data?.workflows) return [];
-
-        return data.workflows.map((w, idx) => ({
-            id: w.workflowId,
-            workflowId: w.workflowId,
-            leadId: w.leadId,
-            clientName: `Client ${w.leadId}`, // Would fetch from leads API
-            companyName: `Company ${w.leadId} (Pty) Ltd`,
-            stage: w.stage,
-            stageName: w.stageName,
-            createdAt: new Date(w.startedAt),
-            // Mock AI analysis data - in production, fetch from workflow metadata
-            aiTrustScore: 45 + Math.floor(Math.random() * 50),
-            itcScore: 580 + Math.floor(Math.random() * 150),
-            riskFlags:
-                idx % 2 === 0
-                    ? [
-                        {
-                            type: "BOUNCED_DEBIT",
-                            severity: "HIGH" as const,
-                            description: "Multiple bounced debit orders detected",
-                        },
-                    ]
-                    : [],
-            recommendation: idx % 2 === 0 ? "MANUAL_REVIEW" : "APPROVE",
-            summary:
-                "Financial analysis indicates generally healthy patterns with some areas requiring attention.",
-            bankStatementVerified: true,
-            accountantLetterVerified: idx % 2 === 0,
-            nameMatchVerified: true,
-        }));
-    }, [data]);
-
-    // Mock data for demo when API is empty
-    const mockItems: RiskReviewItem[] = [
-        {
-            id: 1,
-            workflowId: 101,
-            leadId: 1,
-            clientName: "Acme Industries",
-            companyName: "Acme Industries (Pty) Ltd",
-            stage: 3,
-            stageName: "verification",
-            createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-            aiTrustScore: 72,
-            itcScore: 685,
-            riskFlags: [
-                {
-                    type: "CASH_INTENSIVE",
-                    severity: "LOW",
-                    description: "Higher than average cash transactions detected",
-                },
-            ],
-            recommendation: "APPROVE_WITH_CONDITIONS",
-            summary:
-                "Bank statement shows generally healthy patterns. Minor observations include higher than average cash transactions (15% of total). ITC score is acceptable. Recommend approval with standard monitoring.",
-            bankStatementVerified: true,
-            accountantLetterVerified: true,
-            nameMatchVerified: true,
-        },
-        {
-            id: 2,
-            workflowId: 102,
-            leadId: 2,
-            clientName: "TechStart Solutions",
-            companyName: "TechStart Solutions (Pty) Ltd",
-            stage: 3,
-            stageName: "verification",
-            createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000),
-            aiTrustScore: 45,
-            itcScore: 620,
-            riskFlags: [
-                {
-                    type: "BOUNCED_DEBIT",
-                    severity: "HIGH",
-                    description: "3 dishonoured debit orders in the past 30 days",
-                },
-                {
-                    type: "IRREGULAR_DEPOSITS",
-                    severity: "MEDIUM",
-                    description: "Large irregular deposits detected",
-                },
-            ],
-            recommendation: "MANUAL_REVIEW",
-            summary:
-                "Bank statement shows concerning patterns including multiple dishonoured debits and irregular deposit patterns. ITC score is borderline. Manual review strongly recommended before approval.",
-            bankStatementVerified: true,
-            accountantLetterVerified: false,
-            nameMatchVerified: true,
-        },
-        {
-            id: 3,
-            workflowId: 103,
-            leadId: 3,
-            clientName: "Global Trading Co",
-            companyName: "Global Trading Company (Pty) Ltd",
-            stage: 3,
-            stageName: "verification",
-            createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
-            aiTrustScore: 88,
-            itcScore: 745,
-            riskFlags: [],
-            recommendation: "APPROVE",
-            summary:
-                "Excellent financial health indicators. No risk flags detected. ITC score is strong. All documents verified successfully. Suitable for fast-track approval.",
-            bankStatementVerified: true,
-            accountantLetterVerified: true,
-            nameMatchVerified: true,
-        },
-    ];
-
-    // Use mock data if no real data
-    const displayItems = reviewItems.length > 0 ? reviewItems : mockItems;
-
-    // Handle approve action
-    const handleApprove = async (id: number, reason?: string) => {
-        const item = displayItems.find((i) => i.id === id);
-        if (!item) return;
-
-        try {
-            const response = await fetch("/api/risk-decision", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    workflowId: item.workflowId,
-                    leadId: item.leadId,
-                    decision: {
-                        outcome: "APPROVED",
-                        reason: reason || "Approved by Risk Manager",
-                    },
-                }),
-            });
-
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || "Failed to approve");
-            }
-
-            // Refresh the list
-            mutate();
-        } catch (error) {
-            console.error("Approval error:", error);
-            throw error;
-        }
-    };
-
-    // Handle reject action
-    const handleReject = async (id: number, reason: string) => {
-        const item = displayItems.find((i) => i.id === id);
-        if (!item) return;
-
-        try {
-            const response = await fetch("/api/risk-decision", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    workflowId: item.workflowId,
-                    leadId: item.leadId,
-                    decision: {
-                        outcome: "REJECTED",
-                        reason,
-                    },
-                }),
-            });
-
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || "Failed to reject");
-            }
-
-            // Refresh the list
-            mutate();
-        } catch (error) {
-            console.error("Rejection error:", error);
-            throw error;
-        }
-    };
-
-    // Handle view details
-    const handleViewDetails = (item: RiskReviewItem) => {
-        setSelectedItem(item);
-        setDetailOpen(true);
-    };
+    // In a real implementation, we would fetch data here using server actions or SWR
+    // const { data } = useSWR('/api/risk-assessments', fetcher);
 
     return (
-        <div className="flex-1 space-y-6 p-6">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-primary/10">
-                            <RiShieldCheckLine className="h-6 w-6 text-primary" />
+        <DashboardLayout
+            title="Risk Review"
+            description="Manage and approve high-risk client applications"
+            actions={
+                <Button variant="outline" className="gap-2">
+                    <RiFilter3Line className="h-4 w-4" />
+                    Filters
+                </Button>
+            }
+        >
+            {/* Search and Stats Bar */}
+            <div className="flex flex-col md:flex-row gap-4 mb-6">
+                <div className="relative flex-1">
+                    <RiSearchLine className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Search company, registration number..."
+                        className="pl-10 bg-card"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
+                <div className="flex gap-4">
+                    <div className="flex items-center gap-2 px-4 py-2 bg-rose-500/10 border border-rose-500/20 rounded-lg text-rose-500">
+                        <RiAlertLine className="h-4 w-4" />
+                        <span className="text-sm font-bold">3 High Risk</span>
+                    </div>
+                    <div className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 border border-amber-500/20 rounded-lg text-amber-500">
+                        <RiTimeLine className="h-4 w-4" />
+                        <span className="text-sm font-bold">5 Pending</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Risk Assessments Table/Cards */}
+            <div className="space-y-4">
+                {MOCK_RISK_ASSESSMENTS.map((assessment) => (
+                    <GlassCard key={assessment.id} className="group hover:border-primary/30 transition-all cursor-pointer">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+
+                            {/* Company Info */}
+                            <div className="flex items-start gap-4">
+                                <div className={`h-12 w-12 rounded-full flex items-center justify-center shrink-0 ${assessment.riskLevel === 'high' ? 'bg-rose-100 text-rose-600' :
+                                    assessment.riskLevel === 'medium' ? 'bg-amber-100 text-amber-600' :
+                                        'bg-emerald-100 text-emerald-600'
+                                    }`}>
+                                    <RiShieldCheckLine className="h-6 w-6" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors">
+                                        {assessment.companyName}
+                                    </h3>
+                                    <p className="text-sm text-muted-foreground font-mono">
+                                        {assessment.regNumber}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Risk Indicators */}
+                            <div className="flex flex-col md:items-end gap-1">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm text-muted-foreground">Risk Score:</span>
+                                    <span className={`font-mono font-bold text-lg ${assessment.score < 50 ? 'text-rose-500' :
+                                        assessment.score < 80 ? 'text-amber-500' :
+                                            'text-emerald-500'
+                                        }`}>{assessment.score}/100</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <RiskBadge level={assessment.riskLevel} />
+                                    <StatusBadge status={
+                                        assessment.status === 'approved' ? 'success' :
+                                            assessment.status === 'rejected' ? 'error' : 'warning'
+                                    }>
+                                        {assessment.status.replace('_', ' ')}
+                                    </StatusBadge>
+                                </div>
+                            </div>
+
+                            {/* Action Button */}
+                            <div className="flex items-center gap-2 md:border-l border-border md:pl-6">
+                                <Link href={`/dashboard/leads/${assessment.id}?tab=risk`}>
+                                    <Button size="sm" variant="secondary">
+                                        Review
+                                    </Button>
+                                </Link>
+                            </div>
+
                         </div>
-                        Risk Review Queue
-                    </h1>
-                    <p className="text-muted-foreground mt-1">
-                        Review and approve pending client applications
-                    </p>
-                </div>
 
-                <div className="flex items-center gap-3">
-                    <Badge
-                        variant="secondary"
-                        className="px-3 py-1.5 text-sm bg-amber-500/10 text-amber-400 border-amber-500/20"
-                    >
-                        {displayItems.length} Pending
-                    </Badge>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => mutate()}
-                        disabled={isLoading}
-                    >
-                        <RiRefreshLine
-                            className={`h-4 w-4 mr-1.5 ${isLoading ? "animate-spin" : ""}`}
-                        />
-                        Refresh
-                    </Button>
-                </div>
+                        {/* Flagged Items Footer */}
+                        {assessment.flaggedItems.length > 0 && (
+                            <div className="mt-4 pt-4 border-t border-border/50">
+                                <div className="flex flex-wrap gap-2">
+                                    {assessment.flaggedItems.map((item, idx) => (
+                                        <span key={idx} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-rose-500/5 border border-rose-500/10 text-rose-500 text-xs">
+                                            <RiAlertLine className="h-3 w-3" />
+                                            {item}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </GlassCard>
+                ))}
             </div>
-
-            {/* Stats Bar */}
-            <div className="grid grid-cols-4 gap-4">
-                <div className="p-4 rounded-xl bg-card/30 border border-secondary/10 backdrop-blur-sm">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider">
-                        Pending Review
-                    </p>
-                    <p className="text-2xl font-bold mt-1">{displayItems.length}</p>
-                </div>
-                <div className="p-4 rounded-xl bg-card/30 border border-secondary/10 backdrop-blur-sm">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider">
-                        High Priority
-                    </p>
-                    <p className="text-2xl font-bold text-red-400 mt-1">
-                        {displayItems.filter((i) => (i.aiTrustScore || 100) < 60).length}
-                    </p>
-                </div>
-                <div className="p-4 rounded-xl bg-card/30 border border-secondary/10 backdrop-blur-sm">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider">
-                        Approved Today
-                    </p>
-                    <p className="text-2xl font-bold text-emerald-400 mt-1">12</p>
-                </div>
-                <div className="p-4 rounded-xl bg-card/30 border border-secondary/10 backdrop-blur-sm">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider">
-                        Avg. Review Time
-                    </p>
-                    <p className="text-2xl font-bold mt-1">2.4h</p>
-                </div>
-            </div>
-
-            {/* Error State */}
-            {error && (
-                <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400">
-                    <p className="text-sm">
-                        Failed to load pending reviews. Please try refreshing.
-                    </p>
-                </div>
-            )}
-
-            {/* Review Queue */}
-            <RiskReviewQueue
-                items={displayItems}
-                isLoading={isLoading}
-                onApprove={handleApprove}
-                onReject={handleReject}
-                onViewDetails={handleViewDetails}
-                onRefresh={() => mutate()}
-            />
-
-            {/* Detail Sheet */}
-            <RiskReviewDetail
-                item={selectedItem}
-                open={detailOpen}
-                onOpenChange={setDetailOpen}
-                onApprove={handleApprove}
-                onReject={handleReject}
-            />
-        </div>
+        </DashboardLayout>
     );
 }
