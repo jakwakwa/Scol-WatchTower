@@ -165,6 +165,10 @@ export default async function WorkflowDetailsPage({
 
 	const latestQuote = workflowQuotes[0];
 
+	// Helper for stage badge
+	const stageName = lead?.status ? lead.status.replace('_', ' ') : 'Unknown';
+	const stageNumber = workflow.stage || 0;
+
 	return (
 		<DashboardLayout
 			actions={
@@ -189,8 +193,8 @@ export default async function WorkflowDetailsPage({
 						</div>
 					</div>
 					<div className="flex items-center gap-3">
-						<StatusBadge status={workflow.status} />
-						<StageBadge stage={workflow.stage} name={workflow.stageName} />
+						<StatusBadge status={workflow.status || 'unknown'} />
+						<StageBadge stage={stageNumber} name={stageName} />
 					</div>
 				</>
 			}
@@ -289,7 +293,7 @@ export default async function WorkflowDetailsPage({
 												{formatEventType(event.eventType)}
 											</span>
 											<span className="text-xs text-muted-foreground">
-												{formatDistanceToNow(event.timestamp)} ago
+												{formatDistanceToNow(event.timestamp || new Date())} ago
 											</span>
 										</div>
 
@@ -304,7 +308,7 @@ export default async function WorkflowDetailsPage({
 												variant="secondary"
 												className="h-5 px-1.5 text-[10px] bg-muted text-muted-foreground hover:bg-muted/80"
 											>
-												{event.actorType}
+												{event.actorType || 'system'}
 											</Badge>
 											{event.actorId && (
 												<span className="text-[10px] text-muted-foreground font-mono">
@@ -324,7 +328,7 @@ export default async function WorkflowDetailsPage({
 										Workflow Started
 									</span>
 									<span className="text-xs text-muted-foreground">
-										{formatDistanceToNow(workflow.startedAt)} ago
+										{formatDistanceToNow(workflow.startedAt || new Date())} ago
 									</span>
 								</div>
 							</div>
@@ -410,22 +414,10 @@ export default async function WorkflowDetailsPage({
 										Current Agent
 									</p>
 									<p className="text-sm text-foreground">
-										{workflow.currentAgent || "System (Orchestrator)"}
+										System (Orchestrator)
 									</p>
 								</div>
 							</div>
-
-							{workflow.errorDetails && (
-								<div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-xs">
-									<p className="font-medium mb-1 flex items-center gap-2">
-										<RiErrorWarningLine size={14} />
-										Error Detected
-									</p>
-									<code className="block mt-1 opacity-80 wrap-break-word">
-										{workflow.errorDetails}
-									</code>
-								</div>
-							)}
 						</CardContent>
 					</Card>
 				</div>

@@ -149,7 +149,7 @@ export function WorkflowStageIndicator({
 						className={cn(
 							"flex items-center justify-center rounded-full font-medium transition-all",
 							compact ? "h-6 w-6 text-[10px]" : "h-8 w-8 text-xs",
-							stage < currentStage && "bg-teal-500/40 text-teal-700",
+							stage < currentStage && "bg-teal-500/40 text-teal-200",
 							stage === currentStage &&
 							"bg-stone-500/20 text-stone-400 ring-2 ring-stone-500/30",
 							stage > currentStage && "bg-secondary/5 text-muted-foreground",
@@ -338,7 +338,7 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 							<Button
 								variant="ghost"
 								size="icon"
-								className="h-8 w-8 hover:bg-teal-500/40 hover:text-teal-700 transition-colors"
+								className="h-8 w-8 hover:bg-teal-500/40 hover:text-teal-200 transition-colors"
 								onClick={() => meta?.onQuickApprove(row.original)}
 								title="Approve"
 							>
