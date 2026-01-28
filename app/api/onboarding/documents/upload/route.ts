@@ -1,0 +1,182 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getDatabaseClient } from "@/app/utils";
+import { documentUploads, workflows } from "@/db/schema";
+import { eq } from "drizzle-orm";
+import crypto from "crypto";
+
+/**
+ * POST /api/onboarding/documents/upload
+ * Upload a document for FICA verification
+ *
+ * Note: This is a simplified implementation. In production, you would:
+ * 1. Use a proper file storage service (S3, R2, etc.)
+ * 2. Implement virus scanning
+ * 3. Add file validation
+ */
+export async function POST(request: NextRequest) {
+	const db = getDatabaseClient();
+	if (!db) {
+		return NextResponse.json(
+			{ error: "Database not available" },
+			{ status: 500 }
+		);
+	}
+
+	try {
+		const formData = await request.formData();
+
+		const file = formData.get("file") as File | null;
+		const workflowId = formData.get("workflowId") as string | null;
+		const onboardingFormId = formData.get("onboardingFormId") as string | null;
+		const category = formData.get("category") as string | null;
+		const documentType = formData.get("documentType") as string | null;
+		const userId = formData.get("userId") as string | null;
+		const metadata = formData.get("metadata") as string | null;
+
+		// Validate required fields
+		if (!file || !workflowId || !category || !documentType) {
+			return NextResponse.json(
+				{ error: "Missing required fields: file, workflowId, category, documentType" },
+				{ status: 400 }
+			);
+		}
+
+		const workflowIdNum = parseInt(workflowId);
+
+		// Verify workflow exists
+		const workflow = await db
+			.select()
+			.from(workflows)
+			.where(eq(workflows.id, workflowIdNum))
+			.limit(1);
+
+		if (workflow.length === 0) {
+			return NextResponse.json(
+				{ error: "Workflow not found" },
+				{ status: 404 }
+			);
+		}
+
+		// Validate file size (max 10MB)
+		const maxSize = 10 * 1024 * 1024; // 10MB
+		if (file.size > maxSize) {
+			return NextResponse.json(
+				{ error: "File size exceeds 10MB limit" },
+				{ status: 400 }
+			);
+		}
+
+		// Validate file type
+		const allowedTypes = [
+			"application/pdf",
+			"image/jpeg",
+			"image/png",
+			"image/jpg",
+			"application/msword",
+			"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+		];
+
+		if (!allowedTypes.includes(file.type)) {
+			return NextResponse.json(
+				{ error: "File type not allowed. Accepted: PDF, JPG, PNG, DOC, DOCX" },
+				{ status: 400 }
+			);
+		}
+
+		// Generate unique storage key
+		const fileExtension = file.name.split(".").pop() || "bin";
+		const storageKey = `${workflowId}/${category}/${crypto.randomUUID()}.${fileExtension}`;
+
+		// In production, upload to S3/R2 here
+		// For now, we'll just store the metadata
+		// const fileBuffer = await file.arrayBuffer();
+		// await uploadToStorage(storageKey, fileBuffer);
+
+		// Mock storage URL (in production, this would be the actual S3/R2 URL)
+		const storageUrl = `/api/onboarding/documents/download/${storageKey}`;
+
+		// Create document record
+		const result = await db
+			.insert(documentUploads)
+			.values({
+				workflowId: workflowIdNum,
+				onboardingFormId: onboardingFormId ? parseInt(onboardingFormId) : null,
+				category: category as any,
+				documentType,
+				fileName: file.name,
+				fileSize: file.size,
+				mimeType: file.type,
+				storageKey,
+				storageUrl,
+				verificationStatus: "pending",
+				metadata: metadata || undefined,
+				uploadedBy: userId || undefined,
+			})
+			.returning();
+
+		const document = result[0];
+		if (!document) {
+			return NextResponse.json(
+				{ error: "Failed to create document record" },
+				{ status: 500 }
+			);
+		}
+
+		return NextResponse.json({
+			success: true,
+			document: {
+				id: document.id,
+				fileName: document.fileName,
+				fileSize: document.fileSize,
+				mimeType: document.mimeType,
+				storageUrl: document.storageUrl,
+				verificationStatus: document.verificationStatus,
+			},
+		});
+	} catch (error) {
+		console.error("Failed to upload document:", error);
+		return NextResponse.json(
+			{ error: "Failed to upload document" },
+			{ status: 500 }
+		);
+	}
+}
+
+/**
+ * GET /api/onboarding/documents/upload
+ * List all documents for a workflow
+ */
+export async function GET(request: NextRequest) {
+	const db = getDatabaseClient();
+	if (!db) {
+		return NextResponse.json(
+			{ error: "Database not available" },
+			{ status: 500 }
+		);
+	}
+
+	const { searchParams } = new URL(request.url);
+	const workflowId = searchParams.get("workflowId");
+
+	if (!workflowId) {
+		return NextResponse.json(
+			{ error: "workflowId is required" },
+			{ status: 400 }
+		);
+	}
+
+	try {
+		const documents = await db
+			.select()
+			.from(documentUploads)
+			.where(eq(documentUploads.workflowId, parseInt(workflowId)));
+
+		return NextResponse.json({ documents });
+	} catch (error) {
+		console.error("Failed to fetch documents:", error);
+		return NextResponse.json(
+			{ error: "Failed to fetch documents" },
+			{ status: 500 }
+		);
+	}
+}
