@@ -1,0 +1,322 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getDatabaseClient } from "@/app/utils";
+import {
+	onboardingForms,
+	formSubmissions,
+	workflows,
+	FORM_TYPES,
+} from "@/db/schema";
+import { eq, and } from "drizzle-orm";
+import { inngest } from "@/inngest/client";
+
+/**
+ * GET /api/onboarding/forms/[workflowId]/[formType]
+ * Get form data for a specific workflow and form type
+ */
+export async function GET(
+	request: NextRequest,
+	{ params }: { params: Promise<{ workflowId: string; formType: string }> }
+) {
+	const { workflowId, formType } = await params;
+
+	const db = getDatabaseClient();
+	if (!db) {
+		return NextResponse.json(
+			{ error: "Database not available" },
+			{ status: 500 }
+		);
+	}
+
+	// Validate form type
+	if (!FORM_TYPES.includes(formType as any)) {
+		return NextResponse.json(
+			{ error: "Invalid form type" },
+			{ status: 400 }
+		);
+	}
+
+	try {
+		// Get or create the onboarding form record
+		const existingForm = await db
+			.select()
+			.from(onboardingForms)
+			.where(
+				and(
+					eq(onboardingForms.workflowId, parseInt(workflowId)),
+					eq(onboardingForms.formType, formType as any)
+				)
+			)
+			.limit(1);
+
+		const form = existingForm[0];
+		if (!form) {
+			// Return empty form data with not_started status
+			return NextResponse.json({
+				form: null,
+				submission: null,
+				status: "not_started",
+			});
+		}
+
+		// Get the latest submission
+		const latestSubmission = await db
+			.select()
+			.from(formSubmissions)
+			.where(eq(formSubmissions.onboardingFormId, form.id))
+			.orderBy(formSubmissions.version)
+			.limit(1);
+
+		return NextResponse.json({
+			form,
+			submission: latestSubmission[0] || null,
+			status: form.status,
+		});
+	} catch (error) {
+		console.error("Failed to fetch form:", error);
+		return NextResponse.json(
+			{ error: "Failed to fetch form data" },
+			{ status: 500 }
+		);
+	}
+}
+
+/**
+ * POST /api/onboarding/forms/[workflowId]/[formType]
+ * Save form data (draft or submit)
+ */
+export async function POST(
+	request: NextRequest,
+	{ params }: { params: Promise<{ workflowId: string; formType: string }> }
+) {
+	const { workflowId, formType } = await params;
+
+	const db = getDatabaseClient();
+	if (!db) {
+		return NextResponse.json(
+			{ error: "Database not available" },
+			{ status: 500 }
+		);
+	}
+
+	// Validate form type
+	if (!FORM_TYPES.includes(formType as any)) {
+		return NextResponse.json(
+			{ error: "Invalid form type" },
+			{ status: 400 }
+		);
+	}
+
+	try {
+		const body = await request.json();
+		const { formData, isDraft = true, userId } = body;
+
+		if (!formData) {
+			return NextResponse.json(
+				{ error: "Form data is required" },
+				{ status: 400 }
+			);
+		}
+
+		const workflowIdNum = parseInt(workflowId);
+
+		// Verify workflow exists
+		const workflow = await db
+			.select()
+			.from(workflows)
+			.where(eq(workflows.id, workflowIdNum))
+			.limit(1);
+
+		if (workflow.length === 0) {
+			return NextResponse.json(
+				{ error: "Workflow not found" },
+				{ status: 404 }
+			);
+		}
+
+		// Get or create onboarding form record
+		let existingForm = await db
+			.select()
+			.from(onboardingForms)
+			.where(
+				and(
+					eq(onboardingForms.workflowId, workflowIdNum),
+					eq(onboardingForms.formType, formType as any)
+				)
+			)
+			.limit(1);
+
+		let formId: number;
+		const existingFormRecord = existingForm[0];
+
+		if (!existingFormRecord) {
+			// Create new form record
+			const newFormResult = await db
+				.insert(onboardingForms)
+				.values({
+					workflowId: workflowIdNum,
+					formType: formType as any,
+					status: isDraft ? "in_progress" : "submitted",
+					currentStep: body.currentStep || 1,
+					totalSteps: body.totalSteps || 1,
+					lastSavedAt: new Date(),
+					submittedAt: isDraft ? undefined : new Date(),
+				})
+				.returning();
+			
+			const newForm = newFormResult[0];
+			if (!newForm) {
+				return NextResponse.json(
+					{ error: "Failed to create form record" },
+					{ status: 500 }
+				);
+			}
+			formId = newForm.id;
+		} else {
+			formId = existingFormRecord.id;
+
+			// Update form status
+			await db
+				.update(onboardingForms)
+				.set({
+					status: isDraft ? "in_progress" : "submitted",
+					currentStep: body.currentStep || existingFormRecord.currentStep,
+					lastSavedAt: new Date(),
+					submittedAt: isDraft ? existingFormRecord.submittedAt : new Date(),
+					updatedAt: new Date(),
+				})
+				.where(eq(onboardingForms.id, formId));
+		}
+
+		// Get current version number
+		const existingSubmissions = await db
+			.select()
+			.from(formSubmissions)
+			.where(eq(formSubmissions.onboardingFormId, formId))
+			.orderBy(formSubmissions.version);
+
+		const lastSubmission = existingSubmissions[existingSubmissions.length - 1];
+		const nextVersion = lastSubmission ? lastSubmission.version + 1 : 1;
+
+		// Create submission record
+		const submissionResult = await db
+			.insert(formSubmissions)
+			.values({
+				onboardingFormId: formId,
+				version: nextVersion,
+				formData: JSON.stringify(formData),
+				isDraft,
+				submittedBy: userId,
+			})
+			.returning();
+
+		const submission = submissionResult[0];
+		if (!submission) {
+			return NextResponse.json(
+				{ error: "Failed to create submission record" },
+				{ status: 500 }
+			);
+		}
+
+		// If not a draft, send Inngest event
+		if (!isDraft) {
+			await inngest.send({
+				name: "onboarding/form-submitted",
+				data: {
+					workflowId: workflowIdNum,
+					formType: formType as any,
+					submissionId: submission.id,
+				},
+			});
+		}
+
+		return NextResponse.json({
+			success: true,
+			formId,
+			submissionId: submission.id,
+			version: nextVersion,
+			status: isDraft ? "in_progress" : "submitted",
+		});
+	} catch (error) {
+		console.error("Failed to save form:", error);
+		return NextResponse.json(
+			{ error: "Failed to save form data" },
+			{ status: 500 }
+		);
+	}
+}
+
+/**
+ * PUT /api/onboarding/forms/[workflowId]/[formType]
+ * Update form status (for review)
+ */
+export async function PUT(
+	request: NextRequest,
+	{ params }: { params: Promise<{ workflowId: string; formType: string }> }
+) {
+	const { workflowId, formType } = await params;
+
+	const db = getDatabaseClient();
+	if (!db) {
+		return NextResponse.json(
+			{ error: "Database not available" },
+			{ status: 500 }
+		);
+	}
+
+	try {
+		const body = await request.json();
+		const { status, reviewNotes, reviewedBy } = body;
+
+		if (!status) {
+			return NextResponse.json(
+				{ error: "Status is required" },
+				{ status: 400 }
+			);
+		}
+
+		const workflowIdNum = parseInt(workflowId);
+
+		// Get the form
+		const existingForm = await db
+			.select()
+			.from(onboardingForms)
+			.where(
+				and(
+					eq(onboardingForms.workflowId, workflowIdNum),
+					eq(onboardingForms.formType, formType as any)
+				)
+			)
+			.limit(1);
+
+		const formRecord = existingForm[0];
+		if (!formRecord) {
+			return NextResponse.json(
+				{ error: "Form not found" },
+				{ status: 404 }
+			);
+		}
+
+		// Update form status
+		await db
+			.update(onboardingForms)
+			.set({
+				status,
+				reviewNotes,
+				reviewedBy,
+				reviewedAt: new Date(),
+				updatedAt: new Date(),
+			})
+			.where(eq(onboardingForms.id, formRecord.id));
+
+		return NextResponse.json({
+			success: true,
+			status,
+		});
+	} catch (error) {
+		console.error("Failed to update form status:", error);
+		return NextResponse.json(
+			{ error: "Failed to update form status" },
+			{ status: 500 }
+		);
+	}
+}
