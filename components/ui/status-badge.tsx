@@ -8,8 +8,8 @@ export type StatusType = "success" | "warning" | "error" | "info" | "neutral" | 
 const statusStyles: Record<StatusType, string> = {
     // Dark mode compatible pastel/transparent styles
     success: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-    warning: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-    error: "bg-rose-500/10 text-rose-400 border-rose-500/20",
+    warning: "bg-warning/50 text-warning-foreground border-warning",
+    error: "bg-destructive/20 text-destructive-foreground border-rose-500/20",
     info: "bg-sky-500/10 text-sky-400 border-sky-500/20",
     neutral: "bg-secondary/50 text-muted-foreground border-sidebar-border",
     brand: "bg-primary/10 text-primary border-primary/20",

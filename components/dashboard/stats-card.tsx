@@ -15,7 +15,7 @@ interface StatsCardProps {
 
 const iconColorClasses = {
 	amber: "bg-stone-500/20 text-stone-400",
-	green: "bg-emerald-500/30 text-teal-200",
+	green: "bg-emerald-500/30 text-emerald-600/80",
 	blue: "bg-blue-500/20 text-blue-400",
 	purple: "bg-purple-500/20 text-purple-400",
 	red: "bg-red-500/20 text-red-400",
@@ -52,7 +52,7 @@ export function StatsCard({
 							<span
 								className={cn(
 									"text-xs font-medium",
-									change.trend === "up" && "text-teal-200",
+									change.trend === "up" && "text-emerald-600/80",
 									change.trend === "down" && "text-red-400",
 									change.trend === "neutral" && "text-muted-foreground",
 								)}

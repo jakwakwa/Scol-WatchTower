@@ -61,7 +61,7 @@ function getSeverityColor(severity: string): string {
         case "LOW":
             return "bg-blue-500/10 text-blue-400 border-blue-500/20";
         case "MEDIUM":
-            return "bg-amber-500/10 text-amber-400 border-amber-500/20";
+            return "bg-warning/50 text-warning-foreground border-warning";
         case "HIGH":
             return "bg-orange-500/10 text-orange-400 border-orange-500/20";
         case "CRITICAL":
@@ -95,7 +95,7 @@ function MetricCard({
 }) {
     const statusColors = {
         good: "text-emerald-400",
-        warning: "text-amber-400",
+        warning: "text-warning-foreground",
         danger: "text-red-400",
         neutral: "text-muted-foreground",
     };
@@ -139,13 +139,13 @@ function DocumentCard({
             <div
                 className={cn(
                     "p-2 rounded-lg",
-                    verified ? "bg-emerald-500/10" : "bg-amber-500/10"
+                    verified ? "bg-emerald-500/10" : "bg-warning/50"
                 )}
             >
                 <RiFileTextLine
                     className={cn(
                         "h-5 w-5",
-                        verified ? "text-emerald-400" : "text-amber-400"
+                        verified ? "text-emerald-400" : "text-warning-foreground"
                     )}
                 />
             </div>
@@ -167,7 +167,7 @@ function DocumentCard({
                         Verified
                     </Badge>
                 ) : (
-                    <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/20 text-[10px]">
+                    <Badge variant="outline" className="bg-warning/50 text-warning-foreground border-warning text-[10px]">
                         Pending
                     </Badge>
                 )}
@@ -190,7 +190,7 @@ function TimelineEventCard({ event }: { event: TimelineEvent }) {
         stage_change: { icon: RiHistoryLine, color: "text-blue-400", bg: "bg-blue-500/10" },
         agent_dispatch: { icon: RiExternalLinkLine, color: "text-purple-400", bg: "bg-purple-500/10" },
         agent_callback: { icon: RiCheckLine, color: "text-emerald-400", bg: "bg-emerald-500/10" },
-        human_override: { icon: RiUserLine, color: "text-amber-400", bg: "bg-amber-500/10" },
+        human_override: { icon: RiUserLine, color: "text-warning-foreground", bg: "bg-warning/50" },
         error: { icon: RiAlertLine, color: "text-red-400", bg: "bg-red-500/10" },
     };
 
@@ -303,7 +303,7 @@ export function RiskReviewDetail({
                                 item.aiTrustScore && item.aiTrustScore >= 80
                                     ? "bg-emerald-500/10"
                                     : item.aiTrustScore && item.aiTrustScore >= 60
-                                        ? "bg-amber-500/10"
+                                        ? "bg-warning/50"
                                         : "bg-red-500/10"
                             )}
                         >
@@ -395,7 +395,7 @@ export function RiskReviewDetail({
                                     item.recommendation === "APPROVE"
                                         ? "bg-emerald-500/10 text-emerald-400"
                                         : item.recommendation === "MANUAL_REVIEW"
-                                            ? "bg-amber-500/10 text-amber-400"
+                                            ? "bg-warning/50 text-warning-foreground"
                                             : "bg-red-500/10 text-red-400"
                                 )}
                             >

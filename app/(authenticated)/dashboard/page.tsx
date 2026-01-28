@@ -159,9 +159,9 @@ export default async function DashboardPage() {
 			description="Track and manage client applications through the onboarding process"
 			actions={
 				<Link href="/dashboard/leads/new">
-					<Button className="gap-2 bg-blue-500 hover:bg-blue-600 text-white shadow-lg shadow-blue-500/20">
-						<RiAddLine className="h-4 w-4" />
-						New Application
+					<Button variant="secondary">
+						<RiUserAddLine color="var(--color-teal-200)" />
+						New Lead
 					</Button>
 				</Link>
 			}

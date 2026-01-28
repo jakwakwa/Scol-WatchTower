@@ -43,7 +43,7 @@ const statusConfig: Record<string, { label: string; color: string }> = {
 	qualified: { label: "Qualified", color: "bg-stone-500/20 text-stone-400" },
 	proposal: { label: "Proposal", color: "bg-stone-500/20 text-stone-400" },
 	negotiation: { label: "Negotiation", color: "bg-pink-500/20 text-pink-400" },
-	won: { label: "Won", color: "bg-emerald-500/20 text-teal-200" },
+	won: { label: "Won", color: "bg-emerald-500/20 text-emerald-600/80" },
 	lost: { label: "Lost", color: "bg-red-500/20 text-red-400" },
 };
 

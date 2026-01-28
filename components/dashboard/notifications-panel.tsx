@@ -36,8 +36,8 @@ export interface WorkflowNotification {
 const notificationConfig = {
 	awaiting: {
 		icon: RiUserLine,
-		color: "text-amber-500",
-		bgColor: "bg-amber-500/10",
+		color: "text-warning-foreground",
+		bgColor: "bg-warning/50",
 	},
 	completed: {
 		icon: RiCheckLine,
@@ -56,8 +56,8 @@ const notificationConfig = {
 	},
 	paused: {
 		icon: RiPauseCircleLine,
-		color: "text-amber-500",
-		bgColor: "bg-amber-500/10",
+		color: "text-warning-foreground",
+		bgColor: "bg-warning/50",
 	},
 	error: {
 		icon: RiAlertLine,
@@ -257,7 +257,7 @@ export function NotificationsPanel({
 															<Button
 																variant="ghost"
 																size="sm"
-																className="h-6 px-2 text-xs hover:bg-teal-500/40 hover:text-teal-200"
+																className="h-6 px-2 text-xs hover:bg-teal-500/40 hover:text-emerald-600/80"
 																onClick={(e) =>
 																	handleAction(e, notification, "approve")
 																}

@@ -131,18 +131,18 @@ export default async function NotificationsPage() {
                         {allNotifications.map((notification) => (
                             <GlassCard
                                 key={notification.id}
-                                className={`flex items-start justify-between gap-4 ${!notification.read ? "border-l-4 border-l-amber-500" : ""
+                                className={`flex items-start justify-between gap-4 ${!notification.read ? "border-l-4 border-l-warning" : ""
                                     }`}
                             >
                                 <div className="flex items-start gap-4">
                                     <div
                                         className={`p-2 rounded-lg ${notification.type === "error"
-                                                ? "bg-red-500/10 text-red-400"
-                                                : notification.type === "warning"
-                                                    ? "bg-amber-500/10 text-amber-400"
-                                                    : notification.type === "success"
-                                                        ? "bg-green-500/10 text-green-400"
-                                                        : "bg-blue-500/10 text-blue-400"
+                                            ? "bg-red-500/10 text-red-400"
+                                            : notification.type === "warning"
+                                                ? "bg-warning/50 text-warning-foreground"
+                                                : notification.type === "success"
+                                                    ? "bg-green-500/10 text-green-400"
+                                                    : "bg-blue-500/10 text-blue-400"
                                             }`}
                                     >
                                         {notification.type === "error" ? (

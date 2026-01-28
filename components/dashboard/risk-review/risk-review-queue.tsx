@@ -82,14 +82,14 @@ interface RiskDecisionDialogProps {
 
 function getTrustScoreColor(score: number): string {
     if (score >= 80) return "text-emerald-400";
-    if (score >= 60) return "text-amber-400";
+    if (score >= 60) return "text-warning-foreground";
     if (score >= 40) return "text-orange-400";
     return "text-red-400";
 }
 
 function getTrustScoreBg(score: number): string {
     if (score >= 80) return "bg-emerald-500/10";
-    if (score >= 60) return "bg-amber-500/10";
+    if (score >= 60) return "bg-warning/50";
     if (score >= 40) return "bg-orange-500/10";
     return "bg-red-500/10";
 }
@@ -99,7 +99,7 @@ function getSeverityColor(severity: string): string {
         case "LOW":
             return "bg-blue-500/10 text-blue-400 border-blue-500/20";
         case "MEDIUM":
-            return "bg-amber-500/10 text-amber-400 border-amber-500/20";
+            return "bg-warning/50 text-warning-foreground border-warning";
         case "HIGH":
             return "bg-orange-500/10 text-orange-400 border-orange-500/20";
         case "CRITICAL":
@@ -233,7 +233,7 @@ export function RiskReviewCard({
                         item.aiTrustScore && item.aiTrustScore >= 80
                             ? "bg-emerald-500"
                             : item.aiTrustScore && item.aiTrustScore >= 60
-                                ? "bg-amber-500"
+                                ? "bg-warning"
                                 : "bg-red-500"
                     )}
                 />
@@ -287,7 +287,7 @@ export function RiskReviewCard({
                                     item.itcScore && item.itcScore >= 700
                                         ? "text-emerald-400"
                                         : item.itcScore && item.itcScore >= 600
-                                            ? "text-amber-400"
+                                            ? "text-warning-foreground"
                                             : "text-red-400"
                                 )}
                             >
@@ -511,7 +511,7 @@ export function RiskDecisionDialog({
                             className={cn(
                                 "font-medium",
                                 (item.riskFlags?.length || 0) > 0
-                                    ? "text-amber-400"
+                                    ? "text-warning-foreground"
                                     : "text-emerald-400"
                             )}
                         >

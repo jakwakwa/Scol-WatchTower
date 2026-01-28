@@ -18,7 +18,7 @@ const statusConfig = {
 	qualified: { label: "Qualified", color: "bg-stone-500/20 text-stone-400" },
 	proposal: { label: "Proposal", color: "bg-stone-500/20 text-stone-400" },
 	negotiation: { label: "Negotiation", color: "bg-pink-500/20 text-pink-400" },
-	won: { label: "Won", color: "bg-teal-500/40 text-teal-200" },
+	won: { label: "Won", color: "bg-teal-500/40 text-emerald-600/80" },
 	lost: { label: "Lost", color: "bg-red-500/20 text-red-400" },
 } as const;
 
@@ -43,8 +43,9 @@ export default async function LeadsPage(
 			actions={
 
 				<Link href="/dashboard/leads/new">
-					<Button className="gap-2 bg-linear-to-r from-stone-500 to-stone-500 hover:from-stone-600 hover:to-stone-600">
-						<RiUserAddLine className="h-4 w-4" />
+
+					<Button variant="secondary">
+						<RiUserAddLine />
 						New Lead
 					</Button>
 				</Link>

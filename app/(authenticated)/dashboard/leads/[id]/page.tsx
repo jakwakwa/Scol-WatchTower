@@ -75,7 +75,7 @@ export default function ClientDetailPage() {
             actions={
                 <div className="flex gap-2">
                     <Button variant="outline" size="sm">Edit Details</Button>
-                    <Button size="sm" className="bg-blue-600 hover:bg-blue-700">Action Application</Button>
+                    <Button size="sm" className="bg-action hover:bg-action/85">Action Application</Button>
                 </div>
             }
         >
@@ -94,7 +94,7 @@ export default function ClientDetailPage() {
                             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Risk Profile</span>
                             <div className="mt-2 flex items-center gap-2">
                                 <RiskBadge level={client.riskLevel} />
-                                <span className={`text-sm font-bold ${client.itcScore < 60 ? 'text-rose-500' : 'text-emerald-500'}`}>
+                                <span className={`text-sm font-bold ${client.itcScore < 60 ? 'text-destructive-foreground' : 'text-emerald-500'}`}>
                                     ITC: {client.itcScore}
                                 </span>
                             </div>
@@ -182,11 +182,11 @@ export default function ClientDetailPage() {
                                     Currently in <span className="font-medium text-foreground">FICA Review</span> stage awaiting final document verification.
                                 </p>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div className="p-4 rounded-xl bg-secondary/20 border border-border/50">
+                                    <div className="p-4 rounded-xl bg-action/10 border border-border/50">
                                         <label className="text-xs uppercase text-muted-foreground font-bold">Trading Name</label>
                                         <p className="font-medium mt-1">{client.tradingName}</p>
                                     </div>
-                                    <div className="p-4 rounded-xl bg-secondary/20 border border-border/50">
+                                    <div className="p-4 rounded-xl bg-action/10 border border-border/50">
                                         <label className="text-xs uppercase text-muted-foreground font-bold">Estimated Vol</label>
                                         <p className="font-medium mt-1">R {(client.mandateVolume / 100).toLocaleString()}</p>
                                     </div>
@@ -208,8 +208,8 @@ export default function ClientDetailPage() {
                                     <div key={doc.id} className="flex items-center justify-between p-4 rounded-xl border border-border/60 bg-card hover:bg-secondary/10 transition-colors">
                                         <div className="flex items-center gap-4">
                                             <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${doc.status === 'verified' ? 'bg-emerald-500/10 text-emerald-500' :
-                                                doc.status === 'missing' ? 'bg-rose-500/10 text-rose-500' :
-                                                    'bg-amber-500/10 text-amber-500'
+                                                doc.status === 'missing' ? 'bg-destructive/20 text-destructive-foreground' :
+                                                    'bg-warning/50 text-warning-foreground'
                                                 }`}>
                                                 <RiFileTextLine className="h-5 w-5" />
                                             </div>
@@ -243,7 +243,7 @@ export default function ClientDetailPage() {
                                         </div>
                                         <div className="flex justify-between">
                                             <span className="text-sm text-foreground">Dishonoured Payments</span>
-                                            <span className="text-sm font-bold text-amber-500">{MOCK_RISK_ASSESSMENT.dishonouredPayments}</span>
+                                            <span className="text-sm font-bold text-warning-foreground">{MOCK_RISK_ASSESSMENT.dishonouredPayments}</span>
                                         </div>
                                         <div className="flex justify-between">
                                             <span className="text-sm text-foreground">Avg Daily Balance</span>

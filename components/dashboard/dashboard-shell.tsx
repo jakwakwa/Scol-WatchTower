@@ -26,13 +26,13 @@ export function DashboardShell({
     const { title, description, actions } = useDashboardStore();
 
     return (
-        <div className="min-h-screen bg-linear-to-br from-primary/30 via-zinc-700/20 to-black/90 ">
+        <div className="min-h-screen bg-linear-to-br from-secondary/20 via-card/70 to-background ">
             <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
 
             {/* Main content */}
             <main className={cn(`pl-64 transition-all duration-300`, isCollapsed && "pl-20")}>
                 {/* Header */}
-                <header className="sticky top-0 z-30 border-b border-sidebar-border bg-sidebar/90 backdrop-blur-xl">
+                <header className="sticky top-0 z-30 border-b border-sidebar-border bg-transparent backdrop-blur-lg">
                     <div className="flex h-20 items-center justify-between px-8">
                         <div>
                             {title && (

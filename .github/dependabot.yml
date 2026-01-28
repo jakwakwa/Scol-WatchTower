@@ -10,7 +10,4 @@ updates:
     schedule:
       interval: "daily"
     exclude-paths:
-      - "src/test/assets"
       - "vendor/**"
-      - "src/*.js"
-      - "src/test/helper.js"

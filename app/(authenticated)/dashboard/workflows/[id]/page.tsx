@@ -61,7 +61,7 @@ const statusConfig: Record<
 	},
 	awaiting_human: {
 		label: "Awaiting Input",
-		color: "bg-amber-500/10 text-amber-500 border-amber-500/20",
+		color: "bg-warning/50 text-warning-foreground border-warning",
 		icon: RiUserLine,
 	},
 	completed: {
@@ -230,7 +230,7 @@ export default async function WorkflowDetailsPage({
 										className={cn(
 											latestQuote.status === "approved"
 												? "text-emerald-500 border-emerald-500/40"
-												: "text-amber-500 border-amber-500/20",
+												: "text-warning-foreground border-warning",
 										)}
 									>
 										{latestQuote.status.toUpperCase()}

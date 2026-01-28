@@ -81,11 +81,11 @@ export default function RiskReviewPage() {
                     />
                 </div>
                 <div className="flex gap-4">
-                    <div className="flex items-center gap-2 px-4 py-2 bg-rose-500/10 border border-rose-500/20 rounded-lg text-rose-500">
+                    <div className="flex items-center gap-2 px-4 py-2 bg-destructive/20 border border-rose-500/20 rounded-lg text-destructive-foreground">
                         <RiAlertLine className="h-4 w-4" />
                         <span className="text-sm font-bold">3 High Risk</span>
                     </div>
-                    <div className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 border border-amber-500/20 rounded-lg text-amber-500">
+                    <div className="flex items-center gap-2 px-4 py-2 bg-warning/50 border border-warning rounded-lg text-warning-foreground">
                         <RiTimeLine className="h-4 w-4" />
                         <span className="text-sm font-bold">5 Pending</span>
                     </div>
@@ -100,14 +100,14 @@ export default function RiskReviewPage() {
 
                             {/* Company Info */}
                             <div className="flex items-start gap-4">
-                                <div className={`h-12 w-12 rounded-full flex items-center justify-center shrink-0 ${assessment.riskLevel === 'high' ? 'bg-rose-100 text-rose-600' :
-                                    assessment.riskLevel === 'medium' ? 'bg-amber-100 text-amber-600' :
+                                <div className={`h-12 w-12 rounded-full flex items-center justify-center shrink-0 ${assessment.riskLevel === 'high' ? 'bg-rose-100 text-destructive-foreground' :
+                                    assessment.riskLevel === 'medium' ? 'bg-warning text-warning-foreground' :
                                         'bg-emerald-100 text-emerald-600'
                                     }`}>
                                     <RiShieldCheckLine className="h-6 w-6" />
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors">
+                                    <h3 className="font-semibold text-muted-foreground group-hover:text-muted-foreground/70 transition-colors leading-normal">
                                         {assessment.companyName}
                                     </h3>
                                     <p className="text-sm text-muted-foreground font-mono">
@@ -120,8 +120,8 @@ export default function RiskReviewPage() {
                             <div className="flex flex-col md:items-end gap-1">
                                 <div className="flex items-center gap-2">
                                     <span className="text-sm text-muted-foreground">Risk Score:</span>
-                                    <span className={`font-mono font-bold text-lg ${assessment.score < 50 ? 'text-rose-500' :
-                                        assessment.score < 80 ? 'text-amber-500' :
+                                    <span className={`font-mono font-bold text-lg ${assessment.score < 50 ? 'text-destructive-foreground' :
+                                        assessment.score < 80 ? 'text-warning-foreground' :
                                             'text-emerald-500'
                                         }`}>{assessment.score}/100</span>
                                 </div>
@@ -152,7 +152,7 @@ export default function RiskReviewPage() {
                             <div className="mt-4 pt-4 border-t border-border/50">
                                 <div className="flex flex-wrap gap-2">
                                     {assessment.flaggedItems.map((item, idx) => (
-                                        <span key={idx} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-rose-500/5 border border-rose-500/10 text-rose-500 text-xs">
+                                        <span key={idx} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-rose-500/5 border border-rose-500/10 text-destructive-foreground text-xs">
                                             <RiAlertLine className="h-3 w-3" />
                                             {item}
                                         </span>

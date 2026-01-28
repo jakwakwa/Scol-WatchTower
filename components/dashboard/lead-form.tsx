@@ -140,16 +140,16 @@ export function LeadForm({
 		<form onSubmit={handleSubmit} className="space-y-8">
 			{/* Test Mode Banner */}
 			{isMockarooTestMode && (
-				<div className="flex items-center justify-between p-4 rounded-lg border border-amber-500/30 bg-amber-500/10">
+				<div className="flex items-center justify-between p-4 rounded-lg border border-warning bg-warning shadow-lg shadow-amber-900/20">
 					<div className="flex items-center gap-2">
-						<span className="text-amber-400 text-sm font-medium">🧪 Mockaroo Test Mode</span>
+						<span className="text-warning-foreground text-sm font-medium">🧪 Mockaroo Test Mode</span>
 					</div>
 					<Button
 						type="button"
 						variant="outline"
 						size="sm"
 						onClick={fillTestData}
-						className="border-amber-500/50 text-amber-400 hover:bg-amber-500/20"
+						className="border-warning/50 text-warning-foreground hover:bg-warning"
 					>
 						Fill Test Data
 					</Button>
@@ -163,11 +163,12 @@ export function LeadForm({
 					<div className="space-y-2">
 						<Label htmlFor="companyName">Company Name *</Label>
 						<Input
+
 							id="companyName"
 							value={formData.companyName}
 							onChange={(e) => updateField("companyName", e.target.value)}
 							placeholder="Enter company name"
-							className={cn(errors.companyName && "border-red-500")}
+							className={cn(errors.companyName ? "border-red-500" : "border-input-border")}
 						/>
 						{errors.companyName && (
 							<p className="text-xs text-red-400">{errors.companyName}</p>
@@ -177,6 +178,7 @@ export function LeadForm({
 					<div className="space-y-2">
 						<Label htmlFor="registrationNumber">CIPC Registration Number</Label>
 						<Input
+							className="border-input-border"
 							id="registrationNumber"
 							value={formData.registrationNumber}
 							onChange={(e) => updateField("registrationNumber", e.target.value)}
@@ -187,6 +189,7 @@ export function LeadForm({
 					<div className="space-y-2">
 						<Label htmlFor="industry">Industry</Label>
 						<Input
+							className="border-input-border"
 							id="industry"
 							value={formData.industry}
 							onChange={(e) => updateField("industry", e.target.value)}
@@ -197,6 +200,7 @@ export function LeadForm({
 					<div className="space-y-2">
 						<Label htmlFor="employeeCount">Employee Count</Label>
 						<Input
+							className="border-input-border"
 							id="employeeCount"
 							type="number"
 							value={formData.employeeCount}
@@ -206,6 +210,7 @@ export function LeadForm({
 					</div>
 
 					<Input
+						className="border-input-border"
 						id="estimatedVolume"
 						value={formData.estimatedVolume}
 						onChange={(e) => updateField("estimatedVolume", e.target.value)}
@@ -213,13 +218,13 @@ export function LeadForm({
 					/>
 				</div>
 
-				<div className="space-y-2">
+				<div className="space-y-2 mt-4">
 					<Label htmlFor="mandateType">Mandate Type</Label>
 					<select
 						id="mandateType"
 						value={formData.mandateType}
 						onChange={(e) => updateField("mandateType", e.target.value)}
-						className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+						className="flex h-10 w-full rounded-md border border-input-border bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
 					>
 						<option value="">Select Mandate Type</option>
 						<option value="debit_order">Debit Order</option>
