@@ -22,6 +22,17 @@
             ]
           },
           {
+            "group": "User guides",
+            "pages": [
+              "user-guides/overview",
+              "user-guides/leads",
+              "user-guides/workflows",
+              "user-guides/onboarding-forms",
+              "user-guides/agents",
+              "user-guides/notifications"
+            ]
+          },
+          {
             "group": "Customization",
             "pages": [
               "essentials/settings",
