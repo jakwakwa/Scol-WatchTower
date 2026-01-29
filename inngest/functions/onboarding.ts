@@ -24,7 +24,7 @@ import { generateFormLinks, sendFormLinksEmail } from '@/lib/services/form-link.
 import { performITCCheck, shouldAutoDecline } from '@/lib/services/itc.service';
 import { createWorkflowNotification, logWorkflowEvent } from '@/lib/services/notification-events.service';
 import { generateQuote } from '@/lib/services/quote.service';
-import type { Quote, QuoteResult } from '@/lib/services/quote.service';
+import type { QuoteResult } from '@/lib/services/quote.service';
 import { updateWorkflowStatus } from '@/lib/services/workflow.service';
 import {
     createV24ClientProfile,
@@ -53,11 +53,21 @@ type WorkflowResolutionEvent = {
     };
 };
 
-type QuoteGeneratedEvent = {
+type QuoteApprovedEvent = {
     data: {
         workflowId: number;
         leadId: number;
-        quote: Quote;
+        quoteId: number;
+        approvedAt: string;
+    };
+};
+
+type QuoteSignedEvent = {
+    data: {
+        workflowId: number;
+        leadId: number;
+        quoteId: number;
+        signedAt: string;
     };
 };
 
@@ -270,37 +280,15 @@ export const onboardingWorkflow = inngest.createFunction(
         });
 
         // Generate quote based on ITC result and lead data
-        const quoteReqResult = (await step.run('generate-legal-pack', () =>
+        const quoteResult = (await step.run('generate-legal-pack', () =>
             generateQuote(leadId, workflowId),
         )) as unknown as QuoteResult;
 
-        let quote: Quote | undefined;
-        const quoteResult = { ...quoteReqResult };
-
-        if (quoteReqResult.success && quoteReqResult.async) {
-            console.log('[Workflow] Quote generation request sent. Waiting for callback...');
-
-            const quoteEvent = (await step.waitForEvent('wait-for-quote', {
-                event: 'onboarding/quote-generated',
-                match: 'data.workflowId',
-                timeout: '24h',
-            })) as QuoteGeneratedEvent | null;
-
-            if (!quoteEvent) {
-                quoteResult.success = false;
-                quoteResult.error = 'Quote generation timed out';
-            } else {
-                quote = quoteEvent.data.quote;
-                quoteResult.success = true;
-                quoteResult.quote = quote;
-            }
-        } else {
-            quote = quoteResult.quote;
-        }
+        const quote = quoteResult.quote;
 
         // Handle quote error with HITL
-        if (!quoteResult.success) {
-            const errorMessage = quoteResult.error || 'Unknown quote error';
+        if (!quoteResult.success || !quote) {
+            const errorMessage = quoteResult.error || 'Quote generation failed';
 
             await step.run('stage-2-quote-error-log', () =>
                 logWorkflowEvent({
@@ -340,11 +328,45 @@ export const onboardingWorkflow = inngest.createFunction(
             }
         }
 
-        // Quote generated - continue with Stage 3
-        // (Zapier webhooks removed - using direct Inngest events)
+        await step.run('stage-2-quote-created', () =>
+            updateWorkflowStatus(workflowId, 'awaiting_human', 2),
+        );
+
+        await step.run('stage-2-quote-notify', () =>
+            createWorkflowNotification({
+                workflowId,
+                leadId,
+                type: 'awaiting',
+                title: 'Quote ready for approval',
+                message: 'AI-generated quote is ready for staff review and approval.',
+                actionable: true,
+            }),
+        );
+
+        console.log('[Workflow] Waiting for staff quote approval...');
+        const approvalEvent = (await step.waitForEvent('wait-for-quote-approval', {
+            event: 'quote/approved',
+            match: 'data.workflowId',
+            timeout: '30d',
+        })) as QuoteApprovedEvent | null;
+
+        if (!approvalEvent) {
+            await step.run('stage-2-quote-approval-timeout', () => updateWorkflowStatus(workflowId, 'timeout', 2));
+            await step.run('stage-2-quote-approval-timeout-notify', () =>
+                createWorkflowNotification({
+                    workflowId,
+                    leadId,
+                    type: 'timeout',
+                    title: 'Quote approval timeout',
+                    message: 'No staff approval received within 30 days.',
+                    actionable: true,
+                }),
+            );
+            return { status: 'timeout', stage: 2, reason: 'Quote approval timeout' };
+        }
 
         // ================================================================
-        // STEP: Send Form Links to Client
+        // STEP: Send Form Links to Client (after staff approval)
         // ================================================================
         await step.run('send-form-links', async () => {
             const db = getDatabaseClient();
@@ -376,13 +398,41 @@ export const onboardingWorkflow = inngest.createFunction(
             });
         });
 
+        await runSafeStep(step, 'stage-2-awaiting-quote-signature', () => updateWorkflowStatus(workflowId, 'awaiting_human', 2), {
+            workflowId,
+            leadId,
+            stage: 2,
+        });
+
+        console.log('[Workflow] Waiting for Signed Quotation...');
+        const quoteSignedEvent = (await step.waitForEvent('wait-for-quote-signed', {
+            event: 'quote/signed',
+            match: 'data.workflowId',
+            timeout: '30d',
+        })) as QuoteSignedEvent | null;
+
+        if (!quoteSignedEvent) {
+            console.error('[Workflow] Quote signature timeout!');
+            await step.run('quote-signature-timeout', () => updateWorkflowStatus(workflowId, 'timeout', 2));
+            await step.run('quote-signature-timeout-notify', () =>
+                createWorkflowNotification({
+                    workflowId,
+                    leadId,
+                    type: 'timeout',
+                    title: 'Quote signature timeout',
+                    message: 'Client did not sign the quotation within 30 days.',
+                    actionable: true,
+                }),
+            );
+            return { status: 'timeout', stage: 2, reason: 'Quote signature timeout' };
+        }
+
         // Wait for Contract Signing
-        await runSafeStep(
-            step,
-            'stage-2-awaiting-contract',
-            () => updateWorkflowStatus(workflowId, 'awaiting_human', 2),
-            { workflowId, leadId, stage: 2 },
-        );
+        await runSafeStep(step, 'stage-2-awaiting-contract', () => updateWorkflowStatus(workflowId, 'awaiting_human', 2), {
+            workflowId,
+            leadId,
+            stage: 2,
+        });
 
         console.log('[Workflow] Waiting for Contract Signed signal...');
         const contractEvent = (await step.waitForEvent('wait-for-contract', {

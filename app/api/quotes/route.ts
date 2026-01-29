@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import { getDatabaseClient } from "@/app/utils";
 import { quotes } from "@/db/schema";
 import { createQuoteSchema } from "@/lib/validations/quotes";
@@ -46,10 +47,12 @@ export async function POST(request: NextRequest) {
 			.insert(quotes)
 			.values({
 				workflowId: data.workflowId,
+				leadId: data.leadId,
 				amount: data.amount,
 				baseFeePercent: data.baseFeePercent,
 				adjustedFeePercent: data.adjustedFeePercent,
 				rationale: data.rationale,
+				details: data.details,
 				generatedBy: data.generatedBy || "platform",
 				status: "draft",
 			})

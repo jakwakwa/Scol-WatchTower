@@ -3,6 +3,9 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { inngest } from "@/inngest";
 import type { FormType } from "@/lib/types";
+import { getDatabaseClient } from "@/app/utils";
+import { quotes } from "@/db/schema";
+import { desc, eq } from "drizzle-orm";
 import {
 	absa6995Schema,
 	facilityApplicationSchema,
@@ -101,6 +104,36 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
+		let latestQuoteId: number | null = null;
+		let quoteDb = null as Awaited<ReturnType<typeof getDatabaseClient>> | null;
+
+		if (formType === "SIGNED_QUOTATION" && formInstance.workflowId) {
+			quoteDb = await getDatabaseClient();
+
+			if (!quoteDb) {
+				return NextResponse.json(
+					{ error: "Database connection failed" },
+					{ status: 500 },
+				);
+			}
+
+			const quoteResults = await quoteDb
+				.select()
+				.from(quotes)
+				.where(eq(quotes.workflowId, formInstance.workflowId))
+				.orderBy(desc(quotes.createdAt))
+				.limit(1);
+
+			if (quoteResults.length === 0) {
+				return NextResponse.json(
+					{ error: "No quote available for this workflow" },
+					{ status: 404 },
+				);
+			}
+
+			latestQuoteId = quoteResults[0].id;
+		}
+
 		await recordFormSubmission({
 			formInstanceId: formInstance.id,
 			leadId: formInstance.leadId,
@@ -151,6 +184,38 @@ export async function POST(request: NextRequest) {
 						signedAt: new Date().toISOString(),
 					},
 				});
+			}
+
+			if (formType === "SIGNED_QUOTATION" && formInstance.workflowId) {
+				const db = quoteDb ?? (await getDatabaseClient());
+
+				if (!db) {
+					console.error(
+						"[FormSubmit] Database connection failed for quote update",
+					);
+				} else {
+					const updateResults = latestQuoteId
+						? await db
+								.update(quotes)
+								.set({ status: "approved", updatedAt: new Date() })
+								.where(eq(quotes.id, latestQuoteId))
+								.returning()
+						: [];
+
+					const resolvedQuoteId = updateResults[0]?.id ?? latestQuoteId;
+
+					if (resolvedQuoteId) {
+						await inngest.send({
+							name: "quote/signed",
+							data: {
+								workflowId: formInstance.workflowId,
+								leadId: formInstance.leadId,
+								quoteId: resolvedQuoteId,
+								signedAt: new Date().toISOString(),
+							},
+						});
+					}
+				}
 			}
 		}
 

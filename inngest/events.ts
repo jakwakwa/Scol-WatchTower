@@ -60,6 +60,26 @@ export type Events = {
         };
     };
 
+    /** Quote approved by staff and sent to client */
+    'quote/approved': {
+        data: {
+            workflowId: number;
+            leadId: number;
+            quoteId: number;
+            approvedAt: string;
+        };
+    };
+
+    /** Quote signed by client */
+    'quote/signed': {
+        data: {
+            workflowId: number;
+            leadId: number;
+            quoteId: number;
+            signedAt: string;
+        };
+    };
+
     /** Workflow error resolved by human */
     'workflow/error-resolved': {
         data: {
