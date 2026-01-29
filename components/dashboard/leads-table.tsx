@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
 	DropdownMenu,
@@ -217,14 +217,13 @@ export const columns: ColumnDef<LeadRow>[] = [
 			return (
 				<div className="flex items-center justify-end gap-2">
 					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon"
-								className="h-8 w-8 hover:bg-secondary/10"
-							>
-								<RiMoreLine className="h-4 w-4" />
-							</Button>
+						<DropdownMenuTrigger
+							className={cn(
+								buttonVariants({ variant: "ghost", size: "icon" }),
+								"h-8 w-8 hover:bg-secondary/10",
+							)}
+						>
+							<RiMoreLine className="h-4 w-4" />
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="end">
 							<DropdownMenuLabel>Actions</DropdownMenuLabel>

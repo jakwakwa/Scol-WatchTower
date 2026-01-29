@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Dialog,
@@ -344,14 +344,13 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 					)}
 
 					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon"
-								className="h-8 w-8 hover:bg-secondary/10"
-							>
-								<RiMore2Fill className="h-4 w-4" />
-							</Button>
+						<DropdownMenuTrigger
+							className={cn(
+								buttonVariants({ variant: "ghost", size: "icon" }),
+								"h-8 w-8 hover:bg-secondary/10",
+							)}
+						>
+							<RiMore2Fill className="h-4 w-4" />
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="end" className="w-[180px]">
 							<DropdownMenuLabel>Actions</DropdownMenuLabel>
