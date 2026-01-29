@@ -1,7 +1,3 @@
-import { type EventSchemas } from 'inngest';
-import type { WorkflowStatus } from '@/inngest/steps/database';
-import type { ITCCheckResult, FicaDocumentAnalysis } from '@/lib/types';
-
 export type Events = {
     // ================================================================
     // Lead & Workflow Events
@@ -79,6 +75,41 @@ export type Events = {
             workflowId: number;
             contractUrl?: string;
             signedAt: string;
+        };
+    };
+
+    /** Form submitted by client */
+    'form/submitted': {
+        data: {
+            workflowId: number;
+            leadId: number;
+            formType: string;
+            formInstanceId: number;
+            submittedAt: string;
+        };
+    };
+
+    /** Document uploaded by client */
+    'document/uploaded': {
+        data: {
+            workflowId: number;
+            leadId: number;
+            documentId: number;
+            documentType: string;
+            category?: string;
+            uploadedAt: string;
+        };
+    };
+
+    /** Document processed by AI/agent */
+    'document/processed': {
+        data: {
+            workflowId: number;
+            leadId: number;
+            documentId: number;
+            documentType: string;
+            status: 'processed' | 'failed';
+            processedAt: string;
         };
     };
 

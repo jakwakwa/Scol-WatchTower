@@ -1,7 +1,5 @@
 "use client";
 
-import * as React from "react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -15,7 +13,6 @@ import {
 import { cn } from "@/lib/utils";
 import {
 	RiArrowDownSLine,
-	RiArrowRightLine,
 	RiArrowUpSLine,
 	RiMoreLine,
 } from "@remixicon/react";
@@ -55,8 +52,11 @@ export const columns: ColumnDef<LeadRow>[] = [
 		header: ({ table }) => (
 			<Checkbox
 				checked={
-					table.getIsAllPageRowsSelected() ||
-					(table.getIsSomePageRowsSelected() && "indeterminate")
+					table.getIsAllPageRowsSelected()
+						? true
+						: table.getIsSomePageRowsSelected()
+							? "indeterminate"
+							: false
 				}
 				onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
 				aria-label="Select all"
@@ -213,7 +213,7 @@ export const columns: ColumnDef<LeadRow>[] = [
 	},
 	{
 		id: "actions",
-		cell: ({ row }) => {
+		cell: () => {
 			return (
 				<div className="flex items-center justify-end gap-2">
 					<DropdownMenu>

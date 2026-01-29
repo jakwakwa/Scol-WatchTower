@@ -30,6 +30,100 @@ export const MANDATE_TYPE_LABELS: Record<MandateType, string> = {
 };
 
 // ============================================
+// Form & Document Types
+// ============================================
+
+export const FormTypeSchema = z.enum([
+    'FACILITY_APPLICATION',
+    'SIGNED_QUOTATION',
+    'STRATCOL_CONTRACT',
+    'ABSA_6995',
+    'DOCUMENT_UPLOADS',
+]);
+
+export type FormType = z.infer<typeof FormTypeSchema>;
+
+export const FormInstanceStatusSchema = z.enum([
+    'pending',
+    'sent',
+    'viewed',
+    'submitted',
+    'expired',
+    'revoked',
+]);
+
+export type FormInstanceStatus = z.infer<typeof FormInstanceStatusSchema>;
+
+export const DocumentCategorySchema = z.enum([
+    'standard_application',
+    'fica_entity',
+    'fica_individual',
+    'fica_business',
+    'product_specific',
+    'industry_specific',
+    'risk_based',
+    'other',
+]);
+
+export type DocumentCategory = z.infer<typeof DocumentCategorySchema>;
+
+export const DocumentSourceSchema = z.enum([
+    'client',
+    'agent',
+    'internal',
+    'system',
+]);
+
+export type DocumentSource = z.infer<typeof DocumentSourceSchema>;
+
+export const DocumentTypeSchema = z.enum([
+    'BANK_STATEMENT',
+    'ACCOUNTANT_LETTER',
+    'ID_DOCUMENT',
+    'PROOF_OF_ADDRESS',
+    'INVOICE',
+    'EXISTING_MANDATE',
+    'BANK_GUARANTEE',
+    'COMPANY_REGISTRATION',
+    'TRUST_DEED',
+    'NPO_CERTIFICATE',
+    'TAX_VAT',
+    'SERVICE_DESCRIPTION',
+    'WEBSITE_LINK',
+    'DIRECTOR_ID',
+    'PROOF_OF_RESIDENCE',
+    'BUSINESS_PREMISES_PROOF',
+    'BANK_STATEMENT_3_MONTH',
+    'ACCOUNTING_OFFICER_LETTER',
+    'THIRD_PARTY_CONFIRMATION_LETTER',
+    'INTERMEDIARY_AGREEMENT',
+    'COLMS_APPLICATION',
+    'SERVICE_AGREEMENT',
+    'PRODUCT_DESCRIPTION',
+    'SUPPLIER_CONTACT_INFO',
+    'CALL_SCRIPT',
+    'NPO_CONSTITUTION',
+    'NPO_RESOLUTION',
+    'NPO_BOARD_LIST',
+    'TRUST_LETTER_OF_AUTHORITY',
+    'TRUST_BENEFICIARY_IDS',
+    'TRUST_BENEFICIARY_ADDRESSES',
+    'TRUST_ORGANOGRAM',
+    'BODY_CORPORATE_RESOLUTION',
+    'BODY_CORPORATE_BOARD_LIST',
+    'INSURANCE_FSCA_CERT',
+    'SECURITY_PSIRA_CERT',
+    'FIC_REGISTRATION',
+    'NCR_CERTIFICATE',
+    'INSTRUCTION_LETTER_CHANGES',
+    'SALES_AGREEMENT',
+    'FINANCIAL_STATEMENTS',
+    'CONSENT_FORM',
+]);
+
+export type DocumentType = z.infer<typeof DocumentTypeSchema>;
+
+// ============================================
 // Director Information
 // ============================================
 
