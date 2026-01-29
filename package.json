@@ -16,7 +16,7 @@
     "@base-ui/react": "^1.1.0",
     "@clerk/nextjs": "^6.36.9",
     "@clerk/themes": "^2.4.49",
-    "@clerk/types": "^4.101.12",
+    "@clerk/types": "^4.101.14",
     "@libsql/client": "latest",
     "@next/env": "^16.1.4",
     "@remixicon/react": "^4.8.0",
