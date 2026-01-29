@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -30,6 +31,9 @@ export interface LeadRow {
 	industry: string;
 	employeeCount: number;
 	createdAt: Date;
+	workflowId?: number | null;
+	workflowStage?: number | null;
+	hasQuote?: boolean;
 }
 
 // --- Configuration ---
@@ -213,7 +217,10 @@ export const columns: ColumnDef<LeadRow>[] = [
 	},
 	{
 		id: "actions",
-		cell: () => {
+		cell: ({ row }) => {
+			const canViewQuote =
+				row.original.workflowStage === 2 && row.original.hasQuote;
+
 			return (
 				<div className="flex items-center justify-end gap-2">
 					<DropdownMenu>
@@ -228,6 +235,13 @@ export const columns: ColumnDef<LeadRow>[] = [
 						<DropdownMenuContent align="end">
 							<DropdownMenuLabel>Actions</DropdownMenuLabel>
 							<DropdownMenuItem>View Details</DropdownMenuItem>
+							{canViewQuote ? (
+								<DropdownMenuItem asChild>
+									<Link href={`/dashboard/leads/${row.original.id}/quote`}>
+										Review Quote
+									</Link>
+								</DropdownMenuItem>
+							) : null}
 							<DropdownMenuItem>Edit Lead</DropdownMenuItem>
 							<DropdownMenuItem>Start Workflow</DropdownMenuItem>
 							<DropdownMenuSeparator />

@@ -256,12 +256,14 @@ export const agentCallbacks = sqliteTable('xt_callbacks', {
  */
 export const quotes = sqliteTable('quotes', {
     id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
+    leadId: integer('lead_id').references(() => leads.id),
     workflowId: integer('workflow_id')
         .notNull()
         .references(() => workflows.id),
     amount: integer('amount').notNull(), // Cents
     baseFeePercent: integer('base_fee_percent').notNull(), // Basis points (e.g. 150 = 1.5%)
     adjustedFeePercent: integer('adjusted_fee_percent'), // Basis points
+    details: text('details'), // JSON string with AI quote details
     rationale: text('rationale'), // AI reasoning for the fee
     status: text('status', {
         enum: ['draft', 'pending_approval', 'approved', 'rejected'],
