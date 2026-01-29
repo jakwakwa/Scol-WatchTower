@@ -1,18 +1,67 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "StratCol Control Tower Docs",
   "colors": {
-    "primary": "#c2a267",
-    "light": "#07C983",
-    "dark": "#262d31"
+    "primary": "#1f1f27",
+    "light": "#2f2f3b",
+    "dark": "2f2f3b"
   },
   "favicon": "/favicon.svg",
   "navigation": {
-    "groups": [
+    "tabs": [
       {
-        "group": "API reference",
-        "pages": [
+        "tab": "Guides",
+        "groups": [
+          {
+            "group": "Getting started",
+            "pages": [
+              "index",
+              "quickstart",
+              "development"
+            ]
+          },
+          {
+            "group": "User guides",
+            "pages": [
+              "user-guides/overview",
+              "user-guides/leads",
+              "user-guides/workflows",
+              "user-guides/onboarding-forms",
+              "user-guides/agents",
+              "user-guides/notifications",
+              "user-guides/quotations"
+            ]
+          },
+          {
+            "group": "Customization",
+            "pages": [
+              "essentials/settings",
+              "essentials/navigation"
+            ]
+          },
+          {
+            "group": "Writing content",
+            "pages": [
+              "essentials/markdown",
+              "essentials/code",
+              "essentials/images",
+              "essentials/reusable-snippets"
+            ]
+          },
+          {
+            "group": "AI tools",
+            "pages": [
+              "ai-tools/cursor",
+              "ai-tools/claude-code",
+              "ai-tools/windsurf"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API reference",
+        "groups": [
           {
             "group": "API documentation",
             "pages": [
