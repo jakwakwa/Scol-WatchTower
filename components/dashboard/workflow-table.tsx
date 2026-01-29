@@ -21,21 +21,12 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import {
 	RiAlertLine,
 	RiArrowDownSLine,
 	RiArrowUpSLine,
 	RiCheckLine,
-	RiCloseLine,
 	RiFlowChart,
 	RiMore2Fill,
 	RiTimeLine,
@@ -45,14 +36,7 @@ import {
 	RiThumbDownLine,
 	RiPauseCircleLine,
 } from "@remixicon/react";
-import {
-	flexRender,
-	getCoreRowModel,
-	getSortedRowModel,
-	useReactTable,
-	type ColumnDef,
-	type SortingState,
-} from "@tanstack/react-table";
+import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/ui/data-table";
 import { toast } from "sonner";
 
@@ -184,8 +168,11 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 		header: ({ table }) => (
 			<Checkbox
 				checked={
-					table.getIsAllPageRowsSelected() ||
-					(table.getIsSomePageRowsSelected() && "indeterminate")
+					table.getIsAllPageRowsSelected()
+						? true
+						: table.getIsSomePageRowsSelected()
+							? "indeterminate"
+							: false
 				}
 				onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
 				aria-label="Select all"
@@ -446,13 +433,6 @@ function HITLConfirmDialog({
 	onConfirm: () => Promise<void>;
 }) {
 	const [isLoading, setIsLoading] = React.useState(false);
-	const [reason, setReason] = React.useState("");
-
-	React.useEffect(() => {
-		if (open) {
-			setReason("");
-		}
-	}, [open]);
 
 	const handleConfirm = async () => {
 		setIsLoading(true);
@@ -611,9 +591,10 @@ export function WorkflowTable({ workflows, onRefresh }: WorkflowTableProps) {
 			);
 
 			onRefresh?.();
-		} catch (err: any) {
+		} catch (err: unknown) {
+			const message = err instanceof Error ? err.message : "Unexpected error";
 			toast.error("Failed to process workflow", {
-				description: err.message,
+				description: message,
 			});
 			throw err;
 		}

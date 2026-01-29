@@ -19,6 +19,7 @@
     "@clerk/themes": "^2.4.49",
     "@clerk/types": "^4.101.12",
     "@hello-pangea/dnd": "^18.0.1",
+    "@hookform/resolvers": "^5.2.2",
     "@libsql/client": "latest",
     "@next/env": "^16.1.4",
     "@remixicon/react": "^4.8.0",
