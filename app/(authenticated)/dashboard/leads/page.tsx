@@ -12,6 +12,8 @@ import { leads } from "@/db/schema";
 import { desc } from "drizzle-orm";
 import type { WorkflowNotification } from "@/components/dashboard/notifications-panel";
 
+type LeadRow = typeof leads.$inferSelect;
+
 const statusConfig = {
 	new: { label: "New", color: "bg-blue-500/20 text-blue-400" },
 	contacted: { label: "Contacted", color: "bg-purple-500/20 text-purple-400" },
@@ -26,7 +28,7 @@ export default async function LeadsPage(
 	{ workflowNotifications }: { workflowNotifications: WorkflowNotification[] }
 ) {
 	const db = getDatabaseClient();
-	let allLeads: any[] = [];
+	let allLeads: LeadRow[] = [];
 
 	if (db) {
 		try {
@@ -62,8 +64,8 @@ export default async function LeadsPage(
 						<div
 							key={status}
 							className={cn(
-								"rounded-xl bg-secondary/[0.02] border border-sidebar-border p-4 text-center",
-								"transition-colors hover:bg-secondary/[0.04]",
+								"rounded-xl bg-secondary/2 border border-sidebar-border p-4 text-center",
+								"transition-colors hover:bg-secondary/4",
 							)}
 						>
 							<p className="text-2xl font-bold">{count}</p>

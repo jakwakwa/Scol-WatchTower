@@ -1,25 +1,25 @@
 "use client";
 
-import * as React from "react";
-import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import {
-	RiNotification3Line,
-	RiCheckDoubleLine,
-	RiTimeLine,
 	RiAlertLine,
+	RiCheckDoubleLine,
 	RiCheckLine,
 	RiCloseLine,
-	RiUserLine,
+	RiNotification3Line,
 	RiPauseCircleLine,
+	RiTimeLine,
+	RiUserLine,
 } from "@remixicon/react";
+import Link from "next/link";
+import * as React from "react";
 import { toast } from "sonner";
 
 export interface WorkflowNotification {
@@ -104,7 +104,7 @@ export function NotificationsPanel({
 			await onAction?.(notification, action);
 			// Toast is handled by the caller or we can add it here if needed
 			// Removing the generic success toast here as it might be confusing for retry/cancel
-		} catch (err) {
+		} catch {
 			toast.error("Failed to process action");
 		}
 	};
@@ -192,7 +192,7 @@ export function NotificationsPanel({
 									key={notification?.id}
 									className={cn(
 										"group relative flex gap-3 px-4 py-3 border-b border-secondary/5 transition-colors hover:bg-secondary/5",
-										!notification?.read && "bg-secondary/[0.02]",
+										!notification?.read && "bg-secondary/2",
 									)}
 								>
 									{/* Main Action Button */}
@@ -349,7 +349,6 @@ function formatRelativeTime(date: Date): string {
 export function showWorkflowToast(
 	type: "awaiting" | "completed" | "failed" | "timeout" | "paused" | "error",
 	clientName: string,
-	workflowId: number,
 	onAction?: (action: "approve" | "reject" | "view") => void,
 ) {
 	const config = {

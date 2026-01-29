@@ -310,7 +310,7 @@ export function LeadForm({
 				<Button
 					type="submit"
 					disabled={isLoading}
-					className="gap-2 bg-gradient-to-r from-stone-500 to-stone-500 hover:from-stone-600 hover:to-stone-600"
+					className="gap-2 bg-linear-to-r from-stone-500 to-stone-500 hover:from-stone-600 hover:to-stone-600"
 				>
 					{isLoading && <RiLoader4Line className="h-4 w-4 animate-spin" />}
 					{isEditing ? "Save Changes" : "Create Lead"}
