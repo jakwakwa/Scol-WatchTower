@@ -5,10 +5,11 @@ import {
 	DashboardSection,
 	LeadsTable,
 } from "@/components/dashboard";
+import type { LeadRow } from "@/components/dashboard/leads-table";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { getDatabaseClient } from "@/app/utils";
-import { leads } from "@/db/schema";
+import { leads, quotes, workflows } from "@/db/schema";
 import { desc } from "drizzle-orm";
 import type { WorkflowNotification } from "@/components/dashboard/notifications-panel";
 
@@ -26,11 +27,50 @@ export default async function LeadsPage(
 	{ workflowNotifications }: { workflowNotifications: WorkflowNotification[] }
 ) {
 	const db = getDatabaseClient();
-	let allLeads: any[] = [];
+	let allLeads: LeadRow[] = [];
 
 	if (db) {
 		try {
-			allLeads = await db.select().from(leads).orderBy(desc(leads.createdAt));
+			const leadRows = await db
+				.select()
+				.from(leads)
+				.orderBy(desc(leads.createdAt));
+
+			const workflowRows = await db.select().from(workflows);
+			const quoteRows = await db.select().from(quotes);
+
+			const workflowsByLead = new Map<number, typeof workflows.$inferSelect>();
+			for (const workflow of workflowRows.sort((a, b) => {
+				const aTime = new Date(a.startedAt || 0).getTime();
+				const bTime = new Date(b.startedAt || 0).getTime();
+				return bTime - aTime;
+			})) {
+				if (!workflowsByLead.has(workflow.leadId)) {
+					workflowsByLead.set(workflow.leadId, workflow);
+				}
+			}
+
+			const quotesByWorkflow = new Map<number, typeof quotes.$inferSelect>();
+			for (const quote of quoteRows.sort((a, b) => {
+				const aTime = new Date(a.createdAt || 0).getTime();
+				const bTime = new Date(b.createdAt || 0).getTime();
+				return bTime - aTime;
+			})) {
+				if (!quotesByWorkflow.has(quote.workflowId)) {
+					quotesByWorkflow.set(quote.workflowId, quote);
+				}
+			}
+
+			allLeads = leadRows.map(lead => {
+				const workflow = workflowsByLead.get(lead.id);
+				const quote = workflow ? quotesByWorkflow.get(workflow.id) : null;
+				return {
+					...lead,
+					workflowId: workflow?.id ?? null,
+					workflowStage: workflow?.stage ?? null,
+					hasQuote: !!quote,
+				};
+			});
 		} catch (error) {
 			console.error("Failed to fetch leads:", error);
 		}
@@ -62,8 +102,8 @@ export default async function LeadsPage(
 						<div
 							key={status}
 							className={cn(
-								"rounded-xl bg-secondary/[0.02] border border-sidebar-border p-4 text-center",
-								"transition-colors hover:bg-secondary/[0.04]",
+								"rounded-xl bg-secondary/2 border border-sidebar-border p-4 text-center",
+								"transition-colors hover:bg-secondary/4",
 							)}
 						>
 							<p className="text-2xl font-bold">{count}</p>

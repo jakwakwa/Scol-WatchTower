@@ -39,7 +39,7 @@ export function StatsCard({
 			)}
 		>
 			{/* Background gradient effect */}
-			<div className="absolute inset-0 bg-gradient-to-br from-secondary/[0.02] to-transparent" />
+			<div className="absolute inset-0 bg-linear-to-br from-secondary/2 to-transparent" />
 
 			{/* Content */}
 			<div className="relative flex items-start justify-between">
@@ -80,7 +80,7 @@ export function StatsCard({
 			</div>
 
 			{/* Bottom accent line */}
-			<div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-stone-500/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+			<div className="absolute bottom-0 left-0 right-0 h-1 bg-linear-to-r from-transparent via-stone-500/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 		</div>
 	);
 }
@@ -100,7 +100,7 @@ export function StatsCardCompact({
 	iconColor = "amber",
 }: StatsCardCompactProps) {
 	return (
-		<div className="flex items-center gap-3 rounded-xl bg-secondary/[0.02] p-3">
+		<div className="flex items-center gap-3 rounded-xl bg-secondary/2 p-3">
 			<div
 				className={cn(
 					"flex h-10 w-10 items-center justify-center rounded-lg",

@@ -8,11 +8,12 @@
  * Body: FormData with files and metadata
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { inngest } from '@/inngest/client';
 import { getDatabaseClient } from '@/app/utils';
-import { workflows } from '@/db/schema';
+import { documents, workflows } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { auth } from '@clerk/nextjs/server';
 
@@ -32,6 +33,13 @@ interface UploadedDocument {
     url: string;
     uploadedAt: string;
 }
+
+const documentCategoryMap: Record<UploadedDocument['type'], string> = {
+    BANK_STATEMENT: 'fica_business',
+    ACCOUNTANT_LETTER: 'fica_business',
+    ID_DOCUMENT: 'fica_individual',
+    PROOF_OF_ADDRESS: 'fica_individual',
+};
 
 // ============================================
 // POST Handler
@@ -114,12 +122,45 @@ export async function POST(request: NextRequest) {
             // In production: await uploadToStorage(file)
             const storageUrl = await mockUploadFile(file, metadata.workflowId);
 
-            uploadedDocuments.push({
+            const uploadedDocument = {
                 type: metadata.documentType,
                 filename: file.name,
                 url: storageUrl,
                 uploadedAt: new Date().toISOString(),
-            });
+            };
+
+            uploadedDocuments.push(uploadedDocument);
+
+            const [inserted] = await db
+                .insert(documents)
+                .values([
+                    {
+                        leadId: metadata.leadId,
+                        type: metadata.documentType,
+                        status: 'uploaded',
+                        category: documentCategoryMap[metadata.documentType],
+                        source: 'client',
+                        fileName: file.name,
+                        storageUrl,
+                        uploadedBy: userId || 'client',
+                        uploadedAt: new Date(),
+                    },
+                ])
+                .returning();
+
+            if (inserted) {
+                await inngest.send({
+                    name: 'document/uploaded',
+                    data: {
+                        workflowId: metadata.workflowId,
+                        leadId: metadata.leadId,
+                        documentId: inserted.id,
+                        documentType: metadata.documentType,
+                        category: documentCategoryMap[metadata.documentType],
+                        uploadedAt: uploadedDocument.uploadedAt,
+                    },
+                });
+            }
 
             console.log(`[FicaUpload] Uploaded: ${file.name} -> ${storageUrl}`);
         }

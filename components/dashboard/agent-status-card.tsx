@@ -1,8 +1,6 @@
 import {
 	RiRobot2Line,
 	RiCheckLine,
-	RiLoader4Line,
-	RiUserLine,
 	RiAlertLine,
 	RiTimeLine,
 } from "@remixicon/react";
@@ -47,19 +45,17 @@ interface AgentStatusCardProps {
 
 export function AgentStatusCard({ agent, onClick }: AgentStatusCardProps) {
 	const config = statusConfig[agent.status];
-	const StatusIcon = config.icon;
 
-	return (
-		<div
-			onClick={onClick}
-			className={cn(
-				"group relative overflow-hidden rounded-2xl border border-sidebar-border bg-card/50 backdrop-blur-sm p-6",
-				"shadow-xl shadow-black/5",
-				"transition-all duration-300",
-				onClick &&
-				"cursor-pointer hover:bg-card/70 hover:border-secondary/10 hover:shadow-2xl hover:-translate-y-1",
-			)}
-		>
+	const containerClasses = cn(
+		"group relative overflow-hidden rounded-2xl border border-sidebar-border bg-card/50 backdrop-blur-sm p-6",
+		"shadow-xl shadow-black/5",
+		"transition-all duration-300",
+		onClick &&
+			"cursor-pointer hover:bg-card/70 hover:border-secondary/10 hover:shadow-2xl hover:-translate-y-1",
+	);
+
+	const content = (
+		<>
 			{/* Status indicator dot */}
 			<div
 				className={cn(
@@ -118,8 +114,18 @@ export function AgentStatusCard({ agent, onClick }: AgentStatusCardProps) {
 					Last callback: {formatRelativeTime(agent.lastCallbackAt)}
 				</div>
 			)}
-		</div>
+		</>
 	);
+
+	if (onClick) {
+		return (
+			<button type="button" onClick={onClick} className={containerClasses}>
+				{content}
+			</button>
+		);
+	}
+
+	return <div className={containerClasses}>{content}</div>;
 }
 
 // Compact version for lists
@@ -131,7 +137,7 @@ export function AgentStatusRow({ agent }: AgentStatusRowProps) {
 	const config = statusConfig[agent.status];
 
 	return (
-		<div className="flex items-center gap-4 p-4 rounded-xl bg-secondary/[0.02] hover:bg-secondary/[0.04] transition-colors">
+		<div className="flex items-center gap-4 p-4 rounded-xl bg-secondary/2 hover:bg-secondary/4 transition-colors">
 			<div
 				className={cn(
 					"h-2 w-2 rounded-full",
