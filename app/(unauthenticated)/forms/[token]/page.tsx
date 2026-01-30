@@ -55,7 +55,10 @@ export default async function FormPage({ params }: FormPageProps) {
 		await markFormInstanceStatus(formInstance.id, "viewed");
 	}
 
-	const formType = formInstance.formType as Exclude<FormType, "DOCUMENT_UPLOADS">;
+	const formType = formInstance.formType as Exclude<
+		FormType,
+		"DOCUMENT_UPLOADS"
+	>;
 	const content = formContent[formType];
 
 	if (!content) {

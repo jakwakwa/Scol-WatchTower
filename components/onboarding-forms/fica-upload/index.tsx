@@ -54,11 +54,17 @@ interface FicaUploadFormProps {
 	/** Callback to save draft */
 	onSaveDraft?: (data: Partial<FicaDocumentsFormData>) => Promise<void>;
 	/** Callback when a file is uploaded */
-	onFileUpload?: (file: File, documentType: string) => Promise<{ uploadId: string; url: string }>;
+	onFileUpload?: (
+		file: File,
+		documentType: string,
+	) => Promise<{ uploadId: string; url: string }>;
 	/** Whether the form is in read-only mode */
 	readOnly?: boolean;
 	/** Directors/beneficial owners for individual documents */
-	individuals?: Array<{ name: string; role: "director" | "beneficial_owner" | "authorised_representative" }>;
+	individuals?: Array<{
+		name: string;
+		role: "director" | "beneficial_owner" | "authorised_representative";
+	}>;
 }
 
 // ============================================
@@ -114,7 +120,7 @@ function DocumentUploadItem({
 			className={cn(
 				"p-4 rounded-lg border transition-colors",
 				isUploaded ? "border-teal-500/50 bg-teal-500/5" : "border-border",
-				error && "border-destructive bg-destructive/5"
+				error && "border-destructive bg-destructive/5",
 			)}
 		>
 			<div className="flex items-start justify-between gap-4">
@@ -135,7 +141,8 @@ function DocumentUploadItem({
 						<p className="text-xs text-muted-foreground mt-1">{description}</p>
 					)}
 					<p className="text-xs text-muted-foreground mt-1">
-						Accepted: {acceptedFormats.join(", ").toUpperCase()} | Max: {maxSizeMb}MB
+						Accepted: {acceptedFormats.join(", ").toUpperCase()} | Max:{" "}
+						{maxSizeMb}MB
 					</p>
 					{isUploaded && fileName && (
 						<p className="text-xs text-foreground mt-2 flex items-center gap-1">
@@ -267,7 +274,7 @@ export function FicaUploadForm({
 	const handleFileUpload = async (
 		file: File,
 		documentType: string,
-		fieldPath: string
+		fieldPath: string,
 	) => {
 		if (!onFileUpload) {
 			// Mock upload for demo
@@ -324,7 +331,9 @@ export function FicaUploadForm({
 								<div className="space-y-6">
 									<div className="flex items-center gap-2 mb-4">
 										<RiFolderLine className="h-5 w-5 text-muted-foreground" />
-										<h3 className="text-lg font-semibold">Standard Documents</h3>
+										<h3 className="text-lg font-semibold">
+											Standard Documents
+										</h3>
 									</div>
 
 									<div className="space-y-4">
@@ -332,26 +341,42 @@ export function FicaUploadForm({
 											label="CIPC Registration"
 											description="Company registration documents from CIPC"
 											required
-											isUploaded={watch("standard.cipcRegistration.isUploaded") ?? false}
+											isUploaded={
+												watch("standard.cipcRegistration.isUploaded") ?? false
+											}
 											fileName={watch("standard.cipcRegistration.fileName")}
 											acceptedFormats={["pdf", "jpg", "png"]}
 											maxSizeMb={10}
 											onUpload={(file) =>
-												handleFileUpload(file, "cipc_registration", "standard.cipcRegistration")
+												handleFileUpload(
+													file,
+													"cipc_registration",
+													"standard.cipcRegistration",
+												)
 											}
-											onRemove={() => handleFileRemove("standard.cipcRegistration")}
-											disabled={readOnly || uploadingDoc === "cipc_registration"}
+											onRemove={() =>
+												handleFileRemove("standard.cipcRegistration")
+											}
+											disabled={
+												readOnly || uploadingDoc === "cipc_registration"
+											}
 										/>
 
 										<DocumentUploadItem
 											label="Tax Clearance Certificate"
 											description="Valid SARS tax clearance certificate"
-											isUploaded={watch("standard.taxClearance.isUploaded") ?? false}
+											isUploaded={
+												watch("standard.taxClearance.isUploaded") ?? false
+											}
 											fileName={watch("standard.taxClearance.fileName")}
 											acceptedFormats={["pdf"]}
 											maxSizeMb={5}
 											onUpload={(file) =>
-												handleFileUpload(file, "tax_clearance", "standard.taxClearance")
+												handleFileUpload(
+													file,
+													"tax_clearance",
+													"standard.taxClearance",
+												)
 											}
 											onRemove={() => handleFileRemove("standard.taxClearance")}
 											disabled={readOnly || uploadingDoc === "tax_clearance"}
@@ -360,14 +385,22 @@ export function FicaUploadForm({
 										<DocumentUploadItem
 											label="VAT Registration"
 											description="VAT registration certificate if applicable"
-											isUploaded={watch("standard.vatRegistration.isUploaded") ?? false}
+											isUploaded={
+												watch("standard.vatRegistration.isUploaded") ?? false
+											}
 											fileName={watch("standard.vatRegistration.fileName")}
 											acceptedFormats={["pdf"]}
 											maxSizeMb={5}
 											onUpload={(file) =>
-												handleFileUpload(file, "vat_registration", "standard.vatRegistration")
+												handleFileUpload(
+													file,
+													"vat_registration",
+													"standard.vatRegistration",
+												)
 											}
-											onRemove={() => handleFileRemove("standard.vatRegistration")}
+											onRemove={() =>
+												handleFileRemove("standard.vatRegistration")
+											}
 											disabled={readOnly || uploadingDoc === "vat_registration"}
 										/>
 
@@ -375,15 +408,25 @@ export function FicaUploadForm({
 											label="Website/Service Description"
 											description="Description of your website and services offered"
 											required
-											isUploaded={watch("standard.websiteDescription.isUploaded") ?? false}
+											isUploaded={
+												watch("standard.websiteDescription.isUploaded") ?? false
+											}
 											fileName={watch("standard.websiteDescription.fileName")}
 											acceptedFormats={["pdf", "doc", "docx"]}
 											maxSizeMb={10}
 											onUpload={(file) =>
-												handleFileUpload(file, "website_description", "standard.websiteDescription")
+												handleFileUpload(
+													file,
+													"website_description",
+													"standard.websiteDescription",
+												)
 											}
-											onRemove={() => handleFileRemove("standard.websiteDescription")}
-											disabled={readOnly || uploadingDoc === "website_description"}
+											onRemove={() =>
+												handleFileRemove("standard.websiteDescription")
+											}
+											disabled={
+												readOnly || uploadingDoc === "website_description"
+											}
 										/>
 									</div>
 								</div>
@@ -394,12 +437,15 @@ export function FicaUploadForm({
 								<div className="space-y-6">
 									<div className="flex items-center gap-2 mb-4">
 										<RiUserLine className="h-5 w-5 text-muted-foreground" />
-										<h3 className="text-lg font-semibold">Individual Documents</h3>
+										<h3 className="text-lg font-semibold">
+											Individual Documents
+										</h3>
 									</div>
 
 									<p className="text-sm text-muted-foreground">
-										Upload ID copies and proof of residence for each director and beneficial owner.
-										Documents must not be older than 3 months.
+										Upload ID copies and proof of residence for each director
+										and beneficial owner. Documents must not be older than 3
+										months.
 									</p>
 
 									{!readOnly && (
@@ -410,8 +456,14 @@ export function FicaUploadForm({
 												addIndividualDoc({
 													personName: "",
 													personRole: "director",
-													idDocument: { documentType: "director_id", isUploaded: false },
-													proofOfResidence: { documentType: "proof_of_residence", isUploaded: false },
+													idDocument: {
+														documentType: "director_id",
+														isUploaded: false,
+													},
+													proofOfResidence: {
+														documentType: "proof_of_residence",
+														isUploaded: false,
+													},
 												})
 											}
 											className="gap-1.5"
@@ -430,22 +482,32 @@ export function FicaUploadForm({
 												<div className="flex items-center justify-between">
 													<div className="grid grid-cols-2 gap-4 flex-1">
 														<div className="space-y-2">
-															<Label className="text-sm font-medium">Person Name</Label>
+															<Label className="text-sm font-medium">
+																Person Name
+															</Label>
 															<Input
-																{...methods.register(`individual.documents.${index}.personName`)}
+																{...methods.register(
+																	`individual.documents.${index}.personName`,
+																)}
 																placeholder="Full name"
 																disabled={readOnly}
 															/>
 														</div>
 														<div className="space-y-2">
-															<Label className="text-sm font-medium">Role</Label>
+															<Label className="text-sm font-medium">
+																Role
+															</Label>
 															<select
-																{...methods.register(`individual.documents.${index}.personRole`)}
+																{...methods.register(
+																	`individual.documents.${index}.personRole`,
+																)}
 																className="flex h-9 w-full rounded-lg border border-input bg-input/10 px-3 py-1 text-sm"
 																disabled={readOnly}
 															>
 																<option value="director">Director</option>
-																<option value="beneficial_owner">Beneficial Owner</option>
+																<option value="beneficial_owner">
+																	Beneficial Owner
+																</option>
 																<option value="authorised_representative">
 																	Authorised Representative
 																</option>
@@ -472,20 +534,26 @@ export function FicaUploadForm({
 														description="Certified copy of ID"
 														required
 														isUploaded={
-															watch(`individual.documents.${index}.idDocument.isUploaded`) ?? false
+															watch(
+																`individual.documents.${index}.idDocument.isUploaded`,
+															) ?? false
 														}
-														fileName={watch(`individual.documents.${index}.idDocument.fileName`)}
+														fileName={watch(
+															`individual.documents.${index}.idDocument.fileName`,
+														)}
 														acceptedFormats={["pdf", "jpg", "png"]}
 														maxSizeMb={5}
 														onUpload={(file) =>
 															handleFileUpload(
 																file,
 																`individual_id_${index}`,
-																`individual.documents.${index}.idDocument`
+																`individual.documents.${index}.idDocument`,
 															)
 														}
 														onRemove={() =>
-															handleFileRemove(`individual.documents.${index}.idDocument`)
+															handleFileRemove(
+																`individual.documents.${index}.idDocument`,
+															)
 														}
 														disabled={readOnly}
 													/>
@@ -495,11 +563,12 @@ export function FicaUploadForm({
 														description="Not older than 3 months"
 														required
 														isUploaded={
-															watch(`individual.documents.${index}.proofOfResidence.isUploaded`) ??
-															false
+															watch(
+																`individual.documents.${index}.proofOfResidence.isUploaded`,
+															) ?? false
 														}
 														fileName={watch(
-															`individual.documents.${index}.proofOfResidence.fileName`
+															`individual.documents.${index}.proofOfResidence.fileName`,
 														)}
 														acceptedFormats={["pdf", "jpg", "png"]}
 														maxSizeMb={5}
@@ -507,11 +576,13 @@ export function FicaUploadForm({
 															handleFileUpload(
 																file,
 																`individual_por_${index}`,
-																`individual.documents.${index}.proofOfResidence`
+																`individual.documents.${index}.proofOfResidence`,
 															)
 														}
 														onRemove={() =>
-															handleFileRemove(`individual.documents.${index}.proofOfResidence`)
+															handleFileRemove(
+																`individual.documents.${index}.proofOfResidence`,
+															)
 														}
 														disabled={readOnly}
 													/>
@@ -521,8 +592,8 @@ export function FicaUploadForm({
 
 										{individualDocs.length === 0 && (
 											<p className="text-sm text-muted-foreground text-center py-8">
-												No individuals added. Click "Add Person" to add directors and beneficial
-												owners.
+												No individuals added. Click "Add Person" to add
+												directors and beneficial owners.
 											</p>
 										)}
 									</div>
@@ -534,12 +605,14 @@ export function FicaUploadForm({
 								<div className="space-y-6">
 									<div className="flex items-center gap-2 mb-4">
 										<RiBankLine className="h-5 w-5 text-muted-foreground" />
-										<h3 className="text-lg font-semibold">Financial Documents</h3>
+										<h3 className="text-lg font-semibold">
+											Financial Documents
+										</h3>
 									</div>
 
 									<p className="text-sm text-muted-foreground">
-										Upload the latest 3 months of bank statements for the account where funds will
-										be credited.
+										Upload the latest 3 months of bank statements for the
+										account where funds will be credited.
 									</p>
 
 									<div className="space-y-4">
@@ -547,37 +620,76 @@ export function FicaUploadForm({
 											label="Bank Statement - Month 1"
 											description="Most recent statement"
 											required
-											isUploaded={watch("financial.bankStatementMonth1.isUploaded") ?? false}
+											isUploaded={
+												watch("financial.bankStatementMonth1.isUploaded") ??
+												false
+											}
 											fileName={watch("financial.bankStatementMonth1.fileName")}
 											acceptedFormats={["pdf"]}
 											maxSizeMb={10}
-											onUpload={(file) => handleFileUpload(file, "bankStatementMonth1", "financial.bankStatementMonth1")}
-											onRemove={() => handleFileRemove("financial.bankStatementMonth1")}
-											disabled={readOnly || uploadingDoc === "bankStatementMonth1"}
+											onUpload={(file) =>
+												handleFileUpload(
+													file,
+													"bankStatementMonth1",
+													"financial.bankStatementMonth1",
+												)
+											}
+											onRemove={() =>
+												handleFileRemove("financial.bankStatementMonth1")
+											}
+											disabled={
+												readOnly || uploadingDoc === "bankStatementMonth1"
+											}
 										/>
 										<DocumentUploadItem
 											label="Bank Statement - Month 2"
 											description="Second most recent statement"
 											required
-											isUploaded={watch("financial.bankStatementMonth2.isUploaded") ?? false}
+											isUploaded={
+												watch("financial.bankStatementMonth2.isUploaded") ??
+												false
+											}
 											fileName={watch("financial.bankStatementMonth2.fileName")}
 											acceptedFormats={["pdf"]}
 											maxSizeMb={10}
-											onUpload={(file) => handleFileUpload(file, "bankStatementMonth2", "financial.bankStatementMonth2")}
-											onRemove={() => handleFileRemove("financial.bankStatementMonth2")}
-											disabled={readOnly || uploadingDoc === "bankStatementMonth2"}
+											onUpload={(file) =>
+												handleFileUpload(
+													file,
+													"bankStatementMonth2",
+													"financial.bankStatementMonth2",
+												)
+											}
+											onRemove={() =>
+												handleFileRemove("financial.bankStatementMonth2")
+											}
+											disabled={
+												readOnly || uploadingDoc === "bankStatementMonth2"
+											}
 										/>
 										<DocumentUploadItem
 											label="Bank Statement - Month 3"
 											description="Third most recent statement"
 											required
-											isUploaded={watch("financial.bankStatementMonth3.isUploaded") ?? false}
+											isUploaded={
+												watch("financial.bankStatementMonth3.isUploaded") ??
+												false
+											}
 											fileName={watch("financial.bankStatementMonth3.fileName")}
 											acceptedFormats={["pdf"]}
 											maxSizeMb={10}
-											onUpload={(file) => handleFileUpload(file, "bankStatementMonth3", "financial.bankStatementMonth3")}
-											onRemove={() => handleFileRemove("financial.bankStatementMonth3")}
-											disabled={readOnly || uploadingDoc === "bankStatementMonth3"}
+											onUpload={(file) =>
+												handleFileUpload(
+													file,
+													"bankStatementMonth3",
+													"financial.bankStatementMonth3",
+												)
+											}
+											onRemove={() =>
+												handleFileRemove("financial.bankStatementMonth3")
+											}
+											disabled={
+												readOnly || uploadingDoc === "bankStatementMonth3"
+											}
 										/>
 									</div>
 								</div>
@@ -588,7 +700,9 @@ export function FicaUploadForm({
 								<div className="space-y-6">
 									<div className="flex items-center gap-2 mb-4">
 										<RiBriefcaseLine className="h-5 w-5 text-muted-foreground" />
-										<h3 className="text-lg font-semibold">Professional Documents</h3>
+										<h3 className="text-lg font-semibold">
+											Professional Documents
+										</h3>
 									</div>
 
 									<div className="space-y-4">
@@ -597,22 +711,28 @@ export function FicaUploadForm({
 											description="Letter on Auditor letterhead confirming accounting officer"
 											required
 											isUploaded={
-												watch("professional.accountingOfficerLetter.isUploaded") ?? false
+												watch(
+													"professional.accountingOfficerLetter.isUploaded",
+												) ?? false
 											}
-											fileName={watch("professional.accountingOfficerLetter.fileName")}
+											fileName={watch(
+												"professional.accountingOfficerLetter.fileName",
+											)}
 											acceptedFormats={["pdf"]}
 											maxSizeMb={5}
 											onUpload={(file) =>
 												handleFileUpload(
 													file,
 													"accounting_officer_letter",
-													"professional.accountingOfficerLetter"
+													"professional.accountingOfficerLetter",
 												)
 											}
 											onRemove={() =>
 												handleFileRemove("professional.accountingOfficerLetter")
 											}
-											disabled={readOnly || uploadingDoc === "accounting_officer_letter"}
+											disabled={
+												readOnly || uploadingDoc === "accounting_officer_letter"
+											}
 											error={
 												errors.professional?.accountingOfficerLetter?.message
 											}
@@ -621,14 +741,22 @@ export function FicaUploadForm({
 										<DocumentUploadItem
 											label="Auditor Report"
 											description="Latest auditor report (if available)"
-											isUploaded={watch("professional.auditorReport.isUploaded") ?? false}
+											isUploaded={
+												watch("professional.auditorReport.isUploaded") ?? false
+											}
 											fileName={watch("professional.auditorReport.fileName")}
 											acceptedFormats={["pdf"]}
 											maxSizeMb={10}
 											onUpload={(file) =>
-												handleFileUpload(file, "auditor_report", "professional.auditorReport")
+												handleFileUpload(
+													file,
+													"auditor_report",
+													"professional.auditorReport",
+												)
 											}
-											onRemove={() => handleFileRemove("professional.auditorReport")}
+											onRemove={() =>
+												handleFileRemove("professional.auditorReport")
+											}
 											disabled={readOnly || uploadingDoc === "auditor_report"}
 										/>
 									</div>
@@ -640,23 +768,32 @@ export function FicaUploadForm({
 								<div className="space-y-6">
 									<div className="flex items-center gap-2 mb-4">
 										<RiGovernmentLine className="h-5 w-5 text-muted-foreground" />
-										<h3 className="text-lg font-semibold">Industry Documents</h3>
+										<h3 className="text-lg font-semibold">
+											Industry Documents
+										</h3>
 									</div>
 
 									<p className="text-sm text-muted-foreground">
-										Upload any applicable regulatory certificates based on your industry.
+										Upload any applicable regulatory certificates based on your
+										industry.
 									</p>
 
 									<div className="space-y-4">
 										<DocumentUploadItem
 											label="FSCA Licence"
 											description="Financial Sector Conduct Authority licence (for insurance)"
-											isUploaded={watch("industry.fscaLicence.isUploaded") ?? false}
+											isUploaded={
+												watch("industry.fscaLicence.isUploaded") ?? false
+											}
 											fileName={watch("industry.fscaLicence.fileName")}
 											acceptedFormats={["pdf"]}
 											maxSizeMb={5}
 											onUpload={(file) =>
-												handleFileUpload(file, "fsca_licence", "industry.fscaLicence")
+												handleFileUpload(
+													file,
+													"fsca_licence",
+													"industry.fscaLicence",
+												)
 											}
 											onRemove={() => handleFileRemove("industry.fscaLicence")}
 											disabled={readOnly}
@@ -665,56 +802,88 @@ export function FicaUploadForm({
 										<DocumentUploadItem
 											label="PSIRA Certificate"
 											description="Private Security Industry Regulatory Authority certificate"
-											isUploaded={watch("industry.psiraCertificate.isUploaded") ?? false}
+											isUploaded={
+												watch("industry.psiraCertificate.isUploaded") ?? false
+											}
 											fileName={watch("industry.psiraCertificate.fileName")}
 											acceptedFormats={["pdf"]}
 											maxSizeMb={5}
 											onUpload={(file) =>
-												handleFileUpload(file, "psira_certificate", "industry.psiraCertificate")
+												handleFileUpload(
+													file,
+													"psira_certificate",
+													"industry.psiraCertificate",
+												)
 											}
-											onRemove={() => handleFileRemove("industry.psiraCertificate")}
+											onRemove={() =>
+												handleFileRemove("industry.psiraCertificate")
+											}
 											disabled={readOnly}
 										/>
 
 										<DocumentUploadItem
 											label="NCR Registration"
 											description="National Credit Regulator registration (for loans)"
-											isUploaded={watch("industry.ncrRegistration.isUploaded") ?? false}
+											isUploaded={
+												watch("industry.ncrRegistration.isUploaded") ?? false
+											}
 											fileName={watch("industry.ncrRegistration.fileName")}
 											acceptedFormats={["pdf"]}
 											maxSizeMb={5}
 											onUpload={(file) =>
-												handleFileUpload(file, "ncr_registration", "industry.ncrRegistration")
+												handleFileUpload(
+													file,
+													"ncr_registration",
+													"industry.ncrRegistration",
+												)
 											}
-											onRemove={() => handleFileRemove("industry.ncrRegistration")}
+											onRemove={() =>
+												handleFileRemove("industry.ncrRegistration")
+											}
 											disabled={readOnly}
 										/>
 
 										<DocumentUploadItem
 											label="NPO Constitution"
 											description="Non-Profit Organisation constitution document"
-											isUploaded={watch("industry.npoConstitution.isUploaded") ?? false}
+											isUploaded={
+												watch("industry.npoConstitution.isUploaded") ?? false
+											}
 											fileName={watch("industry.npoConstitution.fileName")}
 											acceptedFormats={["pdf"]}
 											maxSizeMb={10}
 											onUpload={(file) =>
-												handleFileUpload(file, "npo_constitution", "industry.npoConstitution")
+												handleFileUpload(
+													file,
+													"npo_constitution",
+													"industry.npoConstitution",
+												)
 											}
-											onRemove={() => handleFileRemove("industry.npoConstitution")}
+											onRemove={() =>
+												handleFileRemove("industry.npoConstitution")
+											}
 											disabled={readOnly}
 										/>
 
 										<DocumentUploadItem
 											label="Other Regulatory Documents"
 											description="Any other applicable regulatory certificates"
-											isUploaded={watch("industry.otherRegulatory.isUploaded") ?? false}
+											isUploaded={
+												watch("industry.otherRegulatory.isUploaded") ?? false
+											}
 											fileName={watch("industry.otherRegulatory.fileName")}
 											acceptedFormats={["pdf"]}
 											maxSizeMb={10}
 											onUpload={(file) =>
-												handleFileUpload(file, "other_regulatory", "industry.otherRegulatory")
+												handleFileUpload(
+													file,
+													"other_regulatory",
+													"industry.otherRegulatory",
+												)
 											}
-											onRemove={() => handleFileRemove("industry.otherRegulatory")}
+											onRemove={() =>
+												handleFileRemove("industry.otherRegulatory")
+											}
 											disabled={readOnly}
 										/>
 									</div>
@@ -725,7 +894,9 @@ export function FicaUploadForm({
 							<FormStep isActive={currentStep === 5}>
 								<div className="space-y-6">
 									<div className="mb-4">
-										<h3 className="text-lg font-semibold">Review & Acknowledgement</h3>
+										<h3 className="text-lg font-semibold">
+											Review & Acknowledgement
+										</h3>
 									</div>
 
 									<div className="p-4 rounded-lg border border-border bg-muted/30">
@@ -735,12 +906,14 @@ export function FicaUploadForm({
 											<p className="flex items-center justify-between">
 												<span>Standard Documents:</span>
 												<span className="font-medium">
-													{[
-														watch("standard.cipcRegistration.isUploaded"),
-														watch("standard.taxClearance.isUploaded"),
-														watch("standard.vatRegistration.isUploaded"),
-														watch("standard.websiteDescription.isUploaded"),
-													].filter(Boolean).length}{" "}
+													{
+														[
+															watch("standard.cipcRegistration.isUploaded"),
+															watch("standard.taxClearance.isUploaded"),
+															watch("standard.vatRegistration.isUploaded"),
+															watch("standard.websiteDescription.isUploaded"),
+														].filter(Boolean).length
+													}{" "}
 													/ 4 uploaded
 												</span>
 											</p>
@@ -753,21 +926,27 @@ export function FicaUploadForm({
 											<p className="flex items-center justify-between">
 												<span>Financial Documents:</span>
 												<span className="font-medium">
-													{[
-														watch("financial.bankStatementMonth1.isUploaded"),
-														watch("financial.bankStatementMonth2.isUploaded"),
-														watch("financial.bankStatementMonth3.isUploaded"),
-													].filter(Boolean).length}{" "}
+													{
+														[
+															watch("financial.bankStatementMonth1.isUploaded"),
+															watch("financial.bankStatementMonth2.isUploaded"),
+															watch("financial.bankStatementMonth3.isUploaded"),
+														].filter(Boolean).length
+													}{" "}
 													/ 3 uploaded
 												</span>
 											</p>
 											<p className="flex items-center justify-between">
 												<span>Professional Documents:</span>
 												<span className="font-medium">
-													{[
-														watch("professional.accountingOfficerLetter.isUploaded"),
-														watch("professional.auditorReport.isUploaded"),
-													].filter(Boolean).length}{" "}
+													{
+														[
+															watch(
+																"professional.accountingOfficerLetter.isUploaded",
+															),
+															watch("professional.auditorReport.isUploaded"),
+														].filter(Boolean).length
+													}{" "}
 													/ 2 uploaded
 												</span>
 											</p>
@@ -779,7 +958,7 @@ export function FicaUploadForm({
 											"flex items-start gap-3 p-4 rounded-lg border",
 											errors.acknowledgement
 												? "border-destructive bg-destructive/5"
-												: "border-border"
+												: "border-border",
 										)}
 									>
 										<Checkbox
@@ -794,9 +973,10 @@ export function FicaUploadForm({
 											htmlFor="acknowledgement"
 											className="text-sm leading-relaxed cursor-pointer"
 										>
-											I acknowledge that all documents uploaded are authentic, current, and
-											accurate. I understand that providing false or misleading documents may
-											result in the rejection of this application and potential legal action.
+											I acknowledge that all documents uploaded are authentic,
+											current, and accurate. I understand that providing false
+											or misleading documents may result in the rejection of
+											this application and potential legal action.
 											<span className="text-destructive ml-1">*</span>
 										</Label>
 									</div>

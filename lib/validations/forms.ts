@@ -3,7 +3,13 @@ import { z } from "zod";
 export const facilityApplicationSchema = z.object({
 	serviceTypes: z
 		.array(
-			z.enum(["EFT", "DebiCheck", "3rd Party Payments", "Pay@", "Card Payments"]),
+			z.enum([
+				"EFT",
+				"DebiCheck",
+				"3rd Party Payments",
+				"Pay@",
+				"Card Payments",
+			]),
 		)
 		.min(1, "Select at least one service type"),
 	additionalServices: z
@@ -165,7 +171,14 @@ export const absa6995Schema = z.object({
 			sourceOfIncome: z.string().optional(),
 		}),
 		salesDistribution: z
-			.array(z.enum(["Direct Sales", "Call Centre", "Network Marketing", "Face-to-Face"]))
+			.array(
+				z.enum([
+					"Direct Sales",
+					"Call Centre",
+					"Network Marketing",
+					"Face-to-Face",
+				]),
+			)
 			.optional()
 			.default([]),
 		collectionHistory: z.object({
@@ -179,11 +192,9 @@ export const absa6995Schema = z.object({
 	previousHistory: z.object({
 		previousSponsoringBank: z.string().optional(),
 		wasExited: z.enum(["yes", "no"]),
-		exitReason: z.enum([
-			"Debiting without mandate",
-			"Debiting without consent",
-			"Other",
-		]).optional(),
+		exitReason: z
+			.enum(["Debiting without mandate", "Debiting without consent", "Other"])
+			.optional(),
 		exitReasonOther: z.string().optional(),
 	}),
 	references: z
@@ -238,7 +249,9 @@ export const absa6995Schema = z.object({
 	declarations: z.object({
 		informationCorrect: z.literal(true, { message: "Required" }),
 		misrepresentationAcknowledged: z.literal(true, { message: "Required" }),
-		debitingWithoutConsentAcknowledged: z.literal(true, { message: "Required" }),
+		debitingWithoutConsentAcknowledged: z.literal(true, {
+			message: "Required",
+		}),
 		consentForProcessing: z.literal(true, { message: "Required" }),
 		infoSharingAcknowledged: z.literal(true, { message: "Required" }),
 		tpppConsentConfirmed: z.literal(true, { message: "Required" }),

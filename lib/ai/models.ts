@@ -8,7 +8,7 @@
  * Models are lazily initialized to prevent build errors when env vars aren't set.
  */
 
-import { createVertex } from '@ai-sdk/google-vertex';
+import { createVertex } from "@ai-sdk/google-vertex";
 
 // Lazy initialization - models created on first use
 let _google: ReturnType<typeof createVertex> | null = null;
@@ -17,16 +17,18 @@ let _google: ReturnType<typeof createVertex> | null = null;
  * Get Google Vertex AI provider (lazy initialization)
  */
 function getGoogle() {
-    if (!_google) {
-        if (!process.env.GOOGLE_VERTEX_PROJECT) {
-            throw new Error('GOOGLE_VERTEX_PROJECT environment variable is required for AI features');
-        }
-        _google = createVertex({
-            project: process.env.GOOGLE_VERTEX_PROJECT,
-            location: process.env.GOOGLE_VERTEX_LOCATION || 'us-central1',
-        });
-    }
-    return _google;
+	if (!_google) {
+		if (!process.env.GOOGLE_VERTEX_PROJECT) {
+			throw new Error(
+				"GOOGLE_VERTEX_PROJECT environment variable is required for AI features",
+			);
+		}
+		_google = createVertex({
+			project: process.env.GOOGLE_VERTEX_PROJECT,
+			location: process.env.GOOGLE_VERTEX_LOCATION || "us-central1",
+		});
+	}
+	return _google;
 }
 
 /**
@@ -36,7 +38,7 @@ function getGoogle() {
  * - AI trust score calculation
  */
 export function getThinkingModel() {
-    return getGoogle()('gemini-2.0-flash');
+	return getGoogle()("gemini-2.0-flash");
 }
 
 /**
@@ -45,29 +47,29 @@ export function getThinkingModel() {
  * - Quick validation checks
  */
 export function getFastModel() {
-    return getGoogle()('gemini-2.0-flash-lite');
+	return getGoogle()("gemini-2.0-flash-lite");
 }
 
 /**
  * Get the appropriate model based on task complexity
  */
-export function getModel(complexity: 'fast' | 'thinking' = 'thinking') {
-    return complexity === 'fast' ? getFastModel() : getThinkingModel();
+export function getModel(complexity: "fast" | "thinking" = "thinking") {
+	return complexity === "fast" ? getFastModel() : getThinkingModel();
 }
 
 /**
  * Check if AI is configured
  */
 export function isAIConfigured(): boolean {
-    return !!process.env.GOOGLE_VERTEX_PROJECT;
+	return !!process.env.GOOGLE_VERTEX_PROJECT;
 }
 
 /**
  * AI configuration constants
  */
 export const AI_CONFIG = {
-    /** Temperature for deterministic outputs */
-    ANALYSIS_TEMPERATURE: 0.1,
-    /** Retry attempts for failed AI calls */
-    MAX_RETRIES: 3,
+	/** Temperature for deterministic outputs */
+	ANALYSIS_TEMPERATURE: 0.1,
+	/** Retry attempts for failed AI calls */
+	MAX_RETRIES: 3,
 } as const;

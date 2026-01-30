@@ -5,7 +5,10 @@ import { inngest } from "@/inngest";
 import { getDatabaseClient } from "@/app/utils";
 import { documents } from "@/db/schema";
 import { DocumentCategorySchema, DocumentTypeSchema } from "@/lib/types";
-import { getFormInstanceByToken, markFormInstanceStatus } from "@/lib/services/form.service";
+import {
+	getFormInstanceByToken,
+	markFormInstanceStatus,
+} from "@/lib/services/form.service";
 
 const UploadSchema = z.object({
 	token: z.string().min(10),
@@ -35,15 +38,27 @@ export async function POST(request: NextRequest) {
 
 		const formInstance = await getFormInstanceByToken(validation.data.token);
 		if (!formInstance || formInstance.formType !== "DOCUMENT_UPLOADS") {
-			return NextResponse.json({ error: "Invalid upload link" }, { status: 404 });
+			return NextResponse.json(
+				{ error: "Invalid upload link" },
+				{ status: 404 },
+			);
 		}
 
-		if (formInstance.expiresAt && new Date(formInstance.expiresAt) < new Date()) {
-			return NextResponse.json({ error: "Upload link has expired" }, { status: 410 });
+		if (
+			formInstance.expiresAt &&
+			new Date(formInstance.expiresAt) < new Date()
+		) {
+			return NextResponse.json(
+				{ error: "Upload link has expired" },
+				{ status: 410 },
+			);
 		}
 
 		if (formInstance.status === "revoked") {
-			return NextResponse.json({ error: "Upload link has been revoked" }, { status: 410 });
+			return NextResponse.json(
+				{ error: "Upload link has been revoked" },
+				{ status: 410 },
+			);
 		}
 
 		const files = formData.getAll("files") as File[];
@@ -80,7 +95,10 @@ export async function POST(request: NextRequest) {
 				continue;
 			}
 
-			const storageUrl = await mockUploadFile(file, formInstance.workflowId ?? 0);
+			const storageUrl = await mockUploadFile(
+				file,
+				formInstance.workflowId ?? 0,
+			);
 			const [inserted] = await db
 				.insert(documents)
 				.values([
@@ -141,7 +159,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function mockUploadFile(file: File, workflowId: number): Promise<string> {
-	await new Promise(resolve => setTimeout(resolve, 100));
+	await new Promise((resolve) => setTimeout(resolve, 100));
 	const timestamp = Date.now();
 	const safeFilename = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
 	const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";

@@ -54,7 +54,8 @@ export function LeadForm({
 	});
 
 	// Check if Mockaroo test mode is enabled
-	const isMockarooTestMode = process.env.NEXT_PUBLIC_USE_MOCKAROO_CREDIT_CHECK === "true";
+	const isMockarooTestMode =
+		process.env.NEXT_PUBLIC_USE_MOCKAROO_CREDIT_CHECK === "true";
 
 	// Fill form with test data for Mockaroo testing
 	const fillTestData = () => {
@@ -142,7 +143,9 @@ export function LeadForm({
 			{isMockarooTestMode && (
 				<div className="flex items-center justify-between p-4 rounded-lg border border-warning bg-warning shadow-lg shadow-amber-900/20">
 					<div className="flex items-center gap-2">
-						<span className="text-warning-foreground text-sm font-medium">🧪 Mockaroo Test Mode</span>
+						<span className="text-warning-foreground text-sm font-medium">
+							🧪 Mockaroo Test Mode
+						</span>
 					</div>
 					<Button
 						type="button"
@@ -163,12 +166,13 @@ export function LeadForm({
 					<div className="space-y-2">
 						<Label htmlFor="companyName">Company Name *</Label>
 						<Input
-
 							id="companyName"
 							value={formData.companyName}
 							onChange={(e) => updateField("companyName", e.target.value)}
 							placeholder="Enter company name"
-							className={cn(errors.companyName ? "border-red-500" : "border-input-border")}
+							className={cn(
+								errors.companyName ? "border-red-500" : "border-input-border",
+							)}
 						/>
 						{errors.companyName && (
 							<p className="text-xs text-red-400">{errors.companyName}</p>
@@ -181,7 +185,9 @@ export function LeadForm({
 							className="border-input-border"
 							id="registrationNumber"
 							value={formData.registrationNumber}
-							onChange={(e) => updateField("registrationNumber", e.target.value)}
+							onChange={(e) =>
+								updateField("registrationNumber", e.target.value)
+							}
 							placeholder="e.g., 2024/123456/07"
 						/>
 					</div>
@@ -233,7 +239,6 @@ export function LeadForm({
 						<option value="managed_collection">Managed Collection</option>
 					</select>
 				</div>
-
 			</GlassCard>
 
 			{/* Contact Information */}
@@ -316,6 +321,6 @@ export function LeadForm({
 					{isEditing ? "Save Changes" : "Create Lead"}
 				</Button>
 			</div>
-		</form >
+		</form>
 	);
 }

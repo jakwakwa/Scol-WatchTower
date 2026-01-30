@@ -14,14 +14,24 @@ import {
 import { DashboardLayout } from "@/components/dashboard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardHeader,
+	CardTitle,
+	CardDescription,
+} from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 // ============================================
 // Types
 // ============================================
 
-type FormTypeKey = "stratcol_agreement" | "facility_application" | "absa_6995" | "fica_documents";
+type FormTypeKey =
+	| "stratcol_agreement"
+	| "facility_application"
+	| "absa_6995"
+	| "fica_documents";
 
 interface FormConfig {
 	type: FormTypeKey;
@@ -39,7 +49,8 @@ const FORM_CONFIGS: FormConfig[] = [
 	{
 		type: "stratcol_agreement",
 		title: "StratCol Agreement",
-		description: "Core contract establishing legal relationship and entity data",
+		description:
+			"Core contract establishing legal relationship and entity data",
 		stage: 2,
 		icon: RiFileTextLine,
 	},
@@ -154,7 +165,7 @@ export default async function FormsHubPage({
 	// Calculate progress
 	const totalForms = FORM_CONFIGS.length;
 	const completedForms = forms.filter(
-		(f) => f.status === "approved" || f.status === "submitted"
+		(f) => f.status === "approved" || f.status === "submitted",
 	).length;
 	const progressPercent = Math.round((completedForms / totalForms) * 100);
 
@@ -212,7 +223,8 @@ export default async function FormsHubPage({
 					{FORM_CONFIGS.map((config) => {
 						const form = formMap.get(config.type);
 						const status = form?.status || "not_started";
-						const statusConfig = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG];
+						const statusConfig =
+							STATUS_CONFIG[status as keyof typeof STATUS_CONFIG];
 						const Icon = config.icon;
 						const StatusIcon = statusConfig.icon;
 
@@ -230,7 +242,7 @@ export default async function FormsHubPage({
 									"transition-all duration-200",
 									isAccessible
 										? "hover:border-primary/50 hover:shadow-lg"
-										: "opacity-50"
+										: "opacity-50",
 								)}
 							>
 								<CardHeader>

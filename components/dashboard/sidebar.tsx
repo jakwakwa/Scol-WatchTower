@@ -19,13 +19,22 @@ const navigation = [
 	{ name: "Overview", href: "/dashboard", icon: RiDashboardLine },
 	{ name: "Leads", href: "/dashboard/leads", icon: RiUserAddLine },
 	{ name: "Workflows", href: "/dashboard/workflows", icon: RiFlowChart },
-	{ name: "Risk Review", href: "/dashboard/risk-review", icon: RiShieldCheckLine },
+	{
+		name: "Risk Review",
+		href: "/dashboard/risk-review",
+		icon: RiShieldCheckLine,
+	},
 	{ name: "Agents", href: "/dashboard/agents", icon: RiRobot2Line },
 ];
 
-export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean; setIsCollapsed: React.Dispatch<React.SetStateAction<boolean>> }) {
+export function Sidebar({
+	isCollapsed,
+	setIsCollapsed,
+}: {
+	isCollapsed: boolean;
+	setIsCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
+}) {
 	const pathname = usePathname();
-
 
 	return (
 		<aside
@@ -37,12 +46,12 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean;
 		>
 			{/* Header */}
 			<div className="flex h-24 items-center justify-between px-6 border-b border-secondary/5">
-				<div className={cn("flex items-center gap-1 ", isCollapsed && "hidden")}>
+				<div
+					className={cn("flex items-center gap-1 ", isCollapsed && "hidden")}
+				>
 					<div className="flex flex-col w-full h-fit items-start px-4 py-2 justify-center rounded-2xl  border-stone-500/20">
-
 						<div className="text-base font-bold bg-linear-to-r from-primary to-ring/90 bg-clip-text text-transparent">
 							<RiSignalTowerFill className="h-6 w-6 text-sidebar-foreground" />
-
 							SCol
 						</div>
 						<span className="text-muted-foreground/90 text-xs uppercase leading-[14px]">

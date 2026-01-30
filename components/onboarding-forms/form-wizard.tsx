@@ -9,7 +9,13 @@
 import * as React from "react";
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardFooter,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import {
 	RiArrowLeftLine,
@@ -103,25 +109,22 @@ export function StepIndicator({
 								"flex items-center justify-center rounded-full font-medium transition-all",
 								"h-8 w-8 text-xs",
 								isCompleted && "bg-teal-500/40 text-teal-700",
-								isCurrent && "bg-stone-500/20 text-stone-400 ring-2 ring-stone-500/30",
+								isCurrent &&
+									"bg-stone-500/20 text-stone-400 ring-2 ring-stone-500/30",
 								!isCompleted && !isCurrent && "bg-muted text-muted-foreground",
 								isClickable && "cursor-pointer hover:opacity-80",
-								!isClickable && "cursor-default"
+								!isClickable && "cursor-default",
 							)}
 							title={step.title}
 						>
-							{isCompleted ? (
-								<RiCheckLine className="h-4 w-4" />
-							) : (
-								index + 1
-							)}
+							{isCompleted ? <RiCheckLine className="h-4 w-4" /> : index + 1}
 						</button>
 
 						{index < steps.length - 1 && (
 							<div
 								className={cn(
 									"h-0.5 w-6 transition-colors",
-									index < currentStep ? "bg-teal-500/40" : "bg-muted"
+									index < currentStep ? "bg-teal-500/40" : "bg-muted",
 								)}
 							/>
 						)}
@@ -227,7 +230,7 @@ export function FormWizard({
 				onStepChange?.(step);
 			}
 		},
-		[activeSteps.length, controlledStep, onStepChange]
+		[activeSteps.length, controlledStep, onStepChange],
 	);
 
 	// Go to next step

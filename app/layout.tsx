@@ -4,7 +4,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 
 import "./globals.css";
 
-const dmSans = DM_Sans({ subsets: ['latin'], variable: '--font-sans' });
+const dmSans = DM_Sans({ subsets: ["latin"], variable: "--font-sans" });
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
@@ -21,7 +21,10 @@ export default function RootLayout({
 	return (
 		<ClerkProvider>
 			<html lang="en" className={dmSans.variable} suppressHydrationWarning>
-				<body className={`bg-rich-black overscroll-none ${inter.className}`} suppressHydrationWarning>
+				<body
+					className={`bg-rich-black overscroll-none ${inter.className}`}
+					suppressHydrationWarning
+				>
 					{children}
 				</body>
 			</html>

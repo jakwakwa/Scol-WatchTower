@@ -166,7 +166,7 @@ export default async function WorkflowDetailsPage({
 	const latestQuote = workflowQuotes[0];
 
 	// Helper for stage badge
-	const stageName = lead?.status ? lead.status.replace('_', ' ') : 'Unknown';
+	const stageName = lead?.status ? lead.status.replace("_", " ") : "Unknown";
 	const stageNumber = workflow.stage || 0;
 
 	return (
@@ -193,7 +193,7 @@ export default async function WorkflowDetailsPage({
 						</div>
 					</div>
 					<div className="flex items-center gap-3">
-						<StatusBadge status={workflow.status || 'unknown'} />
+						<StatusBadge status={workflow.status || "unknown"} />
 						<StageBadge stage={stageNumber} name={stageName} />
 					</div>
 				</>
@@ -308,7 +308,7 @@ export default async function WorkflowDetailsPage({
 												variant="secondary"
 												className="h-5 px-1.5 text-[10px] bg-muted text-muted-foreground hover:bg-muted/80"
 											>
-												{event.actorType || 'system'}
+												{event.actorType || "system"}
 											</Badge>
 											{event.actorId && (
 												<span className="text-[10px] text-muted-foreground font-mono">
@@ -408,7 +408,10 @@ export default async function WorkflowDetailsPage({
 						</CardHeader>
 						<CardContent className="space-y-4">
 							<div className="flex items-center gap-3 p-3 rounded-lg bg-blue-500/5 border border-blue-500/10">
-								<RiRobot2Line className="text-blue-500 animate-bounce" size={20} />
+								<RiRobot2Line
+									className="text-blue-500 animate-bounce"
+									size={20}
+								/>
 								<div>
 									<p className="text-xs text-blue-500 font-medium">
 										Current Agent

@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
 	if (!db) {
 		return NextResponse.json(
 			{ error: "Database not available" },
-			{ status: 500 }
+			{ status: 500 },
 		);
 	}
 
@@ -36,8 +36,11 @@ export async function POST(request: NextRequest) {
 		// Validate required fields
 		if (!file || !workflowId || !category || !documentType) {
 			return NextResponse.json(
-				{ error: "Missing required fields: file, workflowId, category, documentType" },
-				{ status: 400 }
+				{
+					error:
+						"Missing required fields: file, workflowId, category, documentType",
+				},
+				{ status: 400 },
 			);
 		}
 
@@ -53,7 +56,7 @@ export async function POST(request: NextRequest) {
 		if (workflow.length === 0) {
 			return NextResponse.json(
 				{ error: "Workflow not found" },
-				{ status: 404 }
+				{ status: 404 },
 			);
 		}
 
@@ -62,7 +65,7 @@ export async function POST(request: NextRequest) {
 		if (file.size > maxSize) {
 			return NextResponse.json(
 				{ error: "File size exceeds 10MB limit" },
-				{ status: 400 }
+				{ status: 400 },
 			);
 		}
 
@@ -79,7 +82,7 @@ export async function POST(request: NextRequest) {
 		if (!allowedTypes.includes(file.type)) {
 			return NextResponse.json(
 				{ error: "File type not allowed. Accepted: PDF, JPG, PNG, DOC, DOCX" },
-				{ status: 400 }
+				{ status: 400 },
 			);
 		}
 
@@ -118,7 +121,7 @@ export async function POST(request: NextRequest) {
 		if (!document) {
 			return NextResponse.json(
 				{ error: "Failed to create document record" },
-				{ status: 500 }
+				{ status: 500 },
 			);
 		}
 
@@ -137,7 +140,7 @@ export async function POST(request: NextRequest) {
 		console.error("Failed to upload document:", error);
 		return NextResponse.json(
 			{ error: "Failed to upload document" },
-			{ status: 500 }
+			{ status: 500 },
 		);
 	}
 }
@@ -151,7 +154,7 @@ export async function GET(request: NextRequest) {
 	if (!db) {
 		return NextResponse.json(
 			{ error: "Database not available" },
-			{ status: 500 }
+			{ status: 500 },
 		);
 	}
 
@@ -161,7 +164,7 @@ export async function GET(request: NextRequest) {
 	if (!workflowId) {
 		return NextResponse.json(
 			{ error: "workflowId is required" },
-			{ status: 400 }
+			{ status: 400 },
 		);
 	}
 
@@ -176,7 +179,7 @@ export async function GET(request: NextRequest) {
 		console.error("Failed to fetch documents:", error);
 		return NextResponse.json(
 			{ error: "Failed to fetch documents" },
-			{ status: 500 }
+			{ status: 500 },
 		);
 	}
 }

@@ -15,7 +15,11 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { GlassCard } from "@/components/dashboard";
-import { StatusBadge, RiskBadge, StageBadge } from "@/components/ui/status-badge";
+import {
+	StatusBadge,
+	RiskBadge,
+	StageBadge,
+} from "@/components/ui/status-badge";
 import { useParams } from "next/navigation";
 
 interface LeadDetail {
@@ -70,7 +74,9 @@ export default function ClientDetailPage() {
 	const id = params.id as string;
 	const [lead, setLead] = useState<LeadDetail | null>(null);
 	const [documents, setDocuments] = useState<LeadDocument[]>([]);
-	const [formSubmissions, setFormSubmissions] = useState<LeadFormSubmission[]>([]);
+	const [formSubmissions, setFormSubmissions] = useState<LeadFormSubmission[]>(
+		[],
+	);
 	const [formInstances, setFormInstances] = useState<LeadFormInstance[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -206,7 +212,9 @@ export default function ClientDetailPage() {
 								</div>
 								<div>
 									<p className="font-semibold text-sm">{client.contactName}</p>
-									<p className="text-xs text-muted-foreground">Main Signatory</p>
+									<p className="text-xs text-muted-foreground">
+										Main Signatory
+									</p>
 								</div>
 							</div>
 							<div className="space-y-2 text-sm">
@@ -316,7 +324,7 @@ export default function ClientDetailPage() {
 										No documents uploaded yet.
 									</p>
 								) : (
-									documents.map(doc => (
+									documents.map((doc) => (
 										<div
 											key={doc.id}
 											className="flex items-center justify-between p-4 rounded-xl border border-border/60 bg-card hover:bg-secondary/10 transition-colors"
@@ -341,8 +349,8 @@ export default function ClientDetailPage() {
 														doc.status === "verified"
 															? "success"
 															: doc.status === "rejected"
-															? "error"
-															: "warning"
+																? "error"
+																: "warning"
 													}
 												>
 													{doc.status}
@@ -363,9 +371,9 @@ export default function ClientDetailPage() {
 									</p>
 								) : (
 									<div className="space-y-3">
-										{formInstances.map(instance => {
+										{formInstances.map((instance) => {
 											const submission = formSubmissions.find(
-												item => item.formType === instance.formType,
+												(item) => item.formType === instance.formType,
 											);
 											return (
 												<div
@@ -402,7 +410,10 @@ export default function ClientDetailPage() {
 										Financial Health
 									</h4>
 									<div className="space-y-4 text-sm text-muted-foreground">
-										<p>AI analysis results will appear once documents are processed.</p>
+										<p>
+											AI analysis results will appear once documents are
+											processed.
+										</p>
 									</div>
 								</GlassCard>
 
@@ -424,7 +435,9 @@ export default function ClientDetailPage() {
 											<StatusBadge status="warning">Pending</StatusBadge>
 										</div>
 										<div className="flex justify-between items-center">
-											<span className="text-sm text-foreground">CIPC Status</span>
+											<span className="text-sm text-foreground">
+												CIPC Status
+											</span>
 											<StatusBadge status="warning">Pending</StatusBadge>
 										</div>
 									</div>
@@ -449,15 +462,11 @@ export default function ClientDetailPage() {
 										No recent activity logged.
 									</p>
 								) : (
-									formSubmissions.map(submission => (
-										<div
-											key={submission.id}
-											className="relative pl-6"
-										>
+									formSubmissions.map((submission) => (
+										<div key={submission.id} className="relative pl-6">
 											<div className="absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full bg-border border-2 border-background"></div>
 											<p className="text-sm font-medium">
-												Form submitted:{" "}
-												{submission.formType.replace(/_/g, " ")}
+												Form submitted: {submission.formType.replace(/_/g, " ")}
 											</p>
 											<p className="text-xs text-muted-foreground mb-1">
 												{submission.submittedBy || "Client"} •{" "}

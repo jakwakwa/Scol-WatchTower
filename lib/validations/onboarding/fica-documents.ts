@@ -17,7 +17,8 @@ export const DocumentCategory = {
 	INDUSTRY: "industry",
 } as const;
 
-export type DocumentCategoryValue = (typeof DocumentCategory)[keyof typeof DocumentCategory];
+export type DocumentCategoryValue =
+	(typeof DocumentCategory)[keyof typeof DocumentCategory];
 
 // ============================================
 // Document Types by Category
@@ -100,47 +101,53 @@ export const individualDocumentsSchema = z.object({
 	documents: z.array(
 		z.object({
 			personName: z.string().min(1, "Person name is required"),
-			personRole: z.enum(["director", "beneficial_owner", "authorised_representative"]),
+			personRole: z.enum([
+				"director",
+				"beneficial_owner",
+				"authorised_representative",
+			]),
 			idDocument: documentUploadItemSchema,
 			proofOfResidence: documentUploadItemSchema,
-		})
+		}),
 	),
 });
 
 export const financialDocumentsSchema = z.object({
 	bankStatementMonth1: documentUploadItemSchema.refine(
 		(doc) => doc.isUploaded,
-		{ message: "Bank statement (month 1) is required" }
+		{ message: "Bank statement (month 1) is required" },
 	),
 	bankStatementMonth2: documentUploadItemSchema.refine(
 		(doc) => doc.isUploaded,
-		{ message: "Bank statement (month 2) is required" }
+		{ message: "Bank statement (month 2) is required" },
 	),
 	bankStatementMonth3: documentUploadItemSchema.refine(
 		(doc) => doc.isUploaded,
-		{ message: "Bank statement (month 3) is required" }
+		{ message: "Bank statement (month 3) is required" },
 	),
 });
 
 export const professionalDocumentsSchema = z.object({
 	accountingOfficerLetter: documentUploadItemSchema.refine(
 		(doc) => doc.isUploaded,
-		{ message: "Confirmation of Accounting Officer letter is required" }
+		{ message: "Confirmation of Accounting Officer letter is required" },
 	),
 	auditorReport: documentUploadItemSchema.optional(),
 });
 
 export const industryDocumentsSchema = z.object({
 	// These are conditional based on industry type
-	applicableRegulations: z.array(
-		z.enum([
-			IndustryDocumentType.FSCA_LICENCE,
-			IndustryDocumentType.PSIRA_CERTIFICATE,
-			IndustryDocumentType.NCR_REGISTRATION,
-			IndustryDocumentType.NPO_CONSTITUTION,
-			IndustryDocumentType.OTHER_REGULATORY,
-		])
-	).default([]),
+	applicableRegulations: z
+		.array(
+			z.enum([
+				IndustryDocumentType.FSCA_LICENCE,
+				IndustryDocumentType.PSIRA_CERTIFICATE,
+				IndustryDocumentType.NCR_REGISTRATION,
+				IndustryDocumentType.NPO_CONSTITUTION,
+				IndustryDocumentType.OTHER_REGULATORY,
+			]),
+		)
+		.default([]),
 	fscaLicence: documentUploadItemSchema.optional(),
 	psiraCertificate: documentUploadItemSchema.optional(),
 	ncrRegistration: documentUploadItemSchema.optional(),
@@ -345,33 +352,79 @@ export const DOCUMENT_REQUIREMENTS: DocumentRequirement[] = [
 // Default Values Helper
 // ============================================
 
-export const getFicaDocumentsDefaultValues = (): Partial<FicaDocumentsFormData> => ({
-	standard: {
-		cipcRegistration: { documentType: StandardDocumentType.CIPC_REGISTRATION, isUploaded: false },
-		taxClearance: { documentType: StandardDocumentType.TAX_CLEARANCE, isUploaded: false },
-		vatRegistration: { documentType: StandardDocumentType.VAT_REGISTRATION, isUploaded: false },
-		websiteDescription: { documentType: StandardDocumentType.WEBSITE_DESCRIPTION, isUploaded: false },
-		serviceDescription: { documentType: StandardDocumentType.SERVICE_DESCRIPTION, isUploaded: false },
-	},
-	individual: {
-		documents: [],
-	},
-	financial: {
-		bankStatementMonth1: { documentType: FinancialDocumentType.BANK_STATEMENT_MONTH_1, isUploaded: false },
-		bankStatementMonth2: { documentType: FinancialDocumentType.BANK_STATEMENT_MONTH_2, isUploaded: false },
-		bankStatementMonth3: { documentType: FinancialDocumentType.BANK_STATEMENT_MONTH_3, isUploaded: false },
-	},
-	professional: {
-		accountingOfficerLetter: { documentType: ProfessionalDocumentType.ACCOUNTING_OFFICER_LETTER, isUploaded: false },
-		auditorReport: { documentType: ProfessionalDocumentType.AUDITOR_REPORT, isUploaded: false },
-	},
-	industry: {
-		applicableRegulations: [],
-		fscaLicence: { documentType: IndustryDocumentType.FSCA_LICENCE, isUploaded: false },
-		psiraCertificate: { documentType: IndustryDocumentType.PSIRA_CERTIFICATE, isUploaded: false },
-		ncrRegistration: { documentType: IndustryDocumentType.NCR_REGISTRATION, isUploaded: false },
-		npoConstitution: { documentType: IndustryDocumentType.NPO_CONSTITUTION, isUploaded: false },
-		otherRegulatory: { documentType: IndustryDocumentType.OTHER_REGULATORY, isUploaded: false },
-	},
-	acknowledgement: false,
-});
+export const getFicaDocumentsDefaultValues =
+	(): Partial<FicaDocumentsFormData> => ({
+		standard: {
+			cipcRegistration: {
+				documentType: StandardDocumentType.CIPC_REGISTRATION,
+				isUploaded: false,
+			},
+			taxClearance: {
+				documentType: StandardDocumentType.TAX_CLEARANCE,
+				isUploaded: false,
+			},
+			vatRegistration: {
+				documentType: StandardDocumentType.VAT_REGISTRATION,
+				isUploaded: false,
+			},
+			websiteDescription: {
+				documentType: StandardDocumentType.WEBSITE_DESCRIPTION,
+				isUploaded: false,
+			},
+			serviceDescription: {
+				documentType: StandardDocumentType.SERVICE_DESCRIPTION,
+				isUploaded: false,
+			},
+		},
+		individual: {
+			documents: [],
+		},
+		financial: {
+			bankStatementMonth1: {
+				documentType: FinancialDocumentType.BANK_STATEMENT_MONTH_1,
+				isUploaded: false,
+			},
+			bankStatementMonth2: {
+				documentType: FinancialDocumentType.BANK_STATEMENT_MONTH_2,
+				isUploaded: false,
+			},
+			bankStatementMonth3: {
+				documentType: FinancialDocumentType.BANK_STATEMENT_MONTH_3,
+				isUploaded: false,
+			},
+		},
+		professional: {
+			accountingOfficerLetter: {
+				documentType: ProfessionalDocumentType.ACCOUNTING_OFFICER_LETTER,
+				isUploaded: false,
+			},
+			auditorReport: {
+				documentType: ProfessionalDocumentType.AUDITOR_REPORT,
+				isUploaded: false,
+			},
+		},
+		industry: {
+			applicableRegulations: [],
+			fscaLicence: {
+				documentType: IndustryDocumentType.FSCA_LICENCE,
+				isUploaded: false,
+			},
+			psiraCertificate: {
+				documentType: IndustryDocumentType.PSIRA_CERTIFICATE,
+				isUploaded: false,
+			},
+			ncrRegistration: {
+				documentType: IndustryDocumentType.NCR_REGISTRATION,
+				isUploaded: false,
+			},
+			npoConstitution: {
+				documentType: IndustryDocumentType.NPO_CONSTITUTION,
+				isUploaded: false,
+			},
+			otherRegulatory: {
+				documentType: IndustryDocumentType.OTHER_REGULATORY,
+				isUploaded: false,
+			},
+		},
+		acknowledgement: false,
+	});

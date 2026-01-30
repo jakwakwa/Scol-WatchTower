@@ -154,13 +154,48 @@ const productSpecificRequirements: DocumentRequirement[] = [
 ];
 
 const industrySpecificRequirements: DocumentRequirement[] = [
-	{ type: "NPO_CONSTITUTION", label: "NPO constitution", category: "industry_specific", required: false },
-	{ type: "NPO_RESOLUTION", label: "NPO resolution", category: "industry_specific", required: false },
-	{ type: "NPO_BOARD_LIST", label: "List of board members", category: "industry_specific", required: false },
-	{ type: "TRUST_LETTER_OF_AUTHORITY", label: "Letter of authority", category: "industry_specific", required: false },
-	{ type: "TRUST_BENEFICIARY_IDS", label: "Beneficiary IDs", category: "industry_specific", required: false },
-	{ type: "TRUST_BENEFICIARY_ADDRESSES", label: "Beneficiary addresses", category: "industry_specific", required: false },
-	{ type: "TRUST_ORGANOGRAM", label: "Organogram (on request)", category: "industry_specific", required: false },
+	{
+		type: "NPO_CONSTITUTION",
+		label: "NPO constitution",
+		category: "industry_specific",
+		required: false,
+	},
+	{
+		type: "NPO_RESOLUTION",
+		label: "NPO resolution",
+		category: "industry_specific",
+		required: false,
+	},
+	{
+		type: "NPO_BOARD_LIST",
+		label: "List of board members",
+		category: "industry_specific",
+		required: false,
+	},
+	{
+		type: "TRUST_LETTER_OF_AUTHORITY",
+		label: "Letter of authority",
+		category: "industry_specific",
+		required: false,
+	},
+	{
+		type: "TRUST_BENEFICIARY_IDS",
+		label: "Beneficiary IDs",
+		category: "industry_specific",
+		required: false,
+	},
+	{
+		type: "TRUST_BENEFICIARY_ADDRESSES",
+		label: "Beneficiary addresses",
+		category: "industry_specific",
+		required: false,
+	},
+	{
+		type: "TRUST_ORGANOGRAM",
+		label: "Organogram (on request)",
+		category: "industry_specific",
+		required: false,
+	},
 	{
 		type: "BODY_CORPORATE_RESOLUTION",
 		label: "Body corporate resolution",
@@ -173,10 +208,30 @@ const industrySpecificRequirements: DocumentRequirement[] = [
 		category: "industry_specific",
 		required: false,
 	},
-	{ type: "INSURANCE_FSCA_CERT", label: "FSCA certificate", category: "industry_specific", required: false },
-	{ type: "SECURITY_PSIRA_CERT", label: "PSIRA certificate", category: "industry_specific", required: false },
-	{ type: "FIC_REGISTRATION", label: "FIC registration number", category: "industry_specific", required: false },
-	{ type: "NCR_CERTIFICATE", label: "NCR certificate", category: "industry_specific", required: false },
+	{
+		type: "INSURANCE_FSCA_CERT",
+		label: "FSCA certificate",
+		category: "industry_specific",
+		required: false,
+	},
+	{
+		type: "SECURITY_PSIRA_CERT",
+		label: "PSIRA certificate",
+		category: "industry_specific",
+		required: false,
+	},
+	{
+		type: "FIC_REGISTRATION",
+		label: "FIC registration number",
+		category: "industry_specific",
+		required: false,
+	},
+	{
+		type: "NCR_CERTIFICATE",
+		label: "NCR certificate",
+		category: "industry_specific",
+		required: false,
+	},
 ];
 
 const riskBasedRequirements: DocumentRequirement[] = [
@@ -228,7 +283,9 @@ export function getDocumentRequirements(context: DocumentRequirementContext) {
 		});
 	}
 
-	if (context.productTypes?.some(type => type.toLowerCase().includes("premium"))) {
+	if (
+		context.productTypes?.some((type) => type.toLowerCase().includes("premium"))
+	) {
 		requirements.push({
 			type: "INTERMEDIARY_AGREEMENT",
 			label: "Intermediary agreement",
@@ -237,37 +294,117 @@ export function getDocumentRequirements(context: DocumentRequirementContext) {
 		});
 	}
 
-	if (context.productTypes?.some(type => type.toLowerCase().includes("call centre"))) {
+	if (
+		context.productTypes?.some((type) =>
+			type.toLowerCase().includes("call centre"),
+		)
+	) {
 		requirements.push(
-			{ type: "COLMS_APPLICATION", label: "COLMS application", category: "product_specific", required: true },
-			{ type: "SERVICE_AGREEMENT", label: "Service agreement", category: "product_specific", required: true },
-			{ type: "PRODUCT_DESCRIPTION", label: "Product description", category: "product_specific", required: true },
-			{ type: "SUPPLIER_CONTACT_INFO", label: "Supplier contact information", category: "product_specific", required: true },
-			{ type: "CALL_SCRIPT", label: "Call script", category: "product_specific", required: true },
+			{
+				type: "COLMS_APPLICATION",
+				label: "COLMS application",
+				category: "product_specific",
+				required: true,
+			},
+			{
+				type: "SERVICE_AGREEMENT",
+				label: "Service agreement",
+				category: "product_specific",
+				required: true,
+			},
+			{
+				type: "PRODUCT_DESCRIPTION",
+				label: "Product description",
+				category: "product_specific",
+				required: true,
+			},
+			{
+				type: "SUPPLIER_CONTACT_INFO",
+				label: "Supplier contact information",
+				category: "product_specific",
+				required: true,
+			},
+			{
+				type: "CALL_SCRIPT",
+				label: "Call script",
+				category: "product_specific",
+				required: true,
+			},
 		);
 	}
 
 	if (context.entityType === "npo" || hasIndustry(context.industry, "npo")) {
 		requirements.push(
-			{ type: "NPO_CONSTITUTION", label: "NPO constitution", category: "industry_specific", required: true },
-			{ type: "NPO_RESOLUTION", label: "NPO resolution", category: "industry_specific", required: true },
-			{ type: "NPO_BOARD_LIST", label: "List of board members", category: "industry_specific", required: true },
+			{
+				type: "NPO_CONSTITUTION",
+				label: "NPO constitution",
+				category: "industry_specific",
+				required: true,
+			},
+			{
+				type: "NPO_RESOLUTION",
+				label: "NPO resolution",
+				category: "industry_specific",
+				required: true,
+			},
+			{
+				type: "NPO_BOARD_LIST",
+				label: "List of board members",
+				category: "industry_specific",
+				required: true,
+			},
 		);
 	}
 
-	if (context.entityType === "trust" || hasIndustry(context.industry, "trust")) {
+	if (
+		context.entityType === "trust" ||
+		hasIndustry(context.industry, "trust")
+	) {
 		requirements.push(
-			{ type: "TRUST_LETTER_OF_AUTHORITY", label: "Letter of authority", category: "industry_specific", required: true },
-			{ type: "TRUST_BENEFICIARY_IDS", label: "Beneficiary IDs", category: "industry_specific", required: true },
-			{ type: "TRUST_BENEFICIARY_ADDRESSES", label: "Beneficiary addresses", category: "industry_specific", required: true },
-			{ type: "TRUST_ORGANOGRAM", label: "Organogram", category: "industry_specific", required: false },
+			{
+				type: "TRUST_LETTER_OF_AUTHORITY",
+				label: "Letter of authority",
+				category: "industry_specific",
+				required: true,
+			},
+			{
+				type: "TRUST_BENEFICIARY_IDS",
+				label: "Beneficiary IDs",
+				category: "industry_specific",
+				required: true,
+			},
+			{
+				type: "TRUST_BENEFICIARY_ADDRESSES",
+				label: "Beneficiary addresses",
+				category: "industry_specific",
+				required: true,
+			},
+			{
+				type: "TRUST_ORGANOGRAM",
+				label: "Organogram",
+				category: "industry_specific",
+				required: false,
+			},
 		);
 	}
 
-	if (context.entityType === "body_corporate" || hasIndustry(context.industry, "body corporate")) {
+	if (
+		context.entityType === "body_corporate" ||
+		hasIndustry(context.industry, "body corporate")
+	) {
 		requirements.push(
-			{ type: "BODY_CORPORATE_RESOLUTION", label: "Body corporate resolution", category: "industry_specific", required: true },
-			{ type: "BODY_CORPORATE_BOARD_LIST", label: "List of board members", category: "industry_specific", required: true },
+			{
+				type: "BODY_CORPORATE_RESOLUTION",
+				label: "Body corporate resolution",
+				category: "industry_specific",
+				required: true,
+			},
+			{
+				type: "BODY_CORPORATE_BOARD_LIST",
+				label: "List of board members",
+				category: "industry_specific",
+				required: true,
+			},
 		);
 	}
 
@@ -298,7 +435,10 @@ export function getDocumentRequirements(context: DocumentRequirementContext) {
 		});
 	}
 
-	if (hasIndustry(context.industry, "loan") || hasIndustry(context.industry, "debt")) {
+	if (
+		hasIndustry(context.industry, "loan") ||
+		hasIndustry(context.industry, "debt")
+	) {
 		requirements.push({
 			type: "NCR_CERTIFICATE",
 			label: "NCR certificate",

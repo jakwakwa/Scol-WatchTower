@@ -9,7 +9,7 @@ import { eq } from "drizzle-orm";
  */
 export async function GET(
 	request: NextRequest,
-	{ params }: { params: Promise<{ id: string }> }
+	{ params }: { params: Promise<{ id: string }> },
 ) {
 	const { id } = await params;
 
@@ -17,7 +17,7 @@ export async function GET(
 	if (!db) {
 		return NextResponse.json(
 			{ error: "Database not available" },
-			{ status: 500 }
+			{ status: 500 },
 		);
 	}
 
@@ -31,7 +31,7 @@ export async function GET(
 		if (document.length === 0) {
 			return NextResponse.json(
 				{ error: "Document not found" },
-				{ status: 404 }
+				{ status: 404 },
 			);
 		}
 
@@ -40,7 +40,7 @@ export async function GET(
 		console.error("Failed to fetch document:", error);
 		return NextResponse.json(
 			{ error: "Failed to fetch document" },
-			{ status: 500 }
+			{ status: 500 },
 		);
 	}
 }
@@ -51,7 +51,7 @@ export async function GET(
  */
 export async function PUT(
 	request: NextRequest,
-	{ params }: { params: Promise<{ id: string }> }
+	{ params }: { params: Promise<{ id: string }> },
 ) {
 	const { id } = await params;
 
@@ -59,26 +59,29 @@ export async function PUT(
 	if (!db) {
 		return NextResponse.json(
 			{ error: "Database not available" },
-			{ status: 500 }
+			{ status: 500 },
 		);
 	}
 
 	try {
 		const body = await request.json();
-		const { verificationStatus, verificationNotes, verifiedBy, expiresAt } = body;
+		const { verificationStatus, verificationNotes, verifiedBy, expiresAt } =
+			body;
 
 		if (!verificationStatus) {
 			return NextResponse.json(
 				{ error: "verificationStatus is required" },
-				{ status: 400 }
+				{ status: 400 },
 			);
 		}
 
 		const validStatuses = ["pending", "verified", "rejected", "expired"];
 		if (!validStatuses.includes(verificationStatus)) {
 			return NextResponse.json(
-				{ error: `Invalid status. Must be one of: ${validStatuses.join(", ")}` },
-				{ status: 400 }
+				{
+					error: `Invalid status. Must be one of: ${validStatuses.join(", ")}`,
+				},
+				{ status: 400 },
 			);
 		}
 
@@ -98,7 +101,7 @@ export async function PUT(
 		if (!updated) {
 			return NextResponse.json(
 				{ error: "Document not found" },
-				{ status: 404 }
+				{ status: 404 },
 			);
 		}
 
@@ -110,7 +113,7 @@ export async function PUT(
 		console.error("Failed to update document:", error);
 		return NextResponse.json(
 			{ error: "Failed to update document" },
-			{ status: 500 }
+			{ status: 500 },
 		);
 	}
 }
@@ -121,7 +124,7 @@ export async function PUT(
  */
 export async function DELETE(
 	request: NextRequest,
-	{ params }: { params: Promise<{ id: string }> }
+	{ params }: { params: Promise<{ id: string }> },
 ) {
 	const { id } = await params;
 
@@ -129,7 +132,7 @@ export async function DELETE(
 	if (!db) {
 		return NextResponse.json(
 			{ error: "Database not available" },
-			{ status: 500 }
+			{ status: 500 },
 		);
 	}
 
@@ -144,7 +147,7 @@ export async function DELETE(
 		if (document.length === 0) {
 			return NextResponse.json(
 				{ error: "Document not found" },
-				{ status: 404 }
+				{ status: 404 },
 			);
 		}
 
@@ -164,7 +167,7 @@ export async function DELETE(
 		console.error("Failed to delete document:", error);
 		return NextResponse.json(
 			{ error: "Failed to delete document" },
-			{ status: 500 }
+			{ status: 500 },
 		);
 	}
 }

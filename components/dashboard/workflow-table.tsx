@@ -49,13 +49,13 @@ export interface WorkflowRow {
 	stage: 1 | 2 | 3 | 4;
 	stageName: string;
 	status:
-	| "pending"
-	| "in_progress"
-	| "awaiting_human"
-	| "completed"
-	| "failed"
-	| "timeout"
-	| "paused";
+		| "pending"
+		| "in_progress"
+		| "awaiting_human"
+		| "completed"
+		| "failed"
+		| "timeout"
+		| "paused";
 	currentAgent?: string;
 	startedAt: Date;
 	payload?: Record<string, unknown>;
@@ -135,7 +135,7 @@ export function WorkflowStageIndicator({
 							compact ? "h-6 w-6 text-[10px]" : "h-8 w-8 text-xs",
 							stage < currentStage && "bg-teal-500/40 text-emerald-600/80",
 							stage === currentStage &&
-							"bg-stone-500/20 text-stone-400 ring-2 ring-stone-500/30",
+								"bg-stone-500/20 text-stone-400 ring-2 ring-stone-500/30",
 							stage > currentStage && "bg-secondary/5 text-muted-foreground",
 						)}
 					>
@@ -223,11 +223,8 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 	{
 		accessorKey: "stage",
 		header: () => (
-			<span
-				className="-ml-4 font-light hover:bg-transparent hover:text-foreground"
-			>
+			<span className="-ml-4 font-light hover:bg-transparent hover:text-foreground">
 				Stage
-
 			</span>
 		),
 		cell: ({ row }) => (
@@ -307,7 +304,9 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 	},
 	{
 		id: "actions",
-		header: () => <span className="-ml-4 font-light text-xs uppercase">Actions</span>,
+		header: () => (
+			<span className="-ml-4 font-light text-xs uppercase">Actions</span>
+		),
 		cell: ({ row, table }) => {
 			const meta = table.options.meta as {
 				onViewPayload: (data: WorkflowRow) => void;

@@ -23,9 +23,11 @@ const statusConfig = {
 	lost: { label: "Lost", color: "bg-red-500/20 text-red-400" },
 } as const;
 
-export default async function LeadsPage(
-	{ workflowNotifications }: { workflowNotifications: WorkflowNotification[] }
-) {
+export default async function LeadsPage({
+	workflowNotifications,
+}: {
+	workflowNotifications: WorkflowNotification[];
+}) {
 	const db = getDatabaseClient();
 	let allLeads: LeadRow[] = [];
 
@@ -61,7 +63,7 @@ export default async function LeadsPage(
 				}
 			}
 
-			allLeads = leadRows.map(lead => {
+			allLeads = leadRows.map((lead) => {
 				const workflow = workflowsByLead.get(lead.id);
 				const quote = workflow ? quotesByWorkflow.get(workflow.id) : null;
 				return {
@@ -81,15 +83,12 @@ export default async function LeadsPage(
 			title="Leads"
 			description="Manage your potential clients"
 			actions={
-
 				<Link href="/dashboard/leads/new">
-
 					<Button variant="secondary">
 						<RiUserAddLine />
 						New Lead
 					</Button>
 				</Link>
-
 			}
 			notifications={workflowNotifications}
 		>

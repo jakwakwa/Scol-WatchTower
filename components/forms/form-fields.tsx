@@ -54,7 +54,7 @@ function CheckboxGroup({
 				const value = Array.isArray(field.value) ? field.value : [];
 				return (
 					<div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-						{options.map(option => {
+						{options.map((option) => {
 							const checked = value.includes(getOptionValue(option));
 							const checkboxId = `${name}-${option.value}`;
 							return (
@@ -65,10 +65,12 @@ function CheckboxGroup({
 									<Checkbox
 										id={checkboxId}
 										checked={checked}
-										onCheckedChange={isChecked => {
+										onCheckedChange={(isChecked) => {
 											const nextValue = isChecked
 												? [...value, getOptionValue(option)]
-												: value.filter(item => item !== getOptionValue(option));
+												: value.filter(
+														(item) => item !== getOptionValue(option),
+													);
 											field.onChange(nextValue);
 										}}
 										aria-label={getOptionLabel(option)}
@@ -96,7 +98,7 @@ function SingleCheckbox({ name, label }: { name: string; label: string }) {
 					<Checkbox
 						id={name}
 						checked={!!field.value}
-						onCheckedChange={checked => field.onChange(!!checked)}
+						onCheckedChange={(checked) => field.onChange(!!checked)}
 						aria-label={label}
 					/>
 					<span>{label}</span>
@@ -123,7 +125,7 @@ function SelectField({
 			className="flex h-10 w-full rounded-md border border-input-border bg-background px-3 py-2 text-sm"
 		>
 			<option value="">{placeholder || "Select an option"}</option>
-			{options.map(option => (
+			{options.map((option) => (
 				<option key={option.value} value={option.value}>
 					{option.label}
 				</option>
@@ -132,7 +134,11 @@ function SelectField({
 	);
 }
 
-export function FormField({ field }: { field: Exclude<FieldDefinition, { type: "repeatable" }> }) {
+export function FormField({
+	field,
+}: {
+	field: Exclude<FieldDefinition, { type: "repeatable" }>;
+}) {
 	const { register } = useFormContext();
 
 	if (field.type === "checkbox") {
@@ -170,7 +176,10 @@ export function FormField({ field }: { field: Exclude<FieldDefinition, { type: "
 
 	return (
 		<div className={fieldWrapperClasses}>
-			<label className="text-sm font-medium text-foreground" htmlFor={field.name}>
+			<label
+				className="text-sm font-medium text-foreground"
+				htmlFor={field.name}
+			>
 				{field.label}
 				{field.required ? " *" : ""}
 			</label>
@@ -254,7 +263,7 @@ export function RepeatableFieldGroup({
 							) : null}
 						</div>
 						<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-							{field.fields.map(subField => (
+							{field.fields.map((subField) => (
 								<FormField
 									key={`${field.name}.${index}.${subField.name}`}
 									field={{

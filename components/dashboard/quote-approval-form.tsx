@@ -49,7 +49,8 @@ export function QuoteApprovalForm({
 			: "",
 	);
 	const [adjustedFeePercent, setAdjustedFeePercent] = useState(
-		initialAdjustedFeePercent !== null && initialAdjustedFeePercent !== undefined
+		initialAdjustedFeePercent !== null &&
+			initialAdjustedFeePercent !== undefined
 			? String(initialAdjustedFeePercent)
 			: "",
 	);
@@ -160,7 +161,7 @@ export function QuoteApprovalForm({
 							id="quote-amount"
 							type="number"
 							value={amount}
-							onChange={event => setAmount(event.target.value)}
+							onChange={(event) => setAmount(event.target.value)}
 							disabled={isLocked}
 						/>
 						{errors.amount ? (
@@ -174,7 +175,7 @@ export function QuoteApprovalForm({
 							id="quote-base-fee"
 							type="number"
 							value={baseFeePercent}
-							onChange={event => setBaseFeePercent(event.target.value)}
+							onChange={(event) => setBaseFeePercent(event.target.value)}
 							disabled={isLocked}
 						/>
 						{errors.baseFeePercent ? (
@@ -190,7 +191,7 @@ export function QuoteApprovalForm({
 							id="quote-adjusted-fee"
 							type="number"
 							value={adjustedFeePercent}
-							onChange={event => setAdjustedFeePercent(event.target.value)}
+							onChange={(event) => setAdjustedFeePercent(event.target.value)}
 							disabled={isLocked}
 						/>
 						{errors.adjustedFeePercent ? (
@@ -206,7 +207,7 @@ export function QuoteApprovalForm({
 					<Textarea
 						id="quote-rationale"
 						value={rationale}
-						onChange={event => setRationale(event.target.value)}
+						onChange={(event) => setRationale(event.target.value)}
 						disabled={isLocked}
 						rows={5}
 					/>
@@ -223,7 +224,7 @@ export function QuoteApprovalForm({
 								Recommendation: {parsedDetails.recommendation || "N/A"}
 							</Badge>
 							{parsedDetails.riskFactors?.length
-								? parsedDetails.riskFactors.map(factor => (
+								? parsedDetails.riskFactors.map((factor) => (
 										<Badge key={factor} variant="outline">
 											{factor}
 										</Badge>

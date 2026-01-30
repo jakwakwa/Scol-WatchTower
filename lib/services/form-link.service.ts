@@ -50,13 +50,11 @@ export async function sendFormLinksEmail(options: {
 	links: FormLink[];
 }) {
 	const resendApiKey = process.env.RESEND_API_KEY;
-	const intro = options.contactName
-		? `Hi ${options.contactName},`
-		: "Hello,";
+	const intro = options.contactName ? `Hi ${options.contactName},` : "Hello,";
 
 	const linkHtml = options.links
 		.map(
-			link =>
+			(link) =>
 				`<li><strong>${link.formType.replace(/_/g, " ")}</strong>: <a href="${link.url}">${link.url}</a></li>`,
 		)
 		.join("");

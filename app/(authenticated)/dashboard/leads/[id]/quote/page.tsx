@@ -24,10 +24,7 @@ export default async function LeadQuotePage({
 		throw new Error("Database connection failed");
 	}
 
-	const leadResults = await db
-		.select()
-		.from(leads)
-		.where(eq(leads.id, leadId));
+	const leadResults = await db.select().from(leads).where(eq(leads.id, leadId));
 
 	if (leadResults.length === 0) {
 		notFound();

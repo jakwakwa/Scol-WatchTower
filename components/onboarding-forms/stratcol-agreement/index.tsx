@@ -67,7 +67,13 @@ interface FormFieldProps {
 	className?: string;
 }
 
-function FormField({ label, required, error, children, className }: FormFieldProps) {
+function FormField({
+	label,
+	required,
+	error,
+	children,
+	className,
+}: FormFieldProps) {
 	return (
 		<div className={cn("space-y-2", className)}>
 			<Label className="text-sm font-medium">
@@ -165,7 +171,9 @@ function EntityDetailsSection() {
 							<SelectItem value={EntityType.CLOSE_CORPORATION}>
 								Close Corporation
 							</SelectItem>
-							<SelectItem value={EntityType.PARTNERSHIP}>Partnership</SelectItem>
+							<SelectItem value={EntityType.PARTNERSHIP}>
+								Partnership
+							</SelectItem>
 							<SelectItem value={EntityType.OTHER}>Other</SelectItem>
 						</SelectContent>
 					</Select>
@@ -456,7 +464,9 @@ export function StratcolAgreementForm({
 													<SelectItem value={EntityType.PARTNERSHIP}>
 														Partnership
 													</SelectItem>
-													<SelectItem value={EntityType.OTHER}>Other</SelectItem>
+													<SelectItem value={EntityType.OTHER}>
+														Other
+													</SelectItem>
 												</SelectContent>
 											</Select>
 										</FormField>
@@ -488,7 +498,9 @@ export function StratcolAgreementForm({
 											</FormField>
 											<FormField label="Town/City" required>
 												<Input
-													{...register("entityDetails.businessAddress.townCity")}
+													{...register(
+														"entityDetails.businessAddress.townCity",
+													)}
 													placeholder="Town/City"
 													disabled={readOnly}
 												/>
@@ -496,7 +508,7 @@ export function StratcolAgreementForm({
 											<FormField label="Postal Code" required>
 												<Input
 													{...register(
-														"entityDetails.businessAddress.postalCode"
+														"entityDetails.businessAddress.postalCode",
 													)}
 													placeholder="0000"
 													maxLength={4}
@@ -527,7 +539,7 @@ export function StratcolAgreementForm({
 											<FormField label="Name" required>
 												<Input
 													{...register(
-														"signatoryAndOwners.authorisedRepresentative.name"
+														"signatoryAndOwners.authorisedRepresentative.name",
 													)}
 													placeholder="Full name"
 													disabled={readOnly}
@@ -536,7 +548,7 @@ export function StratcolAgreementForm({
 											<FormField label="ID Number" required>
 												<Input
 													{...register(
-														"signatoryAndOwners.authorisedRepresentative.idNumber"
+														"signatoryAndOwners.authorisedRepresentative.idNumber",
 													)}
 													placeholder="13-digit ID number"
 													maxLength={13}
@@ -546,7 +558,7 @@ export function StratcolAgreementForm({
 											<FormField label="Position" required>
 												<Input
 													{...register(
-														"signatoryAndOwners.authorisedRepresentative.position"
+														"signatoryAndOwners.authorisedRepresentative.position",
 													)}
 													placeholder="e.g., Director"
 													disabled={readOnly}
@@ -608,7 +620,7 @@ export function StratcolAgreementForm({
 													<FormField label="Name" required>
 														<Input
 															{...register(
-																`signatoryAndOwners.beneficialOwners.${index}.name`
+																`signatoryAndOwners.beneficialOwners.${index}.name`,
 															)}
 															placeholder="Full name"
 															disabled={readOnly}
@@ -617,7 +629,7 @@ export function StratcolAgreementForm({
 													<FormField label="ID Number" required>
 														<Input
 															{...register(
-																`signatoryAndOwners.beneficialOwners.${index}.idNumber`
+																`signatoryAndOwners.beneficialOwners.${index}.idNumber`,
 															)}
 															placeholder="13-digit ID"
 															maxLength={13}
@@ -627,7 +639,7 @@ export function StratcolAgreementForm({
 													<FormField label="Position" required>
 														<Input
 															{...register(
-																`signatoryAndOwners.beneficialOwners.${index}.position`
+																`signatoryAndOwners.beneficialOwners.${index}.position`,
 															)}
 															placeholder="e.g., Director"
 															disabled={readOnly}
@@ -636,7 +648,7 @@ export function StratcolAgreementForm({
 													<FormField label="Address" required>
 														<Input
 															{...register(
-																`signatoryAndOwners.beneficialOwners.${index}.address`
+																`signatoryAndOwners.beneficialOwners.${index}.address`,
 															)}
 															placeholder="Residential address"
 															disabled={readOnly}
@@ -645,7 +657,7 @@ export function StratcolAgreementForm({
 													<FormField label="Shareholding %" required>
 														<Input
 															{...register(
-																`signatoryAndOwners.beneficialOwners.${index}.shareholdingPercentage`
+																`signatoryAndOwners.beneficialOwners.${index}.shareholdingPercentage`,
 															)}
 															placeholder="e.g., 25"
 															disabled={readOnly}
@@ -670,7 +682,9 @@ export function StratcolAgreementForm({
 								<div className="space-y-6">
 									<div className="flex items-center gap-2 mb-4">
 										<RiBankLine className="h-5 w-5 text-muted-foreground" />
-										<h3 className="text-lg font-semibold">Banking & Mandates</h3>
+										<h3 className="text-lg font-semibold">
+											Banking & Mandates
+										</h3>
 									</div>
 
 									{/* Credit Bank Account */}
@@ -682,7 +696,7 @@ export function StratcolAgreementForm({
 											<FormField label="Account Name" required>
 												<Input
 													{...register(
-														"bankingAndMandates.creditBankAccount.accountName"
+														"bankingAndMandates.creditBankAccount.accountName",
 													)}
 													placeholder="Account holder name"
 													disabled={readOnly}
@@ -691,7 +705,7 @@ export function StratcolAgreementForm({
 											<FormField label="Bank Name" required>
 												<Input
 													{...register(
-														"bankingAndMandates.creditBankAccount.bankName"
+														"bankingAndMandates.creditBankAccount.bankName",
 													)}
 													placeholder="e.g., ABSA"
 													disabled={readOnly}
@@ -700,7 +714,7 @@ export function StratcolAgreementForm({
 											<FormField label="Branch Code" required>
 												<Input
 													{...register(
-														"bankingAndMandates.creditBankAccount.branchCode"
+														"bankingAndMandates.creditBankAccount.branchCode",
 													)}
 													placeholder="6-digit code"
 													maxLength={6}
@@ -710,7 +724,7 @@ export function StratcolAgreementForm({
 											<FormField label="Account Number" required>
 												<Input
 													{...register(
-														"bankingAndMandates.creditBankAccount.accountNumber"
+														"bankingAndMandates.creditBankAccount.accountNumber",
 													)}
 													placeholder="Account number"
 													disabled={readOnly}
@@ -719,7 +733,7 @@ export function StratcolAgreementForm({
 											<FormField label="Account Type" required>
 												<Input
 													{...register(
-														"bankingAndMandates.creditBankAccount.accountType"
+														"bankingAndMandates.creditBankAccount.accountType",
 													)}
 													placeholder="e.g., Current"
 													disabled={readOnly}
@@ -736,12 +750,15 @@ export function StratcolAgreementForm({
 											onCheckedChange={(checked) =>
 												setValue(
 													"bankingAndMandates.useSameAccountForDebit",
-													checked as boolean
+													checked as boolean,
 												)
 											}
 											disabled={readOnly}
 										/>
-										<Label htmlFor="useSameAccount" className="text-sm cursor-pointer">
+										<Label
+											htmlFor="useSameAccount"
+											className="text-sm cursor-pointer"
+										>
 											Use the same account for debit (fees and unpaid
 											re-collections)
 										</Label>
@@ -757,7 +774,7 @@ export function StratcolAgreementForm({
 												<FormField label="Account Name" required>
 													<Input
 														{...register(
-															"bankingAndMandates.debitBankAccount.accountName"
+															"bankingAndMandates.debitBankAccount.accountName",
 														)}
 														placeholder="Account holder name"
 														disabled={readOnly}
@@ -766,7 +783,7 @@ export function StratcolAgreementForm({
 												<FormField label="Bank Name" required>
 													<Input
 														{...register(
-															"bankingAndMandates.debitBankAccount.bankName"
+															"bankingAndMandates.debitBankAccount.bankName",
 														)}
 														placeholder="e.g., ABSA"
 														disabled={readOnly}
@@ -775,7 +792,7 @@ export function StratcolAgreementForm({
 												<FormField label="Branch Code" required>
 													<Input
 														{...register(
-															"bankingAndMandates.debitBankAccount.branchCode"
+															"bankingAndMandates.debitBankAccount.branchCode",
 														)}
 														placeholder="6-digit code"
 														maxLength={6}
@@ -785,7 +802,7 @@ export function StratcolAgreementForm({
 												<FormField label="Account Number" required>
 													<Input
 														{...register(
-															"bankingAndMandates.debitBankAccount.accountNumber"
+															"bankingAndMandates.debitBankAccount.accountNumber",
 														)}
 														placeholder="Account number"
 														disabled={readOnly}
@@ -794,7 +811,7 @@ export function StratcolAgreementForm({
 												<FormField label="Account Type" required>
 													<Input
 														{...register(
-															"bankingAndMandates.debitBankAccount.accountType"
+															"bankingAndMandates.debitBankAccount.accountType",
 														)}
 														placeholder="e.g., Current"
 														disabled={readOnly}
@@ -833,10 +850,10 @@ export function StratcolAgreementForm({
 											>
 												I confirm that all information provided in this
 												agreement is true, correct, and complete. I understand
-												that any misrepresentation may result in the
-												termination of services and potential legal action. I
-												authorise StratCol to process the personal information
-												provided for the purposes of this agreement.
+												that any misrepresentation may result in the termination
+												of services and potential legal action. I authorise
+												StratCol to process the personal information provided
+												for the purposes of this agreement.
 											</Label>
 										</div>
 										{errors.declarationsAccepted && (
@@ -868,7 +885,9 @@ export function StratcolAgreementForm({
 										<SignatureCanvas
 											label="Signature"
 											required
-											onSave={(dataUrl) => setValue("signature.signature", dataUrl)}
+											onSave={(dataUrl) =>
+												setValue("signature.signature", dataUrl)
+											}
 											initialValue={watch("signature.signature")}
 											error={errors.signature?.signature?.message}
 											disabled={readOnly}

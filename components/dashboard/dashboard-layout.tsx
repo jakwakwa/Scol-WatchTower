@@ -19,11 +19,7 @@ export function DashboardLayout({
 }: DashboardLayoutProps) {
 	return (
 		<>
-			<PageMeta
-				title={title}
-				description={description}
-				actions={actions}
-			/>
+			<PageMeta title={title} description={description} actions={actions} />
 			{children}
 		</>
 	);
@@ -43,11 +39,15 @@ export function DashboardGrid({
 }: DashboardGridProps) {
 	return (
 		<div
-			className={`grid gap-6 ${columns === 1 ? "grid-cols-1" :
-					columns === 2 ? "grid-cols-1 md:grid-cols-2" :
-						columns === 3 ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" :
-							"grid-cols-1 md:grid-cols-2 lg:grid-cols-4"
-				} ${className || ""}`}
+			className={`grid gap-6 ${
+				columns === 1
+					? "grid-cols-1"
+					: columns === 2
+						? "grid-cols-1 md:grid-cols-2"
+						: columns === 3
+							? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+							: "grid-cols-1 md:grid-cols-2 lg:grid-cols-4"
+			} ${className || ""}`}
 		>
 			{children}
 		</div>
@@ -68,8 +68,11 @@ export function GlassCard({
 }: GlassCardProps) {
 	return (
 		<div
-			className={`rounded-2xl border border-sidebar-border bg-card/90 backdrop-blur-sm p-6 shadow-xl shadow-black/5 ${hover ? "transition-all duration-300 hover:bg-card/70 hover:border-secondary/10 hover:shadow-2xl hover:-translate-y-1" : ""
-				} ${className || ""}`}
+			className={`rounded-2xl border border-sidebar-border bg-card/90 backdrop-blur-sm p-6 shadow-xl shadow-black/5 ${
+				hover
+					? "transition-all duration-300 hover:bg-card/70 hover:border-secondary/10 hover:shadow-2xl hover:-translate-y-1"
+					: ""
+			} ${className || ""}`}
 		>
 			{children}
 		</div>

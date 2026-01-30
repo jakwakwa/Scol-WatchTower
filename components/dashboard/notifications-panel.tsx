@@ -280,29 +280,29 @@ export function NotificationsPanel({
 													{(notification?.type === "error" ||
 														notification?.type === "timeout" ||
 														notification?.type === "paused") && (
-															<>
-																<Button
-																	variant="ghost"
-																	size="sm"
-																	className="h-6 px-2 text-xs hover:bg-blue-500/20 hover:text-blue-400"
-																	onClick={(e) =>
-																		handleAction(e, notification, "retry")
-																	}
-																>
-																	Retry
-																</Button>
-																<Button
-																	variant="ghost"
-																	size="sm"
-																	className="h-6 px-2 text-xs hover:bg-red-500/20 hover:text-red-400"
-																	onClick={(e) =>
-																		handleAction(e, notification, "cancel")
-																	}
-																>
-																	Cancel
-																</Button>
-															</>
-														)}
+														<>
+															<Button
+																variant="ghost"
+																size="sm"
+																className="h-6 px-2 text-xs hover:bg-blue-500/20 hover:text-blue-400"
+																onClick={(e) =>
+																	handleAction(e, notification, "retry")
+																}
+															>
+																Retry
+															</Button>
+															<Button
+																variant="ghost"
+																size="sm"
+																className="h-6 px-2 text-xs hover:bg-red-500/20 hover:text-red-400"
+																onClick={(e) =>
+																	handleAction(e, notification, "cancel")
+																}
+															>
+																Cancel
+															</Button>
+														</>
+													)}
 												</div>
 											)}
 										</div>
@@ -327,7 +327,7 @@ export function NotificationsPanel({
 					</div>
 				)}
 			</PopoverContent>
-		</Popover >
+		</Popover>
 	);
 }
 

@@ -178,14 +178,22 @@ export default async function DashboardPage() {
 				/>
 				<StatsCard
 					title="In Progress"
-					value={activeWorkflows.filter(w => !["won", "lost", "completed"].includes(w.stage)).length}
+					value={
+						activeWorkflows.filter(
+							(w) => !["won", "lost", "completed"].includes(w.stage),
+						).length
+					}
 					change={{ value: 5, trend: "up" }}
 					icon={RiTimeLine}
 					iconColor="amber" // Used cyan in screenshot, mapping to StratCol palette
 				/>
 				<StatsCard
 					title="Completed"
-					value={activeWorkflows.filter(w => ["won", "activation"].includes(w.stage)).length}
+					value={
+						activeWorkflows.filter((w) =>
+							["won", "activation"].includes(w.stage),
+						).length
+					}
 					change={{ value: 18, trend: "up" }}
 					icon={RiCheckboxCircleLine}
 					iconColor="green"
@@ -203,7 +211,6 @@ export default async function DashboardPage() {
 			<div className="w-full">
 				<PipelineView workflows={activeWorkflows} />
 			</div>
-
 		</DashboardLayout>
 	);
 }

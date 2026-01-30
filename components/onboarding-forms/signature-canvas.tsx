@@ -60,7 +60,10 @@ export function SignatureCanvas({
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const [isDrawing, setIsDrawing] = useState(false);
 	const [hasSignature, setHasSignature] = useState(false);
-	const [lastPosition, setLastPosition] = useState<{ x: number; y: number } | null>(null);
+	const [lastPosition, setLastPosition] = useState<{
+		x: number;
+		y: number;
+	} | null>(null);
 
 	// Initialise canvas
 	useEffect(() => {
@@ -99,21 +102,21 @@ export function SignatureCanvas({
 			const scaleX = canvas.width / rect.width;
 			const scaleY = canvas.height / rect.height;
 
-		if ("touches" in e) {
-			const touch = e.touches[0];
-			if (!touch) return { x: 0, y: 0 };
-			return {
-				x: (touch.clientX - rect.left) * scaleX,
-				y: (touch.clientY - rect.top) * scaleY,
-			};
-		}
+			if ("touches" in e) {
+				const touch = e.touches[0];
+				if (!touch) return { x: 0, y: 0 };
+				return {
+					x: (touch.clientX - rect.left) * scaleX,
+					y: (touch.clientY - rect.top) * scaleY,
+				};
+			}
 
 			return {
 				x: (e.clientX - rect.left) * scaleX,
 				y: (e.clientY - rect.top) * scaleY,
 			};
 		},
-		[]
+		[],
 	);
 
 	// Start drawing
@@ -125,7 +128,7 @@ export function SignatureCanvas({
 			setIsDrawing(true);
 			setLastPosition(getPosition(e));
 		},
-		[disabled, getPosition]
+		[disabled, getPosition],
 	);
 
 	// Draw
@@ -152,7 +155,7 @@ export function SignatureCanvas({
 			setLastPosition(currentPosition);
 			setHasSignature(true);
 		},
-		[isDrawing, disabled, lastPosition, getPosition, strokeColour, strokeWidth]
+		[isDrawing, disabled, lastPosition, getPosition, strokeColour, strokeWidth],
 	);
 
 	// Stop drawing
@@ -214,7 +217,7 @@ export function SignatureCanvas({
 					"relative rounded-lg border-2 border-dashed transition-colors",
 					error ? "border-destructive" : "border-border",
 					disabled ? "opacity-50 cursor-not-allowed" : "cursor-crosshair",
-					!hasSignature && "bg-muted/30"
+					!hasSignature && "bg-muted/30",
 				)}
 			>
 				<canvas
@@ -273,9 +276,7 @@ export function SignatureCanvas({
 			</div>
 
 			{/* Error message */}
-			{error && (
-				<p className="text-sm text-destructive">{error}</p>
-			)}
+			{error && <p className="text-sm text-destructive">{error}</p>}
 
 			{/* Helper text */}
 			<p className="text-xs text-muted-foreground">

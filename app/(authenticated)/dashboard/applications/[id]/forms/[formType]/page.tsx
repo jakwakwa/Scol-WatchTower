@@ -79,7 +79,7 @@ export default function FormPage({
 		const fetchFormData = async () => {
 			try {
 				const response = await fetch(
-					`/api/onboarding/forms/${resolvedParams.id}/${resolvedParams.formType}`
+					`/api/onboarding/forms/${resolvedParams.id}/${resolvedParams.formType}`,
 				);
 				if (response.ok) {
 					const data = await response.json();
@@ -127,7 +127,7 @@ export default function FormPage({
 						formData: data,
 						isDraft: false,
 					}),
-				}
+				},
 			);
 
 			if (!response.ok) {
@@ -160,7 +160,7 @@ export default function FormPage({
 						formData: data,
 						isDraft: true,
 					}),
-				}
+				},
 			);
 
 			if (!response.ok) {
@@ -226,9 +226,7 @@ export default function FormPage({
 				</div>
 			}
 		>
-			<div className="max-w-4xl mx-auto">
-				{renderForm()}
-			</div>
+			<div className="max-w-4xl mx-auto">{renderForm()}</div>
 		</DashboardLayout>
 	);
 }

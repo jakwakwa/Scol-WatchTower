@@ -39,7 +39,8 @@ export const ApplicationType = {
 	RM: "rm",
 } as const;
 
-export type ApplicationTypeValue = (typeof ApplicationType)[keyof typeof ApplicationType];
+export type ApplicationTypeValue =
+	(typeof ApplicationType)[keyof typeof ApplicationType];
 
 // ============================================
 // Sales Distribution Enum
@@ -52,7 +53,8 @@ export const SalesDistribution = {
 	FACE_TO_FACE: "face_to_face",
 } as const;
 
-export type SalesDistributionValue = (typeof SalesDistribution)[keyof typeof SalesDistribution];
+export type SalesDistributionValue =
+	(typeof SalesDistribution)[keyof typeof SalesDistribution];
 
 // ============================================
 // Exit Reason Enum
@@ -72,8 +74,12 @@ export type ExitReasonValue = (typeof ExitReason)[keyof typeof ExitReason];
 
 // 1. Applicant's Details
 export const applicantDetailsSchema = z.object({
-	ultimateCreditorName: z.string().min(1, "Name of the Ultimate Creditor is required"),
-	preferredShortName: z.string().min(1, "Preferred abbreviated short name is required"),
+	ultimateCreditorName: z
+		.string()
+		.min(1, "Name of the Ultimate Creditor is required"),
+	preferredShortName: z
+		.string()
+		.min(1, "Preferred abbreviated short name is required"),
 	alternativeShortNames: z.object({
 		alternative1: z.string().min(1, "Alternative short name 1 is required"),
 		alternative2: z.string().min(1, "Alternative short name 2 is required"),
@@ -96,7 +102,7 @@ export const applicationTypeSchema = z.object({
 				ApplicationType.NEW_TPPP,
 				ApplicationType.PAYSHAP,
 				ApplicationType.RM,
-			])
+			]),
 		)
 		.min(1, "Please select at least one application type"),
 });
@@ -122,14 +128,18 @@ export const contactDetailsSchema = z.object({
 export const bankingDetailsAbsaSchema = z.object({
 	bankName: optionalString(),
 	accountType: optionalString(),
-	branchCode: z.string().optional().refine(
-		(val) => !val || /^\d{6}$/.test(val),
-		{ message: "Branch code must be 6 digits" }
-	),
-	accountNumber: z.string().optional().refine(
-		(val) => !val || /^\d{6,16}$/.test(val),
-		{ message: "Account number must be between 6 and 16 digits" }
-	),
+	branchCode: z
+		.string()
+		.optional()
+		.refine((val) => !val || /^\d{6}$/.test(val), {
+			message: "Branch code must be 6 digits",
+		}),
+	accountNumber: z
+		.string()
+		.optional()
+		.refine((val) => !val || /^\d{6,16}$/.test(val), {
+			message: "Account number must be between 6 and 16 digits",
+		}),
 	sourceOfIncome: optionalString(),
 });
 
@@ -142,7 +152,7 @@ export const collectionHistorySchema = z.object({
 				SalesDistribution.CALL_CENTRE,
 				SalesDistribution.NETWORK_MARKETING,
 				SalesDistribution.FACE_TO_FACE,
-			])
+			]),
 		)
 		.default([]),
 	isNewToCollections: z.boolean().default(false),
@@ -178,7 +188,7 @@ export const previousHistorySchema = z.object({
 				ExitReason.DEBITING_WITHOUT_MANDATE,
 				ExitReason.DEBITING_WITHOUT_CONSENT,
 				ExitReason.OTHER,
-			])
+			]),
 		)
 		.default([]),
 	exitReasonOther: optionalString(),
@@ -377,8 +387,18 @@ export const getAbsa6995DefaultValues = (): Partial<Absa6995FormData> => ({
 			],
 		},
 		contactDetails: {
-			physicalAddress: { address: "", suburb: "", townCity: "", postalCode: "" },
-			cipcRegisteredAddress: { address: "", suburb: "", townCity: "", postalCode: "" },
+			physicalAddress: {
+				address: "",
+				suburb: "",
+				townCity: "",
+				postalCode: "",
+			},
+			cipcRegisteredAddress: {
+				address: "",
+				suburb: "",
+				townCity: "",
+				postalCode: "",
+			},
 			telephoneNumber: "",
 			emailAddress: "",
 			websiteAddress: "",

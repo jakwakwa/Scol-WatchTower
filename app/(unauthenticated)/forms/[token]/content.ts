@@ -32,7 +32,8 @@ export const formContent: Record<
 		sections: [
 			{
 				title: "Facility Selection",
-				description: "Select the services required for your collections facility.",
+				description:
+					"Select the services required for your collections facility.",
 				fields: [
 					{
 						name: "serviceTypes",
@@ -321,8 +322,7 @@ export const formContent: Record<
 			},
 			{
 				title: "Beneficial Owners",
-				description:
-					"List all beneficial owners with 5% or more shareholding.",
+				description: "List all beneficial owners with 5% or more shareholding.",
 				fields: [
 					{
 						name: "beneficialOwners",
@@ -331,7 +331,12 @@ export const formContent: Record<
 						minItems: 1,
 						addLabel: "Add beneficial owner",
 						fields: [
-							{ name: "name", label: "Full name", type: "text", required: true },
+							{
+								name: "name",
+								label: "Full name",
+								type: "text",
+								required: true,
+							},
 							{
 								name: "idNumber",
 								label: "ID number",
@@ -556,8 +561,18 @@ export const formContent: Record<
 						minItems: 1,
 						addLabel: "Add director",
 						fields: [
-							{ name: "fullName", label: "Full name", type: "text", required: true },
-							{ name: "idNumber", label: "ID number", type: "text", required: true },
+							{
+								name: "fullName",
+								label: "Full name",
+								type: "text",
+								required: true,
+							},
+							{
+								name: "idNumber",
+								label: "ID number",
+								type: "text",
+								required: true,
+							},
 						],
 					},
 				],
@@ -744,8 +759,14 @@ export const formContent: Record<
 						label: "If yes, select reason",
 						type: "select",
 						options: [
-							{ label: "Debiting without mandate", value: "Debiting without mandate" },
-							{ label: "Debiting without consent", value: "Debiting without consent" },
+							{
+								label: "Debiting without mandate",
+								value: "Debiting without mandate",
+							},
+							{
+								label: "Debiting without consent",
+								value: "Debiting without consent",
+							},
 							{ label: "Other", value: "Other" },
 						],
 					},
@@ -774,7 +795,12 @@ export const formContent: Record<
 								type: "text",
 								required: true,
 							},
-							{ name: "reference", label: "Reference", type: "text", required: true },
+							{
+								name: "reference",
+								label: "Reference",
+								type: "text",
+								required: true,
+							},
 						],
 					},
 				],
@@ -887,9 +913,17 @@ export const formContent: Record<
 			{
 				title: "Bureau Details (if applicable)",
 				fields: [
-					{ name: "bureauDetails.bureauName", label: "Bureau name", type: "text" },
+					{
+						name: "bureauDetails.bureauName",
+						label: "Bureau name",
+						type: "text",
+					},
 					{ name: "bureauDetails.ldCode", label: "LD code", type: "text" },
-					{ name: "bureauDetails.bureauCif", label: "Bureau CIF", type: "text" },
+					{
+						name: "bureauDetails.bureauCif",
+						label: "Bureau CIF",
+						type: "text",
+					},
 				],
 			},
 			{
@@ -901,8 +935,18 @@ export const formContent: Record<
 						type: "repeatable",
 						addLabel: "Add director",
 						fields: [
-							{ name: "fullName", label: "Full name", type: "text", required: true },
-							{ name: "idNumber", label: "ID number", type: "text", required: true },
+							{
+								name: "fullName",
+								label: "Full name",
+								type: "text",
+								required: true,
+							},
+							{
+								name: "idNumber",
+								label: "ID number",
+								type: "text",
+								required: true,
+							},
 						],
 					},
 				],
@@ -978,7 +1022,8 @@ export const formContent: Record<
 					},
 					{
 						name: "declarations.infoSharingAcknowledged",
-						label: "Absa may share information with credit bureaus and regulators.",
+						label:
+							"Absa may share information with credit bureaus and regulators.",
 						type: "checkbox",
 						required: true,
 					},

@@ -25,7 +25,7 @@ export const phoneNumberSchema = z
 	.min(1, "Telephone number is required")
 	.regex(
 		/^(\+27|0)[1-9][0-9]{8}$/,
-		"Please enter a valid South African telephone number"
+		"Please enter a valid South African telephone number",
 	);
 
 /**
@@ -60,7 +60,7 @@ export const registrationNumberSchema = z
 	.min(1, "Registration number is required")
 	.regex(
 		/^\d{4}\/\d{6}\/\d{2}$/,
-		"Please enter a valid company registration number (e.g., 2024/123456/07)"
+		"Please enter a valid company registration number (e.g., 2024/123456/07)",
 	);
 
 /**
@@ -165,7 +165,7 @@ export function percentageSchema(fieldName: string) {
 				const num = parseFloat(val);
 				return !isNaN(num) && num >= 0 && num <= 100;
 			},
-			{ message: `${fieldName} must be between 0 and 100` }
+			{ message: `${fieldName} must be between 0 and 100` },
 		);
 }
 
@@ -182,6 +182,6 @@ export function currencySchema(fieldName: string) {
 				const num = parseFloat(val.replace(/[R,\s]/g, ""));
 				return !isNaN(num) && num >= 0;
 			},
-			{ message: `${fieldName} must be a valid amount` }
+			{ message: `${fieldName} must be a valid amount` },
 		);
 }

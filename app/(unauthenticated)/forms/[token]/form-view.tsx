@@ -48,7 +48,7 @@ export default function FormView({
 			schema={schema}
 			defaultValues={defaultValues}
 			submitLabel={submitLabel}
-			onSubmit={async values => {
+			onSubmit={async (values) => {
 				const response = await fetch("/api/forms/submit", {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },

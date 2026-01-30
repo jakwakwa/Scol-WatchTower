@@ -1,114 +1,108 @@
 {
-  "compilerOptions": {
-    "lib": [
-      "ESNext",
-      "DOM"
-    ],
-    "target": "ESNext",
-    "module": "Preserve",
-    "moduleDetection": "force",
-    "jsx": "react-jsx",
-    "allowJs": true,
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "verbatimModuleSyntax": true,
-    "noEmit": true,
-    "strict": false,
-    "skipLibCheck": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUncheckedIndexedAccess": true,
-    "noImplicitOverride": true,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    "noPropertyAccessFromIndexSignature": false,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "incremental": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
-    "paths": {
-      "@/*": [
-        "./*",
-        "./components/*",
-        "./lib/*",
-        "./hooks/*",
-        "./app/*",
-        "./store/*",
-        "./config/*",
-        "./prisma/*",
-        "./scripts/*",
-        "./tests/*",
-        "./styles/*"
-      ],
-      "components/ui/*": [
-        "./components/ui/*",
-        "./components/new/*"
-      ]
-    }
-  },
-  "ts-node": {
-    "compilerOptions": {
-      "module": "commonjs"
-    }
-  },
-  "include": [
-    "next-env.d.ts",
-    "*.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts",
-    "**/*.css",
-    ".next/dev/types/**/*.ts"
-  ],
-  "exclude": [
-    ".mdc",
-    ".md",
-    ".css",
-    ".scss",
-    ".sass",
-    ".less",
-    ".styl",
-    ".stylus",
-    ".pcss",
-    ".postcss",
-    ".configig",
-    ".cursor",
-    ".cursorrules",
-    ".cursorignore",
-    ".cursorignorerules",
-    ".cursorignorecursorrules",
-    ".cursorignorecursorrules",
-    "/docs",
-    "/docs/**",
-    "docs/**",
-    "**/docs/**",
-    "/public",
-    "/styles",
-    "/styles/globals.css",
-    "/styles/globals.css.map",
-    "/styles/globals.css.map",
-    "**/*.disabled",
-    ".yml",
-    ".yaml",
-    ".json",
-    ".jsonc",
-    ".jsonrc",
-    ".json5",
-    ".mjs",
-    ".mts",
-    ".cts",
-    ".mtsx",
-    ".ctsx",
-    ".mjs",
-    ".mts",
-    "node_modules",
-    ".next",
-    "tests",
-    "**/*.test.*",
-    "**/*.spec.*",
-    "vitest.config.ts"
-  ]
+	"compilerOptions": {
+		"lib": ["ESNext", "DOM"],
+		"target": "ESNext",
+		"module": "Preserve",
+		"moduleDetection": "force",
+		"jsx": "react-jsx",
+		"allowJs": true,
+		"moduleResolution": "bundler",
+		"allowImportingTsExtensions": true,
+		"verbatimModuleSyntax": true,
+		"noEmit": true,
+		"strict": false,
+		"skipLibCheck": true,
+		"noFallthroughCasesInSwitch": true,
+		"noUncheckedIndexedAccess": true,
+		"noImplicitOverride": true,
+		"noUnusedLocals": false,
+		"noUnusedParameters": false,
+		"noPropertyAccessFromIndexSignature": false,
+		"resolveJsonModule": true,
+		"isolatedModules": true,
+		"incremental": true,
+		"plugins": [
+			{
+				"name": "next"
+			}
+		],
+		"paths": {
+			"@/*": [
+				"./*",
+				"./components/*",
+				"./lib/*",
+				"./hooks/*",
+				"./app/*",
+				"./store/*",
+				"./config/*",
+				"./prisma/*",
+				"./scripts/*",
+				"./tests/*",
+				"./styles/*"
+			],
+			"components/ui/*": ["./components/ui/*", "./components/new/*"]
+		}
+	},
+	"ts-node": {
+		"compilerOptions": {
+			"module": "commonjs"
+		}
+	},
+	"include": [
+		"next-env.d.ts",
+		"*.d.ts",
+		"**/*.ts",
+		"**/*.tsx",
+		".next/types/**/*.ts",
+		"**/*.css",
+		".next/dev/types/**/*.ts"
+	],
+	"exclude": [
+		".mdc",
+		".md",
+		".css",
+		".scss",
+		".sass",
+		".less",
+		".styl",
+		".stylus",
+		".pcss",
+		".postcss",
+		".configig",
+		".cursor",
+		".cursorrules",
+		".cursorignore",
+		".cursorignorerules",
+		".cursorignorecursorrules",
+		".cursorignorecursorrules",
+		"/docs",
+		"/docs/**",
+		"docs/**",
+		"**/docs/**",
+		"/public",
+		"/styles",
+		"/styles/globals.css",
+		"/styles/globals.css.map",
+		"/styles/globals.css.map",
+		"**/*.disabled",
+		".yml",
+		".yaml",
+		".json",
+		".jsonc",
+		".jsonrc",
+		".json5",
+		".mjs",
+		".mts",
+		".cts",
+		".mtsx",
+		".ctsx",
+		".mjs",
+		".mts",
+		"node_modules",
+		".next",
+		"tests",
+		"**/*.test.*",
+		"**/*.spec.*",
+		"vitest.config.ts"
+	]
 }

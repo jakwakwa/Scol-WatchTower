@@ -73,7 +73,13 @@ interface FormFieldProps {
 	className?: string;
 }
 
-function FormField({ label, required, error, children, className }: FormFieldProps) {
+function FormField({
+	label,
+	required,
+	error,
+	children,
+	className,
+}: FormFieldProps) {
 	return (
 		<div className={cn("space-y-2", className)}>
 			<Label className="text-sm font-medium">
@@ -124,7 +130,7 @@ function CheckboxGroup({
 				"grid gap-2",
 				columns === 2 && "grid-cols-2",
 				columns === 3 && "grid-cols-3",
-				columns === 4 && "grid-cols-4"
+				columns === 4 && "grid-cols-4",
 			)}
 		>
 			{options.map((option) => (
@@ -224,7 +230,8 @@ export function Absa6995Form({
 		id: `step-${index + 1}`,
 		title,
 		// Skip bureau details if not applicable
-		shouldSkip: index === 4 ? () => !watch("bureauDetails.isApplicable") : undefined,
+		shouldSkip:
+			index === 4 ? () => !watch("bureauDetails.isApplicable") : undefined,
 	}));
 
 	// Handle form submission
@@ -245,12 +252,21 @@ export function Absa6995Form({
 	};
 
 	// Watch values for conditional rendering
-	const applicationTypes = watch("sectionA.applicationTypes.applicationTypes") || [];
-	const salesDistribution = watch("sectionA.collectionHistory.salesDistribution") || [];
-	const hasPastCollections = watch("sectionA.collectionHistory.hasPastCollections");
-	const hasBeenExited = watch("complianceHistory.previousHistory.hasBeenExited");
-	const exitReasons = watch("complianceHistory.previousHistory.exitReasons") || [];
-	const isPresentlySponsored = watch("complianceHistory.businessMetrics.isPresentlySponsored");
+	const applicationTypes =
+		watch("sectionA.applicationTypes.applicationTypes") || [];
+	const salesDistribution =
+		watch("sectionA.collectionHistory.salesDistribution") || [];
+	const hasPastCollections = watch(
+		"sectionA.collectionHistory.hasPastCollections",
+	);
+	const hasBeenExited = watch(
+		"complianceHistory.previousHistory.hasBeenExited",
+	);
+	const exitReasons =
+		watch("complianceHistory.previousHistory.exitReasons") || [];
+	const isPresentlySponsored = watch(
+		"complianceHistory.businessMetrics.isPresentlySponsored",
+	);
 	const bureauApplicable = watch("bureauDetails.isApplicable");
 
 	return (
@@ -282,10 +298,15 @@ export function Absa6995Form({
 										<FormField
 											label="Name of the Ultimate Creditor"
 											required
-											error={errors.sectionA?.applicantDetails?.ultimateCreditorName?.message}
+											error={
+												errors.sectionA?.applicantDetails?.ultimateCreditorName
+													?.message
+											}
 										>
 											<Input
-												{...register("sectionA.applicantDetails.ultimateCreditorName")}
+												{...register(
+													"sectionA.applicantDetails.ultimateCreditorName",
+												)}
 												placeholder="Company name"
 												disabled={readOnly}
 											/>
@@ -294,10 +315,15 @@ export function Absa6995Form({
 										<FormField
 											label="Company Registration Number"
 											required
-											error={errors.sectionA?.applicantDetails?.companyRegistrationNumber?.message}
+											error={
+												errors.sectionA?.applicantDetails
+													?.companyRegistrationNumber?.message
+											}
 										>
 											<Input
-												{...register("sectionA.applicantDetails.companyRegistrationNumber")}
+												{...register(
+													"sectionA.applicantDetails.companyRegistrationNumber",
+												)}
 												placeholder="2024/123456/07"
 												disabled={readOnly}
 											/>
@@ -306,10 +332,15 @@ export function Absa6995Form({
 										<FormField
 											label="Preferred Abbreviated Short Name"
 											required
-											error={errors.sectionA?.applicantDetails?.preferredShortName?.message}
+											error={
+												errors.sectionA?.applicantDetails?.preferredShortName
+													?.message
+											}
 										>
 											<Input
-												{...register("sectionA.applicantDetails.preferredShortName")}
+												{...register(
+													"sectionA.applicantDetails.preferredShortName",
+												)}
 												placeholder="Short name for statements"
 												disabled={readOnly}
 											/>
@@ -317,7 +348,9 @@ export function Absa6995Form({
 
 										<FormField label="Nature of Business">
 											<Input
-												{...register("sectionA.applicantDetails.natureOfBusiness")}
+												{...register(
+													"sectionA.applicantDetails.natureOfBusiness",
+												)}
 												placeholder="Describe your business"
 												disabled={readOnly}
 											/>
@@ -338,7 +371,7 @@ export function Absa6995Form({
 												>
 													<Input
 														{...register(
-															`sectionA.applicantDetails.alternativeShortNames.alternative${num}` as any
+															`sectionA.applicantDetails.alternativeShortNames.alternative${num}` as any,
 														)}
 														placeholder={`Alt ${num}`}
 														disabled={readOnly}
@@ -353,7 +386,10 @@ export function Absa6995Form({
 										<FormField
 											label="Application Type"
 											required
-											error={errors.sectionA?.applicationTypes?.applicationTypes?.message}
+											error={
+												errors.sectionA?.applicationTypes?.applicationTypes
+													?.message
+											}
 										>
 											<p className="text-xs text-muted-foreground mb-2">
 												Select all that apply
@@ -362,7 +398,10 @@ export function Absa6995Form({
 												options={APPLICATION_TYPE_OPTIONS}
 												value={applicationTypes}
 												onChange={(value) =>
-													setValue("sectionA.applicationTypes.applicationTypes", value as any)
+													setValue(
+														"sectionA.applicationTypes.applicationTypes",
+														value as any,
+													)
 												}
 												disabled={readOnly}
 												columns={4}
@@ -377,7 +416,9 @@ export function Absa6995Form({
 								<div className="space-y-6">
 									<div className="flex items-center gap-2 mb-4">
 										<RiUserLine className="h-5 w-5 text-muted-foreground" />
-										<h3 className="text-lg font-semibold">Directors & Contact Details</h3>
+										<h3 className="text-lg font-semibold">
+											Directors & Contact Details
+										</h3>
 									</div>
 
 									{/* Directors */}
@@ -391,7 +432,9 @@ export function Absa6995Form({
 													type="button"
 													variant="outline"
 													size="sm"
-													onClick={() => addDirector({ fullName: "", idNumber: "" })}
+													onClick={() =>
+														addDirector({ fullName: "", idNumber: "" })
+													}
 													className="gap-1.5"
 												>
 													<RiAddLine className="h-4 w-4" />
@@ -406,16 +449,23 @@ export function Absa6995Form({
 												className="flex items-start gap-4 p-3 rounded-lg border border-border bg-muted/30"
 											>
 												<div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
-													<FormField label={`Director ${index + 1} Full Name`} required>
+													<FormField
+														label={`Director ${index + 1} Full Name`}
+														required
+													>
 														<Input
-															{...register(`sectionA.directors.directors.${index}.fullName`)}
+															{...register(
+																`sectionA.directors.directors.${index}.fullName`,
+															)}
 															placeholder="Full name"
 															disabled={readOnly}
 														/>
 													</FormField>
 													<FormField label="ID Number" required>
 														<Input
-															{...register(`sectionA.directors.directors.${index}.idNumber`)}
+															{...register(
+																`sectionA.directors.directors.${index}.idNumber`,
+															)}
 															placeholder="13-digit ID number"
 															maxLength={13}
 															disabled={readOnly}
@@ -443,30 +493,42 @@ export function Absa6995Form({
 											Physical Operating Address
 										</h4>
 										<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-											<FormField label="Address" required className="md:col-span-2">
+											<FormField
+												label="Address"
+												required
+												className="md:col-span-2"
+											>
 												<Input
-													{...register("sectionA.contactDetails.physicalAddress.address")}
+													{...register(
+														"sectionA.contactDetails.physicalAddress.address",
+													)}
 													placeholder="Street address"
 													disabled={readOnly}
 												/>
 											</FormField>
 											<FormField label="Suburb" required>
 												<Input
-													{...register("sectionA.contactDetails.physicalAddress.suburb")}
+													{...register(
+														"sectionA.contactDetails.physicalAddress.suburb",
+													)}
 													placeholder="Suburb"
 													disabled={readOnly}
 												/>
 											</FormField>
 											<FormField label="Town/City" required>
 												<Input
-													{...register("sectionA.contactDetails.physicalAddress.townCity")}
+													{...register(
+														"sectionA.contactDetails.physicalAddress.townCity",
+													)}
 													placeholder="Town/City"
 													disabled={readOnly}
 												/>
 											</FormField>
 											<FormField label="Postal Code" required>
 												<Input
-													{...register("sectionA.contactDetails.physicalAddress.postalCode")}
+													{...register(
+														"sectionA.contactDetails.physicalAddress.postalCode",
+													)}
 													placeholder="0000"
 													maxLength={4}
 													disabled={readOnly}
@@ -480,30 +542,42 @@ export function Absa6995Form({
 											CIPC Registered Address
 										</h4>
 										<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-											<FormField label="Address" required className="md:col-span-2">
+											<FormField
+												label="Address"
+												required
+												className="md:col-span-2"
+											>
 												<Input
-													{...register("sectionA.contactDetails.cipcRegisteredAddress.address")}
+													{...register(
+														"sectionA.contactDetails.cipcRegisteredAddress.address",
+													)}
 													placeholder="Street address"
 													disabled={readOnly}
 												/>
 											</FormField>
 											<FormField label="Suburb" required>
 												<Input
-													{...register("sectionA.contactDetails.cipcRegisteredAddress.suburb")}
+													{...register(
+														"sectionA.contactDetails.cipcRegisteredAddress.suburb",
+													)}
 													placeholder="Suburb"
 													disabled={readOnly}
 												/>
 											</FormField>
 											<FormField label="Town/City" required>
 												<Input
-													{...register("sectionA.contactDetails.cipcRegisteredAddress.townCity")}
+													{...register(
+														"sectionA.contactDetails.cipcRegisteredAddress.townCity",
+													)}
 													placeholder="Town/City"
 													disabled={readOnly}
 												/>
 											</FormField>
 											<FormField label="Postal Code" required>
 												<Input
-													{...register("sectionA.contactDetails.cipcRegisteredAddress.postalCode")}
+													{...register(
+														"sectionA.contactDetails.cipcRegisteredAddress.postalCode",
+													)}
 													placeholder="0000"
 													maxLength={4}
 													disabled={readOnly}
@@ -520,10 +594,15 @@ export function Absa6995Form({
 											<FormField
 												label="Telephone Number"
 												required
-												error={errors.sectionA?.contactDetails?.telephoneNumber?.message}
+												error={
+													errors.sectionA?.contactDetails?.telephoneNumber
+														?.message
+												}
 											>
 												<Input
-													{...register("sectionA.contactDetails.telephoneNumber")}
+													{...register(
+														"sectionA.contactDetails.telephoneNumber",
+													)}
 													placeholder="+27 XX XXX XXXX"
 													disabled={readOnly}
 												/>
@@ -531,7 +610,9 @@ export function Absa6995Form({
 											<FormField
 												label="Email Address"
 												required
-												error={errors.sectionA?.contactDetails?.emailAddress?.message}
+												error={
+													errors.sectionA?.contactDetails?.emailAddress?.message
+												}
 											>
 												<Input
 													{...register("sectionA.contactDetails.emailAddress")}
@@ -543,10 +624,15 @@ export function Absa6995Form({
 											<FormField
 												label="Website Address"
 												required
-												error={errors.sectionA?.contactDetails?.websiteAddress?.message}
+												error={
+													errors.sectionA?.contactDetails?.websiteAddress
+														?.message
+												}
 											>
 												<Input
-													{...register("sectionA.contactDetails.websiteAddress")}
+													{...register(
+														"sectionA.contactDetails.websiteAddress",
+													)}
 													placeholder="https://www.company.co.za"
 													disabled={readOnly}
 												/>
@@ -561,7 +647,9 @@ export function Absa6995Form({
 								<div className="space-y-6">
 									<div className="flex items-center gap-2 mb-4">
 										<RiBankLine className="h-5 w-5 text-muted-foreground" />
-										<h3 className="text-lg font-semibold">Banking & Collection History</h3>
+										<h3 className="text-lg font-semibold">
+											Banking & Collection History
+										</h3>
 									</div>
 
 									{/* Banking Details */}
@@ -599,9 +687,14 @@ export function Absa6995Form({
 													disabled={readOnly}
 												/>
 											</FormField>
-											<FormField label="Source of Income" className="md:col-span-2">
+											<FormField
+												label="Source of Income"
+												className="md:col-span-2"
+											>
 												<Input
-													{...register("sectionA.bankingDetails.sourceOfIncome")}
+													{...register(
+														"sectionA.bankingDetails.sourceOfIncome",
+													)}
 													placeholder="Describe source of income"
 													disabled={readOnly}
 												/>
@@ -619,7 +712,10 @@ export function Absa6995Form({
 												options={SALES_DISTRIBUTION_OPTIONS}
 												value={salesDistribution}
 												onChange={(value) =>
-													setValue("sectionA.collectionHistory.salesDistribution", value as any)
+													setValue(
+														"sectionA.collectionHistory.salesDistribution",
+														value as any,
+													)
 												}
 												disabled={readOnly}
 											/>
@@ -635,13 +731,21 @@ export function Absa6995Form({
 										<div className="flex items-center gap-3 p-3 rounded-lg border border-border">
 											<Checkbox
 												id="newToCollections"
-												checked={watch("sectionA.collectionHistory.isNewToCollections")}
+												checked={watch(
+													"sectionA.collectionHistory.isNewToCollections",
+												)}
 												onCheckedChange={(checked) =>
-													setValue("sectionA.collectionHistory.isNewToCollections", checked as boolean)
+													setValue(
+														"sectionA.collectionHistory.isNewToCollections",
+														checked as boolean,
+													)
 												}
 												disabled={readOnly}
 											/>
-											<Label htmlFor="newToCollections" className="text-sm cursor-pointer">
+											<Label
+												htmlFor="newToCollections"
+												className="text-sm cursor-pointer"
+											>
 												The Ultimate Creditor is new to collections
 											</Label>
 										</div>
@@ -651,12 +755,19 @@ export function Absa6995Form({
 												id="pastCollections"
 												checked={hasPastCollections}
 												onCheckedChange={(checked) =>
-													setValue("sectionA.collectionHistory.hasPastCollections", checked as boolean)
+													setValue(
+														"sectionA.collectionHistory.hasPastCollections",
+														checked as boolean,
+													)
 												}
 												disabled={readOnly}
 											/>
-											<Label htmlFor="pastCollections" className="text-sm cursor-pointer">
-												Have you in the past collected for any other product/service?
+											<Label
+												htmlFor="pastCollections"
+												className="text-sm cursor-pointer"
+											>
+												Have you in the past collected for any other
+												product/service?
 											</Label>
 										</div>
 
@@ -664,21 +775,27 @@ export function Absa6995Form({
 											<div className="grid grid-cols-1 md:grid-cols-3 gap-4 pl-8">
 												<FormField label="Previous Product/Service">
 													<Input
-														{...register("sectionA.collectionHistory.pastCollectionProduct")}
+														{...register(
+															"sectionA.collectionHistory.pastCollectionProduct",
+														)}
 														placeholder="What was collected"
 														disabled={readOnly}
 													/>
 												</FormField>
 												<FormField label="Previous Short Name">
 													<Input
-														{...register("sectionA.collectionHistory.previousShortName")}
+														{...register(
+															"sectionA.collectionHistory.previousShortName",
+														)}
 														placeholder="Previous abbreviated name"
 														disabled={readOnly}
 													/>
 												</FormField>
 												<FormField label="Collecting Bureau">
 													<Input
-														{...register("sectionA.collectionHistory.collectingBureau")}
+														{...register(
+															"sectionA.collectionHistory.collectingBureau",
+														)}
 														placeholder="Bureau name"
 														disabled={readOnly}
 													/>
@@ -694,7 +811,9 @@ export function Absa6995Form({
 								<div className="space-y-6">
 									<div className="flex items-center gap-2 mb-4">
 										<RiShieldCheckLine className="h-5 w-5 text-muted-foreground" />
-										<h3 className="text-lg font-semibold">Compliance & Metrics</h3>
+										<h3 className="text-lg font-semibold">
+											Compliance & Metrics
+										</h3>
 									</div>
 
 									{/* Previous History */}
@@ -705,7 +824,9 @@ export function Absa6995Form({
 
 										<FormField label="Previous Sponsoring Bank">
 											<Input
-												{...register("complianceHistory.previousHistory.previousSponsoringBank")}
+												{...register(
+													"complianceHistory.previousHistory.previousSponsoringBank",
+												)}
 												placeholder="Name of previous bank"
 												disabled={readOnly}
 											/>
@@ -716,12 +837,19 @@ export function Absa6995Form({
 												id="hasBeenExited"
 												checked={hasBeenExited}
 												onCheckedChange={(checked) =>
-													setValue("complianceHistory.previousHistory.hasBeenExited", checked as boolean)
+													setValue(
+														"complianceHistory.previousHistory.hasBeenExited",
+														checked as boolean,
+													)
 												}
 												disabled={readOnly}
 											/>
-											<Label htmlFor="hasBeenExited" className="text-sm cursor-pointer">
-												Has your business been exited from a sponsoring bank or bureau?
+											<Label
+												htmlFor="hasBeenExited"
+												className="text-sm cursor-pointer"
+											>
+												Has your business been exited from a sponsoring bank or
+												bureau?
 											</Label>
 										</div>
 
@@ -732,7 +860,10 @@ export function Absa6995Form({
 														options={EXIT_REASON_OPTIONS}
 														value={exitReasons}
 														onChange={(value) =>
-															setValue("complianceHistory.previousHistory.exitReasons", value as any)
+															setValue(
+																"complianceHistory.previousHistory.exitReasons",
+																value as any,
+															)
 														}
 														disabled={readOnly}
 														columns={2}
@@ -742,7 +873,9 @@ export function Absa6995Form({
 												{exitReasons.includes(ExitReason.OTHER) && (
 													<FormField label="Other Reason">
 														<Input
-															{...register("complianceHistory.previousHistory.exitReasonOther")}
+															{...register(
+																"complianceHistory.previousHistory.exitReasonOther",
+															)}
 															placeholder="Specify other reason"
 															disabled={readOnly}
 														/>
@@ -765,21 +898,27 @@ export function Absa6995Form({
 											>
 												<FormField label={`Reference ${index + 1} - Name`}>
 													<Input
-														{...register(`complianceHistory.references.references.${index}.name` as any)}
+														{...register(
+															`complianceHistory.references.references.${index}.name` as any,
+														)}
 														placeholder="Client name"
 														disabled={readOnly}
 													/>
 												</FormField>
 												<FormField label="Account Number">
 													<Input
-														{...register(`complianceHistory.references.references.${index}.accountNumber` as any)}
+														{...register(
+															`complianceHistory.references.references.${index}.accountNumber` as any,
+														)}
 														placeholder="Account number"
 														disabled={readOnly}
 													/>
 												</FormField>
 												<FormField label="Reference">
 													<Input
-														{...register(`complianceHistory.references.references.${index}.reference` as any)}
+														{...register(
+															`complianceHistory.references.references.${index}.reference` as any,
+														)}
 														placeholder="Reference number"
 														disabled={readOnly}
 													/>
@@ -797,42 +936,54 @@ export function Absa6995Form({
 										<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 											<FormField label="Average Dispute Ratio (%)">
 												<Input
-													{...register("complianceHistory.ratiosAndMetrics.averageDisputeRatio")}
+													{...register(
+														"complianceHistory.ratiosAndMetrics.averageDisputeRatio",
+													)}
 													placeholder="e.g., 2.5"
 													disabled={readOnly}
 												/>
 											</FormField>
 											<FormField label="Average Unpaid Ratio (%)">
 												<Input
-													{...register("complianceHistory.ratiosAndMetrics.averageUnpaidRatio")}
+													{...register(
+														"complianceHistory.ratiosAndMetrics.averageUnpaidRatio",
+													)}
 													placeholder="e.g., 5.0"
 													disabled={readOnly}
 												/>
 											</FormField>
 											<FormField label="Sales Employees Count">
 												<Input
-													{...register("complianceHistory.businessMetrics.salesEmployeesCount")}
+													{...register(
+														"complianceHistory.businessMetrics.salesEmployeesCount",
+													)}
 													placeholder="Number of employees"
 													disabled={readOnly}
 												/>
 											</FormField>
 											<FormField label="Average Debit Order Value">
 												<Input
-													{...register("complianceHistory.businessMetrics.averageDebitOrderValue")}
+													{...register(
+														"complianceHistory.businessMetrics.averageDebitOrderValue",
+													)}
 													placeholder="R 0.00"
 													disabled={readOnly}
 												/>
 											</FormField>
 											<FormField label="Present Book Size (Volume & Value)">
 												<Input
-													{...register("complianceHistory.businessMetrics.presentBookSize")}
+													{...register(
+														"complianceHistory.businessMetrics.presentBookSize",
+													)}
 													placeholder="e.g., 10,000 transactions / R5m"
 													disabled={readOnly}
 												/>
 											</FormField>
 											<FormField label="Business Operation Length">
 												<Input
-													{...register("complianceHistory.businessMetrics.businessOperationLength")}
+													{...register(
+														"complianceHistory.businessMetrics.businessOperationLength",
+													)}
 													placeholder="e.g., 5 years"
 													disabled={readOnly}
 												/>
@@ -845,11 +996,17 @@ export function Absa6995Form({
 												id="isPresentlySponsored"
 												checked={isPresentlySponsored}
 												onCheckedChange={(checked) =>
-													setValue("complianceHistory.businessMetrics.isPresentlySponsored", checked as boolean)
+													setValue(
+														"complianceHistory.businessMetrics.isPresentlySponsored",
+														checked as boolean,
+													)
 												}
 												disabled={readOnly}
 											/>
-											<Label htmlFor="isPresentlySponsored" className="text-sm cursor-pointer">
+											<Label
+												htmlFor="isPresentlySponsored"
+												className="text-sm cursor-pointer"
+											>
 												Are you presently sponsored by another bank/bureau?
 											</Label>
 										</div>
@@ -858,21 +1015,27 @@ export function Absa6995Form({
 											<div className="grid grid-cols-1 md:grid-cols-3 gap-4 pl-8">
 												<FormField label="Sponsoring Bank Name">
 													<Input
-														{...register("complianceHistory.businessMetrics.sponsoringBankName")}
+														{...register(
+															"complianceHistory.businessMetrics.sponsoringBankName",
+														)}
 														placeholder="Bank name"
 														disabled={readOnly}
 													/>
 												</FormField>
 												<FormField label="Period (Years)">
 													<Input
-														{...register("complianceHistory.businessMetrics.sponsorshipPeriodYears")}
+														{...register(
+															"complianceHistory.businessMetrics.sponsorshipPeriodYears",
+														)}
 														placeholder="Years"
 														disabled={readOnly}
 													/>
 												</FormField>
 												<FormField label="Period (Months)">
 													<Input
-														{...register("complianceHistory.businessMetrics.sponsorshipPeriodMonths")}
+														{...register(
+															"complianceHistory.businessMetrics.sponsorshipPeriodMonths",
+														)}
 														placeholder="Months"
 														disabled={readOnly}
 													/>
@@ -885,23 +1048,31 @@ export function Absa6995Form({
 											{[
 												{
 													id: "hasLitigationPending",
-													label: "Is there litigation pending regarding debiting without consent?",
-													field: "complianceHistory.businessMetrics.hasLitigationPending" as const,
+													label:
+														"Is there litigation pending regarding debiting without consent?",
+													field:
+														"complianceHistory.businessMetrics.hasLitigationPending" as const,
 												},
 												{
 													id: "hasDirectorsUnderAdmin",
-													label: "Are any directors under administration order/debt rearrangement?",
-													field: "complianceHistory.businessMetrics.hasDirectorsUnderAdministration" as const,
+													label:
+														"Are any directors under administration order/debt rearrangement?",
+													field:
+														"complianceHistory.businessMetrics.hasDirectorsUnderAdministration" as const,
 												},
 												{
 													id: "hasFormalComplaints",
-													label: "Are there formal complaints lodged (PASA, SARB, FSCA)?",
-													field: "complianceHistory.businessMetrics.hasFormalComplaints" as const,
+													label:
+														"Are there formal complaints lodged (PASA, SARB, FSCA)?",
+													field:
+														"complianceHistory.businessMetrics.hasFormalComplaints" as const,
 												},
 												{
 													id: "hasComplianceConcerns",
-													label: "Do you have compliance concerns regarding your existing client base?",
-													field: "complianceHistory.businessMetrics.hasComplianceConcerns" as const,
+													label:
+														"Do you have compliance concerns regarding your existing client base?",
+													field:
+														"complianceHistory.businessMetrics.hasComplianceConcerns" as const,
 												},
 											].map((item) => (
 												<div
@@ -916,7 +1087,10 @@ export function Absa6995Form({
 														}
 														disabled={readOnly}
 													/>
-													<Label htmlFor={item.id} className="text-sm cursor-pointer">
+													<Label
+														htmlFor={item.id}
+														className="text-sm cursor-pointer"
+													>
 														{item.label}
 													</Label>
 												</div>
@@ -939,11 +1113,17 @@ export function Absa6995Form({
 											id="bureauApplicable"
 											checked={bureauApplicable}
 											onCheckedChange={(checked) =>
-												setValue("bureauDetails.isApplicable", checked as boolean)
+												setValue(
+													"bureauDetails.isApplicable",
+													checked as boolean,
+												)
 											}
 											disabled={readOnly}
 										/>
-										<Label htmlFor="bureauApplicable" className="text-sm cursor-pointer">
+										<Label
+											htmlFor="bureauApplicable"
+											className="text-sm cursor-pointer"
+										>
 											Bureau details are applicable
 										</Label>
 									</div>
@@ -976,7 +1156,8 @@ export function Absa6995Form({
 
 									{!bureauApplicable && (
 										<p className="text-sm text-muted-foreground text-center py-8">
-											Bureau details are not applicable. You can proceed to the next step.
+											Bureau details are not applicable. You can proceed to the
+											next step.
 										</p>
 									)}
 								</div>
@@ -987,7 +1168,9 @@ export function Absa6995Form({
 								<div className="space-y-6">
 									<div className="flex items-center gap-2 mb-4">
 										<RiFileListLine className="h-5 w-5 text-muted-foreground" />
-										<h3 className="text-lg font-semibold">Declarations & Signatures</h3>
+										<h3 className="text-lg font-semibold">
+											Declarations & Signatures
+										</h3>
 									</div>
 
 									{/* Document Checklist */}
@@ -996,72 +1179,158 @@ export function Absa6995Form({
 											Document Checklist
 										</h4>
 										<p className="text-xs text-muted-foreground">
-											Please confirm the following documents will accompany this request
+											Please confirm the following documents will accompany this
+											request
 										</p>
 
 										<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
 											<div className="flex items-center gap-3 p-3 rounded-lg border border-border">
 												<Checkbox
 													id="directorsIds"
-													checked={watch("sectionC.documentChecklist.directorsIds")}
-													onCheckedChange={(checked) => setValue("sectionC.documentChecklist.directorsIds", checked as boolean)}
+													checked={watch(
+														"sectionC.documentChecklist.directorsIds",
+													)}
+													onCheckedChange={(checked) =>
+														setValue(
+															"sectionC.documentChecklist.directorsIds",
+															checked as boolean,
+														)
+													}
 													disabled={readOnly}
 												/>
-												<Label htmlFor="directorsIds" className="text-sm cursor-pointer">Copy of directors' IDs</Label>
+												<Label
+													htmlFor="directorsIds"
+													className="text-sm cursor-pointer"
+												>
+													Copy of directors' IDs
+												</Label>
 											</div>
 											<div className="flex items-center gap-3 p-3 rounded-lg border border-border">
 												<Checkbox
 													id="proofOfBusinessAddress"
-													checked={watch("sectionC.documentChecklist.proofOfBusinessAddress")}
-													onCheckedChange={(checked) => setValue("sectionC.documentChecklist.proofOfBusinessAddress", checked as boolean)}
+													checked={watch(
+														"sectionC.documentChecklist.proofOfBusinessAddress",
+													)}
+													onCheckedChange={(checked) =>
+														setValue(
+															"sectionC.documentChecklist.proofOfBusinessAddress",
+															checked as boolean,
+														)
+													}
 													disabled={readOnly}
 												/>
-												<Label htmlFor="proofOfBusinessAddress" className="text-sm cursor-pointer">Proof of business address</Label>
+												<Label
+													htmlFor="proofOfBusinessAddress"
+													className="text-sm cursor-pointer"
+												>
+													Proof of business address
+												</Label>
 											</div>
 											<div className="flex items-center gap-3 p-3 rounded-lg border border-border">
 												<Checkbox
 													id="bankStatements"
-													checked={watch("sectionC.documentChecklist.bankStatements")}
-													onCheckedChange={(checked) => setValue("sectionC.documentChecklist.bankStatements", checked as boolean)}
+													checked={watch(
+														"sectionC.documentChecklist.bankStatements",
+													)}
+													onCheckedChange={(checked) =>
+														setValue(
+															"sectionC.documentChecklist.bankStatements",
+															checked as boolean,
+														)
+													}
 													disabled={readOnly}
 												/>
-												<Label htmlFor="bankStatements" className="text-sm cursor-pointer">3 months bank statements</Label>
+												<Label
+													htmlFor="bankStatements"
+													className="text-sm cursor-pointer"
+												>
+													3 months bank statements
+												</Label>
 											</div>
 											<div className="flex items-center gap-3 p-3 rounded-lg border border-border">
 												<Checkbox
 													id="cipcDocuments"
-													checked={watch("sectionC.documentChecklist.cipcDocuments")}
-													onCheckedChange={(checked) => setValue("sectionC.documentChecklist.cipcDocuments", checked as boolean)}
+													checked={watch(
+														"sectionC.documentChecklist.cipcDocuments",
+													)}
+													onCheckedChange={(checked) =>
+														setValue(
+															"sectionC.documentChecklist.cipcDocuments",
+															checked as boolean,
+														)
+													}
 													disabled={readOnly}
 												/>
-												<Label htmlFor="cipcDocuments" className="text-sm cursor-pointer">Latest CIPC and registration documents</Label>
+												<Label
+													htmlFor="cipcDocuments"
+													className="text-sm cursor-pointer"
+												>
+													Latest CIPC and registration documents
+												</Label>
 											</div>
 											<div className="flex items-center gap-3 p-3 rounded-lg border border-border">
 												<Checkbox
 													id="regulatedIndustryCertificates"
-													checked={watch("sectionC.documentChecklist.regulatedIndustryCertificates")}
-													onCheckedChange={(checked) => setValue("sectionC.documentChecklist.regulatedIndustryCertificates", checked as boolean)}
+													checked={watch(
+														"sectionC.documentChecklist.regulatedIndustryCertificates",
+													)}
+													onCheckedChange={(checked) =>
+														setValue(
+															"sectionC.documentChecklist.regulatedIndustryCertificates",
+															checked as boolean,
+														)
+													}
 													disabled={readOnly}
 												/>
-												<Label htmlFor="regulatedIndustryCertificates" className="text-sm cursor-pointer">Certified copies for regulated industries (NCR, FSCA, etc.)</Label>
+												<Label
+													htmlFor="regulatedIndustryCertificates"
+													className="text-sm cursor-pointer"
+												>
+													Certified copies for regulated industries (NCR, FSCA,
+													etc.)
+												</Label>
 											</div>
 											<div className="flex items-center gap-3 p-3 rounded-lg border border-border">
 												<Checkbox
 													id="clientMandates"
-													checked={watch("sectionC.documentChecklist.clientMandates")}
-													onCheckedChange={(checked) => setValue("sectionC.documentChecklist.clientMandates", checked as boolean)}
+													checked={watch(
+														"sectionC.documentChecklist.clientMandates",
+													)}
+													onCheckedChange={(checked) =>
+														setValue(
+															"sectionC.documentChecklist.clientMandates",
+															checked as boolean,
+														)
+													}
 													disabled={readOnly}
 												/>
-												<Label htmlFor="clientMandates" className="text-sm cursor-pointer">Five mandates of existing clients</Label>
+												<Label
+													htmlFor="clientMandates"
+													className="text-sm cursor-pointer"
+												>
+													Five mandates of existing clients
+												</Label>
 											</div>
 											<div className="flex items-center gap-3 p-3 rounded-lg border border-border">
 												<Checkbox
 													id="marketingMaterial"
-													checked={watch("sectionC.documentChecklist.marketingMaterial")}
-													onCheckedChange={(checked) => setValue("sectionC.documentChecklist.marketingMaterial", checked as boolean)}
+													checked={watch(
+														"sectionC.documentChecklist.marketingMaterial",
+													)}
+													onCheckedChange={(checked) =>
+														setValue(
+															"sectionC.documentChecklist.marketingMaterial",
+															checked as boolean,
+														)
+													}
 													disabled={readOnly}
 												/>
-												<Label htmlFor="marketingMaterial" className="text-sm cursor-pointer">Brochure or marketing material</Label>
+												<Label
+													htmlFor="marketingMaterial"
+													className="text-sm cursor-pointer"
+												>
+													Brochure or marketing material
+												</Label>
 											</div>
 										</div>
 									</div>
@@ -1075,18 +1344,31 @@ export function Absa6995Form({
 										<div
 											className={cn(
 												"flex items-start gap-3 p-3 rounded-lg border",
-												errors.sectionC?.declarations?.informationTrueAndCorrect ? "border-destructive bg-destructive/5" : "border-border"
+												errors.sectionC?.declarations?.informationTrueAndCorrect
+													? "border-destructive bg-destructive/5"
+													: "border-border",
 											)}
 										>
 											<Checkbox
 												id="informationTrueAndCorrect"
-												checked={watch("sectionC.declarations.informationTrueAndCorrect")}
-												onCheckedChange={(checked) => setValue("sectionC.declarations.informationTrueAndCorrect", checked as boolean)}
+												checked={watch(
+													"sectionC.declarations.informationTrueAndCorrect",
+												)}
+												onCheckedChange={(checked) =>
+													setValue(
+														"sectionC.declarations.informationTrueAndCorrect",
+														checked as boolean,
+													)
+												}
 												disabled={readOnly}
 												className="mt-0.5"
 											/>
-											<Label htmlFor="informationTrueAndCorrect" className="text-sm cursor-pointer leading-relaxed">
-												I confirm that all information provided is true and correct.
+											<Label
+												htmlFor="informationTrueAndCorrect"
+												className="text-sm cursor-pointer leading-relaxed"
+											>
+												I confirm that all information provided is true and
+												correct.
 												<span className="text-destructive ml-1">*</span>
 											</Label>
 										</div>
@@ -1094,18 +1376,32 @@ export function Absa6995Form({
 										<div
 											className={cn(
 												"flex items-start gap-3 p-3 rounded-lg border",
-												errors.sectionC?.declarations?.misrepresentationAcknowledgement ? "border-destructive bg-destructive/5" : "border-border"
+												errors.sectionC?.declarations
+													?.misrepresentationAcknowledgement
+													? "border-destructive bg-destructive/5"
+													: "border-border",
 											)}
 										>
 											<Checkbox
 												id="misrepresentationAcknowledgement"
-												checked={watch("sectionC.declarations.misrepresentationAcknowledgement")}
-												onCheckedChange={(checked) => setValue("sectionC.declarations.misrepresentationAcknowledgement", checked as boolean)}
+												checked={watch(
+													"sectionC.declarations.misrepresentationAcknowledgement",
+												)}
+												onCheckedChange={(checked) =>
+													setValue(
+														"sectionC.declarations.misrepresentationAcknowledgement",
+														checked as boolean,
+													)
+												}
 												disabled={readOnly}
 												className="mt-0.5"
 											/>
-											<Label htmlFor="misrepresentationAcknowledgement" className="text-sm cursor-pointer leading-relaxed">
-												I acknowledge that misrepresentation may result in legal action.
+											<Label
+												htmlFor="misrepresentationAcknowledgement"
+												className="text-sm cursor-pointer leading-relaxed"
+											>
+												I acknowledge that misrepresentation may result in legal
+												action.
 												<span className="text-destructive ml-1">*</span>
 											</Label>
 										</div>
@@ -1113,18 +1409,32 @@ export function Absa6995Form({
 										<div
 											className={cn(
 												"flex items-start gap-3 p-3 rounded-lg border",
-												errors.sectionC?.declarations?.debitingConsentAcknowledgement ? "border-destructive bg-destructive/5" : "border-border"
+												errors.sectionC?.declarations
+													?.debitingConsentAcknowledgement
+													? "border-destructive bg-destructive/5"
+													: "border-border",
 											)}
 										>
 											<Checkbox
 												id="debitingConsentAcknowledgement"
-												checked={watch("sectionC.declarations.debitingConsentAcknowledgement")}
-												onCheckedChange={(checked) => setValue("sectionC.declarations.debitingConsentAcknowledgement", checked as boolean)}
+												checked={watch(
+													"sectionC.declarations.debitingConsentAcknowledgement",
+												)}
+												onCheckedChange={(checked) =>
+													setValue(
+														"sectionC.declarations.debitingConsentAcknowledgement",
+														checked as boolean,
+													)
+												}
 												disabled={readOnly}
 												className="mt-0.5"
 											/>
-											<Label htmlFor="debitingConsentAcknowledgement" className="text-sm cursor-pointer leading-relaxed">
-												I acknowledge that debiting without consent is a criminal offence.
+											<Label
+												htmlFor="debitingConsentAcknowledgement"
+												className="text-sm cursor-pointer leading-relaxed"
+											>
+												I acknowledge that debiting without consent is a
+												criminal offence.
 												<span className="text-destructive ml-1">*</span>
 											</Label>
 										</div>
@@ -1132,18 +1442,32 @@ export function Absa6995Form({
 										<div
 											className={cn(
 												"flex items-start gap-3 p-3 rounded-lg border",
-												errors.sectionC?.declarations?.personalInfoProcessingConsent ? "border-destructive bg-destructive/5" : "border-border"
+												errors.sectionC?.declarations
+													?.personalInfoProcessingConsent
+													? "border-destructive bg-destructive/5"
+													: "border-border",
 											)}
 										>
 											<Checkbox
 												id="personalInfoProcessingConsent"
-												checked={watch("sectionC.declarations.personalInfoProcessingConsent")}
-												onCheckedChange={(checked) => setValue("sectionC.declarations.personalInfoProcessingConsent", checked as boolean)}
+												checked={watch(
+													"sectionC.declarations.personalInfoProcessingConsent",
+												)}
+												onCheckedChange={(checked) =>
+													setValue(
+														"sectionC.declarations.personalInfoProcessingConsent",
+														checked as boolean,
+													)
+												}
 												disabled={readOnly}
 												className="mt-0.5"
 											/>
-											<Label htmlFor="personalInfoProcessingConsent" className="text-sm cursor-pointer leading-relaxed">
-												I consent to Absa processing personal information for pre-screening.
+											<Label
+												htmlFor="personalInfoProcessingConsent"
+												className="text-sm cursor-pointer leading-relaxed"
+											>
+												I consent to Absa processing personal information for
+												pre-screening.
 												<span className="text-destructive ml-1">*</span>
 											</Label>
 										</div>
@@ -1151,18 +1475,31 @@ export function Absa6995Form({
 										<div
 											className={cn(
 												"flex items-start gap-3 p-3 rounded-lg border",
-												errors.sectionC?.declarations?.infoSharingUnderstanding ? "border-destructive bg-destructive/5" : "border-border"
+												errors.sectionC?.declarations?.infoSharingUnderstanding
+													? "border-destructive bg-destructive/5"
+													: "border-border",
 											)}
 										>
 											<Checkbox
 												id="infoSharingUnderstanding"
-												checked={watch("sectionC.declarations.infoSharingUnderstanding")}
-												onCheckedChange={(checked) => setValue("sectionC.declarations.infoSharingUnderstanding", checked as boolean)}
+												checked={watch(
+													"sectionC.declarations.infoSharingUnderstanding",
+												)}
+												onCheckedChange={(checked) =>
+													setValue(
+														"sectionC.declarations.infoSharingUnderstanding",
+														checked as boolean,
+													)
+												}
 												disabled={readOnly}
 												className="mt-0.5"
 											/>
-											<Label htmlFor="infoSharingUnderstanding" className="text-sm cursor-pointer leading-relaxed">
-												I understand that Absa may share information with credit bureaus/regulators.
+											<Label
+												htmlFor="infoSharingUnderstanding"
+												className="text-sm cursor-pointer leading-relaxed"
+											>
+												I understand that Absa may share information with credit
+												bureaus/regulators.
 												<span className="text-destructive ml-1">*</span>
 											</Label>
 										</div>
@@ -1170,26 +1507,48 @@ export function Absa6995Form({
 										<div className="flex items-start gap-3 p-3 rounded-lg border border-border">
 											<Checkbox
 												id="tpppConsentWarranty"
-												checked={watch("sectionC.declarations.tpppConsentWarranty")}
-												onCheckedChange={(checked) => setValue("sectionC.declarations.tpppConsentWarranty", checked as boolean)}
+												checked={watch(
+													"sectionC.declarations.tpppConsentWarranty",
+												)}
+												onCheckedChange={(checked) =>
+													setValue(
+														"sectionC.declarations.tpppConsentWarranty",
+														checked as boolean,
+													)
+												}
 												disabled={readOnly}
 												className="mt-0.5"
 											/>
-											<Label htmlFor="tpppConsentWarranty" className="text-sm cursor-pointer leading-relaxed">
-												Warranty that TPPP has obtained consent from the Ultimate Creditor.
+											<Label
+												htmlFor="tpppConsentWarranty"
+												className="text-sm cursor-pointer leading-relaxed"
+											>
+												Warranty that TPPP has obtained consent from the
+												Ultimate Creditor.
 											</Label>
 										</div>
 
 										<div className="flex items-start gap-3 p-3 rounded-lg border border-border">
 											<Checkbox
 												id="ultimateCreditorInfoWarranty"
-												checked={watch("sectionC.declarations.ultimateCreditorInfoWarranty")}
-												onCheckedChange={(checked) => setValue("sectionC.declarations.ultimateCreditorInfoWarranty", checked as boolean)}
+												checked={watch(
+													"sectionC.declarations.ultimateCreditorInfoWarranty",
+												)}
+												onCheckedChange={(checked) =>
+													setValue(
+														"sectionC.declarations.ultimateCreditorInfoWarranty",
+														checked as boolean,
+													)
+												}
 												disabled={readOnly}
 												className="mt-0.5"
 											/>
-											<Label htmlFor="ultimateCreditorInfoWarranty" className="text-sm cursor-pointer leading-relaxed">
-												Warranty that the Ultimate Creditor is informed about data sharing.
+											<Label
+												htmlFor="ultimateCreditorInfoWarranty"
+												className="text-sm cursor-pointer leading-relaxed"
+											>
+												Warranty that the Ultimate Creditor is informed about
+												data sharing.
 											</Label>
 										</div>
 									</div>
@@ -1206,14 +1565,18 @@ export function Absa6995Form({
 											<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 												<FormField label="Client's Name" required>
 													<Input
-														{...register("sectionC.signatures.clientSignature.name")}
+														{...register(
+															"sectionC.signatures.clientSignature.name",
+														)}
 														placeholder="Full name"
 														disabled={readOnly}
 													/>
 												</FormField>
 												<FormField label="Date" required>
 													<Input
-														{...register("sectionC.signatures.clientSignature.date")}
+														{...register(
+															"sectionC.signatures.clientSignature.date",
+														)}
 														type="date"
 														disabled={readOnly}
 													/>
@@ -1223,28 +1586,42 @@ export function Absa6995Form({
 												label="Client Signature"
 												required
 												onSave={(dataUrl) =>
-													setValue("sectionC.signatures.clientSignature.signature", dataUrl)
+													setValue(
+														"sectionC.signatures.clientSignature.signature",
+														dataUrl,
+													)
 												}
-												initialValue={watch("sectionC.signatures.clientSignature.signature")}
-												error={errors.sectionC?.signatures?.clientSignature?.signature?.message}
+												initialValue={watch(
+													"sectionC.signatures.clientSignature.signature",
+												)}
+												error={
+													errors.sectionC?.signatures?.clientSignature
+														?.signature?.message
+												}
 												disabled={readOnly}
 											/>
 										</div>
 
 										{/* TPPP Official Signature */}
 										<div className="space-y-4 p-4 rounded-lg border border-border bg-muted/30">
-											<h5 className="font-medium">TPPP/SO Mandated Official (if applicable)</h5>
+											<h5 className="font-medium">
+												TPPP/SO Mandated Official (if applicable)
+											</h5>
 											<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 												<FormField label="Official's Name">
 													<Input
-														{...register("sectionC.signatures.tpppOfficialName")}
+														{...register(
+															"sectionC.signatures.tpppOfficialName",
+														)}
 														placeholder="Full name"
 														disabled={readOnly}
 													/>
 												</FormField>
 												<FormField label="Date">
 													<Input
-														{...register("sectionC.signatures.tpppOfficialSignature.date")}
+														{...register(
+															"sectionC.signatures.tpppOfficialSignature.date",
+														)}
 														type="date"
 														disabled={readOnly}
 													/>
@@ -1253,9 +1630,14 @@ export function Absa6995Form({
 											<SignatureCanvas
 												label="Official Signature"
 												onSave={(dataUrl) =>
-													setValue("sectionC.signatures.tpppOfficialSignature.signature", dataUrl)
+													setValue(
+														"sectionC.signatures.tpppOfficialSignature.signature",
+														dataUrl,
+													)
 												}
-												initialValue={watch("sectionC.signatures.tpppOfficialSignature.signature")}
+												initialValue={watch(
+													"sectionC.signatures.tpppOfficialSignature.signature",
+												)}
 												disabled={readOnly}
 											/>
 										</div>

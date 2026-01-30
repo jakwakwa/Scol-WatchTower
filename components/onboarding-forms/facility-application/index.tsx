@@ -123,7 +123,7 @@ function CheckboxGroup({
 						"flex items-start gap-3 p-3 rounded-lg border transition-colors",
 						value.includes(option.value)
 							? "border-primary bg-primary/5"
-							: "border-border hover:border-primary/50"
+							: "border-border hover:border-primary/50",
 					)}
 				>
 					<Checkbox
@@ -301,8 +301,11 @@ export function FacilityApplicationForm({
 
 	// Watch values
 	const serviceTypes = watch("facilitySelection.serviceTypes") || [];
-	const additionalServices = watch("facilitySelection.additionalServices") || [];
-	const hasOutstandingAmounts = watch("volumeMetrics.history.hasOutstandingAmounts");
+	const additionalServices =
+		watch("facilitySelection.additionalServices") || [];
+	const hasOutstandingAmounts = watch(
+		"volumeMetrics.history.hasOutstandingAmounts",
+	);
 
 	return (
 		<FormProvider {...methods}>
@@ -325,7 +328,9 @@ export function FacilityApplicationForm({
 								<div className="space-y-6">
 									<div className="flex items-center gap-2 mb-4">
 										<RiServiceLine className="h-5 w-5 text-muted-foreground" />
-										<h3 className="text-lg font-semibold">Facility Selection</h3>
+										<h3 className="text-lg font-semibold">
+											Facility Selection
+										</h3>
 									</div>
 
 									{/* Service Types */}
@@ -357,7 +362,7 @@ export function FacilityApplicationForm({
 											onChange={(value) =>
 												setValue(
 													"facilitySelection.additionalServices",
-													value as any
+													value as any,
 												)
 											}
 											disabled={readOnly}
@@ -391,7 +396,9 @@ export function FacilityApplicationForm({
 											</FormField>
 											<FormField label="Previous Service Provider">
 												<Input
-													{...register("volumeMetrics.history.previousProvider")}
+													{...register(
+														"volumeMetrics.history.previousProvider",
+													)}
 													placeholder="Previous provider name"
 													disabled={readOnly}
 												/>
@@ -405,12 +412,15 @@ export function FacilityApplicationForm({
 												onCheckedChange={(checked) =>
 													setValue(
 														"volumeMetrics.history.hasOutstandingAmounts",
-														checked as boolean
+														checked as boolean,
 													)
 												}
 												disabled={readOnly}
 											/>
-											<Label htmlFor="hasOutstanding" className="text-sm cursor-pointer">
+											<Label
+												htmlFor="hasOutstanding"
+												className="text-sm cursor-pointer"
+											>
 												We have outstanding amounts owed to a previous provider
 											</Label>
 										</div>
@@ -442,7 +452,7 @@ export function FacilityApplicationForm({
 											>
 												<Input
 													{...register(
-														"volumeMetrics.statistics.averageTransactionsPerMonth"
+														"volumeMetrics.statistics.averageTransactionsPerMonth",
 													)}
 													placeholder="e.g., 1000"
 													type="number"
@@ -452,7 +462,7 @@ export function FacilityApplicationForm({
 											<FormField label="Average Transaction Value">
 												<Input
 													{...register(
-														"volumeMetrics.statistics.averageTransactionValue"
+														"volumeMetrics.statistics.averageTransactionValue",
 													)}
 													placeholder="R 0.00"
 													disabled={readOnly}
@@ -461,7 +471,7 @@ export function FacilityApplicationForm({
 											<FormField label="Unpaid Transactions Value">
 												<Input
 													{...register(
-														"volumeMetrics.statistics.unpaidTransactionsValue"
+														"volumeMetrics.statistics.unpaidTransactionsValue",
 													)}
 													placeholder="R 0.00"
 													disabled={readOnly}
@@ -470,7 +480,7 @@ export function FacilityApplicationForm({
 											<FormField label="Unpaid Transactions Quantity">
 												<Input
 													{...register(
-														"volumeMetrics.statistics.unpaidTransactionsQuantity"
+														"volumeMetrics.statistics.unpaidTransactionsQuantity",
 													)}
 													placeholder="e.g., 50"
 													disabled={readOnly}
@@ -479,7 +489,7 @@ export function FacilityApplicationForm({
 											<FormField label="Disputed Transactions Value">
 												<Input
 													{...register(
-														"volumeMetrics.statistics.disputedTransactionsValue"
+														"volumeMetrics.statistics.disputedTransactionsValue",
 													)}
 													placeholder="R 0.00"
 													disabled={readOnly}
@@ -488,7 +498,7 @@ export function FacilityApplicationForm({
 											<FormField label="Disputed Transactions Quantity">
 												<Input
 													{...register(
-														"volumeMetrics.statistics.disputedTransactionsQuantity"
+														"volumeMetrics.statistics.disputedTransactionsQuantity",
 													)}
 													placeholder="e.g., 10"
 													disabled={readOnly}
@@ -508,7 +518,7 @@ export function FacilityApplicationForm({
 												<FormField label="Volume">
 													<Input
 														{...register(
-															"volumeMetrics.predictedGrowth.month1Volume"
+															"volumeMetrics.predictedGrowth.month1Volume",
 														)}
 														placeholder="Transactions"
 														disabled={readOnly}
@@ -517,7 +527,7 @@ export function FacilityApplicationForm({
 												<FormField label="Value">
 													<Input
 														{...register(
-															"volumeMetrics.predictedGrowth.month1Value"
+															"volumeMetrics.predictedGrowth.month1Value",
 														)}
 														placeholder="R 0.00"
 														disabled={readOnly}
@@ -529,7 +539,7 @@ export function FacilityApplicationForm({
 												<FormField label="Volume">
 													<Input
 														{...register(
-															"volumeMetrics.predictedGrowth.month2Volume"
+															"volumeMetrics.predictedGrowth.month2Volume",
 														)}
 														placeholder="Transactions"
 														disabled={readOnly}
@@ -538,7 +548,7 @@ export function FacilityApplicationForm({
 												<FormField label="Value">
 													<Input
 														{...register(
-															"volumeMetrics.predictedGrowth.month2Value"
+															"volumeMetrics.predictedGrowth.month2Value",
 														)}
 														placeholder="R 0.00"
 														disabled={readOnly}
@@ -550,7 +560,7 @@ export function FacilityApplicationForm({
 												<FormField label="Volume">
 													<Input
 														{...register(
-															"volumeMetrics.predictedGrowth.month3Volume"
+															"volumeMetrics.predictedGrowth.month3Volume",
 														)}
 														placeholder="Transactions"
 														disabled={readOnly}
@@ -559,7 +569,7 @@ export function FacilityApplicationForm({
 												<FormField label="Value">
 													<Input
 														{...register(
-															"volumeMetrics.predictedGrowth.month3Value"
+															"volumeMetrics.predictedGrowth.month3Value",
 														)}
 														placeholder="R 0.00"
 														disabled={readOnly}
@@ -585,7 +595,7 @@ export function FacilityApplicationForm({
 											>
 												<Input
 													{...register(
-														"volumeMetrics.limitsAppliedFor.maxTransactionsPerMonth"
+														"volumeMetrics.limitsAppliedFor.maxTransactionsPerMonth",
 													)}
 													placeholder="e.g., 5000"
 													type="number"
@@ -602,7 +612,7 @@ export function FacilityApplicationForm({
 											>
 												<Input
 													{...register(
-														"volumeMetrics.limitsAppliedFor.maxRandValue"
+														"volumeMetrics.limitsAppliedFor.maxRandValue",
 													)}
 													placeholder="R 0.00"
 													disabled={readOnly}
@@ -618,7 +628,7 @@ export function FacilityApplicationForm({
 											>
 												<Input
 													{...register(
-														"volumeMetrics.limitsAppliedFor.lineLimit"
+														"volumeMetrics.limitsAppliedFor.lineLimit",
 													)}
 													placeholder="R 0.00"
 													disabled={readOnly}

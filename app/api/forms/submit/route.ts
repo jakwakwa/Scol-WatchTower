@@ -40,9 +40,14 @@ const formSchemaMap: Record<FormType, z.ZodSchema> = {
 	DOCUMENT_UPLOADS: z.any(),
 };
 
-const extractSubmittedBy = (formType: FormType, data: Record<string, unknown>) => {
+const extractSubmittedBy = (
+	formType: FormType,
+	data: Record<string, unknown>,
+) => {
 	if (formType === "SIGNED_QUOTATION" || formType === "STRATCOL_CONTRACT") {
-		return typeof data.signatureName === "string" ? data.signatureName : undefined;
+		return typeof data.signatureName === "string"
+			? data.signatureName
+			: undefined;
 	}
 
 	if (formType === "ABSA_6995") {
@@ -60,7 +65,10 @@ export async function POST(request: NextRequest) {
 
 		if (!parsed.success) {
 			return NextResponse.json(
-				{ error: "Invalid submission payload", details: parsed.error.flatten() },
+				{
+					error: "Invalid submission payload",
+					details: parsed.error.flatten(),
+				},
 				{ status: 400 },
 			);
 		}
@@ -69,11 +77,17 @@ export async function POST(request: NextRequest) {
 		const formInstance = await getFormInstanceByToken(token);
 
 		if (!formInstance) {
-			return NextResponse.json({ error: "Form link is invalid" }, { status: 404 });
+			return NextResponse.json(
+				{ error: "Form link is invalid" },
+				{ status: 404 },
+			);
 		}
 
 		if (formInstance.formType !== formType) {
-			return NextResponse.json({ error: "Form type mismatch" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "Form type mismatch" },
+				{ status: 400 },
+			);
 		}
 
 		if (formInstance.status === "submitted") {
@@ -90,8 +104,14 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		if (formInstance.expiresAt && new Date(formInstance.expiresAt) < new Date()) {
-			return NextResponse.json({ error: "Form link has expired" }, { status: 410 });
+		if (
+			formInstance.expiresAt &&
+			new Date(formInstance.expiresAt) < new Date()
+		) {
+			return NextResponse.json(
+				{ error: "Form link has expired" },
+				{ status: 410 },
+			);
 		}
 
 		const schema = formSchemaMap[formType];
@@ -140,7 +160,10 @@ export async function POST(request: NextRequest) {
 			workflowId: formInstance.workflowId,
 			formType,
 			data: validation.data as Record<string, unknown>,
-			submittedBy: extractSubmittedBy(formType, validation.data as Record<string, unknown>),
+			submittedBy: extractSubmittedBy(
+				formType,
+				validation.data as Record<string, unknown>,
+			),
 		});
 
 		if (formInstance.workflowId) {
