@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import { eq } from "drizzle-orm";
 import { getDatabaseClient } from "@/app/utils";
-import { formInstances, formSubmissions } from "@/db/schema";
+import { formInstances, formInstanceSubmissions } from "@/db/schema";
 import type { FormType, FormInstanceStatus } from "@/lib/types";
 
 interface CreateFormInstanceOptions {
@@ -109,7 +109,7 @@ export async function recordFormSubmission(options: {
 		throw new Error("Database connection failed");
 	}
 
-	await db.insert(formSubmissions).values([
+	await db.insert(formInstanceSubmissions).values([
 		{
 			formInstanceId: options.formInstanceId,
 			leadId: options.leadId,

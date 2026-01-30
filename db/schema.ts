@@ -164,9 +164,9 @@ export const formInstances = sqliteTable('form_instances', {
 });
 
 /**
- * Form Submissions - Stored form payloads
+ * Form Instance Submissions - Stored form payloads
  */
-export const formSubmissions = sqliteTable('form_submissions', {
+export const formInstanceSubmissions = sqliteTable('form_submissions', {
     id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
     formInstanceId: integer('form_instance_id')
         .notNull()
@@ -192,7 +192,7 @@ export const leadsRelations = relations(leads, ({ many, one }) => ({
     workflows: many(workflows),
     documents: many(documents),
     formInstances: many(formInstances),
-    formSubmissions: many(formSubmissions),
+	formInstanceSubmissions: many(formInstanceSubmissions),
     riskAssessment: one(riskAssessments, {
         fields: [leads.id],
         references: [riskAssessments.leadId], // One-to-one roughly
@@ -308,23 +308,26 @@ export const formInstancesRelations = relations(formInstances, ({ one, many }) =
         fields: [formInstances.workflowId],
         references: [workflows.id],
     }),
-    submissions: many(formSubmissions),
+	submissions: many(formInstanceSubmissions),
 }));
 
-export const formSubmissionsRelations = relations(formSubmissions, ({ one }) => ({
-    lead: one(leads, {
-        fields: [formSubmissions.leadId],
-        references: [leads.id],
-    }),
-    workflow: one(workflows, {
-        fields: [formSubmissions.workflowId],
-        references: [workflows.id],
-    }),
-    formInstance: one(formInstances, {
-        fields: [formSubmissions.formInstanceId],
-        references: [formInstances.id],
-    }),
-}));
+export const formInstanceSubmissionsRelations = relations(
+	formInstanceSubmissions,
+	({ one }) => ({
+		lead: one(leads, {
+			fields: [formInstanceSubmissions.leadId],
+			references: [leads.id],
+		}),
+		workflow: one(workflows, {
+			fields: [formInstanceSubmissions.workflowId],
+			references: [workflows.id],
+		}),
+		formInstance: one(formInstances, {
+			fields: [formInstanceSubmissions.formInstanceId],
+			references: [formInstances.id],
+		}),
+	}),
+);
 
 export const riskAssessmentsRelations = relations(riskAssessments, ({ one }) => ({
     lead: one(leads, {

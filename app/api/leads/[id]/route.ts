@@ -1,7 +1,12 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { getDatabaseClient } from "@/app/utils";
-import { documents, formInstances, formSubmissions, leads } from "@/db/schema";
+import {
+	documents,
+	formInstances,
+	formInstanceSubmissions,
+	leads,
+} from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { updateLeadSchema } from "@/lib/validations";
 
@@ -105,14 +110,17 @@ export async function GET(
 
 		const [leadDocuments, submissions, instances] = await Promise.all([
 			db.select().from(documents).where(eq(documents.leadId, id)),
-			db.select().from(formSubmissions).where(eq(formSubmissions.leadId, id)),
+			db
+				.select()
+				.from(formInstanceSubmissions)
+				.where(eq(formInstanceSubmissions.leadId, id)),
 			db.select().from(formInstances).where(eq(formInstances.leadId, id)),
 		]);
 
 		return NextResponse.json({
 			lead,
 			documents: leadDocuments,
-			formSubmissions: submissions,
+			formInstanceSubmissions: submissions,
 			formInstances: instances,
 		});
 	} catch (error) {

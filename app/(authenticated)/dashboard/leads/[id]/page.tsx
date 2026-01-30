@@ -74,9 +74,9 @@ export default function ClientDetailPage() {
 	const id = params.id as string;
 	const [lead, setLead] = useState<LeadDetail | null>(null);
 	const [documents, setDocuments] = useState<LeadDocument[]>([]);
-	const [formSubmissions, setFormSubmissions] = useState<LeadFormSubmission[]>(
-		[],
-	);
+	const [formInstanceSubmissions, setFormInstanceSubmissions] = useState<
+		LeadFormSubmission[]
+	>([]);
 	const [formInstances, setFormInstances] = useState<LeadFormInstance[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -93,7 +93,7 @@ export default function ClientDetailPage() {
 				if (!mounted) return;
 				setLead(data.lead);
 				setDocuments(data.documents || []);
-				setFormSubmissions(data.formSubmissions || []);
+				setFormInstanceSubmissions(data.formInstanceSubmissions || []);
 				setFormInstances(data.formInstances || []);
 			} catch (err) {
 				if (!mounted) return;
@@ -372,7 +372,7 @@ export default function ClientDetailPage() {
 								) : (
 									<div className="space-y-3">
 										{formInstances.map((instance) => {
-											const submission = formSubmissions.find(
+											const submission = formInstanceSubmissions.find(
 												(item) => item.formType === instance.formType,
 											);
 											return (
@@ -457,12 +457,12 @@ export default function ClientDetailPage() {
 
 						<TabsContent value="activity">
 							<div className="space-y-6 pl-2 border-l border-border/50 ml-2 py-2">
-								{formSubmissions.length === 0 ? (
+								{formInstanceSubmissions.length === 0 ? (
 									<p className="text-sm text-muted-foreground">
 										No recent activity logged.
 									</p>
 								) : (
-									formSubmissions.map((submission) => (
+									formInstanceSubmissions.map((submission) => (
 										<div key={submission.id} className="relative pl-6">
 											<div className="absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full bg-border border-2 border-background"></div>
 											<p className="text-sm font-medium">
