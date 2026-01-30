@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDatabaseClient } from "@/app/utils";
-import { leads, workflows } from "@/db/schema";
+import { applicants, workflows } from "@/db/schema";
 import { inngest } from "@/inngest";
 import { z } from "zod";
 
 // Schema for incoming Google Form data
-const leadCaptureSchema = z.object({
+const applicantCaptureSchema = z.object({
 	companyName: z.string().min(1, "Company name is required"),
 	contactName: z.string().min(1, "Contact name is required"),
 	email: z.string().email("Invalid email address"),
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
 		const body = await request.json();
 
 		// 1. Validation
-		const validation = leadCaptureSchema.safeParse(body);
+		const validation = applicantCaptureSchema.safeParse(body);
 		if (!validation.success) {
 			return NextResponse.json(
 				{
@@ -51,10 +51,10 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		// 3. Create Lead
+		// 3. Create Applicant
 		// Returning * is supported in Postgres/SQLite via Drizzle
-		const [newLead] = await db
-			.insert(leads)
+		const [newApplicant] = await db
+			.insert(applicants)
 			.values([
 				{
 					companyName: data.companyName,
@@ -71,8 +71,8 @@ export async function POST(request: NextRequest) {
 			])
 			.returning();
 
-		if (!newLead) {
-			throw new Error("Failed to create lead record");
+		if (!newApplicant) {
+			throw new Error("Failed to create applicant record");
 		}
 
 		// 4. Create Workflow
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
 			.insert(workflows)
 			.values([
 				{
-					leadId: newLead.id,
+					applicantId: newApplicant.id,
 					stage: 1,
 					status: "pending",
 				},
@@ -92,11 +92,11 @@ export async function POST(request: NextRequest) {
 		}
 
 		// 5. Trigger Inngest
-		// We use the existing 'onboarding/started' event which expects { leadId, workflowId }
+		// We use the existing 'onboarding/started' event which expects { applicantId, workflowId }
 		await inngest.send({
 			name: "onboarding/lead.created",
 			data: {
-				leadId: newLead.id,
+				applicantId: newApplicant.id,
 				workflowId: newWorkflow.id,
 			},
 		});
@@ -104,14 +104,14 @@ export async function POST(request: NextRequest) {
 		return NextResponse.json(
 			{
 				success: true,
-				leadId: newLead.id,
+				applicantId: newApplicant.id,
 				workflowId: newWorkflow.id,
-				message: "Lead captured and workflow started",
+				message: "Applicant captured and workflow started",
 			},
 			{ status: 201 },
 		);
 	} catch (error) {
-		console.error("Error in lead-capture webhook:", error);
+		console.error("Error in applicant-capture webhook:", error);
 		const message = error instanceof Error ? error.message : "Unexpected error";
 		return NextResponse.json({ error: message }, { status: 500 });
 	}

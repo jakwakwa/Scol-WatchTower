@@ -5,7 +5,7 @@ import { applicantMagiclinkForms, applicantSubmissions } from "@/db/schema";
 import type { FormType, FormInstanceStatus } from "@/lib/types";
 
 interface CreateFormInstanceOptions {
-	leadId: number;
+	applicantId: number;
 	workflowId?: number;
 	formType: FormType;
 	expiresInDays?: number;
@@ -42,7 +42,7 @@ export async function createFormInstance(
 		.insert(applicantMagiclinkForms)
 		.values([
 			{
-				leadId: options.leadId,
+				applicantId: options.applicantId,
 				workflowId: options.workflowId,
 				formType: options.formType,
 				status: "sent",
@@ -98,7 +98,7 @@ export async function markFormInstanceStatus(
 
 export async function recordFormSubmission(options: {
 	applicantMagiclinkFormId: number;
-	leadId: number;
+	applicantId: number;
 	workflowId?: number | null;
 	formType: FormType;
 	data: Record<string, unknown>;
@@ -112,7 +112,7 @@ export async function recordFormSubmission(options: {
 	await db.insert(applicantSubmissions).values([
 		{
 			applicantMagiclinkFormId: options.applicantMagiclinkFormId,
-			leadId: options.leadId,
+			applicantId: options.applicantId,
 			workflowId: options.workflowId ?? null,
 			formType: options.formType,
 			data: JSON.stringify(options.data),

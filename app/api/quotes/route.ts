@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
 			.insert(quotes)
 			.values({
 				workflowId: data.workflowId,
-				leadId: data.leadId,
+				applicantId: data.applicantId,
 				amount: data.amount,
 				baseFeePercent: data.baseFeePercent,
 				adjustedFeePercent: data.adjustedFeePercent,

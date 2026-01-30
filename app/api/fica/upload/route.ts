@@ -23,7 +23,7 @@ import { auth } from "@clerk/nextjs/server";
 
 const UploadMetadataSchema = z.object({
 	workflowId: z.coerce.number().int().positive("Workflow ID is required"),
-	leadId: z.coerce.number().int().positive("Lead ID is required"),
+	applicantId: z.coerce.number().int().positive("Applicant ID is required"),
 	documentType: z.enum([
 		"BANK_STATEMENT",
 		"ACCOUNTANT_LETTER",
@@ -64,13 +64,13 @@ export async function POST(request: NextRequest) {
 
 		// Extract metadata
 		const workflowId = formData.get("workflowId");
-		const leadId = formData.get("leadId");
+		const applicantId = formData.get("applicantId");
 		const documentType = formData.get("documentType");
 
 		// Validate metadata
 		const metadataResult = UploadMetadataSchema.safeParse({
 			workflowId,
-			leadId,
+			applicantId,
 			documentType,
 		});
 
@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
 				.insert(documents)
 				.values([
 					{
-						leadId: metadata.leadId,
+						applicantId: metadata.applicantId,
 						type: metadata.documentType,
 						status: "uploaded",
 						category: documentCategoryMap[metadata.documentType],
@@ -178,7 +178,7 @@ export async function POST(request: NextRequest) {
 					name: "document/uploaded",
 					data: {
 						workflowId: metadata.workflowId,
-						leadId: metadata.leadId,
+						applicantId: metadata.applicantId,
 						documentId: inserted.id,
 						documentType: metadata.documentType,
 						category: documentCategoryMap[metadata.documentType],
@@ -202,7 +202,7 @@ export async function POST(request: NextRequest) {
 			name: "upload/fica.received",
 			data: {
 				workflowId: metadata.workflowId,
-				leadId: metadata.leadId,
+				applicantId: metadata.applicantId,
 				documents: uploadedDocuments,
 				uploadedBy: userId || "client",
 			},

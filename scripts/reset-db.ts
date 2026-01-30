@@ -34,8 +34,8 @@ async function reset() {
 		console.log("Deleting Workflows...");
 		await db.delete(schema.workflows);
 
-		console.log("Deleting Leads...");
-		await db.delete(schema.leads);
+		console.log("Deleting Applicants...");
+		await db.delete(schema.applicants);
 
 		// Optional: Delete agents if they are considered "seed data" the user wants gone.
 		// Usually "clean" means empty.

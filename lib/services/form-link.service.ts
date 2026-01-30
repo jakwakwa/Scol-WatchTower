@@ -11,7 +11,7 @@ export interface FormLinkBundle {
 }
 
 export async function generateFormLinks(options: {
-	leadId: number;
+	applicantId: number;
 	workflowId: number;
 }) {
 	const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
@@ -28,7 +28,7 @@ export async function generateFormLinks(options: {
 
 	for (const formType of formTypes) {
 		const { token } = await createFormInstance({
-			leadId: options.leadId,
+			applicantId: options.applicantId,
 			workflowId: options.workflowId,
 			formType,
 		});

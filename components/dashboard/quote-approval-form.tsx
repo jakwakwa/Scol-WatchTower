@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { GlassCard } from "@/components/dashboard";
 
 interface QuoteApprovalFormProps {
-	leadId: number;
+	applicantId: number;
 	workflowId: number;
 	quoteId: number;
 	status: string;

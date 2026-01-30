@@ -159,7 +159,7 @@ export default function RiskReviewPage() {
 
 							{/* Action Button */}
 							<div className="flex items-center gap-2 md:border-l border-border md:pl-6">
-								<Link href={`/dashboard/leads/${assessment.id}?tab=risk`}>
+								<Link href={`/dashboard/applicants/${assessment.id}?tab=risk`}>
 									<Button size="sm" variant="secondary">
 										Review
 									</Button>

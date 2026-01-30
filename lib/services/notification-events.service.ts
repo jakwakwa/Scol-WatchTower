@@ -1,10 +1,10 @@
 import { getDatabaseClient } from "@/app/utils";
-import { notifications, workflowEvents, leads } from "@/db/schema";
+import { notifications, workflowEvents } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 export interface CreateNotificationParams {
 	workflowId: number;
-	leadId: number;
+	applicantId: number;
 	type: "awaiting" | "completed" | "failed" | "timeout" | "paused" | "error";
 	title: string;
 	message: string;
@@ -46,7 +46,7 @@ export async function createWorkflowNotification(
 		await db.insert(notifications).values([
 			{
 				workflowId: params.workflowId,
-				leadId: params.leadId,
+				applicantId: params.applicantId,
 				type: params.type,
 				// Title doesn't exist in schema, combining with message
 				message: `${params.title}: ${params.message}`,

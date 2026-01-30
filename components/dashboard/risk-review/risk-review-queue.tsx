@@ -39,7 +39,7 @@ import { toast } from "sonner";
 export interface RiskReviewItem {
 	id: number;
 	workflowId: number;
-	leadId: number;
+	applicantId: number;
 	clientName: string;
 	companyName: string;
 	stage: number;

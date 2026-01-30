@@ -156,7 +156,7 @@ export async function POST(request: NextRequest) {
 
 		await recordFormSubmission({
 			applicantMagiclinkFormId: formInstance.id,
-			leadId: formInstance.leadId,
+			applicantId: formInstance.applicantId,
 			workflowId: formInstance.workflowId,
 			formType,
 			data: validation.data as Record<string, unknown>,
@@ -173,13 +173,13 @@ export async function POST(request: NextRequest) {
 				payload: {
 					step: "form-submitted",
 					formType,
-					formInstanceId: formInstance.id,
+					applicantMagiclinkFormId: formInstance.id,
 				},
 			});
 
 			await createWorkflowNotification({
 				workflowId: formInstance.workflowId,
-				leadId: formInstance.leadId,
+				applicantId: formInstance.applicantId,
 				type: "completed",
 				title: "Form submitted",
 				message: `${formType.replace(/_/g, " ")} submitted successfully.`,
@@ -192,9 +192,9 @@ export async function POST(request: NextRequest) {
 				name: "form/submitted",
 				data: {
 					workflowId: formInstance.workflowId,
-					leadId: formInstance.leadId,
+					applicantId: formInstance.applicantId,
 					formType,
-					formInstanceId: formInstance.id,
+					applicantMagiclinkFormId: formInstance.id,
 					submittedAt: new Date().toISOString(),
 				},
 			});
@@ -232,7 +232,7 @@ export async function POST(request: NextRequest) {
 							name: "quote/signed",
 							data: {
 								workflowId: formInstance.workflowId,
-								leadId: formInstance.leadId,
+								applicantId: formInstance.applicantId,
 								quoteId: resolvedQuoteId,
 								signedAt: new Date().toISOString(),
 							},

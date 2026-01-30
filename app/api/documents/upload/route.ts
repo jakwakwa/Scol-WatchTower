@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
 				.insert(documents)
 				.values([
 					{
-						leadId: formInstance.leadId,
+						applicantId: formInstance.applicantId,
 						type: validation.data.documentType,
 						category: validation.data.category,
 						source: "client",
@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
 						name: "document/uploaded",
 						data: {
 							workflowId: formInstance.workflowId,
-							leadId: formInstance.leadId,
+							applicantId: formInstance.applicantId,
 							documentId: inserted.id,
 							documentType: validation.data.documentType,
 							category: validation.data.category,

@@ -3,13 +3,13 @@ import { RiUserAddLine } from "@remixicon/react";
 import {
 	DashboardLayout,
 	DashboardSection,
-	LeadsTable,
+	ApplicantsTable,
 } from "@/components/dashboard";
-import type { LeadRow } from "@/components/dashboard/leads-table";
+import type { ApplicantRow } from "@/components/dashboard/applicants-table";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { getDatabaseClient } from "@/app/utils";
-import { leads, quotes, workflows } from "@/db/schema";
+import { applicants, quotes, workflows } from "@/db/schema";
 import { desc } from "drizzle-orm";
 import type { WorkflowNotification } from "@/components/dashboard/notifications-panel";
 
@@ -23,32 +23,35 @@ const statusConfig = {
 	lost: { label: "Lost", color: "bg-red-500/20 text-red-400" },
 } as const;
 
-export default async function LeadsPage({
+export default async function ApplicantsPage({
 	workflowNotifications,
 }: {
 	workflowNotifications: WorkflowNotification[];
 }) {
 	const db = getDatabaseClient();
-	let allLeads: LeadRow[] = [];
+	let allApplicants: ApplicantRow[] = [];
 
 	if (db) {
 		try {
-			const leadRows = await db
+			const applicantRows = await db
 				.select()
-				.from(leads)
-				.orderBy(desc(leads.createdAt));
+				.from(applicants)
+				.orderBy(desc(applicants.createdAt));
 
 			const workflowRows = await db.select().from(workflows);
 			const quoteRows = await db.select().from(quotes);
 
-			const workflowsByLead = new Map<number, typeof workflows.$inferSelect>();
+			const workflowsByApplicant = new Map<
+				number,
+				typeof workflows.$inferSelect
+			>();
 			for (const workflow of workflowRows.sort((a, b) => {
 				const aTime = new Date(a.startedAt || 0).getTime();
 				const bTime = new Date(b.startedAt || 0).getTime();
 				return bTime - aTime;
 			})) {
-				if (!workflowsByLead.has(workflow.leadId)) {
-					workflowsByLead.set(workflow.leadId, workflow);
+				if (!workflowsByApplicant.has(workflow.applicantId)) {
+					workflowsByApplicant.set(workflow.applicantId, workflow);
 				}
 			}
 
@@ -63,30 +66,30 @@ export default async function LeadsPage({
 				}
 			}
 
-			allLeads = leadRows.map((lead) => {
-				const workflow = workflowsByLead.get(lead.id);
+			allApplicants = applicantRows.map((applicant) => {
+				const workflow = workflowsByApplicant.get(applicant.id);
 				const quote = workflow ? quotesByWorkflow.get(workflow.id) : null;
 				return {
-					...lead,
+					...applicant,
 					workflowId: workflow?.id ?? null,
 					workflowStage: workflow?.stage ?? null,
 					hasQuote: !!quote,
 				};
 			});
 		} catch (error) {
-			console.error("Failed to fetch leads:", error);
+			console.error("Failed to fetch applicants:", error);
 		}
 	}
 
 	return (
 		<DashboardLayout
-			title="Leads"
-			description="Manage your potential clients"
+			title="Applicants"
+			description="Manage your applicants and their onboarding"
 			actions={
-				<Link href="/dashboard/leads/new">
+				<Link href="/dashboard/applicants/new">
 					<Button variant="secondary">
 						<RiUserAddLine />
-						New Lead
+						New Applicant
 					</Button>
 				</Link>
 			}
@@ -96,7 +99,7 @@ export default async function LeadsPage({
 			<div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-8">
 				{Object.entries(statusConfig).map(([status, config]) => {
 					// @ts-ignore - status match
-					const count = allLeads.filter((l) => l.status === status).length;
+					const count = allApplicants.filter((l) => l.status === status).length;
 					return (
 						<div
 							key={status}
@@ -112,9 +115,9 @@ export default async function LeadsPage({
 				})}
 			</div>
 
-			{/* Leads Table */}
-			<DashboardSection title="All Leads">
-				<LeadsTable leads={allLeads} />
+			{/* Applicants Table */}
+			<DashboardSection title="All Applicants">
+				<ApplicantsTable applicants={allApplicants} />
 			</DashboardSection>
 		</DashboardLayout>
 	);

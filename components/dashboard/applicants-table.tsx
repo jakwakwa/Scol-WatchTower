@@ -18,7 +18,7 @@ import { DataTable } from "@/components/ui/data-table";
 
 // --- Types ---
 
-export interface LeadRow {
+export interface ApplicantRow {
 	id: number;
 	companyName: string;
 	contactName: string;
@@ -46,7 +46,7 @@ const statusConfig: Record<string, { label: string; color: string }> = {
 
 // --- Columns ---
 
-export const columns: ColumnDef<LeadRow>[] = [
+export const columns: ColumnDef<ApplicantRow>[] = [
 	{
 		id: "select",
 		header: ({ table }) => (
@@ -233,16 +233,16 @@ export const columns: ColumnDef<LeadRow>[] = [
 							<DropdownMenuItem>View Details</DropdownMenuItem>
 							{canViewQuote ? (
 								<DropdownMenuItem asChild>
-									<Link href={`/dashboard/leads/${row.original.id}/quote`}>
+									<Link href={`/dashboard/applicants/${row.original.id}/quote`}>
 										Review Quote
 									</Link>
 								</DropdownMenuItem>
 							) : null}
-							<DropdownMenuItem>Edit Lead</DropdownMenuItem>
+							<DropdownMenuItem>Edit Applicant</DropdownMenuItem>
 							<DropdownMenuItem>Start Workflow</DropdownMenuItem>
 							<DropdownMenuSeparator />
 							<DropdownMenuItem className="text-destructive focus:text-destructive">
-								Delete Lead
+								Delete Applicant
 							</DropdownMenuItem>
 						</DropdownMenuContent>
 					</DropdownMenu>
@@ -254,10 +254,10 @@ export const columns: ColumnDef<LeadRow>[] = [
 
 // --- Main Component ---
 
-interface LeadsTableProps {
-	leads: LeadRow[];
+interface ApplicantsTableProps {
+	applicants: ApplicantRow[];
 }
 
-export function LeadsTable({ leads }: LeadsTableProps) {
-	return <DataTable columns={columns} data={leads} />;
+export function ApplicantsTable({ applicants }: ApplicantsTableProps) {
+	return <DataTable columns={columns} data={applicants} />;
 }

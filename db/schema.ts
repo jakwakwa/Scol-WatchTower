@@ -6,10 +6,10 @@ import { text, integer, sqliteTable } from 'drizzle-orm/sqlite-core';
 // ============================================
 
 /**
- * Leads/Applications table - Central entity
+ * Applicants table - Central entity
  * Renamed specific fields to match user preference: mandateVolume, itcScore, etc.
  */
-export const leads = sqliteTable('leads', {
+export const applicants = sqliteTable('applicants', {
     id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
     // Basic Info
     companyName: text('company_name').notNull(),
@@ -49,9 +49,9 @@ export const leads = sqliteTable('leads', {
  */
 export const documents = sqliteTable('documents', {
     id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
-    leadId: integer('lead_id')
+    applicantId: integer('applicant_id')
         .notNull()
-        .references(() => leads.id), // Link to Lead/Application
+        .references(() => applicants.id), // Link to Applicant
     type: text('type').notNull(), // bank_statement, id_document, etc.
     status: text('status').notNull().default('pending'), // pending, uploaded, verified, rejected
     category: text('category'), // standard_application, fica_entity, etc.
@@ -72,9 +72,9 @@ export const documents = sqliteTable('documents', {
  */
 export const riskAssessments = sqliteTable('risk_assessments', {
     id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
-    leadId: integer('lead_id')
+    applicantId: integer('applicant_id')
         .notNull()
-        .references(() => leads.id),
+        .references(() => applicants.id),
     overallRisk: text('overall_risk'), // green, amber, red
 
     // Specific risk factors from user schema
@@ -96,9 +96,9 @@ export const riskAssessments = sqliteTable('risk_assessments', {
  */
 export const activityLogs = sqliteTable('activity_logs', {
     id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
-    leadId: integer('lead_id')
+    applicantId: integer('applicant_id')
         .notNull()
-        .references(() => leads.id),
+        .references(() => applicants.id),
     action: text('action').notNull(),
     description: text('description').notNull(),
     performedBy: text('performed_by'),
@@ -111,9 +111,9 @@ export const activityLogs = sqliteTable('activity_logs', {
 
 export const workflows = sqliteTable('workflows', {
     id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
-    leadId: integer('lead_id')
+    applicantId: integer('applicant_id')
         .notNull()
-        .references(() => leads.id),
+        .references(() => applicants.id),
     stage: integer('stage', { mode: 'number' }).default(1),
     status: text('status').default('pending'),
     startedAt: integer('started_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
@@ -123,7 +123,7 @@ export const workflows = sqliteTable('workflows', {
 export const notifications = sqliteTable('notifications', {
     id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
     workflowId: integer('workflow_id').references(() => workflows.id),
-    leadId: integer('lead_id').references(() => leads.id),
+    applicantId: integer('applicant_id').references(() => applicants.id),
     type: text('type').notNull(),
     message: text('message').notNull(),
     read: integer('read', { mode: 'boolean' }).default(false),
@@ -146,9 +146,9 @@ export const workflowEvents = sqliteTable('workflow_events', {
  */
 export const applicantMagiclinkForms = sqliteTable('applicant_magiclink_forms', {
     id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
-    leadId: integer('lead_id')
+    applicantId: integer('applicant_id')
         .notNull()
-        .references(() => leads.id),
+        .references(() => applicants.id),
     workflowId: integer('workflow_id').references(() => workflows.id),
     formType: text('form_type').notNull(), // FACILITY_APPLICATION, SIGNED_QUOTATION, etc.
     status: text('status').notNull().default('pending'), // pending, sent, viewed, submitted, expired, revoked
@@ -171,9 +171,9 @@ export const applicantSubmissions = sqliteTable('applicant_submissions', {
     applicantMagiclinkFormId: integer('applicant_magiclink_form_id')
         .notNull()
         .references(() => applicantMagiclinkForms.id),
-    leadId: integer('lead_id')
+    applicantId: integer('applicant_id')
         .notNull()
-        .references(() => leads.id),
+        .references(() => applicants.id),
     workflowId: integer('workflow_id').references(() => workflows.id),
     formType: text('form_type').notNull(),
     data: text('data').notNull(), // JSON string
@@ -188,14 +188,14 @@ export const applicantSubmissions = sqliteTable('applicant_submissions', {
 // Relations
 // ============================================
 
-export const leadsRelations = relations(leads, ({ many, one }) => ({
+export const applicantsRelations = relations(applicants, ({ many, one }) => ({
     workflows: many(workflows),
     documents: many(documents),
 	applicantMagiclinkForms: many(applicantMagiclinkForms),
 	applicantSubmissions: many(applicantSubmissions),
     riskAssessment: one(riskAssessments, {
-        fields: [leads.id],
-        references: [riskAssessments.leadId], // One-to-one roughly
+        fields: [applicants.id],
+        references: [riskAssessments.applicantId], // One-to-one roughly
     }),
     activityLogs: many(activityLogs),
 }));
@@ -256,7 +256,7 @@ export const agentCallbacks = sqliteTable('xt_callbacks', {
  */
 export const quotes = sqliteTable('quotes', {
     id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
-    leadId: integer('lead_id').references(() => leads.id),
+    applicantId: integer('applicant_id').references(() => applicants.id),
     workflowId: integer('workflow_id')
         .notNull()
         .references(() => workflows.id),
@@ -280,16 +280,16 @@ export const quotes = sqliteTable('quotes', {
 });
 
 export const documentsRelations = relations(documents, ({ one }) => ({
-    lead: one(leads, {
-        fields: [documents.leadId],
-        references: [leads.id],
+    applicant: one(applicants, {
+        fields: [documents.applicantId],
+        references: [applicants.id],
     }),
 }));
 
 export const workflowsRelations = relations(workflows, ({ one, many }) => ({
-	lead: one(leads, {
-		fields: [workflows.leadId],
-		references: [leads.id],
+	applicant: one(applicants, {
+		fields: [workflows.applicantId],
+		references: [applicants.id],
 	}),
 	quotes: many(quotes),
 	events: many(workflowEvents),
@@ -302,9 +302,9 @@ export const workflowsRelations = relations(workflows, ({ one, many }) => ({
 export const applicantMagiclinkFormsRelations = relations(
 	applicantMagiclinkForms,
 	({ one, many }) => ({
-    lead: one(leads, {
-        fields: [applicantMagiclinkForms.leadId],
-        references: [leads.id],
+    applicant: one(applicants, {
+        fields: [applicantMagiclinkForms.applicantId],
+        references: [applicants.id],
     }),
     workflow: one(workflows, {
         fields: [applicantMagiclinkForms.workflowId],
@@ -317,9 +317,9 @@ export const applicantMagiclinkFormsRelations = relations(
 export const applicantSubmissionsRelations = relations(
 	applicantSubmissions,
 	({ one }) => ({
-		lead: one(leads, {
-			fields: [applicantSubmissions.leadId],
-			references: [leads.id],
+		applicant: one(applicants, {
+			fields: [applicantSubmissions.applicantId],
+			references: [applicants.id],
 		}),
 		workflow: one(workflows, {
 			fields: [applicantSubmissions.workflowId],
@@ -333,9 +333,9 @@ export const applicantSubmissionsRelations = relations(
 );
 
 export const riskAssessmentsRelations = relations(riskAssessments, ({ one }) => ({
-    lead: one(leads, {
-        fields: [riskAssessments.leadId],
-        references: [leads.id],
+    applicant: one(applicants, {
+        fields: [riskAssessments.applicantId],
+        references: [applicants.id],
     }),
 }));
 

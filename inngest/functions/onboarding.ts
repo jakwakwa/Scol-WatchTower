@@ -4,7 +4,7 @@
  * This is the main workflow for client onboarding following the StratCol
  * Risk Management Modernization Plan. It implements:
  *
- * Stage 1: Lead Capture & Commitment (Zero-Entry Application)
+ * Stage 1: Applicant Capture & Commitment (Zero-Entry Application)
  * Stage 2: Dynamic Quotation & ITC Check (Paperwork Cascade)
  * Stage 3: Intelligent Verification & AI FICA Analysis (Digital Forensic Lab)
  * Stage 4: Integration & V24 Handover (Activation)
@@ -16,7 +16,7 @@
  * - 14-day timeout for FICA document uploads
  */
 import { getDatabaseClient } from "@/app/utils";
-import { leads } from "@/db/schema";
+import { applicants } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { NonRetriableError } from "inngest";
 import {
@@ -65,7 +65,7 @@ type WorkflowResolutionEvent = {
 type QuoteApprovedEvent = {
 	data: {
 		workflowId: number;
-		leadId: number;
+		applicantId: number;
 		quoteId: number;
 		approvedAt: string;
 	};
@@ -74,7 +74,7 @@ type QuoteApprovedEvent = {
 type QuoteSignedEvent = {
 	data: {
 		workflowId: number;
-		leadId: number;
+		applicantId: number;
 		quoteId: number;
 		signedAt: string;
 	};
@@ -102,13 +102,14 @@ type FicaUploadDocument = {
 type FicaUploadEvent = {
 	data: {
 		workflowId: number;
-		leadId: number;
+		applicantId: number;
 		documents: FicaUploadDocument[];
 	};
 };
 
 type RiskDecisionEvent = {
 	data: {
+		applicantId: number;
 		decision: {
 			outcome: "APPROVED" | "REJECTED" | "REQUEST_MORE_INFO";
 			decidedBy: string;
@@ -134,7 +135,7 @@ async function runSafeStep<T>(
 	step: unknown,
 	stepId: string,
 	operation: () => Promise<T>,
-	context: { workflowId: number; leadId: number; stage: number },
+	context: { workflowId: number; applicantId: number; stage: number },
 ): Promise<T | null> {
 	const stepInstance = step as {
 		run: (id: string, op: () => Promise<unknown>) => Promise<unknown>;
@@ -163,7 +164,7 @@ async function runSafeStep<T>(
 		await stepInstance.run(`${stepId}-notify-error`, () =>
 			createWorkflowNotification({
 				workflowId: context.workflowId,
-				leadId: context.leadId,
+				applicantId: context.applicantId,
 				type: "error",
 				title: "Workflow Error - Action Required",
 				message: `Step "${stepId}" failed: ${errorMessage}`,
@@ -211,22 +212,24 @@ export const onboardingWorkflow = inngest.createFunction(
 	{ id: "stratcol-client-onboarding", name: "StratCol Client Onboarding" },
 	{ event: "onboarding/lead.created" },
 	async ({ event, step }) => {
-		const { leadId, workflowId } = event.data;
+		const { applicantId, workflowId } = event.data;
 
-		console.log(`[Workflow] STARTED for lead=${leadId} workflow=${workflowId}`);
+		console.log(
+			`[Workflow] STARTED for applicant=${applicantId} workflow=${workflowId}`,
+		);
 
 		// ================================================================
 		// Verification Veto Check (Blacklist)
 		// ================================================================
 		await step.run("verification-veto-check", async () => {
-			if (blacklist.includes(leadId)) {
-				const message = `[Veto] Lead ${leadId} is blacklisted. Workflow terminated.`;
+			if (blacklist.includes(applicantId)) {
+				const message = `[Veto] Applicant ${applicantId} is blacklisted. Workflow terminated.`;
 				console.error(message);
 
 				await logWorkflowEvent({
 					workflowId,
 					eventType: "error",
-					payload: { error: "Lead Blacklisted", reason: "Manual Veto" },
+					payload: { error: "Applicant Blacklisted", reason: "Manual Veto" },
 				});
 
 				await updateWorkflowStatus(workflowId, "failed", 1);
@@ -235,7 +238,7 @@ export const onboardingWorkflow = inngest.createFunction(
 		});
 
 		// ================================================================
-		// STAGE 1: Lead Capture & Commitment
+		// STAGE 1: Applicant Capture & Commitment
 		// ================================================================
 		await runSafeStep(
 			step,
@@ -243,7 +246,7 @@ export const onboardingWorkflow = inngest.createFunction(
 			() => updateWorkflowStatus(workflowId, "processing", 1),
 			{
 				workflowId,
-				leadId,
+				applicantId,
 				stage: 1,
 			},
 		);
@@ -255,8 +258,10 @@ export const onboardingWorkflow = inngest.createFunction(
 		// Mock API call to credit bureau. If score < 600, auto-decline
 		// ================================================================
 		const itcResult = (await step.run("run-itc-check", async () => {
-			console.log(`[Workflow] Running ITC credit check for lead ${leadId}`);
-			return performITCCheck({ leadId, workflowId });
+			console.log(
+				`[Workflow] Running ITC credit check for applicant ${applicantId}`,
+			);
+			return performITCCheck({ applicantId, workflowId });
 		})) as unknown as ITCResult;
 
 		// Log ITC result
@@ -286,7 +291,7 @@ export const onboardingWorkflow = inngest.createFunction(
 			await step.run("itc-decline-notify", () =>
 				createWorkflowNotification({
 					workflowId,
-					leadId,
+					applicantId,
 					type: "failed",
 					title: "Application Declined - Credit Check",
 					message: `ITC credit score (${itcResult.creditScore}) below minimum threshold.`,
@@ -311,14 +316,14 @@ export const onboardingWorkflow = inngest.createFunction(
 			() => updateWorkflowStatus(workflowId, "processing", 2),
 			{
 				workflowId,
-				leadId,
+				applicantId,
 				stage: 2,
 			},
 		);
 
-		// Generate quote based on ITC result and lead data
+		// Generate quote based on ITC result and applicant data
 		const quoteResult = (await step.run("generate-legal-pack", () =>
-			generateQuote(leadId, workflowId),
+			generateQuote(applicantId, workflowId),
 		)) as unknown as QuoteResult;
 
 		const quote = quoteResult.quote;
@@ -338,7 +343,7 @@ export const onboardingWorkflow = inngest.createFunction(
 			await step.run("stage-2-quote-notify", () =>
 				createWorkflowNotification({
 					workflowId,
-					leadId,
+					applicantId,
 					type: "error",
 					title: "Quote Generation Failed",
 					message: errorMessage,
@@ -379,7 +384,7 @@ export const onboardingWorkflow = inngest.createFunction(
 		await step.run("stage-2-quote-notify", () =>
 			createWorkflowNotification({
 				workflowId,
-				leadId,
+				applicantId,
 				type: "awaiting",
 				title: "Quote ready for approval",
 				message: "AI-generated quote is ready for staff review and approval.",
@@ -401,7 +406,7 @@ export const onboardingWorkflow = inngest.createFunction(
 			await step.run("stage-2-quote-approval-timeout-notify", () =>
 				createWorkflowNotification({
 					workflowId,
-					leadId,
+					applicantId,
 					type: "timeout",
 					title: "Quote approval timeout",
 					message: "No staff approval received within 30 days.",
@@ -420,26 +425,29 @@ export const onboardingWorkflow = inngest.createFunction(
 				throw new Error("Database connection failed");
 			}
 
-			const leadResults = await db
+			const applicantResults = await db
 				.select()
-				.from(leads)
-				.where(eq(leads.id, leadId));
-			const lead = leadResults[0];
+				.from(applicants)
+				.where(eq(applicants.id, applicantId));
+			const applicant = applicantResults[0];
 
-			if (!lead) {
-				throw new Error(`Lead ${leadId} not found`);
+			if (!applicant) {
+				throw new Error(`Applicant ${applicantId} not found`);
 			}
 
-			const { links } = await generateFormLinks({ leadId, workflowId });
+			const { links } = await generateFormLinks({
+				applicantId,
+				workflowId,
+			});
 			await sendFormLinksEmail({
-				email: lead.email,
-				contactName: lead.contactName,
+				email: applicant.email,
+				contactName: applicant.contactName,
 				links,
 			});
 
 			await createWorkflowNotification({
 				workflowId,
-				leadId,
+				applicantId,
 				type: "awaiting",
 				title: "Onboarding forms sent",
 				message: "Client has received interactive forms and upload links.",
@@ -453,7 +461,7 @@ export const onboardingWorkflow = inngest.createFunction(
 			() => updateWorkflowStatus(workflowId, "awaiting_human", 2),
 			{
 				workflowId,
-				leadId,
+				applicantId,
 				stage: 2,
 			},
 		);
@@ -473,7 +481,7 @@ export const onboardingWorkflow = inngest.createFunction(
 			await step.run("quote-signature-timeout-notify", () =>
 				createWorkflowNotification({
 					workflowId,
-					leadId,
+					applicantId,
 					type: "timeout",
 					title: "Quote signature timeout",
 					message: "Client did not sign the quotation within 30 days.",
@@ -490,7 +498,7 @@ export const onboardingWorkflow = inngest.createFunction(
 			() => updateWorkflowStatus(workflowId, "awaiting_human", 2),
 			{
 				workflowId,
-				leadId,
+				applicantId,
 				stage: 2,
 			},
 		);
@@ -510,7 +518,7 @@ export const onboardingWorkflow = inngest.createFunction(
 			await step.run("contract-timeout-notify", () =>
 				createWorkflowNotification({
 					workflowId,
-					leadId,
+					applicantId,
 					type: "timeout",
 					title: "Contract Signing Timeout",
 					message: "Workflow timed out waiting for contract signature.",
@@ -536,7 +544,7 @@ export const onboardingWorkflow = inngest.createFunction(
 			() => updateWorkflowStatus(workflowId, "processing", 3),
 			{
 				workflowId,
-				leadId,
+				applicantId,
 				stage: 3,
 			},
 		);
@@ -546,7 +554,7 @@ export const onboardingWorkflow = inngest.createFunction(
 		await step.run("stage-3-request-fica", () =>
 			createWorkflowNotification({
 				workflowId,
-				leadId,
+				applicantId,
 				type: "awaiting",
 				title: "FICA Documents Required",
 				message:
@@ -569,7 +577,7 @@ export const onboardingWorkflow = inngest.createFunction(
 			await step.run("fica-timeout-notify", () =>
 				createWorkflowNotification({
 					workflowId,
-					leadId,
+					applicantId,
 					type: "timeout",
 					title: "FICA Upload Timeout",
 					message:
@@ -658,7 +666,7 @@ export const onboardingWorkflow = inngest.createFunction(
 			await step.run("notify-risk-manager", () =>
 				createWorkflowNotification({
 					workflowId,
-					leadId,
+					applicantId,
 					type: "awaiting",
 					title: "Risk Review Required",
 					message: `AI Trust Score: ${ficaAnalysis.aiTrustScore}%. ${ficaAnalysis.riskFlags.length} risk flag(s) detected. Manual review required.`,
@@ -704,7 +712,7 @@ export const onboardingWorkflow = inngest.createFunction(
 			await step.run("rejected-notify", () =>
 				createWorkflowNotification({
 					workflowId,
-					leadId,
+					applicantId,
 					type: "failed",
 					title: "Application Rejected",
 					message: riskDecision.reason || "Rejected by Risk Manager",
@@ -743,7 +751,7 @@ export const onboardingWorkflow = inngest.createFunction(
 			() => updateWorkflowStatus(workflowId, "processing", 4),
 			{
 				workflowId,
-				leadId,
+				applicantId,
 				stage: 4,
 			},
 		);
@@ -752,7 +760,7 @@ export const onboardingWorkflow = inngest.createFunction(
 		// Create client profile in V24 core system
 		const v24Result = await step.run("v24-create-client", async () => {
 			return createV24ClientProfile({
-				leadId,
+				applicantId,
 				workflowId,
 				mandateType: "EFT", // Would come from facility application
 				approvedVolume: 100000_00, // Would come from quote
@@ -766,7 +774,7 @@ export const onboardingWorkflow = inngest.createFunction(
 			await step.run("v24-error-notify", () =>
 				createWorkflowNotification({
 					workflowId,
-					leadId,
+					applicantId,
 					type: "error",
 					title: "V24 Integration Error",
 					message: v24Result.error || "Failed to create client in V24",
@@ -795,10 +803,10 @@ export const onboardingWorkflow = inngest.createFunction(
 
 		// Schedule training session
 		const trainingSession = await step.run("schedule-training", async () => {
-			// Get lead email from database (simplified)
+			// Get applicant email from database (simplified)
 			return scheduleTrainingSession({
-				email: "client@example.com", // Would fetch from lead
-				clientName: "Test Company", // Would fetch from lead
+				email: "client@example.com", // Would fetch from applicant
+				clientName: "Test Company", // Would fetch from applicant
 			});
 		});
 
@@ -810,7 +818,7 @@ export const onboardingWorkflow = inngest.createFunction(
 		// Send welcome pack
 		await step.run("send-welcome-pack", async () => {
 			return sendWelcomePack({
-				email: "client@example.com", // Would fetch from lead
+				email: "client@example.com", // Would fetch from applicant
 				clientName: "Test Company",
 				v24Reference: v24Result.v24Reference || `SC-${workflowId}`,
 				portalUrl: `${process.env.NEXT_PUBLIC_APP_URL}/portal`,
@@ -825,7 +833,7 @@ export const onboardingWorkflow = inngest.createFunction(
 			() => updateWorkflowStatus(workflowId, "completed", 4),
 			{
 				workflowId,
-				leadId,
+				applicantId,
 				stage: 4,
 			},
 		);

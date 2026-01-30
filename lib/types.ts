@@ -541,7 +541,7 @@ export type TrainingSession = z.infer<typeof TrainingSessionSchema>;
  * Combined workflow context passed through the saga
  */
 export interface OnboardingWorkflowContext {
-	leadId: number;
+	applicantId: number;
 	workflowId: number;
 	facilityApplication?: FacilityApplication;
 	itcResult?: ITCCheckResult;

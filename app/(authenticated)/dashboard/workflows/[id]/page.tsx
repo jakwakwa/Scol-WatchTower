@@ -30,7 +30,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 
 import { getDatabaseClient } from "@/app/utils";
-import { workflows, leads, workflowEvents, quotes } from "@/db/schema";
+import { workflows, applicants, workflowEvents, quotes } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { cn } from "@/lib/utils";
 import { notFound } from "next/navigation";
@@ -128,14 +128,14 @@ export default async function WorkflowDetailsPage({
 		throw new Error("Database connection failed");
 	}
 
-	// 1. Fetch Workflow & Lead
+	// 1. Fetch Workflow & Applicant
 	const workflowResults = await db
 		.select({
 			workflow: workflows,
-			lead: leads,
+			applicant: applicants,
 		})
 		.from(workflows)
-		.leftJoin(leads, eq(workflows.leadId, leads.id))
+		.leftJoin(applicants, eq(workflows.applicantId, applicants.id))
 		.where(eq(workflows.id, workflowId))
 		.limit(1);
 
@@ -147,7 +147,7 @@ export default async function WorkflowDetailsPage({
 	if (!result) {
 		notFound();
 	}
-	const { workflow, lead } = result;
+	const { workflow, applicant } = result;
 
 	// 2. Fetch Events (Audit Log)
 	const events = await db
@@ -166,7 +166,9 @@ export default async function WorkflowDetailsPage({
 	const latestQuote = workflowQuotes[0];
 
 	// Helper for stage badge
-	const stageName = lead?.status ? lead.status.replace("_", " ") : "Unknown";
+	const stageName = applicant?.status
+		? applicant.status.replace("_", " ")
+		: "Unknown";
 	const stageNumber = workflow.stage || 0;
 
 	return (
@@ -185,7 +187,7 @@ export default async function WorkflowDetailsPage({
 						</Link>
 						<div className="flex flex-col gap-1">
 							<h2 className="flex items-center text-lg font-bold uppercase text-foreground/70 gap-3">
-								{lead?.companyName || "Unknown Client"}
+								{applicant?.companyName || "Unknown Client"}
 								<span className="text-foreground font-light text-xs">
 									workflow no. {workflow.id}
 								</span>
@@ -346,7 +348,7 @@ export default async function WorkflowDetailsPage({
 							</CardTitle>
 						</CardHeader>
 						<CardContent className="space-y-4">
-							{lead ? (
+							{applicant ? (
 								<>
 									<div className="flex items-start gap-3">
 										<div className="p-2 rounded-md bg-muted text-muted-foreground">
@@ -354,10 +356,10 @@ export default async function WorkflowDetailsPage({
 										</div>
 										<div>
 											<p className="text-sm font-medium text-foreground">
-												{lead.companyName}
+												{applicant.companyName}
 											</p>
 											<p className="text-xs text-muted-foreground">
-												{lead.industry || "Industry N/A"}
+												{applicant.industry || "Industry N/A"}
 											</p>
 										</div>
 									</div>
@@ -366,26 +368,26 @@ export default async function WorkflowDetailsPage({
 										<div className="flex items-center gap-3">
 											<RiUserLine size={16} className="text-muted-foreground" />
 											<span className="text-sm text-foreground">
-												{lead.contactName}
+												{applicant.contactName}
 											</span>
 										</div>
 										<div className="flex items-center gap-3">
 											<RiMailLine size={16} className="text-muted-foreground" />
 											<a
-												href={`mailto:${lead.email}`}
+												href={`mailto:${applicant.email}`}
 												className="text-sm text-muted-foreground hover:text-foreground transition-colors"
 											>
-												{lead.email}
+												{applicant.email}
 											</a>
 										</div>
-										{lead.phone && (
+										{applicant.phone && (
 											<div className="flex items-center gap-3">
 												<RiPhoneLine
 													size={16}
 													className="text-muted-foreground"
 												/>
 												<span className="text-sm text-muted-foreground">
-													{lead.phone}
+													{applicant.phone}
 												</span>
 											</div>
 										)}
@@ -393,7 +395,7 @@ export default async function WorkflowDetailsPage({
 								</>
 							) : (
 								<p className="text-sm text-muted-foreground italic">
-									Lead data unavailable
+									Applicant data unavailable
 								</p>
 							)}
 						</CardContent>

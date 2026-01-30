@@ -3,13 +3,13 @@
  */
 import { generateObject } from "ai";
 import { getDatabaseClient } from "@/app/utils";
-import { leads, quotes } from "@/db/schema";
+import { applicants, quotes } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getThinkingModel, isAIConfigured, AI_CONFIG } from "@/lib/ai/models";
 import { quoteGenerationSchema } from "@/lib/validations/quotes";
 import type { QuoteGenerationResult } from "@/lib/validations/quotes";
 
-type LeadRow = typeof leads.$inferSelect;
+type ApplicantRow = typeof applicants.$inferSelect;
 
 export interface Quote {
 	quoteId: string;
@@ -22,7 +22,7 @@ export interface Quote {
 }
 
 /**
- * Generate a quote for a lead using external quote service
+ * Generate a quote for an applicant using external quote service
  */
 export interface QuoteResult {
 	success: boolean;
@@ -33,14 +33,14 @@ export interface QuoteResult {
 }
 
 /**
- * Generate a quote for a lead using internal Gemini AI
+ * Generate a quote for an applicant using internal Gemini AI
  */
 export async function generateQuote(
-	leadId: number,
+	applicantId: number,
 	workflowId: number,
 ): Promise<QuoteResult> {
 	console.log(
-		`[QuoteService] Generating Quote for Lead ${leadId}, Workflow ${workflowId}`,
+		`[QuoteService] Generating Quote for Applicant ${applicantId}, Workflow ${workflowId}`,
 	);
 
 	const db = getDatabaseClient();
@@ -52,17 +52,17 @@ export async function generateQuote(
 		};
 	}
 
-	let leadData: LeadRow | null = null;
+	let applicantData: ApplicantRow | null = null;
 	try {
-		const leadResults = await db
+		const applicantResults = await db
 			.select()
-			.from(leads)
-			.where(eq(leads.id, leadId));
-		if (leadResults.length > 0) {
-			leadData = leadResults[0];
+			.from(applicants)
+			.where(eq(applicants.id, applicantId));
+		if (applicantResults.length > 0) {
+			applicantData = applicantResults[0];
 		}
 	} catch (err) {
-		console.error("[QuoteService] Failed to fetch lead:", err);
+		console.error("[QuoteService] Failed to fetch applicant:", err);
 		return {
 			success: false,
 			error: `Database Error: ${err instanceof Error ? err.message : String(err)}`,
@@ -70,16 +70,16 @@ export async function generateQuote(
 		};
 	}
 
-	if (!leadData) {
+	if (!applicantData) {
 		return {
 			success: false,
-			error: `Lead ${leadId} not found`,
+			error: `Applicant ${applicantId} not found`,
 			recoverable: false,
 		};
 	}
 
 	try {
-		const quoteDetails = await generateQuoteWithAI(leadData, workflowId);
+		const quoteDetails = await generateQuoteWithAI(applicantData, workflowId);
 		const detailsJson = JSON.stringify({
 			riskFactors: quoteDetails.riskFactors,
 			recommendation: quoteDetails.recommendation,
@@ -91,7 +91,7 @@ export async function generateQuote(
 			.insert(quotes)
 			.values({
 				workflowId,
-				leadId,
+				applicantId,
 				amount: quoteDetails.amount,
 				baseFeePercent: quoteDetails.baseFeePercent,
 				adjustedFeePercent: quoteDetails.adjustedFeePercent,
@@ -114,9 +114,9 @@ export async function generateQuote(
 		};
 
 		await notifyQuoteGenerated({
-			leadId,
+			applicantId,
 			workflowId,
-			companyName: leadData.companyName,
+			companyName: applicantData.companyName,
 			quote,
 		});
 
@@ -135,7 +135,7 @@ export async function generateQuote(
 }
 
 async function generateQuoteWithAI(
-	leadData: LeadRow,
+	applicantData: ApplicantRow,
 	workflowId: number,
 ): Promise<QuoteGenerationResult> {
 	console.log(
@@ -143,13 +143,13 @@ async function generateQuoteWithAI(
 	);
 	const prompt = `You are a pricing analyst generating a merchant services quote for StratCol.
 
-LEAD DETAILS:
-- Company: ${leadData.companyName}
-- Industry: ${leadData.industry || "Not provided"}
-- Employee count: ${leadData.employeeCount ?? "Not provided"}
-- Mandate volume (cents): ${leadData.mandateVolume ?? "Not provided"}
-- ITC score: ${leadData.itcScore ?? "Not provided"}
-- Mandate type: ${leadData.mandateType ?? "Not provided"}
+APPLICANT DETAILS:
+- Company: ${applicantData.companyName}
+- Industry: ${applicantData.industry || "Not provided"}
+- Employee count: ${applicantData.employeeCount ?? "Not provided"}
+- Mandate volume (cents): ${applicantData.mandateVolume ?? "Not provided"}
+- ITC score: ${applicantData.itcScore ?? "Not provided"}
+- Mandate type: ${applicantData.mandateType ?? "Not provided"}
 
 OUTPUT REQUIREMENTS:
 - amount: integer in cents (ZAR)
@@ -181,13 +181,13 @@ RULES:
 		}
 	}
 
-	return generateMockQuote(leadData);
+	return generateMockQuote(applicantData);
 }
 
-function generateMockQuote(leadData: LeadRow): QuoteGenerationResult {
-	const mandateVolume = leadData.mandateVolume ?? 5_000_000;
+function generateMockQuote(applicantData: ApplicantRow): QuoteGenerationResult {
+	const mandateVolume = applicantData.mandateVolume ?? 5_000_000;
 	const baseFeePercent = 150;
-	const itcScore = leadData.itcScore ?? 700;
+	const itcScore = applicantData.itcScore ?? 700;
 	const riskAdjustment = itcScore < 650 ? 50 : itcScore < 700 ? 25 : 0;
 	const adjustedFeePercent = Math.min(baseFeePercent + riskAdjustment, 500);
 
@@ -204,12 +204,12 @@ function generateMockQuote(leadData: LeadRow): QuoteGenerationResult {
 }
 
 async function notifyQuoteGenerated({
-	leadId,
+	applicantId,
 	workflowId,
 	companyName,
 	quote,
 }: {
-	leadId: number;
+	applicantId: number;
 	workflowId: number;
 	companyName: string;
 	quote: Quote;
@@ -220,7 +220,7 @@ async function notifyQuoteGenerated({
 		const response = await fetch(callbackUrl, {
 			method: "POST",
 			body: JSON.stringify({
-				leadId,
+				applicantId,
 				workflowId,
 				companyName,
 				quoteId: quote.quoteId,

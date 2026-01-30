@@ -44,7 +44,7 @@ import { toast } from "sonner";
 
 export interface WorkflowRow {
 	id: number;
-	leadId: number;
+	applicantId: number;
 	clientName: string;
 	stage: 1 | 2 | 3 | 4;
 	stageName: string;
@@ -604,7 +604,7 @@ export function WorkflowTable({ workflows, onRefresh }: WorkflowTableProps) {
 				<RiFlowChart className="mx-auto h-12 w-12 text-muted-foreground/50" />
 				<h3 className="mt-4 text-lg font-medium">No workflows yet</h3>
 				<p className="mt-2 text-sm text-muted-foreground">
-					Create a new lead to start an onboarding workflow.
+					Create a new applicant to start an onboarding workflow.
 				</p>
 			</div>
 		);

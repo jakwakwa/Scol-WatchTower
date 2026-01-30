@@ -17,7 +17,7 @@ import { Button } from "../ui/button";
 
 const navigation = [
 	{ name: "Overview", href: "/dashboard", icon: RiDashboardLine },
-	{ name: "Leads", href: "/dashboard/leads", icon: RiUserAddLine },
+	{ name: "Applicants", href: "/dashboard/applicants", icon: RiUserAddLine },
 	{ name: "Workflows", href: "/dashboard/workflows", icon: RiFlowChart },
 	{
 		name: "Risk Review",

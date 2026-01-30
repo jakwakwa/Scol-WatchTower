@@ -8,7 +8,7 @@ import { z } from "zod";
 // Flexible schema to handle both Quote and Approval payloads
 const approvalSchema = z.object({
 	workflowId: z.number().optional(),
-	leadId: z.number().optional(),
+	applicantId: z.number().optional(),
 	// Quote fields
 	quoteId: z.string().optional(),
 	amount: z.number().optional(),
@@ -20,19 +20,19 @@ const approvalSchema = z.object({
 });
 
 /**
- * POST /api/leads/approval
+ * POST /api/applicants/approval
  *
  * Handles callbacks from external platforms.
  * Depending on the payload and the current state of the workflow (if we could check),
  * it sends either a "Quote Generated" event or a "Quality Gate Passed" event.
  *
- * Since the user reported being stuck on "wait-for-quote" but calling "leads/approval",
+ * Since the user reported being stuck on "wait-for-quote" but calling "applicants/approval",
  * we prioritize checking for Quote data.
  */
 export async function POST(request: NextRequest) {
 	try {
 		const rawBody = await request.text();
-		console.log(`[API] Lead Approval/Callback Raw Body: ${rawBody}`);
+		console.log(`[API] Applicant Approval/Callback Raw Body: ${rawBody}`);
 
 		let body;
 		try {
@@ -65,9 +65,9 @@ export async function POST(request: NextRequest) {
 				workflow = await db.query.workflows.findFirst({
 					where: eq(workflows.id, workflowId),
 				});
-			} else if (data.leadId) {
+			} else if (data.applicantId) {
 				workflow = await db.query.workflows.findFirst({
-					where: eq(workflows.leadId, data.leadId),
+					where: eq(workflows.applicantId, data.applicantId),
 					orderBy: (workflows, { desc }) => [desc(workflows.startedAt)],
 				});
 				if (workflow) {
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
 		//    - Stage 2 + 'awaiting_human' -> Quality Gate
 
 		let eventName = "";
-		let eventData: any = { workflowId, leadId: data.leadId };
+		let eventData: any = { workflowId, applicantId: data.applicantId };
 
 		if (data.quoteId || data.amount) {
 			// Case: Quote Generated
@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
 			}
 
 			if (!eventName) {
-				// Final Fallback if we can't infer: assume Approved if it's "leads/approval" endpoint?
+				// Final Fallback if we can't infer: assume Approved if it's "applicants/approval" endpoint?
 				// But user log showed "timeout" waiting for quote.
 				// So if we are here, we really should default to whatever unblocks the user.
 

@@ -19,7 +19,7 @@ import { PipelineView } from "@/components/dashboard/pipeline-view";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { getDatabaseClient } from "@/app/utils";
-import { workflows, leads, workflowEvents, notifications } from "@/db/schema";
+import { workflows, applicants, workflowEvents, notifications } from "@/db/schema";
 import { desc, eq, count } from "drizzle-orm";
 import { DynamicWorkflowTable as WorkflowTable } from "@/components/dashboard/dynamic-components";
 
@@ -28,23 +28,23 @@ export default async function DashboardPage() {
 	let activeWorkflows: any[] = [];
 	let recentActivity: any[] = [];
 	let workflowsCount = 0;
-	let leadsCount = 0;
+	let applicantsCount = 0;
 
 	if (db) {
 		try {
-			// Fetch Workflows with Lead data
+			// Fetch Workflows with applicant data
 			const result = await db
 				.select({
 					id: workflows.id,
-					leadId: workflows.leadId,
-					stage: leads.status, // Use lead status for pipeline view
+					applicantId: workflows.applicantId,
+					stage: applicants.status, // Use applicant status for pipeline view
 					status: workflows.status,
 					startedAt: workflows.startedAt,
 					metadata: workflows.metadata,
-					clientName: leads.companyName,
+					clientName: applicants.companyName,
 				})
 				.from(workflows)
-				.leftJoin(leads, eq(workflows.leadId, leads.id))
+				.leftJoin(applicants, eq(workflows.applicantId, applicants.id))
 				.orderBy(desc(workflows.startedAt))
 				.limit(10);
 
@@ -63,12 +63,12 @@ export default async function DashboardPage() {
 					timestamp: workflowEvents.timestamp,
 					actorType: workflowEvents.actorType,
 					actorId: workflowEvents.actorId,
-					clientName: leads.companyName,
+					clientName: applicants.companyName,
 					payload: workflowEvents.payload,
 				})
 				.from(workflowEvents)
 				.innerJoin(workflows, eq(workflowEvents.workflowId, workflows.id))
-				.innerJoin(leads, eq(workflows.leadId, leads.id))
+				.innerJoin(applicants, eq(workflows.applicantId, applicants.id))
 				.orderBy(desc(workflowEvents.timestamp))
 				.limit(10);
 
@@ -106,8 +106,10 @@ export default async function DashboardPage() {
 			const wfCountResult = await db.select({ count: count() }).from(workflows);
 			workflowsCount = wfCountResult[0]?.count || 0;
 
-			const leadsCountResult = await db.select({ count: count() }).from(leads);
-			leadsCount = leadsCountResult[0]?.count || 0;
+			const applicantsCountResult = await db
+				.select({ count: count() })
+				.from(applicants);
+			applicantsCount = applicantsCountResult[0]?.count || 0;
 		} catch (error) {
 			console.error("Failed to fetch dashboard data:", error);
 		}
@@ -130,10 +132,10 @@ export default async function DashboardPage() {
 					read: notifications.read,
 					actionable: notifications.actionable,
 					createdAt: notifications.createdAt,
-					clientName: leads.companyName,
+					clientName: applicants.companyName,
 				})
 				.from(notifications)
-				.leftJoin(leads, eq(notifications.leadId, leads.id))
+				.leftJoin(applicants, eq(notifications.applicantId, applicants.id))
 				.orderBy(desc(notifications.createdAt))
 				.limit(20);
 
@@ -158,10 +160,10 @@ export default async function DashboardPage() {
 			title="Onboarding Pipeline"
 			description="Track and manage client applications through the onboarding process"
 			actions={
-				<Link href="/dashboard/leads/new">
+				<Link href="/dashboard/applicants/new">
 					<Button variant="secondary">
 						<RiUserAddLine color="var(--color-teal-200)" />
-						New Lead
+						New Applicant
 					</Button>
 				</Link>
 			}

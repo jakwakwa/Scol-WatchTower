@@ -5,12 +5,12 @@ description: "How AI quotes are generated, reviewed, and signed in onboarding."
 
 ## Overview
 
-Quotes are generated automatically by Gemini AI when a lead reaches Stage 2 of the onboarding workflow. The quote is stored as a draft and requires staff approval before the client can sign it. Once the client signs, the workflow continues to contract signing.
+Quotes are generated automatically by Gemini AI when an applicant reaches Stage 2 of the onboarding workflow. The quote is stored as a draft and requires staff approval before the client can sign it. Once the client signs, the workflow continues to contract signing.
 
 ## Staff workflow
 
-1. Go to **Dashboard → Leads**.
-2. For Stage 2 leads with a quote, open **Actions → Review Quote**.
+1. Go to **Dashboard → Applicants**.
+2. For Stage 2 applicants with a quote, open **Actions → Review Quote**.
 3. Review and edit the quote values:
    - **Amount** (cents)
    - **Base fee** (basis points)
@@ -68,6 +68,6 @@ Each wait has a 30-day timeout. If a timeout occurs, the workflow status is set 
 
 ## Troubleshooting
 
-- **No Review Quote action**: The lead is not in Stage 2 or no quote exists.
+- **No Review Quote action**: The applicant is not in Stage 2 or no quote exists.
 - **No quote generated**: Verify the workflow is running and AI config is set.
 - **Client did not receive email**: Configure `RESEND_API_KEY` or use server logs for links.

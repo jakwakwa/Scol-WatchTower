@@ -3,11 +3,11 @@
  * (Zapier webhooks removed - using direct Inngest events)
  */
 import { getDatabaseClient } from "@/app/utils";
-import { leads } from "@/db/schema";
+import { applicants } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 export interface DispatchPayload {
-	leadId: number;
+	applicantId: number;
 	workflowId: number;
 	riskScore: number;
 	anomalies: string[];
@@ -28,19 +28,19 @@ export async function dispatchToPlatform(
 	let clientName = "Unknown Client";
 
 	// Fetch client name
-	if (payload.leadId) {
+	if (payload.applicantId) {
 		const db = getDatabaseClient();
 		if (db) {
 			try {
-				const leadResults = await db
+				const applicantResults = await db
 					.select()
-					.from(leads)
-					.where(eq(leads.id, payload.leadId));
-				if (leadResults.length > 0 && leadResults[0]) {
-					clientName = leadResults[0].companyName;
+					.from(applicants)
+					.where(eq(applicants.id, payload.applicantId));
+				if (applicantResults.length > 0 && applicantResults[0]) {
+					clientName = applicantResults[0].companyName;
 				}
 			} catch (err) {
-				console.error("[NotificationService] Failed to fetch lead:", err);
+				console.error("[NotificationService] Failed to fetch applicant:", err);
 			}
 		}
 	}
@@ -55,7 +55,7 @@ export async function dispatchToPlatform(
 
 export interface EscalationPayload {
 	workflowId: number;
-	leadId: number;
+	applicantId: number;
 	reason: string;
 }
 
@@ -74,7 +74,7 @@ export async function escalateToManagement(
 	// For now, just log the escalation
 	console.log(`[NotificationService] Escalation logged:`, {
 		workflowId: payload.workflowId,
-		leadId: payload.leadId,
+		applicantId: payload.applicantId,
 		reason: payload.reason,
 	});
 }

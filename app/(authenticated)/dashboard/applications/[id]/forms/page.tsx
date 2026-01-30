@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getDatabaseClient } from "@/app/utils";
-import { workflows, leads, internalForms } from "@/db/schema";
+import { workflows, applicants, internalForms } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import {
 	RiArrowLeftLine,
@@ -135,14 +135,14 @@ export default async function FormsHubPage({
 		throw new Error("Database connection failed");
 	}
 
-	// Fetch workflow and lead
+	// Fetch workflow and applicant
 	const workflowResults = await db
 		.select({
 			workflow: workflows,
-			lead: leads,
+			applicant: applicants,
 		})
 		.from(workflows)
-		.leftJoin(leads, eq(workflows.leadId, leads.id))
+		.leftJoin(applicants, eq(workflows.applicantId, applicants.id))
 		.where(eq(workflows.id, workflowId))
 		.limit(1);
 
@@ -151,7 +151,7 @@ export default async function FormsHubPage({
 	}
 
 	const result = workflowResults[0];
-	const { workflow, lead } = result;
+	const { workflow, applicant } = result;
 
 	// Fetch all forms for this workflow
 	const forms = await db
@@ -189,7 +189,7 @@ export default async function FormsHubPage({
 						Onboarding Forms
 					</h1>
 					<p className="text-muted-foreground mt-1">
-						{lead?.companyName || "Unknown"} - Complete all required forms to
+						{applicant?.companyName || "Unknown"} - Complete all required forms to
 						proceed with onboarding
 					</p>
 				</div>

@@ -70,7 +70,11 @@ export function StageBadge({ stage }: { stage: string }) {
 		status = "warning";
 	else if (normalized.includes("contract") || normalized.includes("proposal"))
 		status = "brand";
-	else if (normalized.includes("lead") || normalized.includes("new"))
+	else if (
+		normalized.includes("lead") ||
+		normalized.includes("applicant") ||
+		normalized.includes("new")
+	)
 		status = "info";
 	else if (normalized.includes("lost")) status = "error";
 

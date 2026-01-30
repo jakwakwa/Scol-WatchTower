@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { GlassCard } from "@/components/dashboard";
 import { cn } from "@/lib/utils";
 
-interface LeadFormData {
+interface ApplicantFormData {
 	companyName: string;
 	registrationNumber: string;
 	contactName: string;
@@ -23,24 +23,24 @@ interface LeadFormData {
 	notes: string;
 }
 
-interface LeadFormProps {
-	initialData?: Partial<LeadFormData>;
-	onSubmit?: (data: LeadFormData) => Promise<void>;
+interface ApplicantFormProps {
+	initialData?: Partial<ApplicantFormData>;
+	onSubmit?: (data: ApplicantFormData) => Promise<void>;
 	isEditing?: boolean;
 }
 
-export function LeadForm({
+export function ApplicantForm({
 	initialData,
 	onSubmit,
 	isEditing = false,
-}: LeadFormProps) {
+}: ApplicantFormProps) {
 	const router = useRouter();
 	const [isLoading, setIsLoading] = useState(false);
 	const [errors, setErrors] = useState<
-		Partial<Record<keyof LeadFormData, string>>
+		Partial<Record<keyof ApplicantFormData, string>>
 	>({});
 
-	const [formData, setFormData] = useState<LeadFormData>({
+	const [formData, setFormData] = useState<ApplicantFormData>({
 		companyName: initialData?.companyName || "",
 		registrationNumber: initialData?.registrationNumber || "",
 		contactName: initialData?.contactName || "",
@@ -69,11 +69,11 @@ export function LeadForm({
 			mandateType: "debit_order",
 			employeeCount: "50",
 			estimatedVolume: "R500,000",
-			notes: "Mockaroo test lead - auto-generated for credit check testing",
+			notes: "Mockaroo test applicant - auto-generated for credit check testing",
 		});
 	};
 
-	const updateField = (field: keyof LeadFormData, value: string) => {
+	const updateField = (field: keyof ApplicantFormData, value: string) => {
 		setFormData((prev) => ({ ...prev, [field]: value }));
 		// Clear error when user starts typing
 		if (errors[field]) {
@@ -82,7 +82,7 @@ export function LeadForm({
 	};
 
 	const validateForm = (): boolean => {
-		const newErrors: Partial<Record<keyof LeadFormData, string>> = {};
+		const newErrors: Partial<Record<keyof ApplicantFormData, string>> = {};
 
 		if (!formData.companyName.trim()) {
 			newErrors.companyName = "Company name is required";
@@ -112,7 +112,7 @@ export function LeadForm({
 				await onSubmit(formData);
 			} else {
 				// Default behavior: POST to API
-				const response = await fetch("/api/leads", {
+				const response = await fetch("/api/applicants", {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({
@@ -124,14 +124,14 @@ export function LeadForm({
 				});
 
 				if (!response.ok) {
-					throw new Error("Failed to create lead");
+					throw new Error("Failed to create applicant");
 				}
 
-				router.push("/dashboard/leads");
+				router.push("/dashboard/applicants");
 				router.refresh();
 			}
 		} catch (error) {
-			console.error("Error saving lead:", error);
+			console.error("Error saving applicant:", error);
 		} finally {
 			setIsLoading(false);
 		}
@@ -296,7 +296,7 @@ export function LeadForm({
 						id="notes"
 						value={formData.notes}
 						onChange={(e) => updateField("notes", e.target.value)}
-						placeholder="Add any relevant notes about this lead..."
+						placeholder="Add any relevant notes about this applicant..."
 						rows={4}
 					/>
 				</div>
@@ -318,7 +318,7 @@ export function LeadForm({
 					className="gap-2 bg-linear-to-r from-stone-500 to-stone-500 hover:from-stone-600 hover:to-stone-600"
 				>
 					{isLoading && <RiLoader4Line className="h-4 w-4 animate-spin" />}
-					{isEditing ? "Save Changes" : "Create Lead"}
+					{isEditing ? "Save Changes" : "Create Applicant"}
 				</Button>
 			</div>
 		</form>

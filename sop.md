@@ -10,7 +10,7 @@ Create Zod schemas for:
 
 Create a multi-step Inngest function `stratcol-client-onboarding`.
 
-- **Trigger:** `crm/lead.created`
+- **Trigger:** `crm/applicant.created`
 - **Step 1 `run-itc-check`:** Mock an API call to a credit bureau. If score < 600, throw a "Auto-Decline" error or route to manual review.
 - **Step 2 `generate-legal-pack`:** Mock the generation of Facility App & Quote.
 - **Step 3 `wait-for-documents`:** Use `step.waitForEvent` to pause execution until the event `upload/fica.received` is fired. Timeout: 14 days.

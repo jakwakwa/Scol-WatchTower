@@ -7,7 +7,7 @@ export const createQuoteSchema = z.preprocess(
 		const v = val as Record<string, unknown>;
 		return {
 			workflowId: v.workflowId ?? v.workflow_id,
-			leadId: v.leadId ?? v.lead_id,
+			applicantId: v.applicantId ?? v.applicant_id,
 			amount: v.amount,
 			baseFeePercent: v.baseFeePercent ?? v.base_fee_percent,
 			adjustedFeePercent: v.adjustedFeePercent ?? v.adjusted_fee_percent,
@@ -18,7 +18,7 @@ export const createQuoteSchema = z.preprocess(
 	},
 	z.object({
 		workflowId: z.coerce.number().int().positive(),
-		leadId: z.coerce.number().int().positive().optional(),
+		applicantId: z.coerce.number().int().positive().optional(),
 		amount: z.coerce.number().int().positive(), // Cents
 		baseFeePercent: z.coerce.number().int().positive(), // Basis points
 		adjustedFeePercent: z.coerce.number().int().positive().optional(), // Basis points

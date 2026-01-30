@@ -29,7 +29,7 @@ type PipelineWorkflow = {
 const PIPELINE_STAGES = [
 	{
 		id: "new",
-		title: "Lead Engagement",
+		title: "Applicant Engagement",
 		color: "border-t-blue-400",
 		icon: RiFileTextLine,
 	},

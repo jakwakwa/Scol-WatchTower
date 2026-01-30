@@ -5,17 +5,17 @@ import { DashboardLayout } from "@/components/dashboard";
 import { Button } from "@/components/ui/button";
 import { QuoteApprovalForm } from "@/components/dashboard/quote-approval-form";
 import { getDatabaseClient } from "@/app/utils";
-import { leads, workflows, quotes } from "@/db/schema";
+import { applicants, workflows, quotes } from "@/db/schema";
 
-export default async function LeadQuotePage({
+export default async function ApplicantQuotePage({
 	params,
 }: {
 	params: Promise<{ id: string }>;
 }) {
 	const { id } = await params;
-	const leadId = Number(id);
+	const applicantId = Number(id);
 
-	if (!Number.isFinite(leadId)) {
+	if (!Number.isFinite(applicantId)) {
 		notFound();
 	}
 
@@ -24,18 +24,21 @@ export default async function LeadQuotePage({
 		throw new Error("Database connection failed");
 	}
 
-	const leadResults = await db.select().from(leads).where(eq(leads.id, leadId));
+	const applicantResults = await db
+		.select()
+		.from(applicants)
+		.where(eq(applicants.id, applicantId));
 
-	if (leadResults.length === 0) {
+	if (applicantResults.length === 0) {
 		notFound();
 	}
 
-	const [lead] = leadResults;
+	const [applicant] = applicantResults;
 
 	const workflowResults = await db
 		.select()
 		.from(workflows)
-		.where(eq(workflows.leadId, leadId))
+		.where(eq(workflows.applicantId, applicantId))
 		.orderBy(desc(workflows.startedAt))
 		.limit(1);
 
@@ -45,11 +48,11 @@ export default async function LeadQuotePage({
 		return (
 			<DashboardLayout
 				title="Quote Review"
-				description="No workflow found for this lead."
+				description="No workflow found for this applicant."
 				actions={
-					<Link href={`/dashboard/leads/${leadId}`}>
+					<Link href={`/dashboard/applicants/${applicantId}`}>
 						<Button variant="outline" size="sm">
-							Back to lead
+							Back to applicant
 						</Button>
 					</Link>
 				}
@@ -74,11 +77,11 @@ export default async function LeadQuotePage({
 		return (
 			<DashboardLayout
 				title="Quote Review"
-				description={`Lead: ${lead.companyName}`}
+				description={`Applicant: ${applicant.companyName}`}
 				actions={
-					<Link href={`/dashboard/leads/${leadId}`}>
+					<Link href={`/dashboard/applicants/${applicantId}`}>
 						<Button variant="outline" size="sm">
-							Back to lead
+							Back to applicant
 						</Button>
 					</Link>
 				}
@@ -93,12 +96,12 @@ export default async function LeadQuotePage({
 	return (
 		<DashboardLayout
 			title="Quote Review"
-			description={`Lead: ${lead.companyName}`}
+			description={`Applicant: ${applicant.companyName}`}
 			actions={
 				<div className="flex flex-wrap gap-2">
-					<Link href={`/dashboard/leads/${leadId}`}>
+					<Link href={`/dashboard/applicants/${applicantId}`}>
 						<Button variant="outline" size="sm">
-							Back to lead
+							Back to applicant
 						</Button>
 					</Link>
 					<Link href={`/dashboard/workflows/${workflow.id}`}>
@@ -110,7 +113,7 @@ export default async function LeadQuotePage({
 			}
 		>
 			<QuoteApprovalForm
-				leadId={lead.id}
+				applicantId={applicant.id}
 				workflowId={workflow.id}
 				quoteId={quote.id}
 				status={quote.status}

@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/status-badge";
 import { useParams } from "next/navigation";
 
-interface LeadDetail {
+interface ApplicantDetail {
 	id: number;
 	companyName: string;
 	tradingName?: string | null;
@@ -40,7 +40,7 @@ interface LeadDetail {
 	createdAt?: string | number | Date | null;
 }
 
-interface LeadDocument {
+interface ApplicantDocument {
 	id: number;
 	type: string;
 	fileName?: string | null;
@@ -48,14 +48,14 @@ interface LeadDocument {
 	uploadedAt?: string | number | Date | null;
 }
 
-interface LeadFormSubmission {
+interface ApplicantFormSubmission {
 	id: number;
 	formType: string;
 	submittedAt?: string | number | Date | null;
 	submittedBy?: string | null;
 }
 
-interface LeadFormInstance {
+interface ApplicantFormInstance {
 	id: number;
 	formType: string;
 	status: string;
@@ -69,37 +69,39 @@ const formatDate = (value?: string | number | Date | null) => {
 	return date.toLocaleDateString();
 };
 
-export default function ClientDetailPage() {
+export default function ApplicantDetailPage() {
 	const params = useParams();
 	const id = params.id as string;
-	const [lead, setLead] = useState<LeadDetail | null>(null);
-	const [documents, setDocuments] = useState<LeadDocument[]>([]);
+	const [applicant, setApplicant] = useState<ApplicantDetail | null>(null);
+	const [documents, setDocuments] = useState<ApplicantDocument[]>([]);
 	const [applicantSubmissions, setApplicantSubmissions] = useState<
-		LeadFormSubmission[]
+		ApplicantFormSubmission[]
 	>([]);
 	const [applicantMagiclinkForms, setApplicantMagiclinkForms] = useState<
-		LeadFormInstance[]
+		ApplicantFormInstance[]
 	>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
 	useEffect(() => {
 		let mounted = true;
-		const fetchLead = async () => {
+		const fetchApplicant = async () => {
 			try {
-				const response = await fetch(`/api/leads/${id}`);
+				const response = await fetch(`/api/applicants/${id}`);
 				if (!response.ok) {
-					throw new Error("Failed to fetch lead");
+					throw new Error("Failed to fetch applicant");
 				}
 				const data = await response.json();
 				if (!mounted) return;
-				setLead(data.lead);
+				setApplicant(data.applicant);
 				setDocuments(data.documents || []);
 				setApplicantSubmissions(data.applicantSubmissions || []);
 				setApplicantMagiclinkForms(data.applicantMagiclinkForms || []);
 			} catch (err) {
 				if (!mounted) return;
-				setError(err instanceof Error ? err.message : "Failed to load lead");
+				setError(
+					err instanceof Error ? err.message : "Failed to load applicant",
+				);
 			} finally {
 				if (mounted) {
 					setLoading(false);
@@ -107,7 +109,7 @@ export default function ClientDetailPage() {
 			}
 		};
 
-		fetchLead();
+		fetchApplicant();
 		return () => {
 			mounted = false;
 		};
@@ -115,21 +117,31 @@ export default function ClientDetailPage() {
 
 	if (loading) {
 		return (
-			<DashboardLayout title="Loading..." description="Fetching lead details">
-				<p className="text-sm text-muted-foreground">Loading lead details...</p>
+			<DashboardLayout
+				title="Loading..."
+				description="Fetching applicant details"
+			>
+				<p className="text-sm text-muted-foreground">
+					Loading applicant details...
+				</p>
 			</DashboardLayout>
 		);
 	}
 
-	if (error || !lead) {
+	if (error || !applicant) {
 		return (
-			<DashboardLayout title="Lead not found" description="Unable to load lead">
-				<p className="text-sm text-destructive">{error || "Lead not found"}</p>
+			<DashboardLayout
+				title="Applicant not found"
+				description="Unable to load applicant"
+			>
+				<p className="text-sm text-destructive">
+					{error || "Applicant not found"}
+				</p>
 			</DashboardLayout>
 		);
 	}
 
-	const client = lead;
+	const client = applicant;
 
 	return (
 		<DashboardLayout

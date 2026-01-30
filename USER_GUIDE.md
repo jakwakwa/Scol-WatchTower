@@ -15,7 +15,7 @@ Applications progress through a standardized journey:
 
 ```mermaid
 graph LR
-    A[Lead] --> B[Contracting]
+    A[Applicant] --> B[Contracting]
     B --> C[FICA Review]
     C --> D[Activation]
     D --> E[Completed]
@@ -27,7 +27,7 @@ graph LR
     style E fill:#10b981,color:#fff
 ```
 
-1.  **Lead**: Initial entry. A new application is created with basic company details.
+1.  **Applicant**: Initial entry. A new application is created with basic company details.
 2.  **Contracting**: Document signing and initial ITC credit checks.
 3.  **FICA Review**: Human-in-the-loop verification of documents and AI risk scoring.
 4.  **Activation**: Integration ready for V24 system.
@@ -36,14 +36,14 @@ graph LR
 ## 3. User Role Flows
 
 ### Relationship Manager (Sales)
-Responsible for initiating leads and ensuring clients provide necessary documentation.
+Responsible for initiating applicants and ensuring clients provide necessary documentation.
 
 ```mermaid
 sequenceDiagram
     participant RM as Relationship Manager
     participant App as Platform
     participant Client as Client
-    RM->>App: Create New Application (Lead)
+    RM->>App: Create New Application (Applicant)
     App-->>RM: Application ID Generated
     RM->>Client: Request Mandate Documents
     Client->>App: Upload Docs (Bank Stmt, ID)

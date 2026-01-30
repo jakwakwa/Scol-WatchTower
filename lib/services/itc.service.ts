@@ -11,7 +11,7 @@
  */
 
 import { getDatabaseClient } from "@/app/utils";
-import { leads } from "@/db/schema";
+import { applicants } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import {
 	type ITCCheckResult,
@@ -51,11 +51,11 @@ let cachedToken: { token: string; expiresAt: number } | null = null;
 // ============================================
 
 export interface ITCCheckOptions {
-	/** Lead ID to check */
-	leadId: number;
+	/** Applicant ID to check */
+	applicantId: number;
 	/** Workflow ID for tracking */
 	workflowId: number;
-	/** Company registration number (optional, fetched from lead if not provided) */
+	/** Company registration number (optional, fetched from applicant if not provided) */
 	registrationNumber?: string;
 	/** Force a specific score for testing */
 	forceScore?: number;
@@ -66,49 +66,49 @@ export interface ITCCheckOptions {
 // ============================================
 
 /**
- * Perform ITC credit check for a lead
+ * Perform ITC credit check for an applicant
  */
 export async function performITCCheck(
 	options: ITCCheckOptions,
 ): Promise<ITCCheckResult> {
-	const { leadId, workflowId, forceScore } = options;
+	const { applicantId, workflowId, forceScore } = options;
 
 	console.log(
-		`[ITCService] Performing credit check for Lead ${leadId}, Workflow ${workflowId}`,
+		`[ITCService] Performing credit check for Applicant ${applicantId}, Workflow ${workflowId}`,
 	);
 
-	// Fetch lead data
+	// Fetch applicant data
 	const db = getDatabaseClient();
-	let leadData = null;
+	let applicantData = null;
 
 	if (db) {
 		try {
-			const leadResults = await db
+			const applicantResults = await db
 				.select()
-				.from(leads)
-				.where(eq(leads.id, leadId));
-			if (leadResults.length > 0) {
-				leadData = leadResults[0];
+				.from(applicants)
+				.where(eq(applicants.id, applicantId));
+			if (applicantResults.length > 0) {
+				applicantData = applicantResults[0];
 			}
 		} catch (err) {
-			console.error("[ITCService] Failed to fetch lead:", err);
+			console.error("[ITCService] Failed to fetch applicant:", err);
 			throw new Error(
-				`Failed to fetch lead data: ${err instanceof Error ? err.message : String(err)}`,
+				`Failed to fetch applicant data: ${err instanceof Error ? err.message : String(err)}`,
 			);
 		}
 	}
 
-	if (!leadData) {
-		throw new Error(`[ITCService] Lead ${leadId} not found`);
+	if (!applicantData) {
+		throw new Error(`[ITCService] Applicant ${applicantId} not found`);
 	}
 
 	// Check if Experian is configured
 	if (isExperianConfigured()) {
 		try {
 			const registrationNumber =
-				options.registrationNumber || extractRegistrationNumber(leadData);
+				options.registrationNumber || extractRegistrationNumber(applicantData);
 			if (registrationNumber) {
-				return await performExperianCheck(registrationNumber, leadId);
+				return await performExperianCheck(registrationNumber, applicantId);
 			}
 			console.warn(
 				"[ITCService] No registration number found, falling back to mock",
@@ -127,10 +127,10 @@ export async function performITCCheck(
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
-					leadId,
+					applicantId,
 					workflowId,
-					companyName: leadData.companyName,
-					registrationNumber: leadData.notes,
+					companyName: applicantData.companyName,
+					registrationNumber: applicantData.notes,
 					callbackUrl: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/callbacks/itc`,
 				}),
 			});
@@ -158,12 +158,12 @@ export async function performITCCheck(
 		try {
 			const registrationNumber =
 				options.registrationNumber ||
-				extractRegistrationNumber(leadData) ||
+				extractRegistrationNumber(applicantData) ||
 				"2023/000001/07";
 			return await performMockarooCheck(
 				registrationNumber,
-				leadData.companyName,
-				leadId,
+				applicantData.companyName,
+				applicantId,
 			);
 		} catch (err) {
 			console.warn(
@@ -174,7 +174,7 @@ export async function performITCCheck(
 	}
 
 	// Mock ITC check (fallback)
-	return generateMockITCResult(leadData, leadId, forceScore);
+	return generateMockITCResult(applicantData, applicantId, forceScore);
 }
 
 // ============================================
@@ -230,7 +230,7 @@ async function getExperianToken(): Promise<string> {
  */
 async function performExperianCheck(
 	registrationNumber: string,
-	leadId: number,
+	applicantId: number,
 ): Promise<ITCCheckResult> {
 	console.log(
 		`[ITCService] Calling Experian API for registration: ${registrationNumber}`,
@@ -275,7 +275,7 @@ async function performExperianCheck(
 			creditor: listing.creditor || "Unknown",
 		})),
 		checkedAt: new Date(),
-		referenceNumber: `EXP-${data.requestId}-${leadId}`,
+		referenceNumber: `EXP-${data.requestId}-${applicantId}`,
 		rawResponse: data,
 	};
 
@@ -291,19 +291,19 @@ async function performExperianCheck(
 }
 
 /**
- * Extract registration number from lead data
+ * Extract registration number from applicant data
  */
-function extractRegistrationNumber(leadData: {
+function extractRegistrationNumber(applicantData: {
 	registrationNumber?: string | null;
 	notes?: string | null;
 }): string | null {
 	// First check the dedicated registrationNumber field
-	if (leadData.registrationNumber) {
-		return leadData.registrationNumber;
+	if (applicantData.registrationNumber) {
+		return applicantData.registrationNumber;
 	}
 	// Fallback: check notes field for registration number pattern
-	if (leadData.notes) {
-		const regMatch = leadData.notes.match(/\d{4}\/\d+\/\d{2}/);
+	if (applicantData.notes) {
+		const regMatch = applicantData.notes.match(/\d{4}\/\d+\/\d{2}/);
 		if (regMatch) {
 			return regMatch[0];
 		}
@@ -339,7 +339,7 @@ interface MockarooResponse {
 async function performMockarooCheck(
 	registrationNumber: string,
 	companyName: string,
-	leadId: number,
+	applicantId: number,
 ): Promise<ITCCheckResult> {
 	console.log(
 		`[ITCService] Calling Mockaroo API for registration: ${registrationNumber}`,
@@ -371,7 +371,7 @@ async function performMockarooCheck(
 		recommendation: getRecommendation(creditScore),
 		adverseListings: [],
 		checkedAt: new Date(),
-		referenceNumber: `MOC-${Date.now()}-${leadId}`,
+		referenceNumber: `MOC-${Date.now()}-${applicantId}`,
 		rawResponse: data,
 	};
 
@@ -415,11 +415,11 @@ function mapMockarooRiskBand(
  * Generate mock ITC result for testing/development
  */
 function generateMockITCResult(
-	leadData: { companyName: string },
-	leadId: number,
+	applicantData: { companyName: string },
+	applicantId: number,
 	forceScore?: number,
 ): ITCCheckResult {
-	const mockScore = forceScore ?? generateMockScore(leadData);
+	const mockScore = forceScore ?? generateMockScore(applicantData);
 
 	const result: ITCCheckResult = {
 		creditScore: mockScore,
@@ -428,11 +428,11 @@ function generateMockITCResult(
 		recommendation: getRecommendation(mockScore),
 		adverseListings: mockScore < 650 ? generateMockAdverseListings() : [],
 		checkedAt: new Date(),
-		referenceNumber: `MOCK-${Date.now()}-${leadId}`,
+		referenceNumber: `MOCK-${Date.now()}-${applicantId}`,
 	};
 
 	console.log(`[ITCService] Mock credit check complete:`, {
-		leadId,
+		applicantId,
 		score: result.creditScore,
 		category: result.riskCategory,
 		recommendation: result.recommendation,
@@ -442,11 +442,11 @@ function generateMockITCResult(
 }
 
 /**
- * Generate mock credit score based on lead data
+ * Generate mock credit score based on applicant data
  */
-function generateMockScore(leadData: { companyName: string }): number {
+function generateMockScore(applicantData: { companyName: string }): number {
 	let hash = 0;
-	const name = leadData.companyName.toLowerCase();
+	const name = applicantData.companyName.toLowerCase();
 	for (let i = 0; i < name.length; i++) {
 		hash = (hash << 5) - hash + name.charCodeAt(i);
 		hash = hash & hash;

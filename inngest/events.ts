@@ -1,7 +1,3 @@
-import { type EventSchemas } from "inngest";
-import type { WorkflowStatus } from "@/inngest/steps/database";
-import type { FormType } from "@/db/schema";
-
 // ============================================
 // Form Types for Events
 // ============================================
@@ -25,13 +21,13 @@ export type DocumentVerificationResult = {
 
 export type Events = {
 	// ================================================================
-	// Lead & Workflow Events
+	// Applicant & Workflow Events
 	// ================================================================
 
-	/** Triggered when a new lead is created and workflow starts */
+	/** Triggered when a new applicant is created and workflow starts */
 	"onboarding/lead.created": {
 		data: {
-			leadId: number;
+			applicantId: number;
 			workflowId: number;
 		};
 	};
@@ -76,7 +72,7 @@ export type Events = {
 	"onboarding/quote-generated": {
 		data: {
 			workflowId: number;
-			leadId: number;
+			applicantId: number;
 			quote: {
 				quoteId: string;
 				amount: number;
@@ -89,7 +85,7 @@ export type Events = {
 	"quote/approved": {
 		data: {
 			workflowId: number;
-			leadId: number;
+			applicantId: number;
 			quoteId: number;
 			approvedAt: string;
 		};
@@ -99,7 +95,7 @@ export type Events = {
 	"quote/signed": {
 		data: {
 			workflowId: number;
-			leadId: number;
+			applicantId: number;
 			quoteId: number;
 			signedAt: string;
 		};
@@ -127,9 +123,9 @@ export type Events = {
 	"form/submitted": {
 		data: {
 			workflowId: number;
-			leadId: number;
+			applicantId: number;
 			formType: string;
-			formInstanceId: number;
+			applicantMagiclinkFormId: number;
 			submittedAt: string;
 		};
 	};
@@ -138,7 +134,7 @@ export type Events = {
 	"document/uploaded": {
 		data: {
 			workflowId: number;
-			leadId: number;
+			applicantId: number;
 			documentId: number;
 			documentType: string;
 			category?: string;
@@ -150,7 +146,7 @@ export type Events = {
 	"document/processed": {
 		data: {
 			workflowId: number;
-			leadId: number;
+			applicantId: number;
 			documentId: number;
 			documentType: string;
 			status: "processed" | "failed";
@@ -166,7 +162,7 @@ export type Events = {
 	"itc/check.completed": {
 		data: {
 			workflowId: number;
-			leadId: number;
+			applicantId: number;
 			result: {
 				creditScore: number;
 				riskCategory: "LOW" | "MEDIUM" | "HIGH" | "VERY_HIGH";
@@ -190,7 +186,7 @@ export type Events = {
 	"upload/fica.received": {
 		data: {
 			workflowId: number;
-			leadId: number;
+			applicantId: number;
 			documents: Array<{
 				type:
 					| "BANK_STATEMENT"
@@ -209,7 +205,7 @@ export type Events = {
 	"fica/analysis.completed": {
 		data: {
 			workflowId: number;
-			leadId: number;
+			applicantId: number;
 			analysis: {
 				aiTrustScore: number;
 				recommendation:
@@ -235,7 +231,7 @@ export type Events = {
 	"risk/decision.received": {
 		data: {
 			workflowId: number;
-			leadId: number;
+			applicantId: number;
 			decision: {
 				outcome: "APPROVED" | "REJECTED" | "REQUEST_MORE_INFO";
 				decidedBy: string; // Risk Manager email/ID
@@ -254,7 +250,7 @@ export type Events = {
 	"v24/client.created": {
 		data: {
 			workflowId: number;
-			leadId: number;
+			applicantId: number;
 			v24Response: {
 				success: boolean;
 				clientId?: string;
@@ -269,7 +265,7 @@ export type Events = {
 	"v24/training.scheduled": {
 		data: {
 			workflowId: number;
-			leadId: number;
+			applicantId: number;
 			session: {
 				sessionId: string;
 				scheduledDate: string;
@@ -282,7 +278,7 @@ export type Events = {
 	"v24/welcome.sent": {
 		data: {
 			workflowId: number;
-			leadId: number;
+			applicantId: number;
 			sentTo: string; // Email
 			timestamp: string;
 		};
@@ -371,7 +367,7 @@ export type Events = {
 	"onboarding/validation-complete": {
 		data: {
 			workflowId: number;
-			leadId: number;
+			applicantId: number;
 			validationType: "identity" | "entity" | "risk" | "social";
 			passed: boolean;
 			details: Record<string, unknown>;

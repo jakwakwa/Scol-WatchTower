@@ -6,7 +6,7 @@ import { inngest } from "@/inngest";
 
 // Schema for creating a workflow (define locally if not available in validations yet)
 const createWorkflowSchema = z.object({
-	leadId: z.number(),
+	applicantId: z.number(),
 	stage: z.number().default(1),
 	stageName: z
 		.enum(["lead_capture", "dynamic_quotation", "verification", "integration"])
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
 		const newWorkflowResults = await db
 			.insert(workflows)
 			.values({
-				leadId: data.leadId,
+				applicantId: data.applicantId,
 				stage: data.stage,
 				stageName: data.stageName,
 				status: data.status,
@@ -106,7 +106,10 @@ export async function POST(request: NextRequest) {
 		try {
 			await inngest.send({
 				name: "onboarding/lead.created",
-				data: { leadId: newWorkflow.leadId, workflowId: newWorkflow.id },
+				data: {
+					applicantId: newWorkflow.applicantId,
+					workflowId: newWorkflow.id,
+				},
 			});
 		} catch (inngestError) {
 			console.error("Failed to start Inngest workflow:", inngestError);

@@ -49,19 +49,19 @@ export async function POST(
 			.returning();
 
 		const updatedQuote = updatedQuoteResults[0];
-		let leadId = updatedQuote.leadId ?? null;
+		let applicantId = updatedQuote.applicantId ?? null;
 
-		if (!leadId) {
+		if (!applicantId) {
 			const workflowResults = await db
 				.select()
 				.from(workflows)
 				.where(eq(workflows.id, updatedQuote.workflowId));
-			leadId = workflowResults[0]?.leadId ?? null;
+			applicantId = workflowResults[0]?.applicantId ?? null;
 		}
 
-		if (!leadId) {
+		if (!applicantId) {
 			return NextResponse.json(
-				{ error: "Lead ID missing for quote approval" },
+				{ error: "Applicant ID missing for quote approval" },
 				{ status: 400 },
 			);
 		}
@@ -70,7 +70,7 @@ export async function POST(
 			name: "quote/approved",
 			data: {
 				workflowId: updatedQuote.workflowId,
-				leadId,
+				applicantId,
 				quoteId: updatedQuote.id,
 				approvedAt: new Date().toISOString(),
 			},

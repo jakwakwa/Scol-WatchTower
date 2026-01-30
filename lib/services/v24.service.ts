@@ -11,7 +11,7 @@
  */
 
 import { getDatabaseClient } from "@/app/utils";
-import { leads, workflows } from "@/db/schema";
+import { applicants, workflows } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import {
 	type V24ClientProfile,
@@ -23,7 +23,7 @@ import {
 import { v4 as uuidv4 } from "uuid";
 
 export interface CreateClientOptions {
-	leadId: number;
+	applicantId: number;
 	workflowId: number;
 	mandateType: MandateType;
 	approvedVolume: number;
@@ -50,28 +50,28 @@ export interface WelcomePackOptions {
 export async function createV24ClientProfile(
 	options: CreateClientOptions,
 ): Promise<V24Response> {
-	const { leadId, workflowId, mandateType, approvedVolume, feePercent } =
+	const { applicantId, workflowId, mandateType, approvedVolume, feePercent } =
 		options;
 
 	console.log(
-		`[V24Service] Creating client profile for Lead ${leadId}, Workflow ${workflowId}`,
+		`[V24Service] Creating client profile for Applicant ${applicantId}, Workflow ${workflowId}`,
 	);
 
-	// Fetch lead data
+	// Fetch applicant data
 	const db = getDatabaseClient();
-	let leadData = null;
+	let applicantData = null;
 
 	if (db) {
 		try {
-			const leadResults = await db
+			const applicantResults = await db
 				.select()
-				.from(leads)
-				.where(eq(leads.id, leadId));
-			if (leadResults.length > 0) {
-				leadData = leadResults[0];
+				.from(applicants)
+				.where(eq(applicants.id, applicantId));
+			if (applicantResults.length > 0) {
+				applicantData = applicantResults[0];
 			}
 		} catch (err) {
-			console.error("[V24Service] Failed to fetch lead:", err);
+			console.error("[V24Service] Failed to fetch applicant:", err);
 			return {
 				success: false,
 				error: `Database error: ${err instanceof Error ? err.message : String(err)}`,
@@ -79,10 +79,10 @@ export async function createV24ClientProfile(
 		}
 	}
 
-	if (!leadData) {
+	if (!applicantData) {
 		return {
 			success: false,
-			error: `Lead ${leadId} not found`,
+			error: `Applicant ${applicantId} not found`,
 		};
 	}
 
@@ -98,10 +98,10 @@ export async function createV24ClientProfile(
 					Authorization: `Bearer ${process.env.V24_API_KEY || ""}`,
 				},
 				body: JSON.stringify({
-					companyName: leadData.companyName,
-					contactName: leadData.contactName,
-					email: leadData.email,
-					phone: leadData.phone,
+					companyName: applicantData.companyName,
+					contactName: applicantData.contactName,
+					email: applicantData.email,
+					phone: applicantData.phone,
 					mandateType,
 					volumeLimit: approvedVolume,
 					feePercent,
@@ -124,13 +124,13 @@ export async function createV24ClientProfile(
 	}
 
 	// Mock V24 client creation
-	const v24Reference = `V24-${Date.now().toString(36).toUpperCase()}-${leadId}`;
+	const v24Reference = `V24-${Date.now().toString(36).toUpperCase()}-${applicantId}`;
 	const clientId = uuidv4();
 
 	console.log(`[V24Service] Mock client created:`, {
 		clientId,
 		v24Reference,
-		companyName: leadData.companyName,
+		companyName: applicantData.companyName,
 		mandateType,
 	});
 
@@ -141,7 +141,7 @@ export async function createV24ClientProfile(
 		success: true,
 		clientId,
 		v24Reference,
-		message: `Client ${leadData.companyName} successfully created in V24`,
+		message: `Client ${applicantData.companyName} successfully created in V24`,
 	};
 }
 

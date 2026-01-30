@@ -2,7 +2,7 @@
 
 /**
  * Setup test data for quote API testing
- * Creates a test lead and workflow if they don't exist
+ * Creates a test applicant and workflow if they don't exist
  */
 
 import { createClient } from "@libsql/client";
@@ -24,9 +24,9 @@ async function setupTestData() {
 	console.log("🔧 Setting up test data...\n");
 
 	try {
-		// Create a test lead
-		const [testLead] = await db
-			.insert(schema.leads)
+		// Create a test applicant
+		const [testApplicant] = await db
+			.insert(schema.applicants)
 			.values([
 				{
 					companyName: "Test Company Inc",
@@ -36,16 +36,16 @@ async function setupTestData() {
 					industry: "Technology",
 					mandateVolume: 500000,
 					status: "qualified",
-					notes: "Test lead for API testing",
+					notes: "Test applicant for API testing",
 				},
 			])
 			.returning();
 
-		if (!testLead) throw new Error("Failed to create test lead");
+		if (!testApplicant) throw new Error("Failed to create test applicant");
 
-		console.log("✅ Created test lead:");
-		console.log(`   ID: ${testLead.id}`);
-		console.log(`   Company: ${testLead.companyName}`);
+		console.log("✅ Created test applicant:");
+		console.log(`   ID: ${testApplicant.id}`);
+		console.log(`   Company: ${testApplicant.companyName}`);
 		console.log();
 
 		// Create a test workflow
@@ -53,7 +53,7 @@ async function setupTestData() {
 			.insert(schema.workflows)
 			.values([
 				{
-					leadId: testLead.id,
+					applicantId: testApplicant.id,
 					stage: 2,
 					status: "in_progress",
 				},
@@ -64,7 +64,7 @@ async function setupTestData() {
 
 		console.log("✅ Created test workflow:");
 		console.log(`   ID: ${testWorkflow.id}`);
-		console.log(`   Lead ID: ${testWorkflow.leadId}`);
+		console.log(`   Applicant ID: ${testWorkflow.applicantId}`);
 		console.log(`   Stage: ${testWorkflow.stage}`);
 		console.log();
 
@@ -73,7 +73,7 @@ async function setupTestData() {
 			`\n💡 Use workflowId: ${testWorkflow.id} in your test payload\n`,
 		);
 
-		return { lead: testLead, workflow: testWorkflow };
+		return { applicant: testApplicant, workflow: testWorkflow };
 	} catch (error) {
 		console.error("❌ Error setting up test data:", error);
 		throw error;

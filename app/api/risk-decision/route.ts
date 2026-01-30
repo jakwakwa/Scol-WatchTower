@@ -5,7 +5,7 @@
  * Sends the 'risk/decision.received' event to Inngest to resume the Saga.
  *
  * POST /api/risk-decision
- * Body: { workflowId, leadId, decision: { outcome, reason?, conditions? } }
+ * Body: { workflowId, applicantId, decision: { outcome, reason?, conditions? } }
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -22,7 +22,7 @@ import { auth } from "@clerk/nextjs/server";
 
 const RiskDecisionSchema = z.object({
 	workflowId: z.number().int().positive("Workflow ID is required"),
-	leadId: z.number().int().positive("Lead ID is required"),
+	applicantId: z.number().int().positive("Applicant ID is required"),
 	decision: z.object({
 		outcome: z.enum(["APPROVED", "REJECTED", "REQUEST_MORE_INFO"]),
 		reason: z.string().optional(),
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		const { workflowId, leadId, decision } = validationResult.data;
+		const { workflowId, applicantId, decision } = validationResult.data;
 
 		console.log(
 			`[RiskDecision] Processing decision for workflow ${workflowId}:`,
@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
 			name: "risk/decision.received",
 			data: {
 				workflowId,
-				leadId,
+				applicantId,
 				decision: {
 					outcome: decision.outcome,
 					decidedBy: userId,
@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
 			success: true,
 			message: `Risk decision recorded: ${decision.outcome}`,
 			workflowId,
-			leadId,
+			applicantId,
 			decision: {
 				outcome: decision.outcome,
 				decidedBy: userId,
@@ -190,7 +190,7 @@ export async function GET(request: NextRequest) {
 			count: pendingWorkflows.length,
 			workflows: pendingWorkflows.map((w) => ({
 				workflowId: w.id,
-				leadId: w.leadId,
+				applicantId: w.applicantId,
 				stage: w.stage,
 				startedAt: w.startedAt,
 			})),

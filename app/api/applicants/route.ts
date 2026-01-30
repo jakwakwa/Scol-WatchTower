@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDatabaseClient } from "@/app/utils";
-import { leads, workflows } from "@/db/schema";
-import { createLeadSchema } from "@/lib/validations";
+import { applicants, workflows } from "@/db/schema";
+import { createApplicantSchema } from "@/lib/validations";
 import { inngest } from "@/inngest";
 
 /**
- * GET /api/leads
- * List all leads with optional pagination
+ * GET /api/applicants
+ * List all applicants with optional pagination
  */
 export async function GET() {
 	try {
@@ -19,19 +19,22 @@ export async function GET() {
 			);
 		}
 
-		const allLeads = await db.select().from(leads).orderBy(leads.createdAt);
+		const allApplicants = await db
+			.select()
+			.from(applicants)
+			.orderBy(applicants.createdAt);
 
-		return NextResponse.json({ leads: allLeads });
+		return NextResponse.json({ applicants: allApplicants });
 	} catch (error) {
-		console.error("Error fetching leads:", error);
+		console.error("Error fetching applicants:", error);
 		const message = error instanceof Error ? error.message : "Unexpected error";
 		return NextResponse.json({ error: message }, { status: 500 });
 	}
 }
 
 /**
- * POST /api/leads
- * Create a new lead and start the onboarding workflow
+ * POST /api/applicants
+ * Create a new applicant and start the onboarding workflow
  */
 export async function POST(request: NextRequest) {
 	try {
@@ -47,7 +50,7 @@ export async function POST(request: NextRequest) {
 		const body = await request.json();
 
 		// Validate input with Zod
-		const validation = createLeadSchema.safeParse(body);
+		const validation = createApplicantSchema.safeParse(body);
 
 		if (!validation.success) {
 			return NextResponse.json(
@@ -61,9 +64,9 @@ export async function POST(request: NextRequest) {
 
 		const data = validation.data;
 
-		// Insert the new lead
-		const newLeadResults = await db
-			.insert(leads)
+		// Insert the new applicant
+		const newApplicantResults = await db
+			.insert(applicants)
 			.values([
 				{
 					companyName: data.companyName,
@@ -81,10 +84,10 @@ export async function POST(request: NextRequest) {
 			])
 			.returning();
 
-		const newLead = newLeadResults[0];
+		const newApplicant = newApplicantResults[0];
 
-		if (!newLead) {
-			throw new Error("Failed to create lead record in database");
+		if (!newApplicant) {
+			throw new Error("Failed to create applicant record in database");
 		}
 
 		// Create the initial Workflow record in DB
@@ -92,7 +95,7 @@ export async function POST(request: NextRequest) {
 			.insert(workflows)
 			.values([
 				{
-					leadId: newLead.id,
+					applicantId: newApplicant.id,
 					stage: 1,
 					status: "pending",
 					// Removed fields not in schema: stageName, currentAgent
@@ -108,19 +111,21 @@ export async function POST(request: NextRequest) {
 		try {
 			await inngest.send({
 				name: "onboarding/lead.created",
-				data: { leadId: newLead.id, workflowId: newWorkflow.id },
+				data: { applicantId: newApplicant.id, workflowId: newWorkflow.id },
 			});
-			console.log(`[API] Started Inngest workflow for lead ${newLead.id}`);
+			console.log(
+				`[API] Started Inngest workflow for applicant ${newApplicant.id}`,
+			);
 		} catch (inngestError) {
 			console.error("[API] Failed to start Inngest workflow:", inngestError);
 		}
 
 		return NextResponse.json(
-			{ lead: newLead, workflow: newWorkflow },
+			{ applicant: newApplicant, workflow: newWorkflow },
 			{ status: 201 },
 		);
 	} catch (error) {
-		console.error("Error creating lead:", error);
+		console.error("Error creating applicant:", error);
 		const message = error instanceof Error ? error.message : "Unexpected error";
 		return NextResponse.json({ error: message }, { status: 500 });
 	}

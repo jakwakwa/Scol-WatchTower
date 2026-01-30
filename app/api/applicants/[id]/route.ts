@@ -5,14 +5,14 @@ import {
 	documents,
 	applicantMagiclinkForms,
 	applicantSubmissions,
-	leads,
+	applicants,
 } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { updateLeadSchema } from "@/lib/validations";
+import { updateApplicantSchema } from "@/lib/validations";
 
 /**
- * PUT /api/leads/[id]
- * Update a lead by ID
+ * PUT /api/applicants/[id]
+ * Update an applicant by ID
  */
 export async function PUT(
 	request: NextRequest,
@@ -38,7 +38,7 @@ export async function PUT(
 
 		const body = await request.json();
 
-		const validation = updateLeadSchema.safeParse(body);
+		const validation = updateApplicantSchema.safeParse(body);
 
 		if (!validation.success) {
 			return NextResponse.json(
@@ -53,32 +53,35 @@ export async function PUT(
 		const data = validation.data;
 
 		// Perform update
-		const updatedLeadResults = await db
-			.update(leads)
+		const updatedApplicantResults = await db
+			.update(applicants)
 			.set({
 				...data,
 				updatedAt: new Date(),
 			})
-			.where(eq(leads.id, id))
+			.where(eq(applicants.id, id))
 			.returning();
 
-		if (updatedLeadResults.length === 0) {
-			return NextResponse.json({ error: "Lead not found" }, { status: 404 });
+		if (updatedApplicantResults.length === 0) {
+			return NextResponse.json(
+				{ error: "Applicant not found" },
+				{ status: 404 },
+			);
 		}
 
-		const updatedLead = updatedLeadResults[0];
+		const updatedApplicant = updatedApplicantResults[0];
 
-		return NextResponse.json({ lead: updatedLead });
+		return NextResponse.json({ applicant: updatedApplicant });
 	} catch (error) {
-		console.error("Error updating lead:", error);
+		console.error("Error updating applicant:", error);
 		const message = error instanceof Error ? error.message : "Unexpected error";
 		return NextResponse.json({ error: message }, { status: 500 });
 	}
 }
 
 /**
- * GET /api/leads/[id]
- * Fetch lead with documents and form submissions
+ * GET /api/applicants/[id]
+ * Fetch applicant with documents and form submissions
  */
 export async function GET(
 	_request: NextRequest,
@@ -101,33 +104,36 @@ export async function GET(
 			return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
 		}
 
-		const leadResults = await db.select().from(leads).where(eq(leads.id, id));
-		const lead = leadResults[0];
+		const applicantResults = await db
+			.select()
+			.from(applicants)
+			.where(eq(applicants.id, id));
+		const applicant = applicantResults[0];
 
-		if (!lead) {
-			return NextResponse.json({ error: "Lead not found" }, { status: 404 });
+		if (!applicant) {
+			return NextResponse.json({ error: "Applicant not found" }, { status: 404 });
 		}
 
-		const [leadDocuments, submissions, instances] = await Promise.all([
-			db.select().from(documents).where(eq(documents.leadId, id)),
+		const [applicantDocuments, submissions, instances] = await Promise.all([
+			db.select().from(documents).where(eq(documents.applicantId, id)),
 			db
 				.select()
 				.from(applicantSubmissions)
-				.where(eq(applicantSubmissions.leadId, id)),
+				.where(eq(applicantSubmissions.applicantId, id)),
 			db
 				.select()
 				.from(applicantMagiclinkForms)
-				.where(eq(applicantMagiclinkForms.leadId, id)),
+				.where(eq(applicantMagiclinkForms.applicantId, id)),
 		]);
 
 		return NextResponse.json({
-			lead,
-			documents: leadDocuments,
+			applicant,
+			documents: applicantDocuments,
 			applicantSubmissions: submissions,
 			applicantMagiclinkForms: instances,
 		});
 	} catch (error) {
-		console.error("Error fetching lead:", error);
+		console.error("Error fetching applicant:", error);
 		const message = error instanceof Error ? error.message : "Unexpected error";
 		return NextResponse.json({ error: message }, { status: 500 });
 	}

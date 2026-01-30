@@ -5,7 +5,7 @@ import {
 	DashboardSection,
 } from "@/components/dashboard";
 import { Button } from "@/components/ui/button";
-import { notifications, leads, workflows } from "@/db/schema";
+import { notifications, applicants, workflows } from "@/db/schema";
 import { desc, eq } from "drizzle-orm";
 import {
 	RiCheckLine,
@@ -84,11 +84,11 @@ export default async function NotificationsPage() {
 					read: notifications.read,
 					actionable: notifications.actionable,
 					createdAt: notifications.createdAt,
-					clientName: leads.companyName,
+					clientName: applicants.companyName,
 				})
 				.from(notifications)
 				.leftJoin(workflows, eq(notifications.workflowId, workflows.id))
-				.leftJoin(leads, eq(workflows.leadId, leads.id))
+				.leftJoin(applicants, eq(workflows.applicantId, applicants.id))
 				.orderBy(desc(notifications.createdAt));
 
 			allNotifications = result;

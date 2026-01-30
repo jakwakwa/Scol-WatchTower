@@ -17,12 +17,12 @@ Branch: clickup/Ai-Augmented-Client-Onboarding--CU-869bq46ep
 
 ## Form Updates Included
 The new baseline migration includes the latest form-related tables and constraints:
-- `form_instances`
+- `applicant_magiclink_forms`
   - `token_hash` unique index
-  - FK to `leads` and optional FK to `workflows`
+  - FK to `applicants` and optional FK to `workflows`
   - Status and lifecycle timestamps (`sent_at`, `viewed_at`, `expires_at`, `submitted_at`)
-- `form_submissions`
-  - FK to `form_instances`, `leads`, and optional FK to `workflows`
+- `applicant_submissions`
+  - FK to `applicant_magiclink_forms`, `applicants`, and optional FK to `workflows`
   - Versioned submissions with `submitted_at`
 
 These form tables are now part of the single baseline migration so new environments start with the correct schema.

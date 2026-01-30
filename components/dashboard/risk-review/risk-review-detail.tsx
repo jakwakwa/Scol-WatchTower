@@ -279,7 +279,7 @@ export function RiskReviewDetail({
 					id: "1",
 					type: "stage_change",
 					title: "Workflow Started",
-					description: "Lead captured and workflow initiated",
+					description: "Applicant captured and workflow initiated",
 					timestamp: item.createdAt,
 					actor: "System",
 				},

@@ -2,7 +2,7 @@
  * Risk service - AI risk analysis operations
  */
 import { getDatabaseClient } from "@/app/utils";
-import { leads } from "@/db/schema";
+import { applicants } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 export interface RiskResult {
@@ -12,10 +12,12 @@ export interface RiskResult {
 }
 
 /**
- * Perform AI risk analysis for a lead
+ * Perform AI risk analysis for an applicant
  */
-export async function analyzeRisk(leadId: number): Promise<RiskResult> {
-	console.log(`[RiskService] Performing AI Risk Analysis for Lead ${leadId}`);
+export async function analyzeRisk(applicantId: number): Promise<RiskResult> {
+	console.log(
+		`[RiskService] Performing AI Risk Analysis for Applicant ${applicantId}`,
+	);
 
 	const aiServiceUrl = process.env.WEBHOOK_ZAP_AI_RISK_ANALYSIS;
 	if (!aiServiceUrl) {
@@ -24,34 +26,34 @@ export async function analyzeRisk(leadId: number): Promise<RiskResult> {
 		);
 	}
 
-	// Fetch lead data
+	// Fetch applicant data
 	const db = getDatabaseClient();
-	let leadData = null;
+	let applicantData = null;
 	if (db) {
 		try {
-			const leadResults = await db
+			const applicantResults = await db
 				.select()
-				.from(leads)
-				.where(eq(leads.id, leadId));
-			if (leadResults.length > 0) {
-				leadData = leadResults[0];
+				.from(applicants)
+				.where(eq(applicants.id, applicantId));
+			if (applicantResults.length > 0) {
+				applicantData = applicantResults[0];
 			}
 		} catch (err) {
-			console.error("[RiskService] Failed to fetch lead:", err);
+			console.error("[RiskService] Failed to fetch applicant:", err);
 			throw err;
 		}
 	}
 
-	if (!leadData) {
-		throw new Error(`[RiskService] Lead ${leadId} not found`);
+	if (!applicantData) {
+		throw new Error(`[RiskService] Applicant ${applicantId} not found`);
 	}
 
 	const payload = {
-		leadId,
-		companyName: leadData.companyName,
-		industry: leadData.industry,
-		employeeCount: leadData.employeeCount,
-		estimatedVolume: leadData.mandateVolume,
+		applicantId,
+		companyName: applicantData.companyName,
+		industry: applicantData.industry,
+		employeeCount: applicantData.employeeCount,
+		estimatedVolume: applicantData.mandateVolume,
 		callbackUrl: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/risk-analysis/callback`,
 	};
 
