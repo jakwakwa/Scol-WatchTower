@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
 
 		const file = formData.get("file") as File | null;
 		const workflowId = formData.get("workflowId") as string | null;
-		const onboardingFormId = formData.get("onboardingFormId") as string | null;
+		const internalFormId = formData.get("internalFormId") as string | null;
 		const category = formData.get("category") as string | null;
 		const documentType = formData.get("documentType") as string | null;
 		const userId = formData.get("userId") as string | null;
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
 			.insert(documentUploads)
 			.values({
 				workflowId: workflowIdNum,
-				onboardingFormId: onboardingFormId ? parseInt(onboardingFormId) : null,
+				internalFormId: internalFormId ? parseInt(internalFormId) : null,
 				category: category as any,
 				documentType,
 				fileName: file.name,

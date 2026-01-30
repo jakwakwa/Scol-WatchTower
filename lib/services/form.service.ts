@@ -97,7 +97,7 @@ export async function markFormInstanceStatus(
 }
 
 export async function recordFormSubmission(options: {
-	formInstanceId: number;
+	applicantMagiclinkFormId: number;
 	leadId: number;
 	workflowId?: number | null;
 	formType: FormType;
@@ -111,7 +111,7 @@ export async function recordFormSubmission(options: {
 
 	await db.insert(applicantSubmissions).values([
 		{
-			formInstanceId: options.formInstanceId,
+			applicantMagiclinkFormId: options.applicantMagiclinkFormId,
 			leadId: options.leadId,
 			workflowId: options.workflowId ?? null,
 			formType: options.formType,
@@ -121,5 +121,5 @@ export async function recordFormSubmission(options: {
 		},
 	]);
 
-	await markFormInstanceStatus(options.formInstanceId, "submitted");
+	await markFormInstanceStatus(options.applicantMagiclinkFormId, "submitted");
 }

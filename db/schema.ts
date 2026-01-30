@@ -168,7 +168,7 @@ export const applicantMagiclinkForms = sqliteTable('applicant_magiclink_forms', 
  */
 export const applicantSubmissions = sqliteTable('applicant_submissions', {
     id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
-    formInstanceId: integer('form_instance_id')
+    applicantMagiclinkFormId: integer('applicant_magiclink_form_id')
         .notNull()
         .references(() => applicantMagiclinkForms.id),
     leadId: integer('lead_id')
@@ -326,7 +326,7 @@ export const applicantSubmissionsRelations = relations(
 			references: [workflows.id],
 		}),
 		applicantMagiclinkForm: one(applicantMagiclinkForms, {
-			fields: [applicantSubmissions.formInstanceId],
+			fields: [applicantSubmissions.applicantMagiclinkFormId],
 			references: [applicantMagiclinkForms.id],
 		}),
 	}),
@@ -415,7 +415,7 @@ export const internalForms = sqliteTable("internal_forms", {
  */
 export const internalSubmissions = sqliteTable("internal_submissions", {
 	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
-	onboardingFormId: integer("onboarding_form_id")
+	internalFormId: integer("internal_form_id")
 		.notNull()
 		.references(() => internalForms.id),
 	version: integer("version").notNull().default(1),
@@ -435,7 +435,7 @@ export const documentUploads = sqliteTable("document_uploads", {
 	workflowId: integer("workflow_id")
 		.notNull()
 		.references(() => workflows.id),
-	onboardingFormId: integer("onboarding_form_id").references(() => internalForms.id),
+	internalFormId: integer("internal_form_id").references(() => internalForms.id),
 	category: text("category", {
 		enum: ["standard", "individual", "financial", "professional", "industry"],
 	}).notNull(),
@@ -469,7 +469,7 @@ export const signatures = sqliteTable("signatures", {
 	workflowId: integer("workflow_id")
 		.notNull()
 		.references(() => workflows.id),
-	onboardingFormId: integer("onboarding_form_id")
+	internalFormId: integer("internal_form_id")
 		.notNull()
 		.references(() => internalForms.id),
 	signatoryName: text("signatory_name").notNull(),
@@ -502,7 +502,7 @@ export const internalSubmissionsRelations = relations(
 	internalSubmissions,
 	({ one }) => ({
 	internalForm: one(internalForms, {
-		fields: [internalSubmissions.onboardingFormId],
+		fields: [internalSubmissions.internalFormId],
 		references: [internalForms.id],
 	}),
 }),
@@ -514,7 +514,7 @@ export const documentUploadsRelations = relations(documentUploads, ({ one }) => 
 		references: [workflows.id],
 	}),
 	internalForm: one(internalForms, {
-		fields: [documentUploads.onboardingFormId],
+		fields: [documentUploads.internalFormId],
 		references: [internalForms.id],
 	}),
 }));
@@ -525,7 +525,7 @@ export const signaturesRelations = relations(signatures, ({ one }) => ({
 		references: [workflows.id],
 	}),
 	internalForm: one(internalForms, {
-		fields: [signatures.onboardingFormId],
+		fields: [signatures.internalFormId],
 		references: [internalForms.id],
 	}),
 }));

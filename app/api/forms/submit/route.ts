@@ -155,7 +155,7 @@ export async function POST(request: NextRequest) {
 		}
 
 		await recordFormSubmission({
-			formInstanceId: formInstance.id,
+			applicantMagiclinkFormId: formInstance.id,
 			leadId: formInstance.leadId,
 			workflowId: formInstance.workflowId,
 			formType,

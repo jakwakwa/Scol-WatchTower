@@ -59,7 +59,7 @@ export async function GET(
 		const latestSubmission = await db
 			.select()
 			.from(internalSubmissions)
-			.where(eq(internalSubmissions.onboardingFormId, form.id))
+			.where(eq(internalSubmissions.internalFormId, form.id))
 			.orderBy(internalSubmissions.version)
 			.limit(1);
 
@@ -185,7 +185,7 @@ export async function POST(
 		const existingSubmissions = await db
 			.select()
 			.from(internalSubmissions)
-			.where(eq(internalSubmissions.onboardingFormId, formId))
+			.where(eq(internalSubmissions.internalFormId, formId))
 			.orderBy(internalSubmissions.version);
 
 		const lastSubmission = existingSubmissions[existingSubmissions.length - 1];
@@ -195,7 +195,7 @@ export async function POST(
 		const submissionResult = await db
 			.insert(internalSubmissions)
 			.values({
-				onboardingFormId: formId,
+				internalFormId: formId,
 				version: nextVersion,
 				formData: JSON.stringify(formData),
 				isDraft,
