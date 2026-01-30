@@ -1,20 +1,30 @@
 
 "use client";
 
+import type { DropResult } from "@hello-pangea/dnd";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import {
     RiFileTextLine,
-    RiBankCardLine,
     RiShieldCheckLine,
     RiCheckboxCircleLine,
     RiMoreLine,
-    RiTimeLine,
-    RiAddLine
 } from "@remixicon/react";
 import { Button } from "../ui/button";
-import { StageBadge, RiskBadge } from "../ui/status-badge";
+import { RiskBadge } from "../ui/status-badge";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+
+type PipelineWorkflow = {
+    id: number | string;
+    stage: string;
+    clientName?: string;
+    payload?: {
+        riskLevel?: string;
+        registrationNumber?: string;
+        mandateType?: string;
+    };
+    startedAt?: string | Date;
+};
 
 // Define Pipeline Stages based on screenshot
 const PIPELINE_STAGES = [
@@ -24,27 +34,33 @@ const PIPELINE_STAGES = [
     { id: "activation", title: "Activation", color: "border-t-emerald-400", icon: RiCheckboxCircleLine },
 ];
 
-export function PipelineView({ workflows, onDragEnd }: { workflows: any[], onDragEnd?: (result: any) => void }) {
-    const [columns, setColumns] = useState<any>(null);
+export function PipelineView({
+    workflows,
+    onDragEnd,
+}: {
+    workflows: PipelineWorkflow[];
+    onDragEnd?: (result: DropResult) => void;
+}) {
+    const [columns, setColumns] = useState<Record<string, PipelineWorkflow[]> | null>(null);
 
     useEffect(() => {
         const cols = PIPELINE_STAGES.reduce((acc, stage) => {
-            acc[stage.id] = workflows.filter(w => {
-                if (stage.id === "new" && ["new", "contacted", "qualified"].includes(w.stage)) return true;
-                if (stage.id === "contracting" && ["proposal", "negotiation"].includes(w.stage)) return true;
-                if (stage.id === "fica_review" && ["review", "fica_review"].includes(w.stage)) return true;
-                if (stage.id === "activation" && ["won", "activation"].includes(w.stage)) return true;
+            acc[stage.id] = workflows.filter(workflow => {
+                const stageValue = workflow.stage;
+                if (stage.id === "new" && ["new", "contacted", "qualified"].includes(stageValue)) return true;
+                if (stage.id === "contracting" && ["proposal", "negotiation"].includes(stageValue)) return true;
+                if (stage.id === "fica_review" && ["review", "fica_review"].includes(stageValue)) return true;
+                if (stage.id === "activation" && ["won", "activation"].includes(stageValue)) return true;
                 return false;
             });
             return acc;
-            return acc;
-        }, {} as Record<string, any[]>);
+        }, {} as Record<string, PipelineWorkflow[]>);
         setColumns(cols || {});
     }, [workflows]);
 
     if (!columns) return <div>Loading pipeline...</div>;
 
-    const handleDragEnd = (result: any) => {
+    const handleDragEnd = (result: DropResult) => {
         if (!result.destination) return;
         if (onDragEnd) onDragEnd(result);
     };
@@ -81,9 +97,9 @@ export function PipelineView({ workflows, onDragEnd }: { workflows: any[], onDra
                                             snapshot.isDraggingOver ? "bg-secondary/10" : ""
                                         )}
                                     >
-                                        {columns[stage.id]?.map((workflow: any, index: number) => (
+                                        {columns[stage.id]?.map((workflow, index) => (
                                             <Draggable key={workflow.id.toString()} draggableId={workflow.id.toString()} index={index}>
-                                                {(provided, snapshot) => (
+                                                {(provided) => (
                                                     <div
                                                         ref={provided.innerRef}
                                                         {...provided.draggableProps}
@@ -107,7 +123,7 @@ export function PipelineView({ workflows, onDragEnd }: { workflows: any[], onDra
     );
 }
 
-function PipelineCard({ workflow }: { workflow: any }) {
+function PipelineCard({ workflow }: { workflow: PipelineWorkflow }) {
     return (
         <div className="bg-card/80 backdrop-blur-sm p-4 rounded-xl border border-sidebar-border shadow-sm hover:shadow-md transition-all group cursor-pointer relative hover:border-primary/20">
 

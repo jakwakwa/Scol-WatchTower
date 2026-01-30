@@ -85,6 +85,26 @@ export type Events = {
         };
     };
 
+    /** Quote approved by staff and sent to client */
+    'quote/approved': {
+        data: {
+            workflowId: number;
+            leadId: number;
+            quoteId: number;
+            approvedAt: string;
+        };
+    };
+
+    /** Quote signed by client */
+    'quote/signed': {
+        data: {
+            workflowId: number;
+            leadId: number;
+            quoteId: number;
+            signedAt: string;
+        };
+    };
+
     /** Workflow error resolved by human */
     'workflow/error-resolved': {
         data: {
@@ -100,6 +120,41 @@ export type Events = {
             workflowId: number;
             contractUrl?: string;
             signedAt: string;
+        };
+    };
+
+    /** Form submitted by client */
+    'form/submitted': {
+        data: {
+            workflowId: number;
+            leadId: number;
+            formType: string;
+            formInstanceId: number;
+            submittedAt: string;
+        };
+    };
+
+    /** Document uploaded by client */
+    'document/uploaded': {
+        data: {
+            workflowId: number;
+            leadId: number;
+            documentId: number;
+            documentType: string;
+            category?: string;
+            uploadedAt: string;
+        };
+    };
+
+    /** Document processed by AI/agent */
+    'document/processed': {
+        data: {
+            workflowId: number;
+            leadId: number;
+            documentId: number;
+            documentType: string;
+            status: 'processed' | 'failed';
+            processedAt: string;
         };
     };
 

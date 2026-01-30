@@ -54,9 +54,16 @@ export const documents = sqliteTable('documents', {
         .references(() => leads.id), // Link to Lead/Application
     type: text('type').notNull(), // bank_statement, id_document, etc.
     status: text('status').notNull().default('pending'), // pending, uploaded, verified, rejected
+    category: text('category'), // standard_application, fica_entity, etc.
+    source: text('source'), // client, agent, internal, system
     fileName: text('file_name'),
+    storageUrl: text('storage_url'),
+    uploadedBy: text('uploaded_by'),
     uploadedAt: integer('uploaded_at', { mode: 'timestamp' }),
     verifiedAt: integer('verified_at', { mode: 'timestamp' }),
+    processedAt: integer('processed_at', { mode: 'timestamp' }),
+    processingStatus: text('processing_status'), // pending, processed, failed
+    processingResult: text('processing_result'), // JSON string
     notes: text('notes'),
 });
 
@@ -134,6 +141,49 @@ export const workflowEvents = sqliteTable('workflow_events', {
     actorId: text('actor_id'),
 });
 
+/**
+ * Form Instances - Magic link tracking
+ */
+export const formInstances = sqliteTable('form_instances', {
+    id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
+    leadId: integer('lead_id')
+        .notNull()
+        .references(() => leads.id),
+    workflowId: integer('workflow_id').references(() => workflows.id),
+    formType: text('form_type').notNull(), // FACILITY_APPLICATION, SIGNED_QUOTATION, etc.
+    status: text('status').notNull().default('pending'), // pending, sent, viewed, submitted, expired, revoked
+    tokenHash: text('token_hash').notNull().unique(),
+    tokenPrefix: text('token_prefix'),
+    sentAt: integer('sent_at', { mode: 'timestamp' }),
+    viewedAt: integer('viewed_at', { mode: 'timestamp' }),
+    expiresAt: integer('expires_at', { mode: 'timestamp' }),
+    submittedAt: integer('submitted_at', { mode: 'timestamp' }),
+    createdAt: integer('created_at', { mode: 'timestamp' })
+        .notNull()
+        .$defaultFn(() => new Date()),
+});
+
+/**
+ * Form Submissions - Stored form payloads
+ */
+export const formSubmissions = sqliteTable('form_submissions', {
+    id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
+    formInstanceId: integer('form_instance_id')
+        .notNull()
+        .references(() => formInstances.id),
+    leadId: integer('lead_id')
+        .notNull()
+        .references(() => leads.id),
+    workflowId: integer('workflow_id').references(() => workflows.id),
+    formType: text('form_type').notNull(),
+    data: text('data').notNull(), // JSON string
+    submittedBy: text('submitted_by'),
+    version: integer('version').default(1),
+    submittedAt: integer('submitted_at', { mode: 'timestamp' })
+        .notNull()
+        .$defaultFn(() => new Date()),
+});
+
 // ============================================
 // Relations
 // ============================================
@@ -141,6 +191,8 @@ export const workflowEvents = sqliteTable('workflow_events', {
 export const leadsRelations = relations(leads, ({ many, one }) => ({
     workflows: many(workflows),
     documents: many(documents),
+    formInstances: many(formInstances),
+    formSubmissions: many(formSubmissions),
     riskAssessment: one(riskAssessments, {
         fields: [leads.id],
         references: [riskAssessments.leadId], // One-to-one roughly
@@ -204,12 +256,14 @@ export const agentCallbacks = sqliteTable('xt_callbacks', {
  */
 export const quotes = sqliteTable('quotes', {
     id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
+    leadId: integer('lead_id').references(() => leads.id),
     workflowId: integer('workflow_id')
         .notNull()
         .references(() => workflows.id),
     amount: integer('amount').notNull(), // Cents
     baseFeePercent: integer('base_fee_percent').notNull(), // Basis points (e.g. 150 = 1.5%)
     adjustedFeePercent: integer('adjusted_fee_percent'), // Basis points
+    details: text('details'), // JSON string with AI quote details
     rationale: text('rationale'), // AI reasoning for the fee
     status: text('status', {
         enum: ['draft', 'pending_approval', 'approved', 'rejected'],
@@ -243,7 +297,41 @@ export const workflowsRelations = relations(workflows, ({ one, many }) => ({
 	onboardingForms: many(onboardingForms),
 	documentUploads: many(documentUploads),
 	signatures: many(signatures),
->>>>>>> eafdf64 (feat: add onboarding forms and user guides)
+}));
+
+export const formInstancesRelations = relations(formInstances, ({ one, many }) => ({
+    lead: one(leads, {
+        fields: [formInstances.leadId],
+        references: [leads.id],
+    }),
+    workflow: one(workflows, {
+        fields: [formInstances.workflowId],
+        references: [workflows.id],
+    }),
+    submissions: many(formSubmissions),
+}));
+
+export const formSubmissionsRelations = relations(formSubmissions, ({ one }) => ({
+    lead: one(leads, {
+        fields: [formSubmissions.leadId],
+        references: [leads.id],
+    }),
+    workflow: one(workflows, {
+        fields: [formSubmissions.workflowId],
+        references: [workflows.id],
+    }),
+    formInstance: one(formInstances, {
+        fields: [formSubmissions.formInstanceId],
+        references: [formInstances.id],
+    }),
+}));
+
+export const riskAssessmentsRelations = relations(riskAssessments, ({ one }) => ({
+    lead: one(leads, {
+        fields: [riskAssessments.leadId],
+        references: [leads.id],
+    }),
+}));
 }));
 
 export const quotesRelations = relations(quotes, ({ one }) => ({
