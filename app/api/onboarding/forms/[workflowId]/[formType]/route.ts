@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDatabaseClient } from "@/app/utils";
 import {
-	onboardingForms,
-	onboardingFormSubmissions,
+	internalForms,
+	internalSubmissions,
 	workflows,
 	FORM_TYPES,
 } from "@/db/schema";
@@ -33,14 +33,14 @@ export async function GET(
 	}
 
 	try {
-		// Get or create the onboarding form record
+		// Get or create the internal form record
 		const existingForm = await db
 			.select()
-			.from(onboardingForms)
+			.from(internalForms)
 			.where(
 				and(
-					eq(onboardingForms.workflowId, parseInt(workflowId)),
-					eq(onboardingForms.formType, formType as any),
+					eq(internalForms.workflowId, parseInt(workflowId)),
+					eq(internalForms.formType, formType as any),
 				),
 			)
 			.limit(1);
@@ -58,9 +58,9 @@ export async function GET(
 		// Get the latest submission
 		const latestSubmission = await db
 			.select()
-			.from(onboardingFormSubmissions)
-			.where(eq(onboardingFormSubmissions.onboardingFormId, form.id))
-			.orderBy(onboardingFormSubmissions.version)
+			.from(internalSubmissions)
+			.where(eq(internalSubmissions.onboardingFormId, form.id))
+			.orderBy(internalSubmissions.version)
 			.limit(1);
 
 		return NextResponse.json({
@@ -127,14 +127,14 @@ export async function POST(
 			);
 		}
 
-		// Get or create onboarding form record
+		// Get or create internal form record
 		let existingForm = await db
 			.select()
-			.from(onboardingForms)
+			.from(internalForms)
 			.where(
 				and(
-					eq(onboardingForms.workflowId, workflowIdNum),
-					eq(onboardingForms.formType, formType as any),
+					eq(internalForms.workflowId, workflowIdNum),
+					eq(internalForms.formType, formType as any),
 				),
 			)
 			.limit(1);
@@ -145,7 +145,7 @@ export async function POST(
 		if (!existingFormRecord) {
 			// Create new form record
 			const newFormResult = await db
-				.insert(onboardingForms)
+				.insert(internalForms)
 				.values({
 					workflowId: workflowIdNum,
 					formType: formType as any,
@@ -170,7 +170,7 @@ export async function POST(
 
 			// Update form status
 			await db
-				.update(onboardingForms)
+				.update(internalForms)
 				.set({
 					status: isDraft ? "in_progress" : "submitted",
 					currentStep: body.currentStep || existingFormRecord.currentStep,
@@ -178,22 +178,22 @@ export async function POST(
 					submittedAt: isDraft ? existingFormRecord.submittedAt : new Date(),
 					updatedAt: new Date(),
 				})
-				.where(eq(onboardingForms.id, formId));
+				.where(eq(internalForms.id, formId));
 		}
 
 		// Get current version number
 		const existingSubmissions = await db
 			.select()
-			.from(onboardingFormSubmissions)
-			.where(eq(onboardingFormSubmissions.onboardingFormId, formId))
-			.orderBy(onboardingFormSubmissions.version);
+			.from(internalSubmissions)
+			.where(eq(internalSubmissions.onboardingFormId, formId))
+			.orderBy(internalSubmissions.version);
 
 		const lastSubmission = existingSubmissions[existingSubmissions.length - 1];
 		const nextVersion = lastSubmission ? lastSubmission.version + 1 : 1;
 
 		// Create submission record
 		const submissionResult = await db
-			.insert(onboardingFormSubmissions)
+			.insert(internalSubmissions)
 			.values({
 				onboardingFormId: formId,
 				version: nextVersion,
@@ -273,11 +273,11 @@ export async function PUT(
 		// Get the form
 		const existingForm = await db
 			.select()
-			.from(onboardingForms)
+			.from(internalForms)
 			.where(
 				and(
-					eq(onboardingForms.workflowId, workflowIdNum),
-					eq(onboardingForms.formType, formType as any),
+					eq(internalForms.workflowId, workflowIdNum),
+					eq(internalForms.formType, formType as any),
 				),
 			)
 			.limit(1);
@@ -289,7 +289,7 @@ export async function PUT(
 
 		// Update form status
 		await db
-			.update(onboardingForms)
+			.update(internalForms)
 			.set({
 				status,
 				reviewNotes,
@@ -297,7 +297,7 @@ export async function PUT(
 				reviewedAt: new Date(),
 				updatedAt: new Date(),
 			})
-			.where(eq(onboardingForms.id, formRecord.id));
+			.where(eq(internalForms.id, formRecord.id));
 
 		return NextResponse.json({
 			success: true,

@@ -3,8 +3,8 @@ import { NextResponse } from "next/server";
 import { getDatabaseClient } from "@/app/utils";
 import {
 	documents,
-	formInstances,
-	formInstanceSubmissions,
+	applicantMagiclinkForms,
+	applicantSubmissions,
 	leads,
 } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -112,16 +112,19 @@ export async function GET(
 			db.select().from(documents).where(eq(documents.leadId, id)),
 			db
 				.select()
-				.from(formInstanceSubmissions)
-				.where(eq(formInstanceSubmissions.leadId, id)),
-			db.select().from(formInstances).where(eq(formInstances.leadId, id)),
+				.from(applicantSubmissions)
+				.where(eq(applicantSubmissions.leadId, id)),
+			db
+				.select()
+				.from(applicantMagiclinkForms)
+				.where(eq(applicantMagiclinkForms.leadId, id)),
 		]);
 
 		return NextResponse.json({
 			lead,
 			documents: leadDocuments,
-			formInstanceSubmissions: submissions,
-			formInstances: instances,
+			applicantSubmissions: submissions,
+			applicantMagiclinkForms: instances,
 		});
 	} catch (error) {
 		console.error("Error fetching lead:", error);

@@ -142,9 +142,9 @@ export const workflowEvents = sqliteTable('workflow_events', {
 });
 
 /**
- * Form Instances - Magic link tracking
+ * Applicant Magic Link Forms - Magic link tracking
  */
-export const formInstances = sqliteTable('form_instances', {
+export const applicantMagiclinkForms = sqliteTable('applicant_magiclink_forms', {
     id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
     leadId: integer('lead_id')
         .notNull()
@@ -164,13 +164,13 @@ export const formInstances = sqliteTable('form_instances', {
 });
 
 /**
- * Form Instance Submissions - Stored form payloads
+ * Applicant Submissions - Stored form payloads
  */
-export const formInstanceSubmissions = sqliteTable('form_submissions', {
+export const applicantSubmissions = sqliteTable('applicant_submissions', {
     id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
     formInstanceId: integer('form_instance_id')
         .notNull()
-        .references(() => formInstances.id),
+        .references(() => applicantMagiclinkForms.id),
     leadId: integer('lead_id')
         .notNull()
         .references(() => leads.id),
@@ -191,8 +191,8 @@ export const formInstanceSubmissions = sqliteTable('form_submissions', {
 export const leadsRelations = relations(leads, ({ many, one }) => ({
     workflows: many(workflows),
     documents: many(documents),
-    formInstances: many(formInstances),
-	formInstanceSubmissions: many(formInstanceSubmissions),
+	applicantMagiclinkForms: many(applicantMagiclinkForms),
+	applicantSubmissions: many(applicantSubmissions),
     riskAssessment: one(riskAssessments, {
         fields: [leads.id],
         references: [riskAssessments.leadId], // One-to-one roughly
@@ -294,37 +294,40 @@ export const workflowsRelations = relations(workflows, ({ one, many }) => ({
 	quotes: many(quotes),
 	events: many(workflowEvents),
 	callbacks: many(agentCallbacks),
-	onboardingForms: many(onboardingForms),
+	internalForms: many(internalForms),
 	documentUploads: many(documentUploads),
 	signatures: many(signatures),
 }));
 
-export const formInstancesRelations = relations(formInstances, ({ one, many }) => ({
+export const applicantMagiclinkFormsRelations = relations(
+	applicantMagiclinkForms,
+	({ one, many }) => ({
     lead: one(leads, {
-        fields: [formInstances.leadId],
+        fields: [applicantMagiclinkForms.leadId],
         references: [leads.id],
     }),
     workflow: one(workflows, {
-        fields: [formInstances.workflowId],
+        fields: [applicantMagiclinkForms.workflowId],
         references: [workflows.id],
     }),
-	submissions: many(formInstanceSubmissions),
-}));
+	submissions: many(applicantSubmissions),
+}),
+);
 
-export const formInstanceSubmissionsRelations = relations(
-	formInstanceSubmissions,
+export const applicantSubmissionsRelations = relations(
+	applicantSubmissions,
 	({ one }) => ({
 		lead: one(leads, {
-			fields: [formInstanceSubmissions.leadId],
+			fields: [applicantSubmissions.leadId],
 			references: [leads.id],
 		}),
 		workflow: one(workflows, {
-			fields: [formInstanceSubmissions.workflowId],
+			fields: [applicantSubmissions.workflowId],
 			references: [workflows.id],
 		}),
-		formInstance: one(formInstances, {
-			fields: [formInstanceSubmissions.formInstanceId],
-			references: [formInstances.id],
+		applicantMagiclinkForm: one(applicantMagiclinkForms, {
+			fields: [applicantSubmissions.formInstanceId],
+			references: [applicantMagiclinkForms.id],
 		}),
 	}),
 );
@@ -361,11 +364,11 @@ export const todos = sqliteTable("todos", {
 });
 
 // ============================================
-// Onboarding Forms Tables
+// Internal Forms Tables
 // ============================================
 
 /**
- * Form types enum for onboarding forms
+ * Form types enum for internal forms
  */
 export const FORM_TYPES = [
 	"stratcol_agreement",
@@ -377,9 +380,9 @@ export const FORM_TYPES = [
 export type FormType = (typeof FORM_TYPES)[number];
 
 /**
- * Onboarding Forms - Track form submission status per workflow
+ * Internal Forms - Track form submission status per workflow
  */
-export const onboardingForms = sqliteTable("onboarding_forms", {
+export const internalForms = sqliteTable("internal_forms", {
 	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
 	workflowId: integer("workflow_id")
 		.notNull()
@@ -408,13 +411,13 @@ export const onboardingForms = sqliteTable("onboarding_forms", {
 });
 
 /**
- * Form Submissions - Store form data with versioning
+ * Internal Submissions - Store form data with versioning
  */
-export const onboardingFormSubmissions = sqliteTable("onboarding_form_submissions", {
+export const internalSubmissions = sqliteTable("internal_submissions", {
 	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
 	onboardingFormId: integer("onboarding_form_id")
 		.notNull()
-		.references(() => onboardingForms.id),
+		.references(() => internalForms.id),
 	version: integer("version").notNull().default(1),
 	formData: text("form_data").notNull(), // JSON string of form values
 	isDraft: integer("is_draft", { mode: "boolean" }).notNull().default(true),
@@ -432,7 +435,7 @@ export const documentUploads = sqliteTable("document_uploads", {
 	workflowId: integer("workflow_id")
 		.notNull()
 		.references(() => workflows.id),
-	onboardingFormId: integer("onboarding_form_id").references(() => onboardingForms.id),
+	onboardingFormId: integer("onboarding_form_id").references(() => internalForms.id),
 	category: text("category", {
 		enum: ["standard", "individual", "financial", "professional", "industry"],
 	}).notNull(),
@@ -468,7 +471,7 @@ export const signatures = sqliteTable("signatures", {
 		.references(() => workflows.id),
 	onboardingFormId: integer("onboarding_form_id")
 		.notNull()
-		.references(() => onboardingForms.id),
+		.references(() => internalForms.id),
 	signatoryName: text("signatory_name").notNull(),
 	signatoryRole: text("signatory_role"), // e.g., "Director", "Authorised Representative"
 	signatoryIdNumber: text("signatory_id_number"),
@@ -482,25 +485,25 @@ export const signatures = sqliteTable("signatures", {
 });
 
 // ============================================
-// Onboarding Forms Relations
+// Internal Forms Relations
 // ============================================
 
-export const onboardingFormsRelations = relations(onboardingForms, ({ one, many }) => ({
+export const internalFormsRelations = relations(internalForms, ({ one, many }) => ({
 	workflow: one(workflows, {
-		fields: [onboardingForms.workflowId],
+		fields: [internalForms.workflowId],
 		references: [workflows.id],
 	}),
-	submissions: many(onboardingFormSubmissions),
+	submissions: many(internalSubmissions),
 	documents: many(documentUploads),
 	signatures: many(signatures),
 }));
 
-export const onboardingFormSubmissionsRelations = relations(
-	onboardingFormSubmissions,
+export const internalSubmissionsRelations = relations(
+	internalSubmissions,
 	({ one }) => ({
-	onboardingForm: one(onboardingForms, {
-		fields: [onboardingFormSubmissions.onboardingFormId],
-		references: [onboardingForms.id],
+	internalForm: one(internalForms, {
+		fields: [internalSubmissions.onboardingFormId],
+		references: [internalForms.id],
 	}),
 }),
 );
@@ -510,9 +513,9 @@ export const documentUploadsRelations = relations(documentUploads, ({ one }) => 
 		fields: [documentUploads.workflowId],
 		references: [workflows.id],
 	}),
-	onboardingForm: one(onboardingForms, {
+	internalForm: one(internalForms, {
 		fields: [documentUploads.onboardingFormId],
-		references: [onboardingForms.id],
+		references: [internalForms.id],
 	}),
 }));
 
@@ -521,8 +524,8 @@ export const signaturesRelations = relations(signatures, ({ one }) => ({
 		fields: [signatures.workflowId],
 		references: [workflows.id],
 	}),
-	onboardingForm: one(onboardingForms, {
+	internalForm: one(internalForms, {
 		fields: [signatures.onboardingFormId],
-		references: [onboardingForms.id],
+		references: [internalForms.id],
 	}),
 }));

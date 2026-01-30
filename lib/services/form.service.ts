@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import { eq } from "drizzle-orm";
 import { getDatabaseClient } from "@/app/utils";
-import { formInstances, formInstanceSubmissions } from "@/db/schema";
+import { applicantMagiclinkForms, applicantSubmissions } from "@/db/schema";
 import type { FormType, FormInstanceStatus } from "@/lib/types";
 
 interface CreateFormInstanceOptions {
@@ -39,7 +39,7 @@ export async function createFormInstance(
 			: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
 
 	const [created] = await db
-		.insert(formInstances)
+		.insert(applicantMagiclinkForms)
 		.values([
 			{
 				leadId: options.leadId,
@@ -71,8 +71,8 @@ export async function getFormInstanceByToken(token: string) {
 	const tokenHash = hashToken(token);
 	const result = await db
 		.select()
-		.from(formInstances)
-		.where(eq(formInstances.tokenHash, tokenHash));
+		.from(applicantMagiclinkForms)
+		.where(eq(applicantMagiclinkForms.tokenHash, tokenHash));
 
 	return result[0] ?? null;
 }
@@ -87,13 +87,13 @@ export async function markFormInstanceStatus(
 	}
 
 	await db
-		.update(formInstances)
+		.update(applicantMagiclinkForms)
 		.set({
 			status,
 			viewedAt: status === "viewed" ? new Date() : undefined,
 			submittedAt: status === "submitted" ? new Date() : undefined,
 		})
-		.where(eq(formInstances.id, formInstanceId));
+		.where(eq(applicantMagiclinkForms.id, formInstanceId));
 }
 
 export async function recordFormSubmission(options: {
@@ -109,7 +109,7 @@ export async function recordFormSubmission(options: {
 		throw new Error("Database connection failed");
 	}
 
-	await db.insert(formInstanceSubmissions).values([
+	await db.insert(applicantSubmissions).values([
 		{
 			formInstanceId: options.formInstanceId,
 			leadId: options.leadId,

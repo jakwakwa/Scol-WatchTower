@@ -74,10 +74,12 @@ export default function ClientDetailPage() {
 	const id = params.id as string;
 	const [lead, setLead] = useState<LeadDetail | null>(null);
 	const [documents, setDocuments] = useState<LeadDocument[]>([]);
-	const [formInstanceSubmissions, setFormInstanceSubmissions] = useState<
+	const [applicantSubmissions, setApplicantSubmissions] = useState<
 		LeadFormSubmission[]
 	>([]);
-	const [formInstances, setFormInstances] = useState<LeadFormInstance[]>([]);
+	const [applicantMagiclinkForms, setApplicantMagiclinkForms] = useState<
+		LeadFormInstance[]
+	>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
@@ -93,8 +95,8 @@ export default function ClientDetailPage() {
 				if (!mounted) return;
 				setLead(data.lead);
 				setDocuments(data.documents || []);
-				setFormInstanceSubmissions(data.formInstanceSubmissions || []);
-				setFormInstances(data.formInstances || []);
+				setApplicantSubmissions(data.applicantSubmissions || []);
+				setApplicantMagiclinkForms(data.applicantMagiclinkForms || []);
 			} catch (err) {
 				if (!mounted) return;
 				setError(err instanceof Error ? err.message : "Failed to load lead");
@@ -365,14 +367,14 @@ export default function ClientDetailPage() {
 						<TabsContent value="forms">
 							<div className="space-y-4">
 								<h3 className="font-bold text-lg">Form Submissions</h3>
-								{formInstances.length === 0 ? (
+								{applicantMagiclinkForms.length === 0 ? (
 									<p className="text-sm text-muted-foreground">
 										No form links created yet.
 									</p>
 								) : (
 									<div className="space-y-3">
-										{formInstances.map((instance) => {
-											const submission = formInstanceSubmissions.find(
+										{applicantMagiclinkForms.map((instance) => {
+											const submission = applicantSubmissions.find(
 												(item) => item.formType === instance.formType,
 											);
 											return (
@@ -457,12 +459,12 @@ export default function ClientDetailPage() {
 
 						<TabsContent value="activity">
 							<div className="space-y-6 pl-2 border-l border-border/50 ml-2 py-2">
-								{formInstanceSubmissions.length === 0 ? (
+								{applicantSubmissions.length === 0 ? (
 									<p className="text-sm text-muted-foreground">
 										No recent activity logged.
 									</p>
 								) : (
-									formInstanceSubmissions.map((submission) => (
+									applicantSubmissions.map((submission) => (
 										<div key={submission.id} className="relative pl-6">
 											<div className="absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full bg-border border-2 border-background"></div>
 											<p className="text-sm font-medium">

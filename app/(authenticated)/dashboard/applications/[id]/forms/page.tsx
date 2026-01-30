@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getDatabaseClient } from "@/app/utils";
-import { workflows, leads, onboardingForms } from "@/db/schema";
+import { workflows, leads, internalForms } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import {
 	RiArrowLeftLine,
@@ -156,8 +156,8 @@ export default async function FormsHubPage({
 	// Fetch all forms for this workflow
 	const forms = await db
 		.select()
-		.from(onboardingForms)
-		.where(eq(onboardingForms.workflowId, workflowId));
+		.from(internalForms)
+		.where(eq(internalForms.workflowId, workflowId));
 
 	// Create a map of form type to form data
 	const formMap = new Map(forms.map((f) => [f.formType, f]));

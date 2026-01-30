@@ -394,8 +394,8 @@
 			"uniqueConstraints": {},
 			"checkConstraints": {}
 		},
-		"form_instances": {
-			"name": "form_instances",
+		"applicant_magiclink_forms": {
+			"name": "applicant_magiclink_forms",
 			"columns": {
 				"id": {
 					"name": "id",
@@ -484,25 +484,25 @@
 				}
 			},
 			"indexes": {
-				"form_instances_token_hash_unique": {
-					"name": "form_instances_token_hash_unique",
+				"applicant_magiclink_forms_token_hash_unique": {
+					"name": "applicant_magiclink_forms_token_hash_unique",
 					"columns": ["token_hash"],
 					"isUnique": true
 				}
 			},
 			"foreignKeys": {
-				"form_instances_lead_id_leads_id_fk": {
-					"name": "form_instances_lead_id_leads_id_fk",
-					"tableFrom": "form_instances",
+				"applicant_magiclink_forms_lead_id_leads_id_fk": {
+					"name": "applicant_magiclink_forms_lead_id_leads_id_fk",
+					"tableFrom": "applicant_magiclink_forms",
 					"tableTo": "leads",
 					"columnsFrom": ["lead_id"],
 					"columnsTo": ["id"],
 					"onDelete": "no action",
 					"onUpdate": "no action"
 				},
-				"form_instances_workflow_id_workflows_id_fk": {
-					"name": "form_instances_workflow_id_workflows_id_fk",
-					"tableFrom": "form_instances",
+				"applicant_magiclink_forms_workflow_id_workflows_id_fk": {
+					"name": "applicant_magiclink_forms_workflow_id_workflows_id_fk",
+					"tableFrom": "applicant_magiclink_forms",
 					"tableTo": "workflows",
 					"columnsFrom": ["workflow_id"],
 					"columnsTo": ["id"],
@@ -514,8 +514,8 @@
 			"uniqueConstraints": {},
 			"checkConstraints": {}
 		},
-		"form_submissions": {
-			"name": "form_submissions",
+		"applicant_submissions": {
+			"name": "applicant_submissions",
 			"columns": {
 				"id": {
 					"name": "id",
@@ -584,27 +584,27 @@
 			},
 			"indexes": {},
 			"foreignKeys": {
-				"form_submissions_form_instance_id_form_instances_id_fk": {
-					"name": "form_submissions_form_instance_id_form_instances_id_fk",
-					"tableFrom": "form_submissions",
-					"tableTo": "form_instances",
+				"applicant_submissions_form_instance_id_applicant_magiclink_forms_id_fk": {
+					"name": "applicant_submissions_form_instance_id_applicant_magiclink_forms_id_fk",
+					"tableFrom": "applicant_submissions",
+					"tableTo": "applicant_magiclink_forms",
 					"columnsFrom": ["form_instance_id"],
 					"columnsTo": ["id"],
 					"onDelete": "no action",
 					"onUpdate": "no action"
 				},
-				"form_submissions_lead_id_leads_id_fk": {
-					"name": "form_submissions_lead_id_leads_id_fk",
-					"tableFrom": "form_submissions",
+				"applicant_submissions_lead_id_leads_id_fk": {
+					"name": "applicant_submissions_lead_id_leads_id_fk",
+					"tableFrom": "applicant_submissions",
 					"tableTo": "leads",
 					"columnsFrom": ["lead_id"],
 					"columnsTo": ["id"],
 					"onDelete": "no action",
 					"onUpdate": "no action"
 				},
-				"form_submissions_workflow_id_workflows_id_fk": {
-					"name": "form_submissions_workflow_id_workflows_id_fk",
-					"tableFrom": "form_submissions",
+				"applicant_submissions_workflow_id_workflows_id_fk": {
+					"name": "applicant_submissions_workflow_id_workflows_id_fk",
+					"tableFrom": "applicant_submissions",
 					"tableTo": "workflows",
 					"columnsFrom": ["workflow_id"],
 					"columnsTo": ["id"],
