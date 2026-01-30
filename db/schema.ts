@@ -243,7 +243,6 @@ export const workflowsRelations = relations(workflows, ({ one, many }) => ({
 	onboardingForms: many(onboardingForms),
 	documentUploads: many(documentUploads),
 	signatures: many(signatures),
->>>>>>> eafdf64 (feat: add onboarding forms and user guides)
 }));
 
 export const quotesRelations = relations(quotes, ({ one }) => ({
@@ -455,4 +454,3 @@ export const signaturesRelations = relations(signatures, ({ one }) => ({
 		references: [onboardingForms.id],
 	}),
 }));
->>>>>>> eafdf64 (feat: add onboarding forms and user guides)
