@@ -1,41 +1,13 @@
 {
-	"version": "7",
-	"dialect": "turso",
-	"entries": [
-		{
-			"idx": 0,
-			"version": "6",
-			"when": 1769692370617,
-			"tag": "0000_ambiguous_wong",
-			"breakpoints": true
-		},
-		{
-			"idx": 1,
-			"version": "6",
-			"when": 1769692370618,
-			"tag": "0001_add_lead_id_to_quotes",
-			"breakpoints": true
-		},
-		{
-			"idx": 2,
-			"version": "6",
-			"when": 1769768732000,
-			"tag": "0002_rename_form_tables",
-			"breakpoints": true
-		},
-		{
-			"idx": 3,
-			"version": "6",
-			"when": 1769768732001,
-			"tag": "0003_rename_form_columns",
-			"breakpoints": true
-		},
-		{
-			"idx": 4,
-			"version": "6",
-			"when": 1769768732002,
-			"tag": "0004_rename_leads_to_applicants",
-			"breakpoints": true
-		}
-	]
+  "version": "7",
+  "dialect": "turso",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1769781606723,
+      "tag": "0000_dry_invisible_woman",
+      "breakpoints": true
+    }
+  ]
 }
