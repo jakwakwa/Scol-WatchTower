@@ -19,7 +19,7 @@
     "@clerk/types": "^4.101.12",
     "@libsql/client": "latest",
     "@next/env": "^16.1.4",
-    "@remixicon/react": "^4.8.0",
+    "@remixicon/react": "^4.9.0",
     "@tailwindcss/postcss": "^4.1.18",
     "@tanstack/react-table": "^8.21.3",
     "@tursodatabase/api": "^1.9.2",
