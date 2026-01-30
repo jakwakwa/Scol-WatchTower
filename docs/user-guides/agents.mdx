@@ -1,0 +1,47 @@
+---
+title: "Agents"
+description: "Monitor external agent performance and workflow health."
+---
+
+## What agents do
+
+Agents are external services that handle specialised tasks such as:
+
+- Document generation
+- Electronic signatures
+- Risk verification
+- Data synchronisation
+- Notifications and escalation
+
+## Agent dashboard
+
+The **Agents** page shows a high-level summary of the fleet:
+
+- **Total agents**
+- **Active agents**
+- **Total callbacks**
+- **Errors**
+
+## Agent status cards
+
+Each agent card displays:
+
+- **Agent ID and name**
+- **Task type**
+- **Status**: active, inactive, or error
+- **Last callback time**
+- **Callback and error counts**
+
+## Interpreting agent status
+
+- **Active**: agent is operational and receiving requests
+- **Inactive**: agent is temporarily offline or disabled
+- **Error**: agent reported repeated failures or a critical issue
+
+## When to escalate
+
+Escalate to engineering or operations if:
+
+- An agent stays in **Error** state for multiple hours
+- A workflow remains stuck with the same agent
+- Errors increase sharply without a clear external cause
