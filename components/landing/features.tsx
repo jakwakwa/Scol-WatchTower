@@ -7,31 +7,37 @@ export const Features = () => {
 
     const features = [
         {
+            id: "turso-db",
             icon: <Database className="w-6 h-6 text-primary" />,
             title: "Turso DB Integrated",
             description: "Built on LibSQL for edge-compatible, low-latency data access everywhere."
         },
         {
+            id: "secure-auth",
             icon: <Lock className="w-6 h-6 text-accent" />,
             title: "Secure Auth with Clerk",
             description: "Enterprise-grade authentication out of the box. Secure, fast, and reliable."
         },
         {
+            id: "ai-ready",
             icon: <Bot className="w-6 h-6 text-chart-1" />,
             title: "AI-Ready Schema",
             description: "Pre-configured database schema optimized for vector search and AI agents."
         },
         {
+            id: "webhooks",
             icon: <Zap className="w-6 h-6 text-chart-2" />,
             title: "Instant API Webhooks",
             description: "Connected to external apps instantly with built-in webhook handlers."
         },
         {
+            id: "edge",
             icon: <Globe className="w-6 h-6 text-chart-3" />,
             title: "Edge Deployed",
             description: "Global low latency using Vercel Edge functions and Turso replication."
         },
         {
+            id: "modern-stack",
             icon: <Layers className="w-6 h-6 text-chart-4" />,
             title: "Modern Stack",
             description: "Next.js 15, Tailwind 4, Drizzle, and more. A stack built for 2026."
@@ -66,7 +72,7 @@ export const Features = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {features.map((feature, index) => (
                         <motion.div
-                            key={index}
+                            key={feature.id}
                             initial={{ opacity: 0, y: 20 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}

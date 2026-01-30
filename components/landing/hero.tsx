@@ -29,7 +29,7 @@ export const Hero = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: 0.1 }}
-                    className="text-4xl md:text-6xl lg:text-6xl font-black tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-br from-secondary via-secondary/90 to-secondary/50"
+                    className="text-4xl md:text-6xl lg:text-6xl font-black tracking-tight mb-6 bg-clip-text text-transparent bg-linear-to-br from-secondary via-secondary/90 to-secondary/50"
                 >
                     SCOL Watch Tower <br className="hidden md:block" />
                     <span className="text-primary text-4xl">Onboarding Intelligence</span>
@@ -71,7 +71,7 @@ export const Hero = () => {
                     transition={{ duration: 0.8, delay: 0.5 }}
                     className="mt-20 w-full max-w-5xl bg-secondary/5 border border-secondary/10 rounded-2xl p-4 md:p-8 backdrop-blur-sm shadow-2xl relative overflow-hidden"
                 >
-                    <div className="absolute inset-0 bg-gradient-to-t from-rich-black/50 to-transparent z-10 pointer-events-none" />
+                    <div className="absolute inset-0 bg-linear-to-t from-rich-black/50 to-transparent z-10 pointer-events-none" />
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 opacity-80">
                         {/* Mock UI Cards */}
                         <div className="bg-card/50 p-6 rounded-xl border border-border/50 flex flex-col gap-4">

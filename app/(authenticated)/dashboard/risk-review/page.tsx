@@ -151,8 +151,8 @@ export default function RiskReviewPage() {
                         {assessment.flaggedItems.length > 0 && (
                             <div className="mt-4 pt-4 border-t border-border/50">
                                 <div className="flex flex-wrap gap-2">
-                                    {assessment.flaggedItems.map((item, idx) => (
-                                        <span key={idx} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-rose-500/5 border border-rose-500/10 text-destructive-foreground text-xs">
+                                    {assessment.flaggedItems.map((item) => (
+                                        <span key={`${assessment.id}-${item}`} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-rose-500/5 border border-rose-500/10 text-destructive-foreground text-xs">
                                             <RiAlertLine className="h-3 w-3" />
                                             {item}
                                         </span>

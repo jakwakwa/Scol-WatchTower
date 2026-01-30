@@ -69,7 +69,7 @@ export function ActivityFeed({ events, maxItems = 10 }: ActivityFeedProps) {
 
 	if (displayEvents.length === 0) {
 		return (
-			<div className="rounded-xl bg-secondary/[0.02] p-8 text-center">
+			<div className="rounded-xl bg-secondary/2 p-8 text-center">
 				<RiTimeLine className="mx-auto h-8 w-8 text-muted-foreground/50" />
 				<p className="mt-2 text-[9px] text-muted-foreground">
 					No recent activity
@@ -89,7 +89,7 @@ export function ActivityFeed({ events, maxItems = 10 }: ActivityFeedProps) {
 						key={event.id}
 						className={cn(
 							"group flex items-start gap-2 rounded-xl p-2 transition-colors",
-							"hover:bg-secondary/[0.02]",
+							"hover:bg-secondary/2",
 						)}
 					>
 						{/* Timeline connector */}

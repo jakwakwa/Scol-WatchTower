@@ -13,7 +13,7 @@ export const TrustedBy = () => {
                 <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
                     {companies.map((company, index) => (
                         <motion.div
-                            key={index}
+                            key={company}
                             initial={{ opacity: 0 }}
                             whileInView={{ opacity: 1 }}
                             viewport={{ once: true }}

@@ -15,46 +15,123 @@
  * - AI Trust Score < 80%: Risk Manager (Paula) reviews
  * - 14-day timeout for FICA document uploads
  */
-import { inngest } from '../client';
+import { getDatabaseClient } from '@/app/utils';
+import { leads } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 import { NonRetriableError } from 'inngest';
-import blacklist from '../data/mock_blacklist.json';
-import { updateWorkflowStatus } from '@/lib/services/workflow.service';
-import { dispatchToPlatform, escalateToManagement } from '@/lib/services/notification.service';
+import { analyzeBankStatement, canAutoApprove as canAutoApproveFica } from '@/lib/services/fica-ai.service';
+import { generateFormLinks, sendFormLinksEmail } from '@/lib/services/form-link.service';
+import { performITCCheck, shouldAutoDecline } from '@/lib/services/itc.service';
 import { createWorkflowNotification, logWorkflowEvent } from '@/lib/services/notification-events.service';
 import { generateQuote } from '@/lib/services/quote.service';
-import { performITCCheck, shouldAutoDecline } from '@/lib/services/itc.service';
-import {
-    analyzeBankStatement,
-    canAutoApprove as canAutoApproveFica,
-    requiresManualReview,
-} from '@/lib/services/fica-ai.service';
+import type { QuoteResult } from '@/lib/services/quote.service';
+import { updateWorkflowStatus } from '@/lib/services/workflow.service';
 import {
     createV24ClientProfile,
+    generateTemporaryPassword,
     scheduleTrainingSession,
     sendWelcomePack,
-    generateTemporaryPassword,
 } from '@/lib/services/v24.service';
-import { ITC_THRESHOLDS, AI_TRUST_THRESHOLDS } from '@/lib/types';
-import type { Events } from '../events';
+import { AI_TRUST_THRESHOLDS, ITC_THRESHOLDS } from '@/lib/types';
+import type { FicaDocumentAnalysis } from '@/lib/types';
+import { inngest } from '../client';
+import blacklist from '../data/mock_blacklist.json';
 
 // ============================================
 // Helper: Safe Step Execution with HITL
 // ============================================
 
+type WorkflowResolutionEvent = {
+    data: {
+        action: 'retry' | 'cancel' | 'continue';
+        decision?: {
+            agentId: string;
+            outcome: 'APPROVED' | 'REJECTED';
+            reason?: string;
+            timestamp: string;
+        };
+    };
+};
+
+type QuoteApprovedEvent = {
+    data: {
+        workflowId: number;
+        leadId: number;
+        quoteId: number;
+        approvedAt: string;
+    };
+};
+
+type QuoteSignedEvent = {
+    data: {
+        workflowId: number;
+        leadId: number;
+        quoteId: number;
+        signedAt: string;
+    };
+};
+
+type ContractSignedEvent = {
+    data: {
+        workflowId: number;
+        contractUrl?: string;
+        signedAt: string;
+    };
+};
+
+type FicaUploadDocument = {
+    type: 'BANK_STATEMENT' | 'ACCOUNTANT_LETTER' | 'ID_DOCUMENT' | 'PROOF_OF_ADDRESS';
+    filename: string;
+    url: string;
+    uploadedAt: string;
+};
+
+type FicaUploadEvent = {
+    data: {
+        workflowId: number;
+        leadId: number;
+        documents: FicaUploadDocument[];
+    };
+};
+
+type RiskDecisionEvent = {
+    data: {
+        decision: {
+            outcome: 'APPROVED' | 'REJECTED' | 'REQUEST_MORE_INFO';
+            decidedBy: string;
+            reason?: string;
+            conditions?: string[];
+            timestamp: string;
+        };
+    };
+};
+
+type ITCResult = {
+    creditScore: number;
+    riskCategory: 'LOW' | 'MEDIUM' | 'HIGH' | 'VERY_HIGH';
+    passed: boolean;
+    recommendation: 'AUTO_APPROVE' | 'MANUAL_REVIEW' | 'AUTO_DECLINE' | 'ENHANCED_DUE_DILIGENCE';
+};
+
 async function runSafeStep<T>(
-    step: any,
+    step: unknown,
     stepId: string,
     operation: () => Promise<T>,
     context: { workflowId: number; leadId: number; stage: number },
 ): Promise<T | null> {
+    const stepInstance = step as {
+        run: (id: string, op: () => Promise<unknown>) => Promise<unknown>;
+        waitForEvent: (id: string, options: Record<string, unknown>) => Promise<unknown>;
+    };
+
     try {
-        return await step.run(stepId, operation);
-    } catch (error: any) {
+        return (await stepInstance.run(stepId, operation)) as T;
+    } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         console.error(`[Workflow] Step ${stepId} failed:`, errorMessage);
 
         // Log error event
-        await step.run(`${stepId}-log-error`, () =>
+        await stepInstance.run(`${stepId}-log-error`, () =>
             logWorkflowEvent({
                 workflowId: context.workflowId,
                 eventType: 'error',
@@ -63,7 +140,7 @@ async function runSafeStep<T>(
         );
 
         // Create notification
-        await step.run(`${stepId}-notify-error`, () =>
+        await stepInstance.run(`${stepId}-notify-error`, () =>
             createWorkflowNotification({
                 workflowId: context.workflowId,
                 leadId: context.leadId,
@@ -76,17 +153,19 @@ async function runSafeStep<T>(
         );
 
         // Pause workflow status
-        await step.run(`${stepId}-set-paused`, () => updateWorkflowStatus(context.workflowId, 'paused', context.stage));
+        await stepInstance.run(`${stepId}-set-paused`, () =>
+            updateWorkflowStatus(context.workflowId, 'paused', context.stage),
+        );
 
         // Wait for HITL resolution
-        const resolution = await step.waitForEvent(`${stepId}-wait-resolution`, {
+        const resolution = (await stepInstance.waitForEvent(`${stepId}-wait-resolution`, {
             event: 'workflow/error-resolved',
             timeout: '30d',
             match: 'data.workflowId',
-        });
+        })) as WorkflowResolutionEvent | null;
 
         if (!resolution || resolution.data.action === 'cancel') {
-            await step.run(`${stepId}-handle-cancel`, () =>
+            await stepInstance.run(`${stepId}-handle-cancel`, () =>
                 updateWorkflowStatus(context.workflowId, 'failed', context.stage),
             );
             throw new Error(`Workflow cancelled at step ${stepId}: ${errorMessage}`);
@@ -147,10 +226,10 @@ export const onboardingWorkflow = inngest.createFunction(
         // STEP: ITC Credit Check (SOP Step 2.1)
         // Mock API call to credit bureau. If score < 600, auto-decline
         // ================================================================
-        const itcResult = await step.run('run-itc-check', async () => {
+        const itcResult = (await step.run('run-itc-check', async () => {
             console.log(`[Workflow] Running ITC credit check for lead ${leadId}`);
             return performITCCheck({ leadId, workflowId });
-        });
+        })) as unknown as ITCResult;
 
         // Log ITC result
         await step.run('log-itc-result', () =>
@@ -201,35 +280,15 @@ export const onboardingWorkflow = inngest.createFunction(
         });
 
         // Generate quote based on ITC result and lead data
-        const quoteReqResult = await step.run('generate-legal-pack', () => generateQuote(leadId, workflowId));
+        const quoteResult = (await step.run('generate-legal-pack', () =>
+            generateQuote(leadId, workflowId),
+        )) as unknown as QuoteResult;
 
-        let quote;
-        const quoteResult = { ...quoteReqResult };
-
-        if (quoteReqResult.success && quoteReqResult.async) {
-            console.log('[Workflow] Quote generation request sent. Waiting for callback...');
-
-            const quoteEvent = await step.waitForEvent('wait-for-quote', {
-                event: 'onboarding/quote-generated',
-                match: 'data.workflowId',
-                timeout: '24h',
-            });
-
-            if (!quoteEvent) {
-                quoteResult.success = false;
-                quoteResult.error = 'Quote generation timed out';
-            } else {
-                quote = quoteEvent.data.quote;
-                quoteResult.success = true;
-                quoteResult.quote = quote;
-            }
-        } else {
-            quote = quoteResult.quote;
-        }
+        const quote = quoteResult.quote;
 
         // Handle quote error with HITL
-        if (!quoteResult.success) {
-            const errorMessage = quoteResult.error || 'Unknown quote error';
+        if (!quoteResult.success || !quote) {
+            const errorMessage = quoteResult.error || 'Quote generation failed';
 
             await step.run('stage-2-quote-error-log', () =>
                 logWorkflowEvent({
@@ -269,23 +328,118 @@ export const onboardingWorkflow = inngest.createFunction(
             }
         }
 
-        // Quote generated - continue with Stage 3
-        // (Zapier webhooks removed - using direct Inngest events)
-
-        // Wait for Contract Signing
-        await runSafeStep(
-            step,
-            'stage-2-awaiting-contract',
-            () => updateWorkflowStatus(workflowId, 'awaiting_human', 2),
-            { workflowId, leadId, stage: 2 },
+        await step.run('stage-2-quote-created', () =>
+            updateWorkflowStatus(workflowId, 'awaiting_human', 2),
         );
 
+        await step.run('stage-2-quote-notify', () =>
+            createWorkflowNotification({
+                workflowId,
+                leadId,
+                type: 'awaiting',
+                title: 'Quote ready for approval',
+                message: 'AI-generated quote is ready for staff review and approval.',
+                actionable: true,
+            }),
+        );
+
+        console.log('[Workflow] Waiting for staff quote approval...');
+        const approvalEvent = (await step.waitForEvent('wait-for-quote-approval', {
+            event: 'quote/approved',
+            match: 'data.workflowId',
+            timeout: '30d',
+        })) as QuoteApprovedEvent | null;
+
+        if (!approvalEvent) {
+            await step.run('stage-2-quote-approval-timeout', () => updateWorkflowStatus(workflowId, 'timeout', 2));
+            await step.run('stage-2-quote-approval-timeout-notify', () =>
+                createWorkflowNotification({
+                    workflowId,
+                    leadId,
+                    type: 'timeout',
+                    title: 'Quote approval timeout',
+                    message: 'No staff approval received within 30 days.',
+                    actionable: true,
+                }),
+            );
+            return { status: 'timeout', stage: 2, reason: 'Quote approval timeout' };
+        }
+
+        // ================================================================
+        // STEP: Send Form Links to Client (after staff approval)
+        // ================================================================
+        await step.run('send-form-links', async () => {
+            const db = getDatabaseClient();
+            if (!db) {
+                throw new Error('Database connection failed');
+            }
+
+            const leadResults = await db.select().from(leads).where(eq(leads.id, leadId));
+            const lead = leadResults[0];
+
+            if (!lead) {
+                throw new Error(`Lead ${leadId} not found`);
+            }
+
+            const { links } = await generateFormLinks({ leadId, workflowId });
+            await sendFormLinksEmail({
+                email: lead.email,
+                contactName: lead.contactName,
+                links,
+            });
+
+            await createWorkflowNotification({
+                workflowId,
+                leadId,
+                type: 'awaiting',
+                title: 'Onboarding forms sent',
+                message: 'Client has received interactive forms and upload links.',
+                actionable: false,
+            });
+        });
+
+        await runSafeStep(step, 'stage-2-awaiting-quote-signature', () => updateWorkflowStatus(workflowId, 'awaiting_human', 2), {
+            workflowId,
+            leadId,
+            stage: 2,
+        });
+
+        console.log('[Workflow] Waiting for Signed Quotation...');
+        const quoteSignedEvent = (await step.waitForEvent('wait-for-quote-signed', {
+            event: 'quote/signed',
+            match: 'data.workflowId',
+            timeout: '30d',
+        })) as QuoteSignedEvent | null;
+
+        if (!quoteSignedEvent) {
+            console.error('[Workflow] Quote signature timeout!');
+            await step.run('quote-signature-timeout', () => updateWorkflowStatus(workflowId, 'timeout', 2));
+            await step.run('quote-signature-timeout-notify', () =>
+                createWorkflowNotification({
+                    workflowId,
+                    leadId,
+                    type: 'timeout',
+                    title: 'Quote signature timeout',
+                    message: 'Client did not sign the quotation within 30 days.',
+                    actionable: true,
+                }),
+            );
+            return { status: 'timeout', stage: 2, reason: 'Quote signature timeout' };
+        }
+
+        // Wait for Contract Signing
+        await runSafeStep(step, 'stage-2-awaiting-contract', () => updateWorkflowStatus(workflowId, 'awaiting_human', 2), {
+            workflowId,
+            leadId,
+            stage: 2,
+        });
+
         console.log('[Workflow] Waiting for Contract Signed signal...');
-        const contractEvent = await step.waitForEvent('wait-for-contract', {
+        const contractEvent = (await step.waitForEvent('wait-for-contract', {
             event: 'contract/signed',
             match: 'data.workflowId',
             timeout: '7d',
-        });
+        })) as ContractSignedEvent | null;
 
         if (!contractEvent) {
             console.error('[Workflow] Contract signing timeout!');
@@ -328,11 +482,11 @@ export const onboardingWorkflow = inngest.createFunction(
             }),
         );
 
-        const ficaUploadEvent = await step.waitForEvent('wait-for-documents', {
+        const ficaUploadEvent = (await step.waitForEvent('wait-for-documents', {
             event: 'upload/fica.received',
             match: 'data.workflowId',
             timeout: '14d',
-        });
+        })) as FicaUploadEvent | null;
 
         if (!ficaUploadEvent) {
             console.error('[Workflow] FICA document upload timeout!');
@@ -354,14 +508,16 @@ export const onboardingWorkflow = inngest.createFunction(
             };
         }
 
-        console.log('[Workflow] FICA Documents received:', ficaUploadEvent.data.documents.length, 'file(s)');
+        const documents = ficaUploadEvent.data.documents;
+
+        console.log('[Workflow] FICA Documents received:', documents.length, 'file(s)');
 
         // SOP Step 2.4: AI FICA Verification (Vercel AI SDK)
-        const ficaAnalysis = await step.run('ai-fica-verification', async () => {
+        const ficaAnalysis = (await step.run('ai-fica-verification', async () => {
             console.log('[Workflow] Running AI FICA verification...');
 
             // Find bank statement in uploaded documents
-            const bankStatement = ficaUploadEvent.data.documents.find((d: any) => d.type === 'BANK_STATEMENT');
+            const bankStatement = documents.find(document => document.type === 'BANK_STATEMENT');
 
             if (!bankStatement) {
                 throw new Error('Bank statement not found in uploaded documents');
@@ -373,7 +529,7 @@ export const onboardingWorkflow = inngest.createFunction(
                 contentType: 'text',
                 workflowId,
             });
-        });
+        })) as unknown as FicaDocumentAnalysis;
 
         // Log AI analysis result
         await step.run('log-fica-analysis', () =>
@@ -431,11 +587,11 @@ export const onboardingWorkflow = inngest.createFunction(
 
             // Wait for Risk Manager decision
             console.log('[Workflow] Waiting for Risk Manager decision...');
-            const riskEvent = await step.waitForEvent('human-risk-review', {
+            const riskEvent = (await step.waitForEvent('human-risk-review', {
                 event: 'risk/decision.received',
                 match: 'data.workflowId',
                 timeout: '7d',
-            });
+            })) as RiskDecisionEvent | null;
 
             if (!riskEvent) {
                 await step.run('risk-timeout', () => updateWorkflowStatus(workflowId, 'timeout', 3));

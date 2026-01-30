@@ -1,8 +1,7 @@
 "use client";
 
-import * as React from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
 	DropdownMenu,
@@ -15,7 +14,6 @@ import {
 import { cn } from "@/lib/utils";
 import {
 	RiArrowDownSLine,
-	RiArrowRightLine,
 	RiArrowUpSLine,
 	RiMoreLine,
 } from "@remixicon/react";
@@ -33,6 +31,9 @@ export interface LeadRow {
 	industry: string;
 	employeeCount: number;
 	createdAt: Date;
+	workflowId?: number | null;
+	workflowStage?: number | null;
+	hasQuote?: boolean;
 }
 
 // --- Configuration ---
@@ -55,8 +56,11 @@ export const columns: ColumnDef<LeadRow>[] = [
 		header: ({ table }) => (
 			<Checkbox
 				checked={
-					table.getIsAllPageRowsSelected() ||
-					(table.getIsSomePageRowsSelected() && "indeterminate")
+					table.getIsAllPageRowsSelected()
+						? true
+						: table.getIsSomePageRowsSelected()
+							? "indeterminate"
+							: false
 				}
 				onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
 				aria-label="Select all"
@@ -214,21 +218,30 @@ export const columns: ColumnDef<LeadRow>[] = [
 	{
 		id: "actions",
 		cell: ({ row }) => {
+			const canViewQuote =
+				row.original.workflowStage === 2 && row.original.hasQuote;
+
 			return (
 				<div className="flex items-center justify-end gap-2">
 					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon"
-								className="h-8 w-8 hover:bg-secondary/10"
-							>
-								<RiMoreLine className="h-4 w-4" />
-							</Button>
+						<DropdownMenuTrigger
+							className={cn(
+								buttonVariants({ variant: "ghost", size: "icon" }),
+								"h-8 w-8 hover:bg-secondary/10",
+							)}
+						>
+							<RiMoreLine className="h-4 w-4" />
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="end">
 							<DropdownMenuLabel>Actions</DropdownMenuLabel>
 							<DropdownMenuItem>View Details</DropdownMenuItem>
+							{canViewQuote ? (
+								<DropdownMenuItem asChild>
+									<Link href={`/dashboard/leads/${row.original.id}/quote`}>
+										Review Quote
+									</Link>
+								</DropdownMenuItem>
+							) : null}
 							<DropdownMenuItem>Edit Lead</DropdownMenuItem>
 							<DropdownMenuItem>Start Workflow</DropdownMenuItem>
 							<DropdownMenuSeparator />
