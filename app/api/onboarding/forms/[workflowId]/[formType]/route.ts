@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDatabaseClient } from "@/app/utils";
 import {
 	onboardingForms,
-	formSubmissions,
+	onboardingFormSubmissions,
 	workflows,
 	FORM_TYPES,
 } from "@/db/schema";
@@ -15,7 +15,7 @@ import { inngest } from "@/inngest/client";
  */
 export async function GET(
 	request: NextRequest,
-	{ params }: { params: Promise<{ workflowId: string; formType: string }> }
+	{ params }: { params: Promise<{ workflowId: string; formType: string }> },
 ) {
 	const { workflowId, formType } = await params;
 
@@ -23,16 +23,13 @@ export async function GET(
 	if (!db) {
 		return NextResponse.json(
 			{ error: "Database not available" },
-			{ status: 500 }
+			{ status: 500 },
 		);
 	}
 
 	// Validate form type
 	if (!FORM_TYPES.includes(formType as any)) {
-		return NextResponse.json(
-			{ error: "Invalid form type" },
-			{ status: 400 }
-		);
+		return NextResponse.json({ error: "Invalid form type" }, { status: 400 });
 	}
 
 	try {
@@ -43,8 +40,8 @@ export async function GET(
 			.where(
 				and(
 					eq(onboardingForms.workflowId, parseInt(workflowId)),
-					eq(onboardingForms.formType, formType as any)
-				)
+					eq(onboardingForms.formType, formType as any),
+				),
 			)
 			.limit(1);
 
@@ -61,9 +58,9 @@ export async function GET(
 		// Get the latest submission
 		const latestSubmission = await db
 			.select()
-			.from(formSubmissions)
-			.where(eq(formSubmissions.onboardingFormId, form.id))
-			.orderBy(formSubmissions.version)
+			.from(onboardingFormSubmissions)
+			.where(eq(onboardingFormSubmissions.onboardingFormId, form.id))
+			.orderBy(onboardingFormSubmissions.version)
 			.limit(1);
 
 		return NextResponse.json({
@@ -75,7 +72,7 @@ export async function GET(
 		console.error("Failed to fetch form:", error);
 		return NextResponse.json(
 			{ error: "Failed to fetch form data" },
-			{ status: 500 }
+			{ status: 500 },
 		);
 	}
 }
@@ -86,7 +83,7 @@ export async function GET(
  */
 export async function POST(
 	request: NextRequest,
-	{ params }: { params: Promise<{ workflowId: string; formType: string }> }
+	{ params }: { params: Promise<{ workflowId: string; formType: string }> },
 ) {
 	const { workflowId, formType } = await params;
 
@@ -94,16 +91,13 @@ export async function POST(
 	if (!db) {
 		return NextResponse.json(
 			{ error: "Database not available" },
-			{ status: 500 }
+			{ status: 500 },
 		);
 	}
 
 	// Validate form type
 	if (!FORM_TYPES.includes(formType as any)) {
-		return NextResponse.json(
-			{ error: "Invalid form type" },
-			{ status: 400 }
-		);
+		return NextResponse.json({ error: "Invalid form type" }, { status: 400 });
 	}
 
 	try {
@@ -113,7 +107,7 @@ export async function POST(
 		if (!formData) {
 			return NextResponse.json(
 				{ error: "Form data is required" },
-				{ status: 400 }
+				{ status: 400 },
 			);
 		}
 
@@ -129,7 +123,7 @@ export async function POST(
 		if (workflow.length === 0) {
 			return NextResponse.json(
 				{ error: "Workflow not found" },
-				{ status: 404 }
+				{ status: 404 },
 			);
 		}
 
@@ -140,8 +134,8 @@ export async function POST(
 			.where(
 				and(
 					eq(onboardingForms.workflowId, workflowIdNum),
-					eq(onboardingForms.formType, formType as any)
-				)
+					eq(onboardingForms.formType, formType as any),
+				),
 			)
 			.limit(1);
 
@@ -162,12 +156,12 @@ export async function POST(
 					submittedAt: isDraft ? undefined : new Date(),
 				})
 				.returning();
-			
+
 			const newForm = newFormResult[0];
 			if (!newForm) {
 				return NextResponse.json(
 					{ error: "Failed to create form record" },
-					{ status: 500 }
+					{ status: 500 },
 				);
 			}
 			formId = newForm.id;
@@ -190,16 +184,16 @@ export async function POST(
 		// Get current version number
 		const existingSubmissions = await db
 			.select()
-			.from(formSubmissions)
-			.where(eq(formSubmissions.onboardingFormId, formId))
-			.orderBy(formSubmissions.version);
+			.from(onboardingFormSubmissions)
+			.where(eq(onboardingFormSubmissions.onboardingFormId, formId))
+			.orderBy(onboardingFormSubmissions.version);
 
 		const lastSubmission = existingSubmissions[existingSubmissions.length - 1];
 		const nextVersion = lastSubmission ? lastSubmission.version + 1 : 1;
 
 		// Create submission record
 		const submissionResult = await db
-			.insert(formSubmissions)
+			.insert(onboardingFormSubmissions)
 			.values({
 				onboardingFormId: formId,
 				version: nextVersion,
@@ -213,7 +207,7 @@ export async function POST(
 		if (!submission) {
 			return NextResponse.json(
 				{ error: "Failed to create submission record" },
-				{ status: 500 }
+				{ status: 500 },
 			);
 		}
 
@@ -240,7 +234,7 @@ export async function POST(
 		console.error("Failed to save form:", error);
 		return NextResponse.json(
 			{ error: "Failed to save form data" },
-			{ status: 500 }
+			{ status: 500 },
 		);
 	}
 }
@@ -251,7 +245,7 @@ export async function POST(
  */
 export async function PUT(
 	request: NextRequest,
-	{ params }: { params: Promise<{ workflowId: string; formType: string }> }
+	{ params }: { params: Promise<{ workflowId: string; formType: string }> },
 ) {
 	const { workflowId, formType } = await params;
 
@@ -259,7 +253,7 @@ export async function PUT(
 	if (!db) {
 		return NextResponse.json(
 			{ error: "Database not available" },
-			{ status: 500 }
+			{ status: 500 },
 		);
 	}
 
@@ -270,7 +264,7 @@ export async function PUT(
 		if (!status) {
 			return NextResponse.json(
 				{ error: "Status is required" },
-				{ status: 400 }
+				{ status: 400 },
 			);
 		}
 
@@ -283,17 +277,14 @@ export async function PUT(
 			.where(
 				and(
 					eq(onboardingForms.workflowId, workflowIdNum),
-					eq(onboardingForms.formType, formType as any)
-				)
+					eq(onboardingForms.formType, formType as any),
+				),
 			)
 			.limit(1);
 
 		const formRecord = existingForm[0];
 		if (!formRecord) {
-			return NextResponse.json(
-				{ error: "Form not found" },
-				{ status: 404 }
-			);
+			return NextResponse.json({ error: "Form not found" }, { status: 404 });
 		}
 
 		// Update form status
@@ -316,7 +307,7 @@ export async function PUT(
 		console.error("Failed to update form status:", error);
 		return NextResponse.json(
 			{ error: "Failed to update form status" },
-			{ status: 500 }
+			{ status: 500 },
 		);
 	}
 }

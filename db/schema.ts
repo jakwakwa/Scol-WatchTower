@@ -332,7 +332,6 @@ export const riskAssessmentsRelations = relations(riskAssessments, ({ one }) => 
         references: [leads.id],
     }),
 }));
-}));
 
 export const quotesRelations = relations(quotes, ({ one }) => ({
     workflow: one(workflows, {
@@ -347,8 +346,6 @@ export const agentCallbacksRelations = relations(agentCallbacks, ({ one }) => ({
         references: [workflows.id],
     }),
 }));
-<<<<<<< HEAD
-=======
 
 // ============================================
 // Legacy table (kept for compatibility)
@@ -358,26 +355,6 @@ export const todos = sqliteTable("todos", {
 	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
 	description: text("description").notNull(),
 	completed: integer("completed", { mode: "boolean" }).notNull().default(false),
-});
-
-/**
- * Notifications table - Control Tower UI alerts
- */
-export const notifications = sqliteTable("notifications", {
-	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
-	workflowId: integer("workflow_id").references(() => workflows.id),
-	leadId: integer("lead_id").references(() => leads.id),
-	type: text("type", {
-		enum: ["awaiting", "completed", "failed", "timeout", "paused", "error"],
-	}).notNull(),
-	title: text("title").notNull(),
-	message: text("message").notNull(),
-	actionable: integer("actionable", { mode: "boolean" }).default(true),
-	read: integer("read", { mode: "boolean" }).notNull().default(false),
-	errorDetails: text("error_details"), // JSON with error context
-	createdAt: integer("created_at", { mode: "timestamp" })
-		.notNull()
-		.$defaultFn(() => new Date()),
 });
 
 // ============================================
@@ -430,7 +407,7 @@ export const onboardingForms = sqliteTable("onboarding_forms", {
 /**
  * Form Submissions - Store form data with versioning
  */
-export const formSubmissions = sqliteTable("form_submissions", {
+export const onboardingFormSubmissions = sqliteTable("onboarding_form_submissions", {
 	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
 	onboardingFormId: integer("onboarding_form_id")
 		.notNull()
@@ -510,17 +487,20 @@ export const onboardingFormsRelations = relations(onboardingForms, ({ one, many 
 		fields: [onboardingForms.workflowId],
 		references: [workflows.id],
 	}),
-	submissions: many(formSubmissions),
+	submissions: many(onboardingFormSubmissions),
 	documents: many(documentUploads),
 	signatures: many(signatures),
 }));
 
-export const formSubmissionsRelations = relations(formSubmissions, ({ one }) => ({
+export const onboardingFormSubmissionsRelations = relations(
+	onboardingFormSubmissions,
+	({ one }) => ({
 	onboardingForm: one(onboardingForms, {
-		fields: [formSubmissions.onboardingFormId],
+		fields: [onboardingFormSubmissions.onboardingFormId],
 		references: [onboardingForms.id],
 	}),
-}));
+}),
+);
 
 export const documentUploadsRelations = relations(documentUploads, ({ one }) => ({
 	workflow: one(workflows, {
