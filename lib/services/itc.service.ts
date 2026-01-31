@@ -5,9 +5,9 @@
  * Falls back to mock implementation when credentials not configured.
  *
  * Business Logic:
- * - Score >= 700: AUTO_APPROVE (fast-track)
- * - Score 600-699: MANUAL_REVIEW (human required)
- * - Score < 600: AUTO_DECLINE (or enhanced due diligence)
+ * - Score >= AUTO_APPROVE: fast-track approval
+ * - Score >= MANUAL_REVIEW: manual review required
+ * - Score < AUTO_DECLINE: automatic decline
  */
 
 import { getDatabaseClient } from "@/app/utils";
@@ -504,7 +504,7 @@ function getRecommendation(
 	| "ENHANCED_DUE_DILIGENCE" {
 	if (score >= ITC_THRESHOLDS.AUTO_APPROVE) return "AUTO_APPROVE";
 	if (score >= ITC_THRESHOLDS.MANUAL_REVIEW) return "MANUAL_REVIEW";
-	if (score >= 500) return "ENHANCED_DUE_DILIGENCE";
+	if (score >= ITC_THRESHOLDS.AUTO_DECLINE) return "ENHANCED_DUE_DILIGENCE";
 	return "AUTO_DECLINE";
 }
 

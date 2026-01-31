@@ -297,7 +297,7 @@ export type ITCCheckResult = z.infer<typeof ITCCheckResultSchema>;
 export const ITC_THRESHOLDS = {
 	AUTO_APPROVE: 350, // Score >= 350: Fast-track approval
 	MANUAL_REVIEW: 200, // Score 200-349: Manual review required
-	AUTO_DECLINE: 200, // Score < 200: Automatic decline
+	AUTO_DECLINE: 100, // Score < 100: Automatic decline
 } as const;
 
 // ============================================

@@ -10,7 +10,7 @@
  * Stage 4: Integration & V24 Handover (Activation)
  *
  * Business Rules:
- * - ITC Score < 600: Auto-decline or route to manual review
+ * - ITC Score < 100: Auto-decline or route to manual review
  * - AI Trust Score >= 80%: Auto-approve
  * - AI Trust Score < 80%: Risk Manager (Paula) reviews
  * - 14-day timeout for FICA document uploads
@@ -255,7 +255,7 @@ export const onboardingWorkflow = inngest.createFunction(
 
 		// ================================================================
 		// STEP: ITC Credit Check (SOP Step 2.1)
-		// Mock API call to credit bureau. If score < 600, auto-decline
+		// Mock API call to credit bureau. If score < 100, auto-decline
 		// ================================================================
 		const itcResult = (await step.run("run-itc-check", async () => {
 			console.log(
