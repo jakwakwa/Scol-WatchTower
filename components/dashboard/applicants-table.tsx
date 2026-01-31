@@ -230,7 +230,11 @@ export const columns: ColumnDef<ApplicantRow>[] = [
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="end">
 							<DropdownMenuLabel>Actions</DropdownMenuLabel>
-							<DropdownMenuItem>View Details</DropdownMenuItem>
+							<DropdownMenuItem asChild>
+								<Link href={`/dashboard/applicants/${row.original.id}`}>
+									View Details
+								</Link>
+							</DropdownMenuItem>
 							{canViewQuote ? (
 								<DropdownMenuItem asChild>
 									<Link href={`/dashboard/applicants/${row.original.id}/quote`}>
