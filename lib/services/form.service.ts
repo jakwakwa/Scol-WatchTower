@@ -47,6 +47,7 @@ export async function createFormInstance(
 				formType: options.formType,
 				status: "sent",
 				tokenHash,
+				token,
 				tokenPrefix,
 				sentAt: new Date(),
 				expiresAt,
