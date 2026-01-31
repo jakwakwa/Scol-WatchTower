@@ -1,11 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { RiAi, RiAiGenerate2Line, RiLoader4Line } from "@remixicon/react";
+import { RiAi, RiLoader4Line } from "@remixicon/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { GlassCard } from "@/components/dashboard";
 
@@ -54,12 +53,12 @@ export function QuoteApprovalForm({
 			? String(initialAdjustedFeePercent)
 			: "",
 	);
-	const [rationale, setRationale] = useState(initialRationale || "");
+	const [rationale, _setRationale] = useState(initialRationale || "");
 	const [errors, setErrors] = useState<QuoteFormErrors>({});
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [submitMessage, setSubmitMessage] = useState<string | null>(null);
 
-	const parsedDetails = useMemo(() => {
+	const _parsedDetails = useMemo(() => {
 		if (!details) return null;
 		try {
 			return JSON.parse(details) as {
