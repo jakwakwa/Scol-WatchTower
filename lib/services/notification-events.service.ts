@@ -1,10 +1,10 @@
 import { getDatabaseClient } from "@/app/utils";
-import { notifications, workflowEvents, leads } from "@/db/schema";
+import { notifications, workflowEvents } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 export interface CreateNotificationParams {
 	workflowId: number;
-	leadId: number;
+	applicantId: number;
 	type: "awaiting" | "completed" | "failed" | "timeout" | "paused" | "error";
 	title: string;
 	message: string;
@@ -43,18 +43,17 @@ export async function createWorkflowNotification(
 	}
 
 	try {
-		await db.insert(notifications).values({
-			workflowId: params.workflowId,
-			leadId: params.leadId,
-			type: params.type,
-			title: params.title,
-			message: params.message,
-			actionable: params.actionable ?? true,
-			read: false,
-			errorDetails: params.errorDetails
-				? JSON.stringify(params.errorDetails)
-				: null,
-		});
+		await db.insert(notifications).values([
+			{
+				workflowId: params.workflowId,
+				applicantId: params.applicantId,
+				type: params.type,
+				// Title doesn't exist in schema, combining with message
+				message: `${params.title}: ${params.message}`,
+				actionable: params.actionable ?? true,
+				read: false,
+			},
+		]);
 	} catch (error) {
 		console.error("[NotificationEvents] Failed to create notification:", error);
 	}
@@ -75,14 +74,16 @@ export async function logWorkflowEvent(params: LogEventParams): Promise<void> {
 	}
 
 	try {
-		await db.insert(workflowEvents).values({
-			workflowId: params.workflowId,
-			eventType: params.eventType,
-			payload: JSON.stringify(params.payload),
-			actorType: params.actorType || "platform",
-			actorId: params.actorId,
-			timestamp: new Date(),
-		});
+		await db.insert(workflowEvents).values([
+			{
+				workflowId: params.workflowId,
+				eventType: params.eventType,
+				payload: JSON.stringify(params.payload),
+				actorType: params.actorType || "platform",
+				actorId: params.actorId,
+				timestamp: new Date(),
+			},
+		]);
 	} catch (error) {
 		console.error("[NotificationEvents] Failed to log workflow event:", error);
 	}

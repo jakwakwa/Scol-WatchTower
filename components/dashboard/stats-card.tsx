@@ -15,7 +15,7 @@ interface StatsCardProps {
 
 const iconColorClasses = {
 	amber: "bg-stone-500/20 text-stone-400",
-	green: "bg-emerald-500/30 text-teal-700",
+	green: "bg-emerald-500/30 text-emerald-600/80",
 	blue: "bg-blue-500/20 text-blue-400",
 	purple: "bg-purple-500/20 text-purple-400",
 	red: "bg-red-500/20 text-red-400",
@@ -34,12 +34,12 @@ export function StatsCard({
 			className={cn(
 				"group relative overflow-hidden rounded-2xl border border-sidebar-border bg-card/50 backdrop-blur-sm p-6",
 				"shadow-xl shadow-black/5",
-				"transition-all duration-300 hover:bg-card/70 hover:border-white/10 hover:shadow-2xl hover:-translate-y-1",
+				"transition-all duration-300 hover:bg-card/70 hover:border-secondary/10 hover:shadow-2xl hover:-translate-y-1",
 				className,
 			)}
 		>
 			{/* Background gradient effect */}
-			<div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent" />
+			<div className="absolute inset-0 bg-linear-to-br from-secondary/2 to-transparent" />
 
 			{/* Content */}
 			<div className="relative flex items-start justify-between">
@@ -52,7 +52,7 @@ export function StatsCard({
 							<span
 								className={cn(
 									"text-xs font-medium",
-									change.trend === "up" && "text-teal-700",
+									change.trend === "up" && "text-emerald-600/80",
 									change.trend === "down" && "text-red-400",
 									change.trend === "neutral" && "text-muted-foreground",
 								)}
@@ -80,7 +80,7 @@ export function StatsCard({
 			</div>
 
 			{/* Bottom accent line */}
-			<div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-stone-500/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+			<div className="absolute bottom-0 left-0 right-0 h-1 bg-linear-to-r from-transparent via-stone-500/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 		</div>
 	);
 }
@@ -100,7 +100,7 @@ export function StatsCardCompact({
 	iconColor = "amber",
 }: StatsCardCompactProps) {
 	return (
-		<div className="flex items-center gap-3 rounded-xl bg-white/[0.02] p-3">
+		<div className="flex items-center gap-3 rounded-xl bg-secondary/2 p-3">
 			<div
 				className={cn(
 					"flex h-10 w-10 items-center justify-center rounded-lg",

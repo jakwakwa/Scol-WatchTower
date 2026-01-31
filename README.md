@@ -4,7 +4,7 @@
 
 ## Overview
 
-**SCOL Watchtower** (StratCol Onboard AI) is a "Zero-Middleware" onboarding automation platform designed to manage lead lifecycles, risk assessment, and contract workflows.
+**SCOL Watchtower** (StratCol Onboard AI) is a "Zero-Middleware" onboarding automation platform designed to manage applicant lifecycles, risk assessment, and contract workflows.
 
 The system has recently transitioned from a Zapier-dependent architecture to a direct event-driven model. This shift centralises state management within [Inngest](https://www.inngest.com/) workflows, eliminates external dependencies for core logic, and enables direct communication between capture sources (Google Forms/Apps Script) and the Next.js backend.
 
@@ -13,8 +13,8 @@ The system has recently transitioned from a Zapier-dependent architecture to a d
 - **Zero-Middleware Architecture**: Direct ingestion of webhooks from Google Apps Script, removing Zapier entirely to reduce latency and costs.
 - **Event-Driven Workflows**: Complex business logic (onboarding, verification, signing) is orchestrated via Inngest, with clear domain events like `onboarding/lead.created` and `contract/signed`.
 - **Deterministic Verification**: Replaces probabilistic AI voting with a strict, hierarchical veto system using a local blocklist (`mock_blacklist.json`).
-- **Direct Lead Capture**: Secure HTTP endpoints (`/api/webhooks/lead-capture`) handle form submissions directly.
-- **Real-time Dashboard**: A comprehensive UI built with Shadcn/UI for monitoring agents, leads, and workflow statuses.
+- **Direct Applicant Capture**: Secure HTTP endpoints (`/api/webhooks/lead-capture`) handle form submissions directly.
+- **Real-time Dashboard**: A comprehensive UI built with Shadcn/UI for monitoring agents, applicants, and workflow statuses.
 
 ## Tech Stack
 
@@ -39,10 +39,10 @@ The system has recently transitioned from a Zapier-dependent architecture to a d
 
 The platform follows a modern event-driven architecture:
 
-1.  **Ingestion**: Leads are captured via Google Forms, which trigger a Google Apps Script to POST data directly to `/api/webhooks/lead-capture`.
+1.  **Ingestion**: Applicants are captured via Google Forms, which trigger a Google Apps Script to POST data directly to `/api/webhooks/lead-capture`.
 2.  **Orchestration**: The API triggers an Inngest workflow (`inngest/functions/onboarding.ts`).
 3.  **Verification**: The workflow performs immediate veto checks against the database and blocklists.
-4.  **State Management**: The workflow manages the lead's state (e.g., waiting for contract signing via `/api/webhooks/contract-signed`) without polling.
+4.  **State Management**: The workflow manages the applicant's state (e.g., waiting for contract signing via `/api/webhooks/contract-signed`) without polling.
 
 ## Getting Started
 

@@ -1,13 +1,7 @@
 "use client";
 
-import { Sidebar } from "./sidebar";
-import { cn } from "@/lib/utils";
-import {
-	NotificationsPanel,
-	type WorkflowNotification,
-} from "./notifications-panel";
-import { UserButton } from "@clerk/nextjs";
-import { useState } from "react";
+import { PageMeta } from "./page-meta";
+import { type WorkflowNotification } from "./notifications-panel";
 
 interface DashboardLayoutProps {
 	children: React.ReactNode;
@@ -22,79 +16,12 @@ export function DashboardLayout({
 	title,
 	description,
 	actions,
-	notifications = [],
 }: DashboardLayoutProps) {
-
-	const [isCollapsed, setIsCollapsed] = useState(false);
 	return (
-		<div className="min-h-screen bg-background">
-			<Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
-
-			{/* Main content */}
-			<main className={cn(`pl-64 transition-all duration-300`, isCollapsed && "pl-20")}>
-				{/* Header */}
-				{(title || actions || notifications) && (
-					<header className="sticky top-0 z-30 border-b border-sidebar-border bg-sidebar/90 backdrop-blur-xl">
-						<div className="flex h-20 items-center justify-between px-8">
-							<div>
-								{title && (
-									<h1 className="text-xl font-bold bg-linear-to-r from-primary to-muted bg-clip-text text-transparent">
-										{title}
-									</h1>
-								)}
-								{description && (
-									<p className="text-sm text-muted-foreground mt-1">
-										{description}
-									</p>
-								)}
-							</div>
-
-							<div className="flex items-center gap-3">
-								{actions}
-								<NotificationsPanel
-									notifications={notifications}
-									onMarkAllRead={async () => {
-										// We ideally need an ID to mark one, or an endpoint to mark all for user
-										// For now, let's just refresh the page as a brute force or ignore
-									}}
-									onAction={async (notification, action) => {
-										if (["retry", "cancel"].includes(action)) {
-											try {
-												await fetch(
-													`/api/workflows/${notification.workflowId}/resolve-error`,
-													{
-														method: "POST",
-														body: JSON.stringify({ action }),
-														headers: { "Content-Type": "application/json" },
-													},
-												);
-
-												// Also mark notification read
-												await fetch(`/api/notifications/${notification.id}`, {
-													method: "PATCH",
-												});
-
-												window.location.reload(); // Refresh to update UI
-											} catch (e) {
-												console.error("Action failed", e);
-											}
-										}
-									}}
-								/>
-								<div suppressHydrationWarning>
-									<UserButton />
-								</div>
-							</div>
-
-						</div>
-
-					</header>
-				)}
-
-				{/* Page content */}
-				<div className="p-8">{children}</div>
-			</main>
-		</div>
+		<>
+			<PageMeta title={title} description={description} actions={actions} />
+			{children}
+		</>
 	);
 }
 
@@ -112,14 +39,15 @@ export function DashboardGrid({
 }: DashboardGridProps) {
 	return (
 		<div
-			className={cn(
-				"grid gap-6",
-				columns === 1 && "grid-cols-1",
-				columns === 2 && "grid-cols-1 md:grid-cols-2",
-				columns === 3 && "grid-cols-1 md:grid-cols-2 lg:grid-cols-3",
-				columns === 4 && "grid-cols-1 md:grid-cols-2 lg:grid-cols-4",
-				className,
-			)}
+			className={`grid gap-6 ${
+				columns === 1
+					? "grid-cols-1"
+					: columns === 2
+						? "grid-cols-1 md:grid-cols-2"
+						: columns === 3
+							? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+							: "grid-cols-1 md:grid-cols-2 lg:grid-cols-4"
+			} ${className || ""}`}
 		>
 			{children}
 		</div>
@@ -140,13 +68,11 @@ export function GlassCard({
 }: GlassCardProps) {
 	return (
 		<div
-			className={cn(
-				"rounded-2xl border border-sidebar-border bg-card/90 backdrop-blur-sm p-6",
-				"shadow-xl shadow-black/5",
-				hover &&
-				"transition-all duration-300 hover:bg-card/70 hover:border-white/10 hover:shadow-2xl hover:-translate-y-1",
-				className,
-			)}
+			className={`rounded-2xl border border-sidebar-border bg-card/90 backdrop-blur-sm p-6 shadow-xl shadow-black/5 ${
+				hover
+					? "transition-all duration-300 hover:bg-card/70 hover:border-secondary/10 hover:shadow-2xl hover:-translate-y-1"
+					: ""
+			} ${className || ""}`}
 		>
 			{children}
 		</div>
@@ -170,7 +96,7 @@ export function DashboardSection({
 	className,
 }: DashboardSectionProps) {
 	return (
-		<section className={cn("space-y-6", className)}>
+		<section className={`space-y-6 ${className || ""}`}>
 			<div className="flex items-center justify-between">
 				<div>
 					<h2 className="text-lg font-semibold">{title}</h2>

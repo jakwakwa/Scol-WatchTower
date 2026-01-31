@@ -1,0 +1,65 @@
+---
+title: "Workflows"
+description: "Track onboarding progress and take action when human input is required."
+---
+
+## Workflow list
+
+Open **Workflows** from the sidebar to see all active and completed workflows.
+
+### What you can do
+
+- Sort by client, status, agent, or start time
+- View a workflow’s detail page
+- Open the workflow payload for deeper inspection
+- Approve or reject workflows awaiting human input
+
+## Workflow stages
+
+Each workflow moves through four stages:
+
+1. **Applicant Capture**: intake and initial record creation
+2. **Quotation**: agreement and service configuration
+3. **Verification**: bank assessment and FICA document checks
+4. **Integration**: handover and operational readiness
+
+## Workflow statuses
+
+Status badges appear in the list and on each workflow:
+
+- **Pending**: queued and not yet started
+- **In progress**: actively processing
+- **Awaiting human**: waiting for an approval or manual decision
+- **Completed**: all stages finished successfully
+- **Failed**: processing ended with an error
+- **Timeout**: waiting for input exceeded the time limit
+- **Paused**: stopped pending intervention
+
+## Human-in-the-loop actions
+
+When a workflow status is **Awaiting human**, quick actions appear:
+
+- **Approve**: move the workflow to the next stage
+- **Reject**: stop the workflow and record a decision
+
+You will be prompted to confirm the action before it is sent.
+
+## Workflow details page
+
+Select **View workflow** from the actions menu to open the detail view.
+
+### Key sections
+
+- **Header**: workflow ID, client, status, and stage
+- **Generated quote**: amount, status, and rationale (when available)
+- **Activity timeline**: audit log of all events and transitions
+- **Client details**: company and contact information
+- **Processing status**: current agent and any error details
+
+## Payload viewer
+
+Use **View payload** to open the raw workflow payload. This is useful for:
+
+- Debugging unexpected behaviour
+- Verifying data passed between stages
+- Supporting escalation and compliance reviews

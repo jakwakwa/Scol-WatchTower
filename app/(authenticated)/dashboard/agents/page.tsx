@@ -11,7 +11,10 @@ import {
 	StatsCard,
 	AgentStatusCard,
 } from "@/components/dashboard";
-import { NotificationsPanel, type WorkflowNotification } from "@/components/dashboard/notifications-panel";
+import {
+	NotificationsPanel,
+	type WorkflowNotification,
+} from "@/components/dashboard/notifications-panel";
 
 // Mock agents data
 const mockAgents = [
@@ -84,16 +87,17 @@ const stats = {
 	totalErrors: mockAgents.reduce((acc, a) => acc + a.errorCount, 0),
 };
 
-export default function AgentsPage(
-	{ workflowNotifications }: { workflowNotifications: WorkflowNotification[] }
-) {
+export default function AgentsPage({
+	workflowNotifications,
+}: {
+	workflowNotifications: WorkflowNotification[];
+}) {
 	return (
 		<DashboardLayout
 			title="Agents"
 			description="Monitor your external agent fleet"
 			notifications={workflowNotifications}
 		>
-
 			{/* Agent Stats */}
 			<DashboardGrid columns={4} className="mb-8">
 				<StatsCard

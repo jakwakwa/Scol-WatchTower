@@ -1,24 +1,25 @@
 "use client";
 
-import * as React from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import {
-	RiNotification3Line,
-	RiCheckDoubleLine,
-	RiTimeLine,
 	RiAlertLine,
+	RiCheckDoubleLine,
 	RiCheckLine,
 	RiCloseLine,
-	RiUserLine,
+	RiNotification3Line,
 	RiPauseCircleLine,
+	RiTimeLine,
+	RiUserLine,
 } from "@remixicon/react";
+import Link from "next/link";
+import * as React from "react";
 import { toast } from "sonner";
 
 export interface WorkflowNotification {
@@ -35,8 +36,8 @@ export interface WorkflowNotification {
 const notificationConfig = {
 	awaiting: {
 		icon: RiUserLine,
-		color: "text-amber-500",
-		bgColor: "bg-amber-500/10",
+		color: "text-warning-foreground",
+		bgColor: "bg-warning/50",
 	},
 	completed: {
 		icon: RiCheckLine,
@@ -55,8 +56,8 @@ const notificationConfig = {
 	},
 	paused: {
 		icon: RiPauseCircleLine,
-		color: "text-amber-500",
-		bgColor: "bg-amber-500/10",
+		color: "text-warning-foreground",
+		bgColor: "bg-warning/50",
 	},
 	error: {
 		icon: RiAlertLine,
@@ -73,6 +74,7 @@ interface NotificationsPanelProps {
 		notification: WorkflowNotification,
 		action: "approve" | "reject" | "retry" | "cancel",
 	) => void;
+	onDelete?: (notification: WorkflowNotification) => void;
 }
 
 export function NotificationsPanel({
@@ -80,6 +82,7 @@ export function NotificationsPanel({
 	onMarkAllRead,
 	onNotificationClick,
 	onAction,
+	onDelete,
 }: NotificationsPanelProps) {
 	const [isOpen, setIsOpen] = React.useState(false);
 	const [isMounted, setIsMounted] = React.useState(false);
@@ -98,19 +101,10 @@ export function NotificationsPanel({
 		e.stopPropagation();
 
 		try {
-			onAction?.(notification, action);
-			toast.success(
-				action === "approve"
-					? `Approved workflow for ${notification.clientName}`
-					: `Rejected workflow for ${notification.clientName}`,
-				{
-					action: {
-						label: "View",
-						onClick: () => onNotificationClick?.(notification),
-					},
-				},
-			);
-		} catch (err) {
+			await onAction?.(notification, action);
+			// Toast is handled by the caller or we can add it here if needed
+			// Removing the generic success toast here as it might be confusing for retry/cancel
+		} catch {
 			toast.error("Failed to process action");
 		}
 	};
@@ -121,7 +115,7 @@ export function NotificationsPanel({
 			<Button
 				variant="ghost"
 				size="icon"
-				className="relative h-9 w-9 hover:bg-white/10"
+				className="relative h-9 w-9 hover:bg-secondary/10"
 			>
 				<RiNotification3Line className="h-5 w-5" />
 				{unreadCount > 0 && (
@@ -144,7 +138,7 @@ export function NotificationsPanel({
 				<Button
 					variant="ghost"
 					size="icon"
-					className="relative h-9 w-9 hover:bg-white/10"
+					className="relative h-9 w-9 hover:bg-secondary/10"
 				>
 					<RiNotification3Line className="h-5 w-5" />
 					{unreadCount > 0 && (
@@ -161,10 +155,10 @@ export function NotificationsPanel({
 			</PopoverTrigger>
 			<PopoverContent
 				align="end"
-				className="w-[380px] border-white/10 bg-zinc-100/10 backdrop-blur-sm p-0"
+				className="w-[380px] border-secondary/10 bg-zinc-100/10 backdrop-blur-sm p-0"
 			>
 				{/* Header */}
-				<div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+				<div className="flex items-center justify-between border-b border-secondary/10 px-4 py-3">
 					<h3 className="text-sm font-semibold">Notifications</h3>
 					{unreadCount > 0 && (
 						<Button
@@ -197,8 +191,8 @@ export function NotificationsPanel({
 								<div
 									key={notification?.id}
 									className={cn(
-										"group relative flex gap-3 px-4 py-3 border-b border-white/5 transition-colors hover:bg-white/5",
-										!notification?.read && "bg-white/[0.02]",
+										"group relative flex gap-3 px-4 py-3 border-b border-secondary/5 transition-colors hover:bg-secondary/5",
+										!notification?.read && "bg-secondary/2",
 									)}
 								>
 									{/* Main Action Button */}
@@ -228,9 +222,22 @@ export function NotificationsPanel({
 											<p className="text-sm font-medium truncate">
 												{notification?.clientName}
 											</p>
-											{!notification?.read && (
-												<span className="h-2 w-2 shrink-0 rounded-full bg-blue-500" />
-											)}
+											<div className="flex items-center gap-2">
+												{!notification?.read && (
+													<span className="h-2 w-2 shrink-0 rounded-full bg-blue-500" />
+												)}
+												<button
+													type="button"
+													onClick={(e) => {
+														e.stopPropagation();
+														onDelete?.(notification);
+													}}
+													className="text-muted-foreground/40 hover:text-red-400 transition-colors cursor-pointer pointer-events-auto p-1"
+												>
+													<RiCloseLine className="h-4 w-4" />
+													<span className="sr-only">Dismiss</span>
+												</button>
+											</div>
 										</div>
 										<p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
 											{notification?.message}
@@ -250,7 +257,7 @@ export function NotificationsPanel({
 															<Button
 																variant="ghost"
 																size="sm"
-																className="h-6 px-2 text-xs hover:bg-teal-500/40 hover:text-teal-700"
+																className="h-6 px-2 text-xs hover:bg-teal-500/40 hover:text-emerald-600/80"
 																onClick={(e) =>
 																	handleAction(e, notification, "approve")
 																}
@@ -273,29 +280,29 @@ export function NotificationsPanel({
 													{(notification?.type === "error" ||
 														notification?.type === "timeout" ||
 														notification?.type === "paused") && (
-															<>
-																<Button
-																	variant="ghost"
-																	size="sm"
-																	className="h-6 px-2 text-xs hover:bg-blue-500/20 hover:text-blue-400"
-																	onClick={(e) =>
-																		handleAction(e, notification, "retry")
-																	}
-																>
-																	Retry
-																</Button>
-																<Button
-																	variant="ghost"
-																	size="sm"
-																	className="h-6 px-2 text-xs hover:bg-red-500/20 hover:text-red-400"
-																	onClick={(e) =>
-																		handleAction(e, notification, "cancel")
-																	}
-																>
-																	Cancel
-																</Button>
-															</>
-														)}
+														<>
+															<Button
+																variant="ghost"
+																size="sm"
+																className="h-6 px-2 text-xs hover:bg-blue-500/20 hover:text-blue-400"
+																onClick={(e) =>
+																	handleAction(e, notification, "retry")
+																}
+															>
+																Retry
+															</Button>
+															<Button
+																variant="ghost"
+																size="sm"
+																className="h-6 px-2 text-xs hover:bg-red-500/20 hover:text-red-400"
+																onClick={(e) =>
+																	handleAction(e, notification, "cancel")
+																}
+															>
+																Cancel
+															</Button>
+														</>
+													)}
 												</div>
 											)}
 										</div>
@@ -308,17 +315,19 @@ export function NotificationsPanel({
 
 				{/* Footer */}
 				{notifications?.length > 0 && (
-					<div className="border-t border-white/10 p-2">
-						<Button
-							variant="ghost"
-							className="w-full h-8 text-xs text-muted-foreground hover:text-foreground"
-						>
-							View all notifications
-						</Button>
+					<div className="border-t border-secondary/10 p-2">
+						<Link href="/dashboard/notifications">
+							<Button
+								variant="ghost"
+								className="w-full h-8 text-xs text-muted-foreground hover:text-foreground"
+							>
+								View all notifications
+							</Button>
+						</Link>
 					</div>
 				)}
 			</PopoverContent>
-		</Popover >
+		</Popover>
 	);
 }
 
@@ -340,7 +349,6 @@ function formatRelativeTime(date: Date): string {
 export function showWorkflowToast(
 	type: "awaiting" | "completed" | "failed" | "timeout" | "paused" | "error",
 	clientName: string,
-	workflowId: number,
 	onAction?: (action: "approve" | "reject" | "view") => void,
 ) {
 	const config = {

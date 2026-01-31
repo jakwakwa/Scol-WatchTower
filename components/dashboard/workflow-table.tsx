@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Dialog,
@@ -21,21 +21,12 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import {
 	RiAlertLine,
 	RiArrowDownSLine,
 	RiArrowUpSLine,
 	RiCheckLine,
-	RiCloseLine,
 	RiFlowChart,
 	RiMore2Fill,
 	RiTimeLine,
@@ -45,14 +36,7 @@ import {
 	RiThumbDownLine,
 	RiPauseCircleLine,
 } from "@remixicon/react";
-import {
-	flexRender,
-	getCoreRowModel,
-	getSortedRowModel,
-	useReactTable,
-	type ColumnDef,
-	type SortingState,
-} from "@tanstack/react-table";
+import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/ui/data-table";
 import { toast } from "sonner";
 
@@ -60,18 +44,18 @@ import { toast } from "sonner";
 
 export interface WorkflowRow {
 	id: number;
-	leadId: number;
+	applicantId: number;
 	clientName: string;
 	stage: 1 | 2 | 3 | 4;
 	stageName: string;
 	status:
-	| "pending"
-	| "in_progress"
-	| "awaiting_human"
-	| "completed"
-	| "failed"
-	| "timeout"
-	| "paused";
+		| "pending"
+		| "in_progress"
+		| "awaiting_human"
+		| "completed"
+		| "failed"
+		| "timeout"
+		| "paused";
 	currentAgent?: string;
 	startedAt: Date;
 	payload?: Record<string, unknown>;
@@ -149,10 +133,10 @@ export function WorkflowStageIndicator({
 						className={cn(
 							"flex items-center justify-center rounded-full font-medium transition-all",
 							compact ? "h-6 w-6 text-[10px]" : "h-8 w-8 text-xs",
-							stage < currentStage && "bg-teal-500/40 text-teal-700",
+							stage < currentStage && "bg-teal-500/40 text-emerald-600/80",
 							stage === currentStage &&
-							"bg-stone-500/20 text-stone-400 ring-2 ring-stone-500/30",
-							stage > currentStage && "bg-white/5 text-muted-foreground",
+								"bg-stone-500/20 text-stone-400 ring-2 ring-stone-500/30",
+							stage > currentStage && "bg-secondary/5 text-muted-foreground",
 						)}
 					>
 						{stage < currentStage ? (
@@ -166,7 +150,7 @@ export function WorkflowStageIndicator({
 							className={cn(
 								"h-0.5 transition-colors",
 								compact ? "w-2" : "w-4",
-								stage < currentStage ? "bg-teal-500/40" : "bg-white/10",
+								stage < currentStage ? "bg-teal-500/40" : "bg-secondary/10",
 							)}
 						/>
 					)}
@@ -184,8 +168,11 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 		header: ({ table }) => (
 			<Checkbox
 				checked={
-					table.getIsAllPageRowsSelected() ||
-					(table.getIsSomePageRowsSelected() && "indeterminate")
+					table.getIsAllPageRowsSelected()
+						? true
+						: table.getIsSomePageRowsSelected()
+							? "indeterminate"
+							: false
 				}
 				onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
 				aria-label="Select all"
@@ -236,11 +223,8 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 	{
 		accessorKey: "stage",
 		header: () => (
-			<span
-				className="-ml-4 font-light hover:bg-transparent hover:text-foreground"
-			>
+			<span className="-ml-4 font-light hover:bg-transparent hover:text-foreground">
 				Stage
-
 			</span>
 		),
 		cell: ({ row }) => (
@@ -288,7 +272,7 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 			</Button>
 		),
 		cell: ({ row }) => (
-			<code className="rounded bg-white/5 px-2 py-0.5 text-xs text-muted-foreground font-mono">
+			<code className="rounded bg-secondary/5 px-2 py-0.5 text-xs text-muted-foreground font-mono">
 				{row.original.currentAgent || "—"}
 			</code>
 		),
@@ -320,7 +304,9 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 	},
 	{
 		id: "actions",
-		header: () => <span className="-ml-4 font-light text-xs uppercase">Actions</span>,
+		header: () => (
+			<span className="-ml-4 font-light text-xs uppercase">Actions</span>
+		),
 		cell: ({ row, table }) => {
 			const meta = table.options.meta as {
 				onViewPayload: (data: WorkflowRow) => void;
@@ -338,7 +324,7 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 							<Button
 								variant="ghost"
 								size="icon"
-								className="h-8 w-8 hover:bg-teal-500/40 hover:text-teal-700 transition-colors"
+								className="h-8 w-8 hover:bg-teal-500/40 hover:text-emerald-600/80 transition-colors"
 								onClick={() => meta?.onQuickApprove(row.original)}
 								title="Approve"
 							>
@@ -357,14 +343,13 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 					)}
 
 					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon"
-								className="h-8 w-8 hover:bg-white/10"
-							>
-								<RiMore2Fill className="h-4 w-4" />
-							</Button>
+						<DropdownMenuTrigger
+							className={cn(
+								buttonVariants({ variant: "ghost", size: "icon" }),
+								"h-8 w-8 hover:bg-secondary/10",
+							)}
+						>
+							<RiMore2Fill className="h-4 w-4" />
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="end" className="w-[180px]">
 							<DropdownMenuLabel>Actions</DropdownMenuLabel>
@@ -408,7 +393,7 @@ function PayloadDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-w-2xl border-white/10 bg-zinc-100 backdrop-blur-xl">
+			<DialogContent className="max-w-2xl border-secondary/10 bg-zinc-100 backdrop-blur-xl">
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2">
 						<RiCodeSSlashLine className="h-5 w-5 text-stone-400" />
@@ -419,7 +404,7 @@ function PayloadDialog({
 					</DialogDescription>
 				</DialogHeader>
 				<div className="relative mt-4">
-					<div className="max-h-[60vh] overflow-auto rounded-xl bg-black/50 p-6 border border-white/5">
+					<div className="max-h-[60vh] overflow-auto rounded-xl bg-black/50 p-6 border border-secondary/5">
 						<pre className="text-xs text-zinc-400 font-mono leading-relaxed">
 							{JSON.stringify(workflow.payload || {}, null, 2)}
 						</pre>
@@ -446,13 +431,6 @@ function HITLConfirmDialog({
 	onConfirm: () => Promise<void>;
 }) {
 	const [isLoading, setIsLoading] = React.useState(false);
-	const [reason, setReason] = React.useState("");
-
-	React.useEffect(() => {
-		if (open) {
-			setReason("");
-		}
-	}, [open]);
 
 	const handleConfirm = async () => {
 		setIsLoading(true);
@@ -470,7 +448,7 @@ function HITLConfirmDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-w-md border-white/10 bg-zinc-100/10 backdrop-blur-xl">
+			<DialogContent className="max-w-md border-secondary/10 bg-zinc-100/10 backdrop-blur-xl">
 				<DialogHeader>
 					<DialogTitle
 						className={cn(
@@ -493,7 +471,7 @@ function HITLConfirmDialog({
 				</DialogHeader>
 
 				<div className="py-4">
-					<div className="rounded-lg border border-white/10 bg-white/5 p-4 space-y-2">
+					<div className="rounded-lg border border-secondary/10 bg-secondary/5 p-4 space-y-2">
 						<div className="flex justify-between text-sm">
 							<span className="text-muted-foreground">Client</span>
 							<span className="font-medium">{workflow.clientName}</span>
@@ -611,9 +589,10 @@ export function WorkflowTable({ workflows, onRefresh }: WorkflowTableProps) {
 			);
 
 			onRefresh?.();
-		} catch (err: any) {
+		} catch (err: unknown) {
+			const message = err instanceof Error ? err.message : "Unexpected error";
 			toast.error("Failed to process workflow", {
-				description: err.message,
+				description: message,
 			});
 			throw err;
 		}
@@ -625,7 +604,7 @@ export function WorkflowTable({ workflows, onRefresh }: WorkflowTableProps) {
 				<RiFlowChart className="mx-auto h-12 w-12 text-muted-foreground/50" />
 				<h3 className="mt-4 text-lg font-medium">No workflows yet</h3>
 				<p className="mt-2 text-sm text-muted-foreground">
-					Create a new lead to start an onboarding workflow.
+					Create a new applicant to start an onboarding workflow.
 				</p>
 			</div>
 		);

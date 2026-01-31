@@ -3,6 +3,10 @@ import {
 	RiUserAddLine,
 	RiTimeLine,
 	RiCheckDoubleLine,
+	RiAddLine,
+	RiFileTextLine,
+	RiCheckboxCircleLine,
+	RiShieldCheckLine,
 } from "@remixicon/react";
 import {
 	DashboardLayout,
@@ -11,40 +15,36 @@ import {
 	StatsCard,
 	ActivityFeed,
 } from "@/components/dashboard";
+import { PipelineView } from "@/components/dashboard/pipeline-view";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { getDatabaseClient } from "@/app/utils";
-import { workflows, leads, workflowEvents, notifications } from "@/db/schema";
+import { workflows, applicants, workflowEvents, notifications } from "@/db/schema";
 import { desc, eq, count } from "drizzle-orm";
-import {
-	DynamicWorkflowTable as WorkflowTable,
-	DynamicWebhookTester as WebhookTester,
-} from "@/components/dashboard/dynamic-components";
+import { DynamicWorkflowTable as WorkflowTable } from "@/components/dashboard/dynamic-components";
 
 export default async function DashboardPage() {
 	const db = getDatabaseClient();
 	let activeWorkflows: any[] = [];
 	let recentActivity: any[] = [];
 	let workflowsCount = 0;
-	let leadsCount = 0;
+	let applicantsCount = 0;
 
 	if (db) {
 		try {
-			// Fetch Workflows with Lead data
+			// Fetch Workflows with applicant data
 			const result = await db
 				.select({
 					id: workflows.id,
-					leadId: workflows.leadId,
-					stage: workflows.stage,
-					stageName: workflows.stageName,
+					applicantId: workflows.applicantId,
+					stage: applicants.status, // Use applicant status for pipeline view
 					status: workflows.status,
-					currentAgent: workflows.currentAgent,
 					startedAt: workflows.startedAt,
 					metadata: workflows.metadata,
-					clientName: leads.companyName,
+					clientName: applicants.companyName,
 				})
 				.from(workflows)
-				.leftJoin(leads, eq(workflows.leadId, leads.id))
+				.leftJoin(applicants, eq(workflows.applicantId, applicants.id))
 				.orderBy(desc(workflows.startedAt))
 				.limit(10);
 
@@ -63,12 +63,12 @@ export default async function DashboardPage() {
 					timestamp: workflowEvents.timestamp,
 					actorType: workflowEvents.actorType,
 					actorId: workflowEvents.actorId,
-					clientName: leads.companyName,
+					clientName: applicants.companyName,
 					payload: workflowEvents.payload,
 				})
 				.from(workflowEvents)
 				.innerJoin(workflows, eq(workflowEvents.workflowId, workflows.id))
-				.innerJoin(leads, eq(workflows.leadId, leads.id))
+				.innerJoin(applicants, eq(workflows.applicantId, applicants.id))
 				.orderBy(desc(workflowEvents.timestamp))
 				.limit(10);
 
@@ -106,8 +106,10 @@ export default async function DashboardPage() {
 			const wfCountResult = await db.select({ count: count() }).from(workflows);
 			workflowsCount = wfCountResult[0]?.count || 0;
 
-			const leadsCountResult = await db.select({ count: count() }).from(leads);
-			leadsCount = leadsCountResult[0]?.count || 0;
+			const applicantsCountResult = await db
+				.select({ count: count() })
+				.from(applicants);
+			applicantsCount = applicantsCountResult[0]?.count || 0;
 		} catch (error) {
 			console.error("Failed to fetch dashboard data:", error);
 		}
@@ -130,10 +132,10 @@ export default async function DashboardPage() {
 					read: notifications.read,
 					actionable: notifications.actionable,
 					createdAt: notifications.createdAt,
-					clientName: leads.companyName,
+					clientName: applicants.companyName,
 				})
 				.from(notifications)
-				.leftJoin(leads, eq(notifications.leadId, leads.id))
+				.leftJoin(applicants, eq(notifications.applicantId, applicants.id))
 				.orderBy(desc(notifications.createdAt))
 				.limit(20);
 
@@ -152,82 +154,64 @@ export default async function DashboardPage() {
 		}
 	}
 
+	// ... Imports
 	return (
 		<DashboardLayout
-			title="Control Tower"
-			description="Monitor your onboarding workflows in real-time"
+			title="Onboarding Pipeline"
+			description="Track and manage client applications through the onboarding process"
 			actions={
-				<div className="flex items-center gap-4">
-					{process.env.TEST_HOOK === "1" && <WebhookTester />}
-					<Link href="/dashboard/leads/new">
-						<Button className="gap-2 bg-gradient-to-r from-stone-500 to-stone-500 hover:from-stone-600 hover:to-stone-600">
-							<RiUserAddLine className="h-4 w-4" />
-							New Lead
-						</Button>
-					</Link>
-				</div>
+				<Link href="/dashboard/applicants/new">
+					<Button variant="secondary">
+						<RiUserAddLine color="var(--color-teal-200)" />
+						New Applicant
+					</Button>
+				</Link>
 			}
 			notifications={workflowNotifications}
 		>
-			{/* Stats Grid */}
+			{/* Stats Grid - StratCol Style */}
 			<DashboardGrid columns={4} className="mb-8">
 				<StatsCard
-					title="Active Workflows"
+					title="Total Applications"
 					value={workflowsCount}
-					change={{ value: 0, trend: "neutral" }}
-					icon={RiFlowChart}
-					iconColor="amber"
-				/>
-				<StatsCard
-					title="Pending Approvals"
-					value={0} // TODO: Count 'awaiting_human' status
-					change={{ value: 0, trend: "neutral" }}
-					icon={RiTimeLine}
-					iconColor="purple"
-				/>
-				<StatsCard
-					title="Total Leads"
-					value={leadsCount}
-					change={{ value: 0, trend: "neutral" }}
-					icon={RiUserAddLine}
+					change={{ value: 12, trend: "up" }}
+					icon={RiFileTextLine}
 					iconColor="blue"
 				/>
 				<StatsCard
-					title="Completion Rate"
-					value="-"
-					change={{ value: 0, trend: "neutral" }}
-					icon={RiCheckDoubleLine}
+					title="In Progress"
+					value={
+						activeWorkflows.filter(
+							(w) => !["won", "lost", "completed"].includes(w.stage),
+						).length
+					}
+					change={{ value: 5, trend: "up" }}
+					icon={RiTimeLine}
+					iconColor="amber" // Used cyan in screenshot, mapping to StratCol palette
+				/>
+				<StatsCard
+					title="Completed"
+					value={
+						activeWorkflows.filter((w) =>
+							["won", "activation"].includes(w.stage),
+						).length
+					}
+					change={{ value: 18, trend: "up" }}
+					icon={RiCheckboxCircleLine}
 					iconColor="green"
+				/>
+				<StatsCard
+					title="High Risk"
+					value={1}
+					change={{ value: 8, trend: "down" }}
+					icon={RiShieldCheckLine}
+					iconColor="red"
 				/>
 			</DashboardGrid>
 
-			{/* Main content grid */}
-			<div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-				{/* Workflows Table - spans 2 columns */}
-				<div className="lg:col-span-3">
-					<DashboardSection
-						title="Active Workflows"
-						description="Real-time status of onboarding workflows"
-						action={
-							<Link href="/dashboard/workflows">
-								<Button variant="ghost" size="sm">
-									View All
-								</Button>
-							</Link>
-						}
-					>
-						<WorkflowTable workflows={activeWorkflows} />
-					</DashboardSection>
-				</div>
-
-				{/* Activity Feed */}
-				<div className="lg:col-span-1">
-					<DashboardSection title="Recent Activity">
-						<div className="rounded-2xl border border-sidebar-border bg-card/50 p-4 shadow-[0_10px_20px_1px_rgba(0,0,0,0.1)]">
-							<ActivityFeed events={recentActivity} maxItems={5} />
-						</div>
-					</DashboardSection>
-				</div>
+			{/* Pipeline View - Full Width */}
+			<div className="w-full">
+				<PipelineView workflows={activeWorkflows} />
 			</div>
 		</DashboardLayout>
 	);

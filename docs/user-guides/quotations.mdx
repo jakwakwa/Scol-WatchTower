@@ -1,0 +1,73 @@
+---
+title: "Quote generation"
+description: "How AI quotes are generated, reviewed, and signed in onboarding."
+---
+
+## Overview
+
+Quotes are generated automatically by Gemini AI when an applicant reaches Stage 2 of the onboarding workflow. The quote is stored as a draft and requires staff approval before the client can sign it. Once the client signs, the workflow continues to contract signing.
+
+## Staff workflow
+
+1. Go to **Dashboard → Applicants**.
+2. For Stage 2 applicants with a quote, open **Actions → Review Quote**.
+3. Review and edit the quote values:
+   - **Amount** (cents)
+   - **Base fee** (basis points)
+   - **Adjusted fee** (basis points)
+   - **Rationale** (required)
+4. Click **Approve & Send to Client**.
+
+What happens next:
+
+- Quote status becomes `pending_approval`.
+- The client receives a **Signed Quotation** form link by email.
+- The workflow pauses in Stage 2 waiting for client signature.
+
+## Client workflow
+
+1. Client opens the **Signed Quotation** form link.
+2. Client submits the required acceptance fields and signature.
+3. Quote status becomes `approved` and the workflow advances.
+
+## Quote fields and units
+
+- **amount**: integer in cents (ZAR). Example: `250000` = R2,500.
+- **baseFeePercent**: basis points. Example: `150` = 1.50%.
+- **adjustedFeePercent**: basis points. Example: `200` = 2.00%.
+- **rationale**: AI explanation of the pricing.
+- **details**: JSON string with AI signals (risk factors, recommendation).
+
+## Status lifecycle
+
+- `draft` → AI generated, waiting for staff review.
+- `pending_approval` → staff approved, waiting for client signature.
+- `approved` → client signed, workflow continues.
+- `rejected` → reserved for manual rejection flows.
+
+## Workflow pause and timeouts
+
+Stage 2 waits for two events:
+
+1. Staff approval (`quote/approved`)
+2. Client signature (`quote/signed`)
+
+Each wait has a 30-day timeout. If a timeout occurs, the workflow status is set to `timeout` and a notification is created.
+
+## Notifications and email delivery
+
+- Staff see workflow notifications when a quote is ready for review.
+- Client receives the form links via email when the quote is approved.
+- If `RESEND_API_KEY` is not configured, links are logged to the server console.
+
+## AI configuration and fallback
+
+- AI quote generation uses Google Vertex with Gemini.
+- Set `GOOGLE_VERTEX_PROJECT` to enable the AI model.
+- If AI is not configured, the system generates a safe mock quote.
+
+## Troubleshooting
+
+- **No Review Quote action**: The applicant is not in Stage 2 or no quote exists.
+- **No quote generated**: Verify the workflow is running and AI config is set.
+- **Client did not receive email**: Configure `RESEND_API_KEY` or use server logs for links.
