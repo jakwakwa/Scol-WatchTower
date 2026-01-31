@@ -153,6 +153,7 @@ export const applicantMagiclinkForms = sqliteTable('applicant_magiclink_forms', 
     formType: text('form_type').notNull(), // FACILITY_APPLICATION, SIGNED_QUOTATION, etc.
     status: text('status').notNull().default('pending'), // pending, sent, viewed, submitted, expired, revoked
     tokenHash: text('token_hash').notNull().unique(),
+    token: text('token'),
     tokenPrefix: text('token_prefix'),
     sentAt: integer('sent_at', { mode: 'timestamp' }),
     viewedAt: integer('viewed_at', { mode: 'timestamp' }),

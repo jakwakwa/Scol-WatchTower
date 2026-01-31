@@ -60,6 +60,7 @@ interface ApplicantFormInstance {
 	formType: string;
 	status: string;
 	submittedAt?: string | number | Date | null;
+	token?: string | null;
 }
 
 const formatDate = (value?: string | number | Date | null) => {
@@ -82,6 +83,34 @@ export default function ApplicantDetailPage() {
 	>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [copiedFormId, setCopiedFormId] = useState<number | null>(null);
+
+	const handleCopyMagicLink = async (instance: ApplicantFormInstance) => {
+		if (!instance.token) return;
+
+		const baseUrl =
+			process.env.NEXT_PUBLIC_APP_URL ||
+			(typeof window !== "undefined" ? window.location.origin : "");
+		const path =
+			instance.formType === "DOCUMENT_UPLOADS"
+				? `/uploads/${instance.token}`
+				: `/forms/${instance.token}`;
+		const url = `${baseUrl}${path}`;
+
+		try {
+			if (!navigator?.clipboard) {
+				window.prompt("Copy magic link", url);
+				return;
+			}
+
+			await navigator.clipboard.writeText(url);
+			setCopiedFormId(instance.id);
+			setTimeout(() => setCopiedFormId(null), 2000);
+		} catch (copyError) {
+			console.error("Failed to copy magic link:", copyError);
+			window.prompt("Copy magic link", url);
+		}
+	};
 
 	useEffect(() => {
 		let mounted = true;
@@ -401,6 +430,25 @@ export default function ApplicantDetailPage() {
 														<p className="text-xs text-muted-foreground">
 															Status: {instance.status}
 														</p>
+														{instance.token ? (
+															<Button
+																type="button"
+																variant="link"
+																size="xs"
+																className="mt-1 px-0 text-primary"
+																onClick={() =>
+																	handleCopyMagicLink(instance)
+																}
+															>
+																{copiedFormId === instance.id
+																	? "Copied"
+																	: "Copy magic link"}
+															</Button>
+														) : (
+															<p className="mt-1 text-xs text-muted-foreground">
+																Magic link unavailable
+															</p>
+														)}
 													</div>
 													<div className="text-right text-xs text-muted-foreground">
 														{submission?.submittedBy
