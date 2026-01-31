@@ -280,25 +280,25 @@ export default function ApplicantDetailPage() {
 						<TabsList className="mb-6 w-full justify-start border-b border-border/40 rounded-none bg-transparent h-auto p-0 gap-6">
 							<TabsTrigger
 								value="overview"
-								className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
+								className="rounded-none border-b-2 border-transparent data-[state=active]:bg-transparent px-4 py-3"
 							>
 								Overview
 							</TabsTrigger>
 							<TabsTrigger
 								value="documents"
-								className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
+								className=" border-b-2 border-transparent data-[state=active]:bg-transparent px-4 py-3"
 							>
 								Documents & FICA
 							</TabsTrigger>
 							<TabsTrigger
 								value="forms"
-								className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
+								className=" border-b-2 border-transparent data-[state=active]:bg-transparent px-4 py-3"
 							>
 								Forms
 							</TabsTrigger>
 							<TabsTrigger
 								value="risk"
-								className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
+								className=" border-b-2 border-transparent data-[state=active]:bg-transparent px-4 py-3"
 							>
 								Risk Assessment
 							</TabsTrigger>
