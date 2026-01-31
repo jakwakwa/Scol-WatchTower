@@ -14,4 +14,4 @@ export {
 } from "./workflow-table";
 export { AgentStatusCard, AgentStatusRow } from "./agent-status-card";
 export { ActivityFeed, CompactTimeline } from "./activity-feed";
-export { LeadsTable } from "./leads-table";
+export { ApplicantsTable } from "./applicants-table";

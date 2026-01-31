@@ -1,10 +1,10 @@
 import { z } from "zod";
 
 // ============================================
-// Lead Schemas
+// Applicant Schemas
 // ============================================
 
-export const leadStatusEnum = z.enum([
+export const applicantStatusEnum = z.enum([
 	"new",
 	"contacted",
 	"qualified",
@@ -14,7 +14,7 @@ export const leadStatusEnum = z.enum([
 	"lost",
 ]);
 
-export const createLeadSchema = z.object({
+export const createApplicantSchema = z.object({
 	companyName: z.string().min(2, "Company name must be at least 2 characters"),
 	contactName: z.string().min(2, "Contact name must be at least 2 characters"),
 	email: z.string().email("Invalid email address"),
@@ -25,12 +25,12 @@ export const createLeadSchema = z.object({
 	notes: z.string().optional(),
 });
 
-export const updateLeadSchema = createLeadSchema.partial().extend({
-	status: leadStatusEnum.optional(),
+export const updateApplicantSchema = createApplicantSchema.partial().extend({
+	status: applicantStatusEnum.optional(),
 });
 
-export type CreateLeadInput = z.infer<typeof createLeadSchema>;
-export type UpdateLeadInput = z.infer<typeof updateLeadSchema>;
+export type CreateApplicantInput = z.infer<typeof createApplicantSchema>;
+export type UpdateApplicantInput = z.infer<typeof updateApplicantSchema>;
 
 // ============================================
 // Workflow Schemas
@@ -53,7 +53,7 @@ export const workflowStatusEnum = z.enum([
 ]);
 
 export const createWorkflowSchema = z.object({
-	leadId: z.number().int().positive("Lead ID is required"),
+	applicantId: z.number().int().positive("Applicant ID is required"),
 });
 
 export type CreateWorkflowInput = z.infer<typeof createWorkflowSchema>;

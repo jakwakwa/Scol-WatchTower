@@ -30,7 +30,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 
 import { getDatabaseClient } from "@/app/utils";
-import { workflows, leads, workflowEvents, quotes } from "@/db/schema";
+import { workflows, applicants, workflowEvents, quotes } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { cn } from "@/lib/utils";
 import { notFound } from "next/navigation";
@@ -61,7 +61,7 @@ const statusConfig: Record<
 	},
 	awaiting_human: {
 		label: "Awaiting Input",
-		color: "bg-amber-500/10 text-amber-500 border-amber-500/20",
+		color: "bg-warning/50 text-warning-foreground border-warning",
 		icon: RiUserLine,
 	},
 	completed: {
@@ -128,14 +128,14 @@ export default async function WorkflowDetailsPage({
 		throw new Error("Database connection failed");
 	}
 
-	// 1. Fetch Workflow & Lead
+	// 1. Fetch Workflow & Applicant
 	const workflowResults = await db
 		.select({
 			workflow: workflows,
-			lead: leads,
+			applicant: applicants,
 		})
 		.from(workflows)
-		.leftJoin(leads, eq(workflows.leadId, leads.id))
+		.leftJoin(applicants, eq(workflows.applicantId, applicants.id))
 		.where(eq(workflows.id, workflowId))
 		.limit(1);
 
@@ -147,7 +147,7 @@ export default async function WorkflowDetailsPage({
 	if (!result) {
 		notFound();
 	}
-	const { workflow, lead } = result;
+	const { workflow, applicant } = result;
 
 	// 2. Fetch Events (Audit Log)
 	const events = await db
@@ -165,6 +165,12 @@ export default async function WorkflowDetailsPage({
 
 	const latestQuote = workflowQuotes[0];
 
+	// Helper for stage badge
+	const stageName = applicant?.status
+		? applicant.status.replace("_", " ")
+		: "Unknown";
+	const stageNumber = workflow.stage || 0;
+
 	return (
 		<DashboardLayout
 			actions={
@@ -181,7 +187,7 @@ export default async function WorkflowDetailsPage({
 						</Link>
 						<div className="flex flex-col gap-1">
 							<h2 className="flex items-center text-lg font-bold uppercase text-foreground/70 gap-3">
-								{lead?.companyName || "Unknown Client"}
+								{applicant?.companyName || "Unknown Client"}
 								<span className="text-foreground font-light text-xs">
 									workflow no. {workflow.id}
 								</span>
@@ -189,8 +195,8 @@ export default async function WorkflowDetailsPage({
 						</div>
 					</div>
 					<div className="flex items-center gap-3">
-						<StatusBadge status={workflow.status} />
-						<StageBadge stage={workflow.stage} name={workflow.stageName} />
+						<StatusBadge status={workflow.status || "unknown"} />
+						<StageBadge stage={stageNumber} name={stageName} />
 					</div>
 				</>
 			}
@@ -226,7 +232,7 @@ export default async function WorkflowDetailsPage({
 										className={cn(
 											latestQuote.status === "approved"
 												? "text-emerald-500 border-emerald-500/40"
-												: "text-amber-500 border-amber-500/20",
+												: "text-warning-foreground border-warning",
 										)}
 									>
 										{latestQuote.status.toUpperCase()}
@@ -289,7 +295,7 @@ export default async function WorkflowDetailsPage({
 												{formatEventType(event.eventType)}
 											</span>
 											<span className="text-xs text-muted-foreground">
-												{formatDistanceToNow(event.timestamp)} ago
+												{formatDistanceToNow(event.timestamp || new Date())} ago
 											</span>
 										</div>
 
@@ -304,7 +310,7 @@ export default async function WorkflowDetailsPage({
 												variant="secondary"
 												className="h-5 px-1.5 text-[10px] bg-muted text-muted-foreground hover:bg-muted/80"
 											>
-												{event.actorType}
+												{event.actorType || "system"}
 											</Badge>
 											{event.actorId && (
 												<span className="text-[10px] text-muted-foreground font-mono">
@@ -324,7 +330,7 @@ export default async function WorkflowDetailsPage({
 										Workflow Started
 									</span>
 									<span className="text-xs text-muted-foreground">
-										{formatDistanceToNow(workflow.startedAt)} ago
+										{formatDistanceToNow(workflow.startedAt || new Date())} ago
 									</span>
 								</div>
 							</div>
@@ -342,7 +348,7 @@ export default async function WorkflowDetailsPage({
 							</CardTitle>
 						</CardHeader>
 						<CardContent className="space-y-4">
-							{lead ? (
+							{applicant ? (
 								<>
 									<div className="flex items-start gap-3">
 										<div className="p-2 rounded-md bg-muted text-muted-foreground">
@@ -350,10 +356,10 @@ export default async function WorkflowDetailsPage({
 										</div>
 										<div>
 											<p className="text-sm font-medium text-foreground">
-												{lead.companyName}
+												{applicant.companyName}
 											</p>
 											<p className="text-xs text-muted-foreground">
-												{lead.industry || "Industry N/A"}
+												{applicant.industry || "Industry N/A"}
 											</p>
 										</div>
 									</div>
@@ -362,26 +368,26 @@ export default async function WorkflowDetailsPage({
 										<div className="flex items-center gap-3">
 											<RiUserLine size={16} className="text-muted-foreground" />
 											<span className="text-sm text-foreground">
-												{lead.contactName}
+												{applicant.contactName}
 											</span>
 										</div>
 										<div className="flex items-center gap-3">
 											<RiMailLine size={16} className="text-muted-foreground" />
 											<a
-												href={`mailto:${lead.email}`}
+												href={`mailto:${applicant.email}`}
 												className="text-sm text-muted-foreground hover:text-foreground transition-colors"
 											>
-												{lead.email}
+												{applicant.email}
 											</a>
 										</div>
-										{lead.phone && (
+										{applicant.phone && (
 											<div className="flex items-center gap-3">
 												<RiPhoneLine
 													size={16}
 													className="text-muted-foreground"
 												/>
 												<span className="text-sm text-muted-foreground">
-													{lead.phone}
+													{applicant.phone}
 												</span>
 											</div>
 										)}
@@ -389,7 +395,7 @@ export default async function WorkflowDetailsPage({
 								</>
 							) : (
 								<p className="text-sm text-muted-foreground italic">
-									Lead data unavailable
+									Applicant data unavailable
 								</p>
 							)}
 						</CardContent>
@@ -404,28 +410,19 @@ export default async function WorkflowDetailsPage({
 						</CardHeader>
 						<CardContent className="space-y-4">
 							<div className="flex items-center gap-3 p-3 rounded-lg bg-blue-500/5 border border-blue-500/10">
-								<RiRobot2Line className="text-blue-500 animate-bounce" size={20} />
+								<RiRobot2Line
+									className="text-blue-500 animate-bounce"
+									size={20}
+								/>
 								<div>
 									<p className="text-xs text-blue-500 font-medium">
 										Current Agent
 									</p>
 									<p className="text-sm text-foreground">
-										{workflow.currentAgent || "System (Orchestrator)"}
+										System (Orchestrator)
 									</p>
 								</div>
 							</div>
-
-							{workflow.errorDetails && (
-								<div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-xs">
-									<p className="font-medium mb-1 flex items-center gap-2">
-										<RiErrorWarningLine size={14} />
-										Error Detected
-									</p>
-									<code className="block mt-1 opacity-80 wrap-break-word">
-										{workflow.errorDetails}
-									</code>
-								</div>
-							)}
 						</CardContent>
 					</Card>
 				</div>

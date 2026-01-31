@@ -1,0 +1,1084 @@
+import type { FormSectionDefinition } from "@/components/forms/types";
+import type { FormType } from "@/lib/types";
+import type { ZodTypeAny } from "zod";
+import {
+	absa6995Schema,
+	facilityApplicationSchema,
+	signedQuotationSchema,
+	stratcolContractSchema,
+} from "@/lib/validations/forms";
+
+export const formContent: Record<
+	Exclude<FormType, "DOCUMENT_UPLOADS">,
+	{
+		title: string;
+		description: string;
+		sections: FormSectionDefinition[];
+		schema: ZodTypeAny;
+		submitLabel: string;
+		defaultValues: Record<string, unknown>;
+	}
+> = {
+	FACILITY_APPLICATION: {
+		title: "Facility Application",
+		description:
+			"Provide product configuration and volume details so StratCol can prepare your facility.",
+		schema: facilityApplicationSchema,
+		submitLabel: "Submit facility application",
+		defaultValues: {
+			serviceTypes: [],
+			additionalServices: [],
+		},
+		sections: [
+			{
+				title: "Facility Selection",
+				description:
+					"Select the services required for your collections facility.",
+				fields: [
+					{
+						name: "serviceTypes",
+						label: "Service types",
+						type: "checkbox-group",
+						required: true,
+						options: [
+							{ label: "EFT", value: "EFT" },
+							{ label: "DebiCheck", value: "DebiCheck" },
+							{ label: "3rd Party Payments", value: "3rd Party Payments" },
+							{ label: "Pay@", value: "Pay@" },
+							{ label: "Card Payments", value: "Card Payments" },
+						],
+					},
+					{
+						name: "additionalServices",
+						label: "Additional services",
+						type: "checkbox-group",
+						options: [
+							{ label: "Integration", value: "Integration" },
+							{ label: "E-Mandate", value: "E-Mandate" },
+							{ label: "Account Verification", value: "Account Verification" },
+							{ label: "ID Verification", value: "ID Verification" },
+							{ label: "Bulk SMS", value: "Bulk SMS" },
+						],
+					},
+				],
+			},
+			{
+				title: "Volume & Risk Metrics",
+				description: "Provide current processing volumes and risk indicators.",
+				fields: [
+					{
+						name: "currentProvider",
+						label: "Current or previous service provider",
+						type: "text",
+						placeholder: "Provider name",
+					},
+					{
+						name: "amountsOwed",
+						label: "Amounts owed (if any)",
+						type: "text",
+						placeholder: "e.g. R25,000",
+					},
+					{
+						name: "averageTransactionsPerMonth",
+						label: "Average transactions per month",
+						type: "number",
+						placeholder: "0",
+					},
+					{
+						name: "unpaidTransactionsCount",
+						label: "Unpaid transactions (count)",
+						type: "number",
+						placeholder: "0",
+					},
+					{
+						name: "unpaidTransactionsValue",
+						label: "Unpaid transactions (value)",
+						type: "number",
+						placeholder: "0",
+					},
+					{
+						name: "disputedTransactionsCount",
+						label: "Disputed transactions (count)",
+						type: "number",
+						placeholder: "0",
+					},
+					{
+						name: "disputedTransactionsValue",
+						label: "Disputed transactions (value)",
+						type: "number",
+						placeholder: "0",
+					},
+				],
+			},
+			{
+				title: "Predicted Growth",
+				description:
+					"Share your expected transaction growth for the next three months.",
+				fields: [
+					{
+						name: "forecastVolume",
+						label: "Expected monthly volume (3-month forecast)",
+						type: "number",
+						placeholder: "0",
+					},
+					{
+						name: "forecastAverageValue",
+						label: "Expected average transaction value",
+						type: "number",
+						placeholder: "0",
+					},
+				],
+			},
+			{
+				title: "Limits Applied For",
+				description: "Specify the limits you are applying for.",
+				fields: [
+					{
+						name: "maxTransactionsPerMonth",
+						label: "Max transactions per month",
+						type: "number",
+						placeholder: "0",
+					},
+					{
+						name: "maxRandValue",
+						label: "Max rand value per month",
+						type: "number",
+						placeholder: "0",
+					},
+					{
+						name: "highestSingleTransaction",
+						label: "Highest single transaction (line limit)",
+						type: "number",
+						placeholder: "0",
+					},
+				],
+			},
+		],
+	},
+	SIGNED_QUOTATION: {
+		title: "Signed Quotation",
+		description: "Review and accept the quotation provided by StratCol.",
+		schema: signedQuotationSchema,
+		submitLabel: "Accept quotation",
+		defaultValues: {
+			consentAccepted: false,
+		},
+		sections: [
+			{
+				title: "Quotation Acceptance",
+				description: "Confirm acceptance and provide signature details.",
+				fields: [
+					{
+						name: "acceptedByName",
+						label: "Authorised representative name",
+						type: "text",
+						required: true,
+					},
+					{
+						name: "acceptedByRole",
+						label: "Position/role",
+						type: "text",
+						required: true,
+					},
+					{
+						name: "acceptedByEmail",
+						label: "Email address",
+						type: "email",
+						required: true,
+					},
+					{
+						name: "consentAccepted",
+						label: "I accept the quotation terms provided by StratCol.",
+						type: "checkbox",
+						required: true,
+					},
+					{
+						name: "signatureName",
+						label: "Typed signature",
+						type: "signature",
+						required: true,
+					},
+					{
+						name: "signatureDate",
+						label: "Signature date",
+						type: "date",
+						required: true,
+					},
+				],
+			},
+		],
+	},
+	STRATCOL_CONTRACT: {
+		title: "StratCol Contract",
+		description: "Provide entity details and confirm the StratCol agreement.",
+		schema: stratcolContractSchema,
+		submitLabel: "Submit contract",
+		defaultValues: {
+			beneficialOwners: [{}],
+			consentAccepted: false,
+		},
+		sections: [
+			{
+				title: "Entity Details",
+				description: "Core legal and registration details.",
+				fields: [
+					{
+						name: "registeredName",
+						label: "Registered name",
+						type: "text",
+						required: true,
+					},
+					{
+						name: "proprietorName",
+						label: "Proprietor name (if applicable)",
+						type: "text",
+					},
+					{
+						name: "tradingName",
+						label: "Trading name",
+						type: "text",
+						required: true,
+					},
+					{
+						name: "registrationNumber",
+						label: "Registration / ID number",
+						type: "text",
+						required: true,
+					},
+					{
+						name: "entityType",
+						label: "Entity type",
+						type: "select",
+						required: true,
+						options: [
+							{ label: "Proprietor", value: "Proprietor" },
+							{ label: "Company", value: "Company" },
+							{ label: "Close Corporation", value: "Close Corporation" },
+							{ label: "Partnership", value: "Partnership" },
+							{ label: "Other", value: "Other" },
+						],
+					},
+					{
+						name: "businessAddress.address",
+						label: "Business address",
+						type: "text",
+						required: true,
+						colSpan: 2,
+					},
+					{
+						name: "businessAddress.postalCode",
+						label: "Business postal code",
+						type: "text",
+						required: true,
+					},
+					{
+						name: "postalAddress.address",
+						label: "Postal address",
+						type: "text",
+						required: true,
+						colSpan: 2,
+					},
+					{
+						name: "postalAddress.postalCode",
+						label: "Postal code",
+						type: "text",
+						required: true,
+					},
+					{
+						name: "durationAtAddress",
+						label: "Duration at address",
+						type: "text",
+					},
+					{
+						name: "industryTenure",
+						label: "Industry tenure",
+						type: "text",
+					},
+				],
+			},
+			{
+				title: "Authorised Representative",
+				description: "Primary signatory and role details.",
+				fields: [
+					{
+						name: "authorisedRepresentative.name",
+						label: "Full name",
+						type: "text",
+						required: true,
+					},
+					{
+						name: "authorisedRepresentative.idNumber",
+						label: "ID number",
+						type: "text",
+						required: true,
+					},
+					{
+						name: "authorisedRepresentative.position",
+						label: "Position",
+						type: "text",
+						required: true,
+					},
+				],
+			},
+			{
+				title: "Beneficial Owners",
+				description: "List all beneficial owners with 5% or more shareholding.",
+				fields: [
+					{
+						name: "beneficialOwners",
+						label: "Beneficial owners",
+						type: "repeatable",
+						minItems: 1,
+						addLabel: "Add beneficial owner",
+						fields: [
+							{
+								name: "name",
+								label: "Full name",
+								type: "text",
+								required: true,
+							},
+							{
+								name: "idNumber",
+								label: "ID number",
+								type: "text",
+								required: true,
+							},
+							{
+								name: "address",
+								label: "Address",
+								type: "text",
+								required: true,
+							},
+							{
+								name: "position",
+								label: "Position",
+								type: "text",
+								required: true,
+							},
+							{
+								name: "shareholdingPercent",
+								label: "Shareholding %",
+								type: "number",
+							},
+						],
+					},
+				],
+			},
+			{
+				title: "Banking & Mandates",
+				description: "Provide banking details for credit and debit accounts.",
+				fields: [
+					{
+						name: "creditBankAccount.accountName",
+						label: "Credit account name",
+						type: "text",
+						required: true,
+					},
+					{
+						name: "creditBankAccount.bankName",
+						label: "Credit bank",
+						type: "text",
+						required: true,
+					},
+					{
+						name: "creditBankAccount.branch",
+						label: "Credit branch",
+						type: "text",
+					},
+					{
+						name: "creditBankAccount.branchCode",
+						label: "Credit branch code",
+						type: "text",
+						required: true,
+					},
+					{
+						name: "creditBankAccount.accountNumber",
+						label: "Credit account number",
+						type: "text",
+						required: true,
+					},
+					{
+						name: "debitBankAccount.accountName",
+						label: "Debit account name",
+						type: "text",
+						required: true,
+					},
+					{
+						name: "debitBankAccount.bankName",
+						label: "Debit bank",
+						type: "text",
+						required: true,
+					},
+					{
+						name: "debitBankAccount.branch",
+						label: "Debit branch",
+						type: "text",
+					},
+					{
+						name: "debitBankAccount.branchCode",
+						label: "Debit branch code",
+						type: "text",
+						required: true,
+					},
+					{
+						name: "debitBankAccount.accountNumber",
+						label: "Debit account number",
+						type: "text",
+						required: true,
+					},
+				],
+			},
+			{
+				title: "Agreement & Signature",
+				description:
+					"Confirm that the information is accurate and sign the agreement.",
+				fields: [
+					{
+						name: "consentAccepted",
+						label: "I accept the StratCol agreement terms.",
+						type: "checkbox",
+						required: true,
+						colSpan: 2,
+					},
+					{
+						name: "signatureName",
+						label: "Typed signature",
+						type: "signature",
+						required: true,
+					},
+					{
+						name: "signatureDate",
+						label: "Signature date",
+						type: "date",
+						required: true,
+					},
+				],
+			},
+		],
+	},
+	ABSA_6995: {
+		title: "Absa 6995 User Pre-screening Assessment",
+		description:
+			"Complete the Absa 6995 assessment. Fields marked with * are mandatory.",
+		schema: absa6995Schema,
+		submitLabel: "Submit Absa 6995 form",
+		defaultValues: {
+			applicantDetails: {
+				alternativeShortNames: ["", "", ""],
+				applicationTypes: [],
+				directors: [{}, {}, {}],
+				salesDistribution: [],
+				collectionHistory: {
+					isNewToCollections: "no",
+					previousCollections: "no",
+				},
+			},
+			previousHistory: {
+				wasExited: "no",
+			},
+			references: [{}, {}, {}, {}, {}],
+			businessMetrics: {
+				sponsoredByAnotherBank: "no",
+				litigationPending: "no",
+				directorsUnderAdministration: "no",
+				formalComplaints: "no",
+				complianceConcerns: "no",
+			},
+			additionalDirectors: [],
+			documentChecklist: {},
+			declarations: {},
+			signatures: {},
+		},
+		sections: [
+			{
+				title: "Applicant Details",
+				description:
+					"This section must be completed by all applicants applying for collections facilities.",
+				fields: [
+					{
+						name: "applicantDetails.ultimateCreditorName",
+						label: "Name of the ultimate creditor",
+						type: "text",
+						required: true,
+						colSpan: 2,
+					},
+					{
+						name: "applicantDetails.preferredShortName",
+						label: "Preferred abbreviated short name",
+						type: "text",
+						required: true,
+					},
+					{
+						name: "applicantDetails.alternativeShortNames.0",
+						label: "Alternative short name 1",
+						type: "text",
+						required: true,
+					},
+					{
+						name: "applicantDetails.alternativeShortNames.1",
+						label: "Alternative short name 2",
+						type: "text",
+						required: true,
+					},
+					{
+						name: "applicantDetails.alternativeShortNames.2",
+						label: "Alternative short name 3",
+						type: "text",
+						required: true,
+					},
+					{
+						name: "applicantDetails.natureOfBusiness",
+						label: "Nature of business",
+						type: "text",
+						colSpan: 2,
+					},
+					{
+						name: "applicantDetails.companyRegistrationNumber",
+						label: "Company registration number",
+						type: "text",
+						required: true,
+					},
+					{
+						name: "applicantDetails.applicationTypes",
+						label: "Application type",
+						type: "checkbox-group",
+						required: true,
+						options: [
+							{ label: "EFT", value: "EFT" },
+							{ label: "DebiCheck", value: "DebiCheck" },
+							{ label: "AbsaPay", value: "AbsaPay" },
+							{ label: "Payments", value: "Payments" },
+							{ label: "New TPPP", value: "New TPPP" },
+							{ label: "PayShap", value: "PayShap" },
+							{ label: "RM", value: "RM" },
+						],
+						colSpan: 2,
+					},
+					{
+						name: "applicantDetails.directors",
+						label: "Directors (full name and ID number)",
+						type: "repeatable",
+						minItems: 1,
+						addLabel: "Add director",
+						fields: [
+							{
+								name: "fullName",
+								label: "Full name",
+								type: "text",
+								required: true,
+							},
+							{
+								name: "idNumber",
+								label: "ID number",
+								type: "text",
+								required: true,
+							},
+						],
+					},
+				],
+			},
+			{
+				title: "Contact Details",
+				description: "Provide the operating and registered addresses.",
+				fields: [
+					{
+						name: "applicantDetails.physicalAddress.address",
+						label: "Physical operating address",
+						type: "text",
+						required: true,
+						colSpan: 2,
+					},
+					{
+						name: "applicantDetails.physicalAddress.suburb",
+						label: "Suburb",
+						type: "text",
+						required: true,
+					},
+					{
+						name: "applicantDetails.physicalAddress.city",
+						label: "Town/City",
+						type: "text",
+						required: true,
+					},
+					{
+						name: "applicantDetails.physicalAddress.postalCode",
+						label: "Postal code",
+						type: "text",
+						required: true,
+					},
+					{
+						name: "applicantDetails.registeredAddress.address",
+						label: "CIPC registered address",
+						type: "text",
+						required: true,
+						colSpan: 2,
+					},
+					{
+						name: "applicantDetails.registeredAddress.suburb",
+						label: "Suburb",
+						type: "text",
+						required: true,
+					},
+					{
+						name: "applicantDetails.registeredAddress.city",
+						label: "Town/City",
+						type: "text",
+						required: true,
+					},
+					{
+						name: "applicantDetails.registeredAddress.postalCode",
+						label: "Postal code",
+						type: "text",
+						required: true,
+					},
+					{
+						name: "applicantDetails.contactInfo.telephone",
+						label: "Telephone number",
+						type: "tel",
+						required: true,
+					},
+					{
+						name: "applicantDetails.contactInfo.email",
+						label: "Email address",
+						type: "email",
+						required: true,
+					},
+					{
+						name: "applicantDetails.contactInfo.website",
+						label: "Website address",
+						type: "text",
+						required: true,
+					},
+				],
+			},
+			{
+				title: "Banking Details",
+				description: "Bank account details for collected funds.",
+				fields: [
+					{
+						name: "applicantDetails.bankingDetails.bankName",
+						label: "Bank name",
+						type: "text",
+					},
+					{
+						name: "applicantDetails.bankingDetails.accountType",
+						label: "Account type",
+						type: "text",
+					},
+					{
+						name: "applicantDetails.bankingDetails.branchCode",
+						label: "Branch code",
+						type: "text",
+					},
+					{
+						name: "applicantDetails.bankingDetails.accountNumber",
+						label: "Account number",
+						type: "text",
+					},
+					{
+						name: "applicantDetails.bankingDetails.sourceOfIncome",
+						label: "Source of income",
+						type: "text",
+					},
+				],
+			},
+			{
+				title: "Collection History & Sales",
+				description: "Provide sales distribution and history details.",
+				fields: [
+					{
+						name: "applicantDetails.salesDistribution",
+						label: "Sales distribution",
+						type: "checkbox-group",
+						options: [
+							{ label: "Direct Sales", value: "Direct Sales" },
+							{ label: "Call Centre", value: "Call Centre" },
+							{ label: "Network Marketing", value: "Network Marketing" },
+							{ label: "Face-to-Face", value: "Face-to-Face" },
+						],
+						colSpan: 2,
+					},
+					{
+						name: "applicantDetails.collectionHistory.isNewToCollections",
+						label: "Is the ultimate creditor new to collections?",
+						type: "select",
+						options: [
+							{ label: "Yes", value: "yes" },
+							{ label: "No", value: "no" },
+						],
+					},
+					{
+						name: "applicantDetails.collectionHistory.previousCollections",
+						label: "Previously collected for other products/services?",
+						type: "select",
+						required: true,
+						options: [
+							{ label: "Yes", value: "yes" },
+							{ label: "No", value: "no" },
+						],
+					},
+					{
+						name: "applicantDetails.collectionHistory.previousProductOrService",
+						label: "If yes, product or service",
+						type: "text",
+					},
+					{
+						name: "applicantDetails.collectionHistory.previousShortName",
+						label: "Previous abbreviated short name",
+						type: "text",
+					},
+					{
+						name: "applicantDetails.collectionHistory.collectingBureau",
+						label: "Collecting bureau",
+						type: "text",
+					},
+				],
+			},
+			{
+				title: "Previous History",
+				description: "Include any previous sponsoring bank history.",
+				fields: [
+					{
+						name: "previousHistory.previousSponsoringBank",
+						label: "Previous sponsoring bank",
+						type: "text",
+					},
+					{
+						name: "previousHistory.wasExited",
+						label:
+							"Has your business been exited from a sponsoring bank or bureau?",
+						type: "select",
+						required: true,
+						options: [
+							{ label: "Yes", value: "yes" },
+							{ label: "No", value: "no" },
+						],
+					},
+					{
+						name: "previousHistory.exitReason",
+						label: "If yes, select reason",
+						type: "select",
+						options: [
+							{
+								label: "Debiting without mandate",
+								value: "Debiting without mandate",
+							},
+							{
+								label: "Debiting without consent",
+								value: "Debiting without consent",
+							},
+							{ label: "Other", value: "Other" },
+						],
+					},
+					{
+						name: "previousHistory.exitReasonOther",
+						label: "Other reason",
+						type: "text",
+					},
+				],
+			},
+			{
+				title: "References",
+				description: "Provide five reference numbers of Absa banked clients.",
+				fields: [
+					{
+						name: "references",
+						label: "Reference list",
+						type: "repeatable",
+						minItems: 5,
+						addLabel: "Add reference",
+						fields: [
+							{ name: "name", label: "Name", type: "text", required: true },
+							{
+								name: "accountNumber",
+								label: "Account number",
+								type: "text",
+								required: true,
+							},
+							{
+								name: "reference",
+								label: "Reference",
+								type: "text",
+								required: true,
+							},
+						],
+					},
+				],
+			},
+			{
+				title: "Ratios & Metrics",
+				fields: [
+					{
+						name: "ratiosAndMetrics.averageDisputeRatio",
+						label: "Average dispute ratio (%)",
+						type: "number",
+					},
+					{
+						name: "ratiosAndMetrics.averageUnpaidRatio",
+						label: "Average unpaid ratio (%)",
+						type: "number",
+					},
+				],
+			},
+			{
+				title: "Business Metrics",
+				fields: [
+					{
+						name: "businessMetrics.salesEmployees",
+						label: "Number of sales employees",
+						type: "number",
+					},
+					{
+						name: "businessMetrics.averageDebitOrderValue",
+						label: "Average value per debit order",
+						type: "number",
+					},
+					{
+						name: "businessMetrics.presentBookSize",
+						label: "Present book size (volume and value)",
+						type: "text",
+					},
+					{
+						name: "businessMetrics.yearsInOperation",
+						label: "Years in operation",
+						type: "text",
+					},
+					{
+						name: "businessMetrics.sponsoredByAnotherBank",
+						label: "Sponsored by another bank?",
+						type: "select",
+						required: true,
+						options: [
+							{ label: "Yes", value: "yes" },
+							{ label: "No", value: "no" },
+						],
+					},
+					{
+						name: "businessMetrics.sponsoringBankName",
+						label: "If yes, name of bank",
+						type: "text",
+					},
+					{
+						name: "businessMetrics.sponsoringPeriodYears",
+						label: "Period (years)",
+						type: "number",
+					},
+					{
+						name: "businessMetrics.sponsoringPeriodMonths",
+						label: "Period (months)",
+						type: "number",
+					},
+					{
+						name: "businessMetrics.litigationPending",
+						label: "Litigation pending?",
+						type: "select",
+						required: true,
+						options: [
+							{ label: "Yes", value: "yes" },
+							{ label: "No", value: "no" },
+						],
+					},
+					{
+						name: "businessMetrics.directorsUnderAdministration",
+						label: "Directors under administration order?",
+						type: "select",
+						required: true,
+						options: [
+							{ label: "Yes", value: "yes" },
+							{ label: "No", value: "no" },
+						],
+					},
+					{
+						name: "businessMetrics.formalComplaints",
+						label: "Formal complaints lodged?",
+						type: "select",
+						required: true,
+						options: [
+							{ label: "Yes", value: "yes" },
+							{ label: "No", value: "no" },
+						],
+					},
+					{
+						name: "businessMetrics.complianceConcerns",
+						label: "Compliance concerns about client base?",
+						type: "select",
+						required: true,
+						options: [
+							{ label: "Yes", value: "yes" },
+							{ label: "No", value: "no" },
+						],
+					},
+				],
+			},
+			{
+				title: "Bureau Details (if applicable)",
+				fields: [
+					{
+						name: "bureauDetails.bureauName",
+						label: "Bureau name",
+						type: "text",
+					},
+					{ name: "bureauDetails.ldCode", label: "LD code", type: "text" },
+					{
+						name: "bureauDetails.bureauCif",
+						label: "Bureau CIF",
+						type: "text",
+					},
+				],
+			},
+			{
+				title: "Additional Directors",
+				fields: [
+					{
+						name: "additionalDirectors",
+						label: "Additional directors",
+						type: "repeatable",
+						addLabel: "Add director",
+						fields: [
+							{
+								name: "fullName",
+								label: "Full name",
+								type: "text",
+								required: true,
+							},
+							{
+								name: "idNumber",
+								label: "ID number",
+								type: "text",
+								required: true,
+							},
+						],
+					},
+				],
+			},
+			{
+				title: "Document Checklist",
+				fields: [
+					{
+						name: "documentChecklist.directorsIds",
+						label: "Copy of directors IDs",
+						type: "checkbox",
+					},
+					{
+						name: "documentChecklist.businessAddressProof",
+						label: "Proof of business address",
+						type: "checkbox",
+					},
+					{
+						name: "documentChecklist.bankStatements",
+						label: "3 months bank statements",
+						type: "checkbox",
+					},
+					{
+						name: "documentChecklist.cipcDocuments",
+						label: "Latest CIPC and registration documents",
+						type: "checkbox",
+					},
+					{
+						name: "documentChecklist.regulatedIndustryCertificates",
+						label: "Certified copies of regulated industries (NCR, FSCA)",
+						type: "checkbox",
+					},
+					{
+						name: "documentChecklist.existingMandates",
+						label: "Five mandates of existing clients",
+						type: "checkbox",
+					},
+					{
+						name: "documentChecklist.marketingMaterial",
+						label: "Brochure or marketing material",
+						type: "checkbox",
+					},
+				],
+			},
+			{
+				title: "Declarations & Warranties",
+				description:
+					"Please confirm each statement to proceed with the assessment.",
+				fields: [
+					{
+						name: "declarations.informationCorrect",
+						label: "The information supplied is true and correct.",
+						type: "checkbox",
+						required: true,
+					},
+					{
+						name: "declarations.misrepresentationAcknowledged",
+						label: "Misrepresentation may result in legal action.",
+						type: "checkbox",
+						required: true,
+					},
+					{
+						name: "declarations.debitingWithoutConsentAcknowledged",
+						label: "Debiting without consent is a criminal offence.",
+						type: "checkbox",
+						required: true,
+					},
+					{
+						name: "declarations.consentForProcessing",
+						label: "Consent to Absa processing personal information.",
+						type: "checkbox",
+						required: true,
+					},
+					{
+						name: "declarations.infoSharingAcknowledged",
+						label:
+							"Absa may share information with credit bureaus and regulators.",
+						type: "checkbox",
+						required: true,
+					},
+					{
+						name: "declarations.tpppConsentConfirmed",
+						label: "TPPP has obtained consent from the ultimate creditor.",
+						type: "checkbox",
+						required: true,
+					},
+					{
+						name: "declarations.ultimateCreditorInformed",
+						label: "The ultimate creditor is informed about data sharing.",
+						type: "checkbox",
+						required: true,
+					},
+				],
+			},
+			{
+				title: "Signatures",
+				fields: [
+					{
+						name: "signatures.clientName",
+						label: "Client's name",
+						type: "text",
+						required: true,
+					},
+					{
+						name: "signatures.clientSignature",
+						label: "Client signature (typed)",
+						type: "signature",
+						required: true,
+					},
+					{
+						name: "signatures.clientSignatureDate",
+						label: "Date",
+						type: "date",
+						required: true,
+					},
+					{
+						name: "signatures.mandatedOfficialName",
+						label: "TPPP/SO mandated official",
+						type: "text",
+					},
+					{
+						name: "signatures.mandatedOfficialSignature",
+						label: "Mandated official signature (typed)",
+						type: "signature",
+					},
+					{
+						name: "signatures.mandatedOfficialDate",
+						label: "Mandated official date",
+						type: "date",
+					},
+				],
+			},
+		],
+	},
+};

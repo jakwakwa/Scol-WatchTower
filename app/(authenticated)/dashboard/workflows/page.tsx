@@ -8,7 +8,7 @@ import {
 } from "@/components/dashboard";
 import { Button } from "@/components/ui/button";
 import { getDatabaseClient } from "@/app/utils";
-import { workflows, leads } from "@/db/schema";
+import { workflows, applicants } from "@/db/schema";
 import { desc, eq } from "drizzle-orm";
 // Type import needed for WorkflowTable props
 // ensuring we match the expected shape
@@ -25,20 +25,18 @@ export default async function WorkflowsPage() {
 
 	if (db) {
 		try {
-			// Fetch all workflows with Lead data
+			// Fetch all workflows with applicant data
 			const result = await db
 				.select({
 					id: workflows.id,
 					stage: workflows.stage,
-					stageName: workflows.stageName,
 					status: workflows.status,
-					currentAgent: workflows.currentAgent,
 					startedAt: workflows.startedAt,
 					metadata: workflows.metadata,
-					clientName: leads.companyName,
+					clientName: applicants.companyName,
 				})
 				.from(workflows)
-				.leftJoin(leads, eq(workflows.leadId, leads.id))
+				.leftJoin(applicants, eq(workflows.applicantId, applicants.id))
 				.orderBy(desc(workflows.startedAt));
 
 			allWorkflows = result.map((w) => ({
@@ -79,7 +77,7 @@ export default async function WorkflowsPage() {
 			{/* Stage distribution */}
 			<DashboardGrid columns={4} className="mb-8">
 				<StatsCard
-					title="Lead Capture"
+					title="Applicant Capture"
 					value={stageStats.lead_capture}
 					icon={RiFlowChart}
 					iconColor="blue"

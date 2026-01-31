@@ -4,7 +4,7 @@ import { z } from "zod";
 
 // Schema for Quote Generation Callback
 const quoteCallbackSchema = z.object({
-	leadId: z.number(),
+	applicantId: z.number(),
 	companyName: z.string().optional(),
 	quoteId: z.string(),
 	amount: z.number(),
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
 		// For now, assuming it is passed back (we will add it to the payload sent TO ).
 		if (!data.workflowId) {
 			console.warn(
-				"[API] Quote Callback missing workflowId - cannot resume workflow easily (unless we lookup by leadId)",
+				"[API] Quote Callback missing workflowId - cannot resume workflow easily (unless we lookup by applicantId)",
 			);
 			// Potential lookup logic here if strictly needed
 		}
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
 			name: "onboarding/quote-generated",
 			data: {
 				workflowId: data.workflowId!, // Assuming provided for now
-				leadId: data.leadId,
+				applicantId: data.applicantId,
 				quote: {
 					quoteId: data.quoteId,
 					amount: data.amount,
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
 		});
 
 		console.log(
-			`[API] Sent Inngest quote-generated event for lead ${data.leadId}`,
+			`[API] Sent Inngest quote-generated event for applicant ${data.applicantId}`,
 		);
 
 		return NextResponse.json({ success: true }, { status: 200 });
