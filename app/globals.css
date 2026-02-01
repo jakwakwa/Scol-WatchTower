@@ -20,6 +20,8 @@
   --action-foreground: oklch(85.882% 0.03117 204.372);
   --muted: oklch(80.259% 0.12989 77.293 / 0.741);
   --muted-foreground: oklch(90.865% 0.03643 87.794 / 0.643);
+  --destructive: oklch(120.836% 3.6061 1.047);
+  --destructive-foreground: rgb(231, 122, 149);
   --accent: oklch(13.388% 0.00255 106.838 / 0.154);
   --accent-foreground: oklch(80.997% 0.01678 95.297);
   --success: oklch(70.765% 0.09415 172.04);

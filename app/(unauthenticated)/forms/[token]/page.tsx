@@ -76,14 +76,7 @@ export default async function FormPage({ params }: FormPageProps) {
 
 	return (
 		<FormShell title={content.title} description={content.description}>
-			<FormView
-				token={token}
-				formType={formType}
-				sections={content.sections}
-				schema={content.schema}
-				defaultValues={content.defaultValues}
-				submitLabel={content.submitLabel}
-			/>
+			<FormView token={token} formType={formType} />
 		</FormShell>
 	);
 }

@@ -1,30 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import FormRenderer from "@/components/forms/form-renderer";
-import type { FormSectionDefinition } from "@/components/forms/types";
 import type { FormType } from "@/lib/types";
-import type { ZodTypeAny } from "zod";
+import FormRenderer from "@/components/forms/form-renderer";
+import { formContent } from "./content";
 
 interface FormViewProps {
 	token: string;
 	formType: Exclude<FormType, "DOCUMENT_UPLOADS">;
-	sections: FormSectionDefinition[];
-	schema: ZodTypeAny;
-	defaultValues: Record<string, unknown>;
-	submitLabel: string;
 }
 
 export default function FormView({
 	token,
 	formType,
-	sections,
-	schema,
-	defaultValues,
-	submitLabel,
 }: FormViewProps) {
 	const [submitted, setSubmitted] = useState(false);
 	const [submitMessage, setSubmitMessage] = useState<string | null>(null);
+	const content = formContent[formType];
 
 	if (submitted) {
 		return (
@@ -42,12 +34,22 @@ export default function FormView({
 		);
 	}
 
+	if (!content) {
+		return (
+			<div className="space-y-2 text-center">
+				<p className="text-sm text-muted-foreground">
+					This form type is not yet available.
+				</p>
+			</div>
+		);
+	}
+
 	return (
 		<FormRenderer
-			sections={sections}
-			schema={schema}
-			defaultValues={defaultValues}
-			submitLabel={submitLabel}
+			sections={content.sections}
+			schema={content.schema}
+			defaultValues={content.defaultValues}
+			submitLabel={content.submitLabel}
 			onSubmit={async (values) => {
 				const response = await fetch("/api/forms/submit", {
 					method: "POST",

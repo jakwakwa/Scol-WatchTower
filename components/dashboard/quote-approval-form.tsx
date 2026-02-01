@@ -1,11 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { RiLoader4Line } from "@remixicon/react";
+import { RiAi, RiLoader4Line } from "@remixicon/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { GlassCard } from "@/components/dashboard";
 
@@ -54,12 +53,12 @@ export function QuoteApprovalForm({
 			? String(initialAdjustedFeePercent)
 			: "",
 	);
-	const [rationale, setRationale] = useState(initialRationale || "");
+	const [rationale, _setRationale] = useState(initialRationale || "");
 	const [errors, setErrors] = useState<QuoteFormErrors>({});
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [submitMessage, setSubmitMessage] = useState<string | null>(null);
 
-	const parsedDetails = useMemo(() => {
+	const _parsedDetails = useMemo(() => {
 		if (!details) return null;
 		try {
 			return JSON.parse(details) as {
@@ -149,7 +148,7 @@ export function QuoteApprovalForm({
 							Values are stored in cents and basis points.
 						</p>
 					</div>
-					<Badge variant="outline" className="text-xs uppercase">
+					<Badge variant="outline" className={`text-xs uppercase ${currentStatus === "pending_approval" ? "text-warning" : "text-success"}`}	>
 						{currentStatus}
 					</Badge>
 				</div>
@@ -159,6 +158,8 @@ export function QuoteApprovalForm({
 						<Label htmlFor="quote-amount">Amount (cents)</Label>
 						<Input
 							id="quote-amount"
+							className="border-input-border border-none font-mono text-xl font-light text-amber-300"
+							style={{ fontSize: "1.25rem" }}
 							type="number"
 							value={amount}
 							onChange={(event) => setAmount(event.target.value)}
@@ -173,6 +174,8 @@ export function QuoteApprovalForm({
 						<Label htmlFor="quote-base-fee">Base fee (bps)</Label>
 						<Input
 							id="quote-base-fee"
+							className="border-input-border border-none font-mono text-xl font-light text-amber-300"
+							style={{ fontSize: "1.25rem" }}
 							type="number"
 							value={baseFeePercent}
 							onChange={(event) => setBaseFeePercent(event.target.value)}
@@ -189,6 +192,8 @@ export function QuoteApprovalForm({
 						<Label htmlFor="quote-adjusted-fee">Adjusted fee (bps)</Label>
 						<Input
 							id="quote-adjusted-fee"
+							className="border-input-border border-none font-mono text-xl font-light text-amber-300"
+							style={{ fontSize: "1.25rem" }}
 							type="number"
 							value={adjustedFeePercent}
 							onChange={(event) => setAdjustedFeePercent(event.target.value)}
@@ -203,41 +208,23 @@ export function QuoteApprovalForm({
 				</div>
 
 				<div className="space-y-2">
-					<Label htmlFor="quote-rationale">AI rationale</Label>
-					<Textarea
+					<Label htmlFor="quote-rationale" className="text-violet-400 text-lg"><RiAi color="var(--color-violet-500)" />rationale</Label>
+					{/* <Textarea
 						id="quote-rationale"
+						className="border-input-border font-mono font-light text-violet-400"
+						style={{ fontSize: "1rem" }}
 						value={rationale}
 						onChange={(event) => setRationale(event.target.value)}
 						disabled={isLocked}
 						rows={5}
-					/>
-					{errors.rationale ? (
-						<p className="text-xs text-destructive">{errors.rationale}</p>
-					) : null}
-				</div>
-
-				{parsedDetails ? (
-					<div className="space-y-2 text-sm text-muted-foreground">
-						<p className="font-medium text-foreground">AI signals</p>
-						<div className="flex flex-wrap gap-2">
-							<Badge variant="secondary">
-								Recommendation: {parsedDetails.recommendation || "N/A"}
-							</Badge>
-							{parsedDetails.riskFactors?.length
-								? parsedDetails.riskFactors.map((factor) => (
-										<Badge key={factor} variant="outline">
-											{factor}
-										</Badge>
-									))
-								: null}
-						</div>
+					/> */}
+					<p className="bg-violet-900/80 outline-2 font-mono outline-violet-500 text-violet-400 p-4 rounded-lg">{rationale}</p>
 					</div>
-				) : null}
 			</GlassCard>
 
 			<div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-				<p className="text-sm text-muted-foreground">
-					{submitMessage || "Review the quote before sending to the client."}
+				<p className="text-sm text-warning">
+					{submitMessage || "*Review the quote before sending to the client."}
 				</p>
 				<Button
 					onClick={handleApprove}
