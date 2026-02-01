@@ -1,4 +1,5 @@
 import { createFormInstance } from "@/lib/services/form.service";
+import { sendApplicantFormLinksEmail } from "@/lib/services/email.service";
 import type { FormType } from "@/lib/types";
 
 export interface FormLink {
@@ -49,48 +50,17 @@ export async function sendFormLinksEmail(options: {
 	contactName?: string;
 	links: FormLink[];
 }) {
-	const resendApiKey = process.env.RESEND_API_KEY;
-	const intro = options.contactName ? `Hi ${options.contactName},` : "Hello,";
-
-	const linkHtml = options.links
-		.map(
-			(link) =>
-				`<li><strong>${link.formType.replace(/_/g, " ")}</strong>: <a href="${link.url}">${link.url}</a></li>`,
-		)
-		.join("");
-
-	const html = `
-		<p>${intro}</p>
-		<p>Please complete the following onboarding forms:</p>
-		<ul>${linkHtml}</ul>
-		<p>If you have any questions, reply to this email.</p>
-	`;
-
-	if (resendApiKey) {
-		try {
-			const { Resend } = await import("resend");
-			const resend = new Resend(resendApiKey);
-			const { data, error } = await resend.emails.send({
-				from: "StratCol Onboarding <onboarding@stratcol.co.za>",
-				to: options.email,
-				subject: "StratCol onboarding forms",
-				html,
-			});
-
-			if (error) {
-				return { success: false, error: error.message };
-			}
-
-			return { success: true, messageId: data?.id };
-		} catch (err) {
-			console.warn("[FormLinks] Resend API failed, using mock:", err);
-		}
-	}
-
-	console.log("[FormLinks] Mock email sent", {
-		to: options.email,
-		links: options.links,
-	});
-
-	return { success: true, messageId: `mock-${Date.now()}` };
+    // Adapter to match the format expected by the email service if needed,
+    // though here the types are compatible enough for a direct call or simple map.
+    // The FormLink type in email.service accepts {formType: string, url: string}
+    // Our local FormLink has formType as enum.
+    
+    return await sendApplicantFormLinksEmail({
+        email: options.email,
+        contactName: options.contactName,
+        links: options.links.map(l => ({
+            formType: l.formType,
+            url: l.url
+        }))
+    });
 }
