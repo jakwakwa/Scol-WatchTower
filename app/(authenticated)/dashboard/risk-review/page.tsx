@@ -51,12 +51,19 @@ export default function RiskReviewPage() {
 	}, [fetchRiskReviewItems]);
 
 	const handleApprove = async (id: number, reason?: string) => {
+		const item = items.find((i) => i.id === id);
+		if (!item) {
+			toast.error("Workflow not found");
+			return;
+		}
+
 		try {
 			const response = await fetch("/api/risk-decision", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
 					workflowId: id,
+					applicantId: item.applicantId,
 					decision: {
 						outcome: "APPROVED",
 						decidedBy: "staff",
@@ -67,24 +74,35 @@ export default function RiskReviewPage() {
 			});
 
 			if (!response.ok) {
-				throw new Error("Failed to approve");
+				const errorData = await response.json().catch(() => ({}));
+				throw new Error(errorData.message || errorData.error || "Failed to approve");
 			}
 
 			// Refresh the list
 			await fetchRiskReviewItems();
+			toast.success("Application approved successfully");
 		} catch (error) {
 			console.error("Approval error:", error);
-			throw error;
+			toast.error(
+				error instanceof Error ? error.message : "Failed to approve application",
+			);
 		}
 	};
 
 	const handleReject = async (id: number, reason: string) => {
+		const item = items.find((i) => i.id === id);
+		if (!item) {
+			toast.error("Workflow not found");
+			return;
+		}
+
 		try {
 			const response = await fetch("/api/risk-decision", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
 					workflowId: id,
+					applicantId: item.applicantId,
 					decision: {
 						outcome: "REJECTED",
 						decidedBy: "staff",
@@ -95,14 +113,18 @@ export default function RiskReviewPage() {
 			});
 
 			if (!response.ok) {
-				throw new Error("Failed to reject");
+				const errorData = await response.json().catch(() => ({}));
+				throw new Error(errorData.message || errorData.error || "Failed to reject");
 			}
 
 			// Refresh the list
 			await fetchRiskReviewItems();
+			toast.success("Application rejected");
 		} catch (error) {
 			console.error("Rejection error:", error);
-			throw error;
+			toast.error(
+				error instanceof Error ? error.message : "Failed to reject application",
+			);
 		}
 	};
 

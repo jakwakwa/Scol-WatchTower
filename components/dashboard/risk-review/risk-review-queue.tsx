@@ -17,16 +17,12 @@ import { Label } from "@/components/ui/label";
 import {
 	RiShieldCheckLine,
 	RiAlertLine,
-	RiUserLine,
 	RiTimeLine,
 	RiCheckLine,
 	RiCloseLine,
-	RiFileTextLine,
-	RiBankLine,
 	RiBuilding2Line,
 	RiPercentLine,
 	RiScalesLine,
-	RiArrowRightLine,
 	RiEyeLine,
 	RiRefreshLine,
 } from "@remixicon/react";
@@ -51,14 +47,18 @@ export interface RiskReviewItem {
 		type: string;
 		severity: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 		description: string;
+		evidence?: string;
 	}>;
 	itcScore?: number;
 	recommendation?: string;
 	summary?: string;
+	reasoning?: string;  // AI's detailed reasoning for the score
+	analysisConfidence?: number;  // AI confidence in the analysis (0-100)
 	// Document Status
 	bankStatementVerified?: boolean;
 	accountantLetterVerified?: boolean;
 	nameMatchVerified?: boolean;
+	accountMatchVerified?: boolean;
 }
 
 interface RiskReviewCardProps {
@@ -131,6 +131,7 @@ function TrustScoreGauge({ score }: { score: number }) {
 	return (
 		<div className="relative w-24 h-24">
 			<svg className="w-24 h-24 transform -rotate-90">
+				<title>Trust Score Gauge</title>
 				{/* Background circle */}
 				<circle
 					cx="48"
@@ -218,10 +219,16 @@ export function RiskReviewCard({
 		}
 	};
 
-	const highRiskFlags =
-		item.riskFlags?.filter(
-			(f) => f.severity === "HIGH" || f.severity === "CRITICAL",
-		) || [];
+	// Sort flags by severity for display (CRITICAL > HIGH > MEDIUM > LOW)
+	const displayFlags = [
+		...(item.riskFlags || []),
+	].sort((a, b) => {
+		const weight = { CRITICAL: 3, HIGH: 2, MEDIUM: 1, LOW: 0 };
+		return (
+			(weight[b.severity as keyof typeof weight] || 0) -
+			(weight[a.severity as keyof typeof weight] || 0)
+		);
+	});
 
 	return (
 		<>
@@ -243,7 +250,7 @@ export function RiskReviewCard({
 					<div className="flex items-start justify-between gap-4">
 						<div className="flex-1 min-w-0">
 							<div className="flex items-center gap-2">
-								<h3 className="text-base font-semibold truncate">
+								<h3 className="text-base font-semibold ">
 									{item.clientName}
 								</h3>
 								<Badge variant="secondary" className="text-[10px] shrink-0">
@@ -303,9 +310,13 @@ export function RiskReviewCard({
 							<p
 								className={cn(
 									"text-lg font-semibold mt-1",
-									highRiskFlags.length > 0
+									displayFlags.some(
+										(f) => f.severity === "HIGH" || f.severity === "CRITICAL",
+									)
 										? "text-red-400"
-										: "text-emerald-400",
+										: displayFlags.length > 0
+											? "text-warning-foreground"
+											: "text-emerald-400",
 								)}
 							>
 								{item.riskFlags?.length || 0}
@@ -314,42 +325,51 @@ export function RiskReviewCard({
 
 						{/* Verification Status */}
 						<div className="text-center">
-							<div className="flex items-center justify-center gap-1.5 text-muted-foreground">
+							<div className="flex items-center justify-center gap-1.5 text-muted-foreground mb-1">
 								<RiShieldCheckLine className="h-4 w-4" />
 								<span className="text-[10px] uppercase tracking-wider">
 									Verified
 								</span>
 							</div>
-							<div className="flex items-center justify-center gap-1 mt-1">
-								{item.bankStatementVerified ? (
-									<RiCheckLine className="h-4 w-4 text-emerald-400" />
-								) : (
-									<RiCloseLine className="h-4 w-4 text-red-400" />
-								)}
-								{item.accountantLetterVerified ? (
-									<RiCheckLine className="h-4 w-4 text-emerald-400" />
-								) : (
-									<RiCloseLine className="h-4 w-4 text-muted-foreground" />
-								)}
-								{item.nameMatchVerified ? (
-									<RiCheckLine className="h-4 w-4 text-emerald-400" />
-								) : (
-									<RiCloseLine className="h-4 w-4 text-red-400" />
-								)}
+							<div className="flex flex-col gap-0.5 text-[10px] mt-1">
+								<div className="flex items-center justify-center gap-1">
+									{item.bankStatementVerified ? (
+										<RiCheckLine className="h-3 w-3 text-emerald-400" />
+									) : (
+										<RiCloseLine className="h-3 w-3 text-red-400" />
+									)}
+									<span className="text-muted-foreground">Bank</span>
+								</div>
+								<div className="flex items-center justify-center gap-1">
+									{item.accountantLetterVerified ? (
+										<RiCheckLine className="h-3 w-3 text-emerald-400" />
+									) : (
+										<RiCloseLine className="h-3 w-3 text-muted-foreground" />
+									)}
+									<span className="text-muted-foreground">CPA</span>
+								</div>
+								<div className="flex items-center justify-center gap-1">
+									{item.nameMatchVerified ? (
+										<RiCheckLine className="h-3 w-3 text-emerald-400" />
+									) : (
+										<RiCloseLine className="h-3 w-3 text-red-400" />
+									)}
+									<span className="text-muted-foreground">Name</span>
+								</div>
 							</div>
 						</div>
 					</div>
 
 					{/* Risk Flags Preview */}
-					{highRiskFlags.length > 0 && (
+					{displayFlags.length > 0 && (
 						<div className="mt-4">
 							<p className="text-xs font-medium text-muted-foreground mb-2">
-								High Priority Flags:
+								Flags Detected:
 							</p>
 							<div className="flex flex-wrap gap-1.5">
-								{highRiskFlags.slice(0, 3).map((flag, idx) => (
+								{displayFlags.slice(0, 3).map((flag, idx) => (
 									<Badge
-										key={idx}
+										key={flag.type}
 										variant="outline"
 										className={cn(
 											"text-[10px]",
@@ -359,12 +379,12 @@ export function RiskReviewCard({
 										{flag.type.replace(/_/g, " ")}
 									</Badge>
 								))}
-								{highRiskFlags.length > 3 && (
+								{displayFlags.length > 3 && (
 									<Badge
 										variant="outline"
 										className="text-[10px] text-muted-foreground"
 									>
-										+{highRiskFlags.length - 3} more
+										+{displayFlags.length - 3} more
 									</Badge>
 								)}
 							</div>
@@ -374,7 +394,7 @@ export function RiskReviewCard({
 					{/* AI Summary */}
 					{item.summary && (
 						<div className="mt-4 p-3 rounded-lg bg-secondary/5 border border-secondary/10">
-							<p className="text-xs text-muted-foreground line-clamp-2">
+							<p className="text-xs text-muted-foreground">
 								{item.summary}
 							</p>
 						</div>

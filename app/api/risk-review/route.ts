@@ -1,8 +1,76 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { getDatabaseClient } from "@/app/utils";
-import { workflows, applicants, notifications } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { workflows, applicants, workflowEvents } from "@/db/schema";
+import { eq, and, desc } from "drizzle-orm";
 import { auth } from "@clerk/nextjs/server";
+
+/**
+ * Generate fallback explanation for existing workflows without stored reasoning
+ */
+function generateFallbackExplanation(
+	aiTrustScore: number | undefined,
+	riskFlagsCount: number,
+	itcScore: number | undefined,
+	nameMatchVerified: boolean | undefined,
+): string | undefined {
+	if (!aiTrustScore) return undefined;
+
+	const factors: string[] = [];
+	
+	// Score-based explanation
+	if (aiTrustScore >= 80) {
+		factors.push("The AI trust score is high, indicating strong financial health patterns");
+	} else if (aiTrustScore >= 60) {
+		factors.push("The AI trust score is moderate, suggesting some areas require attention");
+	} else {
+		factors.push("The AI trust score is below threshold, indicating potential risk factors");
+	}
+
+	// Risk flags
+	if (riskFlagsCount > 0) {
+		factors.push(`${riskFlagsCount} risk flag${riskFlagsCount > 1 ? "s were" : " was"} detected during document analysis`);
+	} else {
+		factors.push("No significant risk flags were detected");
+	}
+
+	// ITC score
+	if (itcScore) {
+		if (itcScore >= 350) {
+			factors.push("The ITC credit score is in the favorable range");
+		} else if (itcScore >= 200) {
+			factors.push("The ITC credit score requires additional verification");
+		} else {
+			factors.push("The ITC credit score is a concern");
+		}
+	}
+
+	// Name verification
+	if (nameMatchVerified === false) {
+		factors.push("Account holder name verification failed");
+	} else if (nameMatchVerified === true) {
+		factors.push("Account holder details match the application");
+	}
+
+	return factors.join(". ") + ".";
+}
+
+/**
+ * Generate fallback summary for existing workflows
+ */
+function generateFallbackSummary(
+	aiTrustScore: number | undefined,
+	riskFlagsCount: number,
+): string | undefined {
+	if (!aiTrustScore) return undefined;
+
+	if (aiTrustScore >= 80 && riskFlagsCount === 0) {
+		return "Bank statement analysis shows healthy financial patterns with no concerning activity.";
+	} else if (aiTrustScore >= 60) {
+		return "Bank statement analysis shows generally acceptable patterns. Manual verification recommended.";
+	} else {
+		return "Bank statement analysis revealed concerning patterns that require careful review.";
+	}
+}
 
 /**
  * GET /api/risk-review
@@ -45,64 +113,64 @@ export async function GET(request: NextRequest) {
 				),
 			);
 
-		// For each workflow, fetch the risk review notification to get AI analysis data
+		// For each workflow, fetch the FICA analysis event to get AI analysis data
 		const itemsWithAnalysis = await Promise.all(
 			riskReviewWorkflows.map(async (workflow) => {
-				// Find the risk review notification for this workflow
-				const riskNotifications = await db
+				// Fetch FICA analysis event from workflow_events
+				const analysisEvents = await db
 					.select()
-					.from(notifications)
+					.from(workflowEvents)
 					.where(
 						and(
-							eq(notifications.workflowId, workflow.workflowId),
-							eq(notifications.type, "awaiting"),
+							eq(workflowEvents.workflowId, workflow.workflowId),
+							eq(workflowEvents.eventType, "stage_change"),
 						),
 					)
-					.orderBy(notifications.createdAt);
+					.orderBy(desc(workflowEvents.timestamp));
 
-				// Find the one with "Risk Review Required" title or AI data
-				const riskNotification = riskNotifications.find((n) =>
-					n.message?.includes("AI Trust Score"),
-				);
-
-				// Parse errorDetails if available
+				// Find the FICA verification event
 				let aiTrustScore: number | undefined;
 				let riskFlags: Array<{
 					type: string;
 					severity: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 					description: string;
+					evidence?: string;
 				}> = [];
 				let summary: string | undefined;
+				let reasoning: string | undefined;
+				let recommendation: string | undefined;
+				let nameMatchVerified: boolean | undefined;
+				let accountMatchVerified: boolean | undefined;
+				let analysisConfidence: number | undefined;
 
-				if (riskNotification) {
-					try {
-						// errorDetails is stored as JSON string in the message or a separate field
-						// Based on onboarding.ts, it's passed as errorDetails property
-						const match = riskNotification.message?.match(
-							/AI Trust Score: (\d+)%/,
-						);
-						if (match) {
-							aiTrustScore = parseInt(match[1], 10);
-						}
-
-						const flagMatch = riskNotification.message?.match(
-							/(\d+) risk flag\(s\)/,
-						);
-						if (flagMatch) {
-							const count = parseInt(flagMatch[1], 10);
-							// Create placeholder flags based on count
-							for (let i = 0; i < count; i++) {
-								riskFlags.push({
-									type: `RISK_FLAG_${i + 1}`,
-									severity: "MEDIUM",
-									description: "Risk flag detected during FICA analysis",
-								});
+				for (const event of analysisEvents) {
+					if (event.payload) {
+						try {
+							const payload = JSON.parse(event.payload);
+							if (payload.step === "ai-fica-verification") {
+								aiTrustScore = payload.aiTrustScore;
+								riskFlags = payload.riskFlags || [];
+								summary = payload.summary;
+								reasoning = payload.reasoning;
+								recommendation = payload.recommendation;
+								nameMatchVerified = payload.nameMatchVerified;
+								accountMatchVerified = payload.accountMatchVerified;
+								analysisConfidence = payload.analysisConfidence;
+								break;
 							}
+						} catch {
+							// Ignore parsing errors
 						}
-					} catch {
-						// Ignore parsing errors
 					}
 				}
+
+				// Generate fallback explanation if reasoning not stored (for existing workflows)
+				const generatedReasoning = reasoning || generateFallbackExplanation(
+					aiTrustScore,
+					riskFlags.length,
+					workflow.itcScore || undefined,
+					nameMatchVerified,
+				);
 
 				return {
 					id: workflow.workflowId,
@@ -118,17 +186,20 @@ export async function GET(request: NextRequest) {
 					aiTrustScore,
 					riskFlags,
 					itcScore: workflow.itcScore || undefined,
-					recommendation: aiTrustScore
+					recommendation: recommendation || (aiTrustScore
 						? aiTrustScore >= 80
 							? "APPROVE"
 							: aiTrustScore >= 60
 								? "APPROVE_WITH_CONDITIONS"
 								: "MANUAL_REVIEW"
-						: undefined,
-					summary,
+						: undefined),
+					summary: summary || generateFallbackSummary(aiTrustScore, riskFlags.length),
+					reasoning: generatedReasoning,
+					nameMatchVerified,
+					accountMatchVerified,
+					analysisConfidence: analysisConfidence || (aiTrustScore ? 75 : undefined),
 					bankStatementVerified: true, // If they're at stage 3, bank statement was received
 					accountantLetterVerified: false,
-					nameMatchVerified: undefined,
 				};
 			}),
 		);

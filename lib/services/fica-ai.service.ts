@@ -354,16 +354,11 @@ function generateMockAccountantLetterAnalysis(
 
 /**
  * Determine if analysis allows auto-approval
+ * DISABLED: All applications require human review
  */
 export function canAutoApprove(analysis: FicaDocumentAnalysis): boolean {
-	return (
-		analysis.aiTrustScore >= AI_TRUST_THRESHOLDS.AUTO_APPROVE &&
-		analysis.nameMatchVerified &&
-		analysis.accountMatchVerified &&
-		analysis.riskFlags.filter(
-			(f) => f.severity === "HIGH" || f.severity === "CRITICAL",
-		).length === 0
-	);
+	// Auto-approve is disabled - all applications go to human review
+	return false;
 }
 
 /**
