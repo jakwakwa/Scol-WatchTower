@@ -186,6 +186,110 @@ const EXIT_REASON_OPTIONS: CheckboxOption[] = [
 ];
 
 // ============================================
+// Test Data
+// ============================================
+
+const TEST_DATA: Partial<Absa6995FormData> = {
+	sectionA: {
+		applicantDetails: {
+			ultimateCreditorName: "Test Company (Pty) Ltd",
+			preferredShortName: "TESTCO",
+			alternativeShortNames: {
+				alternative1: "TEST",
+				alternative2: "TCO",
+				alternative3: "TC",
+				alternative4: "TCL",
+			},
+			natureOfBusiness: "Software Development",
+			companyRegistrationNumber: "2024/123456/07",
+		},
+		applicationTypes: {
+			applicationTypes: [ApplicationType.EFT, ApplicationType.DEBICHECK],
+		},
+		directors: {
+			directors: [
+				{ fullName: "John Doe", idNumber: "8001015009087" },
+				{ fullName: "Jane Smith", idNumber: "8505050050080" },
+				{ fullName: "Bob Jones", idNumber: "9009095009081" },
+			],
+		},
+		contactDetails: {
+			physicalAddress: {
+				address: "123 Test Street",
+				suburb: "Testville",
+				townCity: "Test City",
+				postalCode: "1234",
+			},
+			cipcRegisteredAddress: {
+				address: "456 Reg Road",
+				suburb: "Regville",
+				townCity: "Reg City",
+				postalCode: "5678",
+			},
+			telephoneNumber: "0111234567",
+			emailAddress: "test@example.com",
+			websiteAddress: "https://example.com",
+		},
+		bankingDetails: {
+			bankName: "Test Bank",
+			accountType: "Current",
+			branchCode: "123456",
+			accountNumber: "123456789",
+			sourceOfIncome: "Sales",
+		},
+		collectionHistory: {
+			salesDistribution: [SalesDistribution.DIRECT_SALES],
+			isNewToCollections: true,
+			hasPastCollections: false,
+			pastCollectionProduct: "",
+			previousShortName: "",
+			collectingBureau: "",
+		},
+	},
+	complianceHistory: {
+		previousHistory: {
+			previousSponsoringBank: "",
+			hasBeenExited: false,
+			exitReasons: [],
+			exitReasonOther: "",
+		},
+		references: {
+			references: [
+				{ name: "Ref 1", accountNumber: "111", reference: "Good" },
+				{ name: "Ref 2", accountNumber: "222", reference: "Good" },
+				{ name: "Ref 3", accountNumber: "333", reference: "Good" },
+				{ name: "Ref 4", accountNumber: "444", reference: "Good" },
+				{ name: "Ref 5", accountNumber: "555", reference: "Good" },
+			],
+		},
+		ratiosAndMetrics: {
+			averageDisputeRatio: "1.5",
+			averageUnpaidRatio: "2.0",
+		},
+		businessMetrics: {
+			salesEmployeesCount: "10",
+			averageDebitOrderValue: "500",
+			presentBookSize: "1000",
+			businessOperationLength: "5 years",
+			isPresentlySponsored: false,
+			sponsoringBankName: "",
+			sponsorshipPeriodYears: "",
+			sponsorshipPeriodMonths: "",
+			hasLitigationPending: false,
+			hasDirectorsUnderAdministration: false,
+			hasFormalComplaints: false,
+			hasComplianceConcerns: false,
+		},
+	},
+	bureauDetails: {
+		isApplicable: false,
+		bureauName: "",
+		ldCode: "",
+		bureauCif: "",
+	},
+};
+
+// ============================================
 // Main Form Component
 // ============================================
 
@@ -272,6 +376,27 @@ export function Absa6995Form({
 	return (
 		<FormProvider {...methods}>
 			<form onSubmit={handleSubmit(handleFormSubmit)}>
+				{process.env.NEXT_PUBLIC_TEST_FORMS === "true" && (
+					<div className="mb-6 p-4 border border-dashed border-yellow-500/50 bg-yellow-50/50 rounded-lg flex items-center justify-between">
+						<div className="space-y-1">
+							<p className="text-sm font-medium text-yellow-800">
+								Testing Mode Active
+							</p>
+							<p className="text-xs text-yellow-700">
+								Click to autofill the form with test data.
+							</p>
+						</div>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							onClick={() => methods.reset(TEST_DATA as Absa6995FormData)}
+							className="bg-white border-yellow-200 hover:bg-yellow-50 hover:text-yellow-900 text-yellow-800"
+						>
+							Autofill Form
+						</Button>
+					</div>
+				)}
 				<FormWizard
 					steps={steps}
 					currentStep={currentStep}

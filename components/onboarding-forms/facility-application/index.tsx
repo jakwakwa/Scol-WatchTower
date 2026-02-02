@@ -13,6 +13,7 @@ import { FormWizard, FormStep } from "../form-wizard";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
 	RiServiceLine,
@@ -213,6 +214,47 @@ const ADDITIONAL_SERVICE_OPTIONS: CheckboxOption[] = [
 	},
 ];
 
+
+// ============================================
+// Test Data
+// ============================================
+
+const TEST_DATA: Partial<FacilityApplicationFormData> = {
+	facilitySelection: {
+		serviceTypes: [ServiceType.EFT, ServiceType.DEBICHECK],
+		additionalServices: [AdditionalService.INTEGRATION],
+	},
+	volumeMetrics: {
+		history: {
+			currentProvider: "None",
+			previousProvider: "None",
+			hasOutstandingAmounts: false,
+			amountsOwed: "R 0.00",
+		},
+		statistics: {
+			averageTransactionsPerMonth: "500",
+			averageTransactionValue: "R 250.00",
+			unpaidTransactionsValue: "R 0.00",
+			unpaidTransactionsQuantity: "0",
+			disputedTransactionsValue: "R 0.00",
+			disputedTransactionsQuantity: "0",
+		},
+		predictedGrowth: {
+			month1Volume: "600",
+			month1Value: "R 150000.00",
+			month2Volume: "700",
+			month2Value: "R 175000.00",
+			month3Volume: "800",
+			month3Value: "R 200000.00",
+		},
+		limitsAppliedFor: {
+			maxTransactionsPerMonth: "1000",
+			maxRandValue: "R 500000.00",
+			lineLimit: "R 5000.00",
+		},
+	},
+};
+
 // ============================================
 // Main Form Component
 // ============================================
@@ -310,6 +352,27 @@ export function FacilityApplicationForm({
 	return (
 		<FormProvider {...methods}>
 			<form onSubmit={handleSubmit(handleFormSubmit)}>
+				{process.env.NEXT_PUBLIC_TEST_FORMS === "true" && (
+					<div className="mb-6 p-4 border border-dashed border-yellow-500/50 bg-yellow-50/50 rounded-lg flex items-center justify-between">
+						<div className="space-y-1">
+							<p className="text-sm font-medium text-yellow-800">
+								Testing Mode Active
+							</p>
+							<p className="text-xs text-yellow-700">
+								Click to autofill the form with test data.
+							</p>
+						</div>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							onClick={() => methods.reset(TEST_DATA as FacilityApplicationFormData)}
+							className="bg-white border-yellow-200 hover:bg-yellow-50 hover:text-yellow-900 text-yellow-800"
+						>
+							Autofill Form
+						</Button>
+					</div>
+				)}
 				<FormWizard
 					steps={steps}
 					currentStep={currentStep}

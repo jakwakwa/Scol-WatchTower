@@ -5,16 +5,10 @@
  * Core contract establishing legal relationship and primary entity data
  * Note: Using UK spelling throughout (e.g., organisation, authorisation)
  */
-
-import * as React from "react";
-import { useForm, FormProvider, useFieldArray } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { FormWizard, FormStep } from "../form-wizard";
-import { SignatureCanvas } from "../signature-canvas";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Select,
 	SelectContent,
@@ -23,18 +17,23 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
 	RiAddLine,
+	RiBankLine,
+	RiBuildingLine,
 	RiDeleteBinLine,
 	RiUserLine,
-	RiBuildingLine,
-	RiBankLine,
 } from "@remixicon/react";
+import * as React from "react";
+import { FormProvider, useFieldArray, useForm } from "react-hook-form";
+import { FormStep, FormWizard } from "../form-wizard";
+import { SignatureCanvas } from "../signature-canvas";
 
 import {
-	stratcolAgreementSchema,
-	STRATCOL_AGREEMENT_STEP_TITLES,
 	EntityType,
+	STRATCOL_AGREEMENT_STEP_TITLES,
+	stratcolAgreementSchema,
 	type StratcolAgreementFormData,
 } from "@/lib/validations/onboarding";
 
@@ -310,6 +309,68 @@ function EntityDetailsSection() {
 }
 
 // ============================================
+// Test Data
+// ============================================
+
+const TEST_DATA: Partial<StratcolAgreementFormData> = {
+	entityDetails: {
+		registeredName: "Test Entity (Pty) Ltd",
+		tradingName: "Test Entity",
+		registrationNumber: "2024/100200/07",
+		entityType: EntityType.COMPANY,
+		businessAddress: {
+			address: "10 Business Rd",
+			suburb: "Bizville",
+			townCity: "Biz City",
+			postalCode: "1000",
+		},
+		postalAddress: {
+			address: "PO Box 10",
+			suburb: "Postville",
+			townCity: "Post City",
+			postalCode: "2000",
+		},
+		durationAtAddress: "1 year",
+		industryTenure: "5 years",
+	},
+	signatoryAndOwners: {
+		authorisedRepresentative: {
+			name: "John Doe",
+			idNumber: "8001015009087",
+			position: "Director",
+		},
+		beneficialOwners: [
+			{
+				name: "Jane Doe",
+				idNumber: "8501015009087",
+				address: "Sample Address",
+				position: "Shareholder",
+				shareholdingPercentage: "50",
+			},
+		],
+	},
+	bankingAndMandates: {
+		creditBankAccount: {
+			accountName: "Test Account",
+			bankName: "Test Bank",
+			accountType: "Current",
+			branchCode: "123456",
+			accountNumber: "987654321",
+		},
+		debitBankAccount: {
+			accountName: "Test Account",
+			bankName: "Test Bank",
+			accountType: "Current",
+			branchCode: "123456",
+			accountNumber: "987654321",
+		},
+		useSameAccountForDebit: true,
+	},
+	declarationsAccepted: true,
+};
+
+
+// ============================================
 // Main Form Component
 // ============================================
 
@@ -378,6 +439,27 @@ export function StratcolAgreementForm({
 	return (
 		<FormProvider {...methods}>
 			<form onSubmit={handleSubmit(handleFormSubmit)}>
+				{process.env.NEXT_PUBLIC_TEST_FORMS === "true" && (
+					<div className="mb-6 p-4 border border-dashed border-yellow-500/50 bg-yellow-50/50 rounded-lg flex items-center justify-between">
+						<div className="space-y-1">
+							<p className="text-sm font-medium text-yellow-800">
+								Testing Mode Active
+							</p>
+							<p className="text-xs text-yellow-700">
+								Click to autofill the form with test data.
+							</p>
+						</div>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							onClick={() => methods.reset(TEST_DATA as StratcolAgreementFormData)}
+							className="bg-white border-yellow-200 hover:bg-yellow-50 hover:text-yellow-900 text-yellow-800"
+						>
+							Autofill Form
+						</Button>
+					</div>
+				)}
 				<FormWizard
 					steps={steps}
 					currentStep={currentStep}

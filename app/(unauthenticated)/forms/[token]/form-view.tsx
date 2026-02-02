@@ -49,6 +49,7 @@ export default function FormView({
 			sections={content.sections}
 			schema={content.schema}
 			defaultValues={content.defaultValues}
+			testData={content.testData}
 			submitLabel={content.submitLabel}
 			onSubmit={async (values) => {
 				const response = await fetch("/api/forms/submit", {

@@ -13,6 +13,7 @@ interface FormRendererProps {
 	sections: FormSectionDefinition[];
 	schema: ZodTypeAny;
 	defaultValues?: Record<string, unknown>;
+	testData?: Record<string, unknown>;
 	submitLabel?: string;
 	onSubmit: (values: FieldValues) => Promise<void>;
 	disabled?: boolean;
@@ -27,6 +28,7 @@ export default function FormRenderer({
 	sections,
 	schema,
 	defaultValues,
+	testData,
 	submitLabel = "Submit",
 	onSubmit,
 	disabled,
@@ -57,9 +59,33 @@ export default function FormRenderer({
 		}
 	});
 
+	const showTestButton =
+		process.env.NEXT_PUBLIC_TEST_FORMS === "true" && testData;
+
 	return (
 		<FormProvider {...form}>
 			<form onSubmit={handleSubmit} className="space-y-10">
+				{showTestButton && (
+					<div className="mb-6 p-4 border border-dashed border-yellow-500/50 bg-yellow-50/50 rounded-lg flex items-center justify-between">
+						<div className="space-y-1">
+							<p className="text-sm font-medium text-yellow-800">
+								Testing Mode Active
+							</p>
+							<p className="text-xs text-yellow-700">
+								Click to autofill the form with test data.
+							</p>
+						</div>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							onClick={() => form.reset(testData)}
+							className="bg-white border-yellow-200 hover:bg-yellow-50 hover:text-yellow-900 text-yellow-800"
+						>
+							Autofill Form
+						</Button>
+					</div>
+				)}
 				{sectionLayouts.map((section) => (
 					<section key={section.title} className="space-y-6">
 						<div className="space-y-1">
