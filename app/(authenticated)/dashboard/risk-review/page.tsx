@@ -15,14 +15,17 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
 	RiskReviewQueue,
+	RiskReviewDetail,
 	type RiskReviewItem,
-} from "@/components/dashboard/risk-review/risk-review-queue";
+} from "@/components/dashboard/risk-review";
 import { toast } from "sonner";
 
 export default function RiskReviewPage() {
 	const [searchTerm, setSearchTerm] = useState("");
 	const [items, setItems] = useState<RiskReviewItem[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
+	const [selectedItem, setSelectedItem] = useState<RiskReviewItem | null>(null);
+	const [isDetailOpen, setIsDetailOpen] = useState(false);
 
 	const fetchRiskReviewItems = useCallback(async () => {
 		setIsLoading(true);
@@ -129,8 +132,8 @@ export default function RiskReviewPage() {
 	};
 
 	const handleViewDetails = (item: RiskReviewItem) => {
-		// Navigate to applicant detail with risk tab
-		window.location.href = `/dashboard/applicants/${item.applicantId}?tab=risk`;
+		setSelectedItem(item);
+		setIsDetailOpen(true);
 	};
 
 	// Filter items based on search
@@ -175,7 +178,7 @@ export default function RiskReviewPage() {
 					<RiSearchLine className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
 					<Input
 						placeholder="Search company, contact name..."
-						className="pl-10 bg-card"
+						className="pl-10"
 						value={searchTerm}
 						onChange={(e) => setSearchTerm(e.target.value)}
 					/>
@@ -200,6 +203,21 @@ export default function RiskReviewPage() {
 				onReject={handleReject}
 				onViewDetails={handleViewDetails}
 				onRefresh={fetchRiskReviewItems}
+			/>
+
+			{/* Detail Sheet */}
+			<RiskReviewDetail
+				item={selectedItem}
+				open={isDetailOpen}
+				onOpenChange={setIsDetailOpen}
+				onApprove={async (id, reason) => {
+					await handleApprove(id, reason);
+					setIsDetailOpen(false);
+				}}
+				onReject={async (id, reason) => {
+					await handleReject(id, reason);
+					setIsDetailOpen(false);
+				}}
 			/>
 		</DashboardLayout>
 	);

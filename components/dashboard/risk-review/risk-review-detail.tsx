@@ -433,8 +433,44 @@ export function RiskReviewDetail({
 								<p className="text-sm text-foreground leading-relaxed">
 									{item.reasoning}
 								</p>
+								
+								{item.riskFlags && item.riskFlags.length > 0 && (
+									<div className="mt-4 pt-4 border-t border-primary/10">
+										<p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
+											Identified Risk Factors
+										</p>
+										<div className="space-y-2">
+											{item.riskFlags.map((flag, idx) => (
+												<div
+													key={idx}
+													className="flex items-start gap-2 bg-background/40 p-2 rounded border border-primary/10"
+												>
+													<Badge
+														variant="outline"
+														className={cn(
+															"text-[10px] shrink-0",
+															getSeverityColor(flag.severity),
+														)}
+													>
+														{flag.severity}
+													</Badge>
+													<div className="text-xs">
+														<span className="font-semibold text-foreground/80">
+															{flag.type.replace(/_/g, " ")}
+														</span>
+														<span className="mx-1 text-muted-foreground">-</span>
+														<span className="text-muted-foreground">
+															{flag.description}
+														</span>
+													</div>
+												</div>
+											))}
+										</div>
+									</div>
+								)}
+
 								{item.analysisConfidence && (
-									<p className="text-xs text-muted-foreground mt-2">
+									<p className="text-xs text-muted-foreground mt-3">
 										AI Confidence: {item.analysisConfidence}%
 									</p>
 								)}

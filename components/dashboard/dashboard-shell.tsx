@@ -26,7 +26,7 @@ export function DashboardShell({
 	const { title, description, actions } = useDashboardStore();
 
 	return (
-		<div className="min-h-screen bg-linear-to-br from-secondary/20 via-card/70 to-background ">
+		<div className="min-h-screen bg-linear-to-br from-popover/40 via-popover/40 to-secondary/45 ">
 			<Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
 
 			{/* Main content */}

@@ -301,18 +301,20 @@ function generateMockBankStatementAnalysis(
 		nameMatchVerified: true,
 		accountMatchVerified: true,
 		summary: isHighRisk
-			? "Bank statement shows concerning patterns including multiple dishonoured debits and irregular deposits. Manual review strongly recommended."
+			? "The bank statement analysis reveals several critical risk factors that necessitate manual review. Significant issues with payment reliability and irregular deposit patterns were identified."
 			: isLowRisk
-				? "Bank statement shows healthy financial patterns with consistent income and no concerning activity. Suitable for fast-track approval."
-				: "Bank statement shows generally healthy patterns with minor observations. Standard processing recommended.",
+				? "The bank statement demonstrates strong financial health with consistent revenue streams and no adverse indicators. The applicant qualifies for fast-track processing."
+				: "The bank statement shows a stable financial position. While there is a higher-than-average reliance on cash transactions, overall liquidity remains healthy.",
 		recommendation: isHighRisk
 			? "MANUAL_REVIEW"
 			: aiTrustScore >= AI_TRUST_THRESHOLDS.AUTO_APPROVE
 				? "APPROVE"
 				: "APPROVE_WITH_CONDITIONS",
 		reasoning: isHighRisk
-			? "Multiple risk indicators require human oversight before approval."
-			: "Financial health indicators are within acceptable parameters for the requested mandate volume.",
+			? "The calculated risk score of 35% is primarily driven by recent dishonoured debit orders (3 in the last 30 days) and a pattern of irregular lump-sum deposits that do not align with the stated business model. These factors suggest potential cash flow instability."
+			: isLowRisk
+				? "The risk score of 92% reflects excellent account conduct. No bounced debits were detected in the analysis period. Income regularity is high, and the average daily balance supports the requested facility."
+				: "The risk score of 72% is influenced by the 'Cash Intensive' flag, as 15% of credits are cash deposits. However, no dishonoured payments were found, and the closing balance has grown by 14% over the period.",
 	};
 
 	console.log(`[FicaAI] Mock analysis complete:`, {
