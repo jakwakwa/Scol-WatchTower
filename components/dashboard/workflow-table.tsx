@@ -59,6 +59,7 @@ export interface WorkflowRow {
 	currentAgent?: string;
 	startedAt: Date;
 	payload?: Record<string, unknown>;
+	hasQuote?: boolean;
 }
 
 // --- Components ---
@@ -309,12 +310,13 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 		),
 		cell: ({ row, table }) => {
 			const meta = table.options.meta as {
-				onViewPayload: (data: WorkflowRow) => void;
 				onManualOverride: (data: WorkflowRow) => void;
 				onQuickApprove: (data: WorkflowRow) => void;
 				onQuickReject: (data: WorkflowRow) => void;
 			};
 			const isAwaiting = row.original.status === "awaiting_human";
+			const canViewQuote =
+				row.original.stage >= 2 && row.original.hasQuote;
 
 			return (
 				<div className="flex items-center gap-1">
@@ -351,24 +353,37 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 						>
 							<RiMore2Fill className="h-4 w-4" />
 						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end" className="w-[180px]">
+						<DropdownMenuContent align="end" className="w-[200px]">
 							<DropdownMenuLabel>Actions</DropdownMenuLabel>
+							<DropdownMenuItem asChild>
+								<Link
+									href={`/dashboard/applicants/${row.original.applicantId}`}
+									className="cursor-pointer flex items-center"
+								>
+									<RiUserLine className="mr-2 h-4 w-4" />
+									View Applicant Details
+								</Link>
+							</DropdownMenuItem>
+							{canViewQuote && (
+								<DropdownMenuItem asChild>
+									<Link
+										href={`/dashboard/applicants/${row.original.applicantId}/quote`}
+										className="cursor-pointer flex items-center"
+									>
+										<RiCheckLine className="mr-2 h-4 w-4" />
+										View Quotation
+									</Link>
+								</DropdownMenuItem>
+							)}
+							<DropdownMenuSeparator />
 							<DropdownMenuItem asChild>
 								<Link
 									href={`/dashboard/workflows/${row.original.id}`}
 									className="cursor-pointer flex items-center"
 								>
 									<RiFlowChart className="mr-2 h-4 w-4" />
-									View Workflow
+									View Workflow Graph
 								</Link>
-							</DropdownMenuItem>
-							<DropdownMenuSeparator />
-							<DropdownMenuItem
-								className="cursor-pointer text-stone-400 focus:text-stone-300"
-								onClick={() => meta?.onViewPayload(row.original)}
-							>
-								<RiCodeSSlashLine className="mr-2 h-4 w-4" />
-								View Payload
 							</DropdownMenuItem>
 						</DropdownMenuContent>
 					</DropdownMenu>
@@ -377,43 +392,6 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 		},
 	},
 ];
-
-// --- Sub-components ---
-
-function PayloadDialog({
-	workflow,
-	open,
-	onOpenChange,
-}: {
-	workflow: WorkflowRow | null;
-	open: boolean;
-	onOpenChange: (open: boolean) => void;
-}) {
-	if (!workflow) return null;
-
-	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-w-2xl border-secondary/10 bg-zinc-100 backdrop-blur-xl">
-				<DialogHeader>
-					<DialogTitle className="flex items-center gap-2">
-						<RiCodeSSlashLine className="h-5 w-5 text-stone-400" />
-						Workflow Payload
-					</DialogTitle>
-					<DialogDescription>
-						Raw data for {workflow.clientName} (ID: #{workflow.id})
-					</DialogDescription>
-				</DialogHeader>
-				<div className="relative mt-4">
-					<div className="max-h-[60vh] overflow-auto rounded-xl bg-black/50 p-6 border border-secondary/5">
-						<pre className="text-xs text-zinc-400 font-mono leading-relaxed">
-							{JSON.stringify(workflow.payload || {}, null, 2)}
-						</pre>
-					</div>
-				</div>
-			</DialogContent>
-		</Dialog>
-	);
-}
 
 // --- HITL Confirmation Dialog ---
 
@@ -524,16 +502,10 @@ interface WorkflowTableProps {
 export function WorkflowTable({ workflows, onRefresh }: WorkflowTableProps) {
 	const [selectedWorkflow, setSelectedWorkflow] =
 		React.useState<WorkflowRow | null>(null);
-	const [isPayloadOpen, setIsPayloadOpen] = React.useState(false);
 	const [isHITLOpen, setIsHITLOpen] = React.useState(false);
 	const [hitlAction, setHitlAction] = React.useState<
 		"approve" | "reject" | null
 	>(null);
-
-	const handleViewPayload = React.useCallback((workflow: WorkflowRow) => {
-		setSelectedWorkflow(workflow);
-		setIsPayloadOpen(true);
-	}, []);
 
 	const handleQuickApprove = React.useCallback((workflow: WorkflowRow) => {
 		setSelectedWorkflow(workflow);
@@ -616,16 +588,9 @@ export function WorkflowTable({ workflows, onRefresh }: WorkflowTableProps) {
 				columns={columns}
 				data={workflows}
 				meta={{
-					onViewPayload: handleViewPayload,
 					onQuickApprove: handleQuickApprove,
 					onQuickReject: handleQuickReject,
 				}}
-			/>
-
-			<PayloadDialog
-				workflow={selectedWorkflow}
-				open={isPayloadOpen}
-				onOpenChange={setIsPayloadOpen}
 			/>
 
 			<HITLConfirmDialog
