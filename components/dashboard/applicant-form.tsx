@@ -36,9 +36,9 @@ export function ApplicantForm({
 }: ApplicantFormProps) {
 	const router = useRouter();
 	const [isLoading, setIsLoading] = useState(false);
-	const [errors, setErrors] = useState<
-		Partial<Record<keyof ApplicantFormData, string>>
-	>({});
+	const [errors, setErrors] = useState<Partial<Record<keyof ApplicantFormData, string>>>(
+		{}
+	);
 
 	const [formData, setFormData] = useState<ApplicantFormData>({
 		companyName: initialData?.companyName || "",
@@ -54,8 +54,7 @@ export function ApplicantForm({
 	});
 
 	// Check if Mockaroo test mode is enabled
-	const isMockarooTestMode =
-		process.env.NEXT_PUBLIC_USE_MOCKAROO_CREDIT_CHECK === "true";
+	const isMockarooTestMode = process.env.NEXT_PUBLIC_USE_MOCKAROO_CREDIT_CHECK === "true";
 
 	// Fill form with test data for Mockaroo testing
 	const fillTestData = () => {
@@ -74,10 +73,10 @@ export function ApplicantForm({
 	};
 
 	const updateField = (field: keyof ApplicantFormData, value: string) => {
-		setFormData((prev) => ({ ...prev, [field]: value }));
+		setFormData(prev => ({ ...prev, [field]: value }));
 		// Clear error when user starts typing
 		if (errors[field]) {
-			setErrors((prev) => ({ ...prev, [field]: undefined }));
+			setErrors(prev => ({ ...prev, [field]: undefined }));
 		}
 	};
 
@@ -152,8 +151,7 @@ export function ApplicantForm({
 						variant="outline"
 						size="sm"
 						onClick={fillTestData}
-						className="border-warning/50 text-warning-foreground hover:bg-warning"
-					>
+						className="border-warning/50 text-warning-foreground hover:bg-warning">
 						Fill Test Data
 					</Button>
 				</div>
@@ -168,10 +166,10 @@ export function ApplicantForm({
 						<Input
 							id="companyName"
 							value={formData.companyName}
-							onChange={(e) => updateField("companyName", e.target.value)}
+							onChange={e => updateField("companyName", e.target.value)}
 							placeholder="Enter company name"
 							className={cn(
-								errors.companyName ? "border-red-500" : "border-input-border",
+								errors.companyName ? "border-red-500" : "border-input-border"
 							)}
 						/>
 						{errors.companyName && (
@@ -185,9 +183,7 @@ export function ApplicantForm({
 							className="border-input-border"
 							id="registrationNumber"
 							value={formData.registrationNumber}
-							onChange={(e) =>
-								updateField("registrationNumber", e.target.value)
-							}
+							onChange={e => updateField("registrationNumber", e.target.value)}
 							placeholder="e.g., 2024/123456/07"
 						/>
 					</div>
@@ -198,7 +194,7 @@ export function ApplicantForm({
 							className="border-input-border"
 							id="industry"
 							value={formData.industry}
-							onChange={(e) => updateField("industry", e.target.value)}
+							onChange={e => updateField("industry", e.target.value)}
 							placeholder="e.g., Financial Services, Mining"
 						/>
 					</div>
@@ -210,7 +206,7 @@ export function ApplicantForm({
 							id="employeeCount"
 							type="number"
 							value={formData.employeeCount}
-							onChange={(e) => updateField("employeeCount", e.target.value)}
+							onChange={e => updateField("employeeCount", e.target.value)}
 							placeholder="e.g., 250"
 						/>
 					</div>
@@ -219,7 +215,7 @@ export function ApplicantForm({
 						className="border-input-border"
 						id="estimatedVolume"
 						value={formData.estimatedVolume}
-						onChange={(e) => updateField("estimatedVolume", e.target.value)}
+						onChange={e => updateField("estimatedVolume", e.target.value)}
 						placeholder="e.g., R500,000"
 					/>
 				</div>
@@ -229,9 +225,8 @@ export function ApplicantForm({
 					<select
 						id="mandateType"
 						value={formData.mandateType}
-						onChange={(e) => updateField("mandateType", e.target.value)}
-						className="flex h-10 w-full rounded-md border border-input-border bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-					>
+						onChange={e => updateField("mandateType", e.target.value)}
+						className="flex h-10 w-full rounded-md border border-input-border bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
 						<option value="">Select Mandate Type</option>
 						<option value="debit_order">Debit Order</option>
 						<option value="eft_collection">EFT Collection</option>
@@ -250,7 +245,7 @@ export function ApplicantForm({
 						<Input
 							id="contactName"
 							value={formData.contactName}
-							onChange={(e) => updateField("contactName", e.target.value)}
+							onChange={e => updateField("contactName", e.target.value)}
 							placeholder="Enter contact name"
 							className={cn(errors.contactName && "border-red-500")}
 						/>
@@ -265,13 +260,11 @@ export function ApplicantForm({
 							id="email"
 							type="email"
 							value={formData.email}
-							onChange={(e) => updateField("email", e.target.value)}
+							onChange={e => updateField("email", e.target.value)}
 							placeholder="contact@company.co.za"
 							className={cn(errors.email && "border-red-500")}
 						/>
-						{errors.email && (
-							<p className="text-xs text-red-400">{errors.email}</p>
-						)}
+						{errors.email && <p className="text-xs text-red-400">{errors.email}</p>}
 					</div>
 
 					<div className="space-y-2 md:col-span-2">
@@ -280,7 +273,7 @@ export function ApplicantForm({
 							id="phone"
 							type="tel"
 							value={formData.phone}
-							onChange={(e) => updateField("phone", e.target.value)}
+							onChange={e => updateField("phone", e.target.value)}
 							placeholder="+27 XX XXX XXXX"
 						/>
 					</div>
@@ -295,7 +288,7 @@ export function ApplicantForm({
 					<Textarea
 						id="notes"
 						value={formData.notes}
-						onChange={(e) => updateField("notes", e.target.value)}
+						onChange={e => updateField("notes", e.target.value)}
 						placeholder="Add any relevant notes about this applicant..."
 						rows={4}
 					/>
@@ -308,15 +301,13 @@ export function ApplicantForm({
 					type="button"
 					variant="ghost"
 					onClick={() => router.back()}
-					disabled={isLoading}
-				>
+					disabled={isLoading}>
 					Cancel
 				</Button>
 				<Button
 					type="submit"
 					disabled={isLoading}
-					className="gap-2 bg-linear-to-r from-stone-500 to-stone-500 hover:from-stone-600 hover:to-stone-600"
-				>
+					className="gap-2 bg-linear-to-r from-stone-500 to-stone-500 hover:from-stone-600 hover:to-stone-600">
 					{isLoading && <RiLoader4Line className="h-4 w-4 animate-spin" />}
 					{isEditing ? "Save Changes" : "Create Applicant"}
 				</Button>

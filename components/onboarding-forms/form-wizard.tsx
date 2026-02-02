@@ -109,14 +109,12 @@ export function StepIndicator({
 								"flex items-center justify-center rounded-full font-medium transition-all",
 								"h-8 w-8 text-xs",
 								isCompleted && "bg-teal-500/40 text-teal-700",
-								isCurrent &&
-									"bg-stone-500/20 text-stone-400 ring-2 ring-stone-500/30",
+								isCurrent && "bg-stone-500/20 text-stone-400 ring-2 ring-stone-500/30",
 								!isCompleted && !isCurrent && "bg-muted text-muted-foreground",
 								isClickable && "cursor-pointer hover:opacity-80",
-								!isClickable && "cursor-default",
+								!isClickable && "cursor-default"
 							)}
-							title={step.title}
-						>
+							title={step.title}>
 							{isCompleted ? <RiCheckLine className="h-4 w-4" /> : index + 1}
 						</button>
 
@@ -124,7 +122,7 @@ export function StepIndicator({
 							<div
 								className={cn(
 									"h-0.5 w-6 transition-colors",
-									index < currentStep ? "bg-teal-500/40" : "bg-muted",
+									index < currentStep ? "bg-teal-500/40" : "bg-muted"
 								)}
 							/>
 						)}
@@ -191,7 +189,7 @@ export function FormWizard({
 	const [isSavingDraft, setIsSavingDraft] = useState(false);
 
 	// Filter out skipped steps
-	const activeSteps = steps.filter((step) => !step.shouldSkip?.());
+	const activeSteps = steps.filter(step => !step.shouldSkip?.());
 
 	const isFirstStep = currentStep === 0;
 	const isLastStep = currentStep === activeSteps.length - 1;
@@ -230,7 +228,7 @@ export function FormWizard({
 				onStepChange?.(step);
 			}
 		},
-		[activeSteps.length, controlledStep, onStepChange],
+		[activeSteps.length, controlledStep, onStepChange]
 	);
 
 	// Go to next step
@@ -291,9 +289,7 @@ export function FormWizard({
 			{(title || showStepIndicator) && (
 				<CardHeader className="space-y-4">
 					{title && (
-						<CardTitle className="text-xl font-bold text-center">
-							{title}
-						</CardTitle>
+						<CardTitle className="text-xl font-bold text-center">{title}</CardTitle>
 					)}
 
 					{showStepIndicator && (
@@ -334,8 +330,7 @@ export function FormWizard({
 						variant="ghost"
 						onClick={goToPrevious}
 						disabled={isFirstStep || isLoading || isSubmitting}
-						className="gap-1.5"
-					>
+						className="gap-1.5">
 						<RiArrowLeftLine className="h-4 w-4" />
 						Previous
 					</Button>
@@ -349,8 +344,7 @@ export function FormWizard({
 							variant="outline"
 							onClick={handleSaveDraft}
 							disabled={isLoading || isSubmitting || isSavingDraft}
-							className="gap-1.5"
-						>
+							className="gap-1.5">
 							{isSavingDraft ? (
 								<RiLoader4Line className="h-4 w-4 animate-spin" />
 							) : (
@@ -366,8 +360,7 @@ export function FormWizard({
 							type="button"
 							onClick={handleSubmit}
 							disabled={isLoading || isSubmitting}
-							className="gap-1.5"
-						>
+							className="gap-1.5">
 							{isSubmitting ? (
 								<RiLoader4Line className="h-4 w-4 animate-spin" />
 							) : (
@@ -380,8 +373,7 @@ export function FormWizard({
 							type="button"
 							onClick={goToNext}
 							disabled={isLoading || isSubmitting}
-							className="gap-1.5"
-						>
+							className="gap-1.5">
 							Next
 							<RiArrowRightLine className="h-4 w-4" />
 						</Button>
@@ -409,8 +401,6 @@ export function FormStep({ isActive, children, className }: FormStepProps) {
 	if (!isActive) return null;
 
 	return (
-		<div className={cn("animate-in fade-in-50 duration-300", className)}>
-			{children}
-		</div>
+		<div className={cn("animate-in fade-in-50 duration-300", className)}>{children}</div>
 	);
 }

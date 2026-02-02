@@ -39,8 +39,7 @@ export const ApplicationType = {
 	RM: "rm",
 } as const;
 
-export type ApplicationTypeValue =
-	(typeof ApplicationType)[keyof typeof ApplicationType];
+export type ApplicationTypeValue = (typeof ApplicationType)[keyof typeof ApplicationType];
 
 // ============================================
 // Sales Distribution Enum
@@ -74,12 +73,8 @@ export type ExitReasonValue = (typeof ExitReason)[keyof typeof ExitReason];
 
 // 1. Applicant's Details
 export const applicantDetailsSchema = z.object({
-	ultimateCreditorName: z
-		.string()
-		.min(1, "Name of the Ultimate Creditor is required"),
-	preferredShortName: z
-		.string()
-		.min(1, "Preferred abbreviated short name is required"),
+	ultimateCreditorName: z.string().min(1, "Name of the Ultimate Creditor is required"),
+	preferredShortName: z.string().min(1, "Preferred abbreviated short name is required"),
 	alternativeShortNames: z.object({
 		alternative1: z.string().min(1, "Alternative short name 1 is required"),
 		alternative2: z.string().min(1, "Alternative short name 2 is required"),
@@ -102,7 +97,7 @@ export const applicationTypeSchema = z.object({
 				ApplicationType.NEW_TPPP,
 				ApplicationType.PAYSHAP,
 				ApplicationType.RM,
-			]),
+			])
 		)
 		.min(1, "Please select at least one application type"),
 });
@@ -131,13 +126,13 @@ export const bankingDetailsAbsaSchema = z.object({
 	branchCode: z
 		.string()
 		.optional()
-		.refine((val) => !val || /^\d{6}$/.test(val), {
+		.refine(val => !val || /^\d{6}$/.test(val), {
 			message: "Branch code must be 6 digits",
 		}),
 	accountNumber: z
 		.string()
 		.optional()
-		.refine((val) => !val || /^\d{6,16}$/.test(val), {
+		.refine(val => !val || /^\d{6,16}$/.test(val), {
 			message: "Account number must be between 6 and 16 digits",
 		}),
 	sourceOfIncome: optionalString(),
@@ -152,7 +147,7 @@ export const collectionHistorySchema = z.object({
 				SalesDistribution.CALL_CENTRE,
 				SalesDistribution.NETWORK_MARKETING,
 				SalesDistribution.FACE_TO_FACE,
-			]),
+			])
 		)
 		.default([]),
 	isNewToCollections: z.boolean().default(false),
@@ -188,7 +183,7 @@ export const previousHistorySchema = z.object({
 				ExitReason.DEBITING_WITHOUT_MANDATE,
 				ExitReason.DEBITING_WITHOUT_CONSENT,
 				ExitReason.OTHER,
-			]),
+			])
 		)
 		.default([]),
 	exitReasonOther: optionalString(),
@@ -267,19 +262,19 @@ export const documentChecklistSchema = z.object({
 
 // Declarations
 export const declarationsSchema = z.object({
-	informationTrueAndCorrect: z.boolean().refine((val) => val === true, {
+	informationTrueAndCorrect: z.boolean().refine(val => val === true, {
 		message: "You must confirm the information is true and correct",
 	}),
-	misrepresentationAcknowledgement: z.boolean().refine((val) => val === true, {
+	misrepresentationAcknowledgement: z.boolean().refine(val => val === true, {
 		message: "You must acknowledge the misrepresentation clause",
 	}),
-	debitingConsentAcknowledgement: z.boolean().refine((val) => val === true, {
+	debitingConsentAcknowledgement: z.boolean().refine(val => val === true, {
 		message: "You must acknowledge the debiting consent clause",
 	}),
-	personalInfoProcessingConsent: z.boolean().refine((val) => val === true, {
+	personalInfoProcessingConsent: z.boolean().refine(val => val === true, {
 		message: "You must consent to personal information processing",
 	}),
-	infoSharingUnderstanding: z.boolean().refine((val) => val === true, {
+	infoSharingUnderstanding: z.boolean().refine(val => val === true, {
 		message: "You must acknowledge the information sharing clause",
 	}),
 	tpppConsentWarranty: z.boolean().default(false),

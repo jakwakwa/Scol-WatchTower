@@ -58,7 +58,7 @@ export const columns: ColumnDef<ApplicantRow>[] = [
 							? "indeterminate"
 							: false
 				}
-				onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+				onCheckedChange={value => table.toggleAllPageRowsSelected(!!value)}
 				aria-label="Select all"
 				className="translate-y-0.5"
 			/>
@@ -66,7 +66,7 @@ export const columns: ColumnDef<ApplicantRow>[] = [
 		cell: ({ row }) => (
 			<Checkbox
 				checked={row.getIsSelected()}
-				onCheckedChange={(value) => row.toggleSelected(!!value)}
+				onCheckedChange={value => row.toggleSelected(!!value)}
 				aria-label="Select row"
 				className="translate-y-0.5"
 			/>
@@ -81,8 +81,7 @@ export const columns: ColumnDef<ApplicantRow>[] = [
 				variant="ghost"
 				size="xs"
 				className="-ml-4 hover:bg-transparent hover:text-foreground"
-				onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-			>
+				onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
 				Company
 				{column.getIsSorted() === "asc" ? (
 					<RiArrowUpSLine className="ml-2 h-4 w-4" />
@@ -93,9 +92,7 @@ export const columns: ColumnDef<ApplicantRow>[] = [
 				)}
 			</Button>
 		),
-		cell: ({ row }) => (
-			<div className="font-medium">{row.original.companyName}</div>
-		),
+		cell: ({ row }) => <div className="font-medium">{row.original.companyName}</div>,
 	},
 	{
 		accessorKey: "contactName",
@@ -104,8 +101,7 @@ export const columns: ColumnDef<ApplicantRow>[] = [
 				variant="ghost"
 				size="xs"
 				className="-ml-4 hover:bg-transparent hover:text-foreground"
-				onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-			>
+				onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
 				Contact
 				{column.getIsSorted() === "asc" ? (
 					<RiArrowUpSLine className="ml-2 h-4 w-4" />
@@ -119,9 +115,7 @@ export const columns: ColumnDef<ApplicantRow>[] = [
 		cell: ({ row }) => (
 			<div>
 				<div className="text-sm">{row.original.contactName}</div>
-				<div className="text-xs text-muted-foreground">
-					{row.original.email}
-				</div>
+				<div className="text-xs text-muted-foreground">{row.original.email}</div>
 			</div>
 		),
 	},
@@ -132,8 +126,7 @@ export const columns: ColumnDef<ApplicantRow>[] = [
 				variant="ghost"
 				size="xs"
 				className="-ml-4 hover:bg-transparent hover:text-foreground"
-				onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-			>
+				onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
 				Industry
 				{column.getIsSorted() === "asc" ? (
 					<RiArrowUpSLine className="ml-2 h-4 w-4" />
@@ -145,9 +138,7 @@ export const columns: ColumnDef<ApplicantRow>[] = [
 			</Button>
 		),
 		cell: ({ row }) => (
-			<div className="text-sm text-muted-foreground">
-				{row.original.industry}
-			</div>
+			<div className="text-sm text-muted-foreground">{row.original.industry}</div>
 		),
 	},
 	{
@@ -157,8 +148,7 @@ export const columns: ColumnDef<ApplicantRow>[] = [
 				variant="ghost"
 				size="xs"
 				className="-ml-4 hover:bg-transparent hover:text-foreground"
-				onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-			>
+				onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
 				Employees
 				{column.getIsSorted() === "asc" ? (
 					<RiArrowUpSLine className="ml-2 h-4 w-4" />
@@ -170,9 +160,7 @@ export const columns: ColumnDef<ApplicantRow>[] = [
 			</Button>
 		),
 		cell: ({ row }) => (
-			<div className="text-sm">
-				{row.original.employeeCount?.toLocaleString() || "—"}
-			</div>
+			<div className="text-sm">{row.original.employeeCount?.toLocaleString() || "—"}</div>
 		),
 	},
 	{
@@ -182,8 +170,7 @@ export const columns: ColumnDef<ApplicantRow>[] = [
 				variant="ghost"
 				size="xs"
 				className="-ml-4 hover:bg-transparent hover:text-foreground"
-				onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-			>
+				onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
 				Status
 				{column.getIsSorted() === "asc" ? (
 					<RiArrowUpSLine className="ml-2 h-4 w-4" />
@@ -203,9 +190,8 @@ export const columns: ColumnDef<ApplicantRow>[] = [
 				<span
 					className={cn(
 						"inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium",
-						config.color,
-					)}
-				>
+						config.color
+					)}>
 					{config.label}
 				</span>
 			);
@@ -214,8 +200,7 @@ export const columns: ColumnDef<ApplicantRow>[] = [
 	{
 		id: "actions",
 		cell: ({ row }) => {
-			const canViewQuote =
-				row.original.workflowStage === 2 && row.original.hasQuote;
+			const canViewQuote = row.original.workflowStage === 2 && row.original.hasQuote;
 
 			return (
 				<div className="flex items-center justify-end gap-2">
@@ -223,9 +208,8 @@ export const columns: ColumnDef<ApplicantRow>[] = [
 						<DropdownMenuTrigger
 							className={cn(
 								buttonVariants({ variant: "ghost", size: "icon" }),
-								"h-8 w-8 hover:bg-secondary/10",
-							)}
-						>
+								"h-8 w-8 hover:bg-secondary/10"
+							)}>
 							<RiMoreLine className="h-4 w-4" />
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="end">

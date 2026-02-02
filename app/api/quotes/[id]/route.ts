@@ -10,16 +10,13 @@ import { updateQuoteSchema } from "@/lib/validations/quotes";
  */
 export async function PUT(
 	request: NextRequest,
-	{ params }: { params: Promise<{ id: string }> },
+	{ params }: { params: Promise<{ id: string }> }
 ) {
 	try {
 		const db = await getDatabaseClient();
 
 		if (!db) {
-			return NextResponse.json(
-				{ error: "Database connection failed" },
-				{ status: 500 },
-			);
+			return NextResponse.json({ error: "Database connection failed" }, { status: 500 });
 		}
 
 		const resolvedParams = await params;
@@ -38,7 +35,7 @@ export async function PUT(
 					error: "Validation failed",
 					details: validation.error.flatten().fieldErrors,
 				},
-				{ status: 400 },
+				{ status: 400 }
 			);
 		}
 

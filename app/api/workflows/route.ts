@@ -12,14 +12,7 @@ const createWorkflowSchema = z.object({
 		.enum(["lead_capture", "dynamic_quotation", "verification", "integration"])
 		.default("lead_capture"),
 	status: z
-		.enum([
-			"pending",
-			"in_progress",
-			"awaiting_human",
-			"completed",
-			"failed",
-			"timeout",
-		])
+		.enum(["pending", "in_progress", "awaiting_human", "completed", "failed", "timeout"])
 		.default("pending"),
 	currentAgent: z.string().optional(),
 	metadata: z.string().optional(),
@@ -34,16 +27,10 @@ export async function GET() {
 		const db = await getDatabaseClient();
 
 		if (!db) {
-			return NextResponse.json(
-				{ error: "Database connection failed" },
-				{ status: 500 },
-			);
+			return NextResponse.json({ error: "Database connection failed" }, { status: 500 });
 		}
 
-		const allWorkflows = await db
-			.select()
-			.from(workflows)
-			.orderBy(workflows.startedAt);
+		const allWorkflows = await db.select().from(workflows).orderBy(workflows.startedAt);
 
 		return NextResponse.json({ workflows: allWorkflows });
 	} catch (error) {
@@ -62,10 +49,7 @@ export async function POST(request: NextRequest) {
 		const db = await getDatabaseClient();
 
 		if (!db) {
-			return NextResponse.json(
-				{ error: "Database connection failed" },
-				{ status: 500 },
-			);
+			return NextResponse.json({ error: "Database connection failed" }, { status: 500 });
 		}
 
 		const body = await request.json();
@@ -78,7 +62,7 @@ export async function POST(request: NextRequest) {
 					error: "Validation failed",
 					details: validation.error.flatten().fieldErrors,
 				},
-				{ status: 400 },
+				{ status: 400 }
 			);
 		}
 

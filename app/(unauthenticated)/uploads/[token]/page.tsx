@@ -18,8 +18,7 @@ export default async function UploadPage({ params }: UploadPageProps) {
 		return (
 			<FormShell
 				title="Upload link invalid"
-				description="The upload link is invalid or no longer available."
-			>
+				description="The upload link is invalid or no longer available.">
 				<p className="text-sm text-muted-foreground">
 					Please contact StratCol to request a new upload link.
 				</p>
@@ -29,10 +28,7 @@ export default async function UploadPage({ params }: UploadPageProps) {
 
 	if (formInstance.expiresAt && new Date(formInstance.expiresAt) < new Date()) {
 		return (
-			<FormShell
-				title="Upload link expired"
-				description="This link has expired."
-			>
+			<FormShell title="Upload link expired" description="This link has expired.">
 				<p className="text-sm text-muted-foreground">
 					Please contact StratCol to request a fresh link.
 				</p>
@@ -49,8 +45,7 @@ export default async function UploadPage({ params }: UploadPageProps) {
 	return (
 		<FormShell
 			title="Document Uploads"
-			description="Upload supporting documents for StratCol onboarding."
-		>
+			description="Upload supporting documents for StratCol onboarding.">
 			<UploadView token={token} requirements={requirements} />
 		</FormShell>
 	);

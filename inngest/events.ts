@@ -188,11 +188,7 @@ export type Events = {
 			workflowId: number;
 			applicantId: number;
 			documents: Array<{
-				type:
-					| "BANK_STATEMENT"
-					| "ACCOUNTANT_LETTER"
-					| "ID_DOCUMENT"
-					| "PROOF_OF_ADDRESS";
+				type: "BANK_STATEMENT" | "ACCOUNTANT_LETTER" | "ID_DOCUMENT" | "PROOF_OF_ADDRESS";
 				filename: string;
 				url: string;
 				uploadedAt: string;
@@ -283,7 +279,6 @@ export type Events = {
 			timestamp: string;
 		};
 	};
-
 
 	// ============================================
 	// Form Submission Events

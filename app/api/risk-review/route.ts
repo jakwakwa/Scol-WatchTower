@@ -11,24 +11,32 @@ function generateFallbackExplanation(
 	aiTrustScore: number | undefined,
 	riskFlagsCount: number,
 	itcScore: number | undefined,
-	nameMatchVerified: boolean | undefined,
+	nameMatchVerified: boolean | undefined
 ): string | undefined {
 	if (!aiTrustScore) return undefined;
 
 	const factors: string[] = [];
-	
+
 	// Score-based explanation
 	if (aiTrustScore >= 80) {
-		factors.push("The AI trust score is high, indicating strong financial health patterns");
+		factors.push(
+			"The AI trust score is high, indicating strong financial health patterns"
+		);
 	} else if (aiTrustScore >= 60) {
-		factors.push("The AI trust score is moderate, suggesting some areas require attention");
+		factors.push(
+			"The AI trust score is moderate, suggesting some areas require attention"
+		);
 	} else {
-		factors.push("The AI trust score is below threshold, indicating potential risk factors");
+		factors.push(
+			"The AI trust score is below threshold, indicating potential risk factors"
+		);
 	}
 
 	// Risk flags
 	if (riskFlagsCount > 0) {
-		factors.push(`${riskFlagsCount} risk flag${riskFlagsCount > 1 ? "s were" : " was"} detected during document analysis`);
+		factors.push(
+			`${riskFlagsCount} risk flag${riskFlagsCount > 1 ? "s were" : " was"} detected during document analysis`
+		);
 	} else {
 		factors.push("No significant risk flags were detected");
 	}
@@ -59,7 +67,7 @@ function generateFallbackExplanation(
  */
 function generateFallbackSummary(
 	aiTrustScore: number | undefined,
-	riskFlagsCount: number,
+	riskFlagsCount: number
 ): string | undefined {
 	if (!aiTrustScore) return undefined;
 
@@ -85,10 +93,7 @@ export async function GET(request: NextRequest) {
 
 		const db = getDatabaseClient();
 		if (!db) {
-			return NextResponse.json(
-				{ error: "Database connection failed" },
-				{ status: 500 },
-			);
+			return NextResponse.json({ error: "Database connection failed" }, { status: 500 });
 		}
 
 		// Fetch workflows awaiting risk review (stage 3, status awaiting_human)
@@ -106,16 +111,11 @@ export async function GET(request: NextRequest) {
 			})
 			.from(workflows)
 			.leftJoin(applicants, eq(workflows.applicantId, applicants.id))
-			.where(
-				and(
-					eq(workflows.status, "awaiting_human"),
-					eq(workflows.stage, 3),
-				),
-			);
+			.where(and(eq(workflows.status, "awaiting_human"), eq(workflows.stage, 3)));
 
 		// For each workflow, fetch the FICA analysis event to get AI analysis data
 		const itemsWithAnalysis = await Promise.all(
-			riskReviewWorkflows.map(async (workflow) => {
+			riskReviewWorkflows.map(async workflow => {
 				// Fetch FICA analysis event from workflow_events
 				const analysisEvents = await db
 					.select()
@@ -123,8 +123,8 @@ export async function GET(request: NextRequest) {
 					.where(
 						and(
 							eq(workflowEvents.workflowId, workflow.workflowId),
-							eq(workflowEvents.eventType, "stage_change"),
-						),
+							eq(workflowEvents.eventType, "stage_change")
+						)
 					)
 					.orderBy(desc(workflowEvents.timestamp));
 
@@ -165,12 +165,14 @@ export async function GET(request: NextRequest) {
 				}
 
 				// Generate fallback explanation if reasoning not stored (for existing workflows)
-				const generatedReasoning = reasoning || generateFallbackExplanation(
-					aiTrustScore,
-					riskFlags.length,
-					workflow.itcScore || undefined,
-					nameMatchVerified,
-				);
+				const generatedReasoning =
+					reasoning ||
+					generateFallbackExplanation(
+						aiTrustScore,
+						riskFlags.length,
+						workflow.itcScore || undefined,
+						nameMatchVerified
+					);
 
 				return {
 					id: workflow.workflowId,
@@ -186,13 +188,15 @@ export async function GET(request: NextRequest) {
 					aiTrustScore,
 					riskFlags,
 					itcScore: workflow.itcScore || undefined,
-					recommendation: recommendation || (aiTrustScore
-						? aiTrustScore >= 80
-							? "APPROVE"
-							: aiTrustScore >= 60
-								? "APPROVE_WITH_CONDITIONS"
-								: "MANUAL_REVIEW"
-						: undefined),
+					recommendation:
+						recommendation ||
+						(aiTrustScore
+							? aiTrustScore >= 80
+								? "APPROVE"
+								: aiTrustScore >= 60
+									? "APPROVE_WITH_CONDITIONS"
+									: "MANUAL_REVIEW"
+							: undefined),
 					summary: summary || generateFallbackSummary(aiTrustScore, riskFlags.length),
 					reasoning: generatedReasoning,
 					nameMatchVerified,
@@ -201,7 +205,7 @@ export async function GET(request: NextRequest) {
 					bankStatementVerified: true, // If they're at stage 3, bank statement was received
 					accountantLetterVerified: false,
 				};
-			}),
+			})
 		);
 
 		return NextResponse.json({
@@ -215,7 +219,7 @@ export async function GET(request: NextRequest) {
 				error: "Failed to fetch risk review items",
 				message: error instanceof Error ? error.message : "Unknown error",
 			},
-			{ status: 500 },
+			{ status: 500 }
 		);
 	}
 }

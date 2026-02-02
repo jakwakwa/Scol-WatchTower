@@ -2,7 +2,6 @@ import { Resend } from "resend";
 import { render } from "@react-email/render";
 import InternalAlert from "@/components/emails/InternalAlert";
 import ApplicantFormLinks, { type FormLink } from "@/components/emails/ApplicantFormLinks";
-import * as React from "react";
 
 const resendApiKey = process.env.RESEND_API_KEY;
 // Use the configured alert recipients or fall back to a default/empty

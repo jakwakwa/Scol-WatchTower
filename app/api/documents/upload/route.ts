@@ -32,32 +32,23 @@ export async function POST(request: NextRequest) {
 		if (!validation.success) {
 			return NextResponse.json(
 				{ error: "Validation failed", details: validation.error.flatten() },
-				{ status: 400 },
+				{ status: 400 }
 			);
 		}
 
 		const formInstance = await getFormInstanceByToken(validation.data.token);
 		if (!formInstance || formInstance.formType !== "DOCUMENT_UPLOADS") {
-			return NextResponse.json(
-				{ error: "Invalid upload link" },
-				{ status: 404 },
-			);
+			return NextResponse.json({ error: "Invalid upload link" }, { status: 404 });
 		}
 
-		if (
-			formInstance.expiresAt &&
-			new Date(formInstance.expiresAt) < new Date()
-		) {
-			return NextResponse.json(
-				{ error: "Upload link has expired" },
-				{ status: 410 },
-			);
+		if (formInstance.expiresAt && new Date(formInstance.expiresAt) < new Date()) {
+			return NextResponse.json({ error: "Upload link has expired" }, { status: 410 });
 		}
 
 		if (formInstance.status === "revoked") {
 			return NextResponse.json(
 				{ error: "Upload link has been revoked" },
-				{ status: 410 },
+				{ status: 410 }
 			);
 		}
 
@@ -68,10 +59,7 @@ export async function POST(request: NextRequest) {
 
 		const db = getDatabaseClient();
 		if (!db) {
-			return NextResponse.json(
-				{ error: "Database connection failed" },
-				{ status: 500 },
-			);
+			return NextResponse.json({ error: "Database connection failed" }, { status: 500 });
 		}
 
 		const allowedTypes = [
@@ -95,10 +83,7 @@ export async function POST(request: NextRequest) {
 				continue;
 			}
 
-			const storageUrl = await mockUploadFile(
-				file,
-				formInstance.workflowId ?? 0,
-			);
+			const storageUrl = await mockUploadFile(file, formInstance.workflowId ?? 0);
 			const [inserted] = await db
 				.insert(documents)
 				.values([
@@ -138,7 +123,7 @@ export async function POST(request: NextRequest) {
 		if (uploadedDocuments.length === 0) {
 			return NextResponse.json(
 				{ error: "No valid files were uploaded" },
-				{ status: 400 },
+				{ status: 400 }
 			);
 		}
 
@@ -159,7 +144,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function mockUploadFile(file: File, workflowId: number): Promise<string> {
-	await new Promise((resolve) => setTimeout(resolve, 100));
+	await new Promise(resolve => setTimeout(resolve, 100));
 	const timestamp = Date.now();
 	const safeFilename = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
 	const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";

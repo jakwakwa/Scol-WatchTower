@@ -3,7 +3,7 @@
  *
  * Uses Vercel AI SDK v6 with AI Gateway for centralized model access.
  * Requires AI_GATEWAY_API_KEY environment variable.
- * 
+ *
  * Available models through the gateway:
  * - anthropic/claude-sonnet-4: Complex analysis, risk scoring
  * - google/gemini-2.0-flash: Fast document parsing

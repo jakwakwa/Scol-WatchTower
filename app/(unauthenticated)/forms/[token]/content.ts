@@ -33,8 +33,7 @@ export const formContent: Record<
 		sections: [
 			{
 				title: "Facility Selection",
-				description:
-					"Select the services required for your collections facility.",
+				description: "Select the services required for your collections facility.",
 				fields: [
 					{
 						name: "serviceTypes",
@@ -113,8 +112,7 @@ export const formContent: Record<
 			},
 			{
 				title: "Predicted Growth",
-				description:
-					"Share your expected transaction growth for the next three months.",
+				description: "Share your expected transaction growth for the next three months.",
 				fields: [
 					{
 						name: "forecastVolume",
@@ -447,8 +445,7 @@ export const formContent: Record<
 			},
 			{
 				title: "Agreement & Signature",
-				description:
-					"Confirm that the information is accurate and sign the agreement.",
+				description: "Confirm that the information is accurate and sign the agreement.",
 				fields: [
 					{
 						name: "consentAccepted",
@@ -513,8 +510,7 @@ export const formContent: Record<
 	},
 	ABSA_6995: {
 		title: "Absa 6995 User Pre-screening Assessment",
-		description:
-			"Complete the Absa 6995 assessment. Fields marked with * are mandatory.",
+		description: "Complete the Absa 6995 assessment. Fields marked with * are mandatory.",
 		schema: absa6995Schema,
 		submitLabel: "Submit Absa 6995 form",
 		defaultValues: {
@@ -800,8 +796,7 @@ export const formContent: Record<
 					},
 					{
 						name: "previousHistory.wasExited",
-						label:
-							"Has your business been exited from a sponsoring bank or bureau?",
+						label: "Has your business been exited from a sponsoring bank or bureau?",
 						type: "select",
 						required: true,
 						options: [
@@ -1048,8 +1043,7 @@ export const formContent: Record<
 			},
 			{
 				title: "Declarations & Warranties",
-				description:
-					"Please confirm each statement to proceed with the assessment.",
+				description: "Please confirm each statement to proceed with the assessment.",
 				fields: [
 					{
 						name: "declarations.informationCorrect",
@@ -1077,8 +1071,7 @@ export const formContent: Record<
 					},
 					{
 						name: "declarations.infoSharingAcknowledged",
-						label:
-							"Absa may share information with credit bureaus and regulators.",
+						label: "Absa may share information with credit bureaus and regulators.",
 						type: "checkbox",
 						required: true,
 					},

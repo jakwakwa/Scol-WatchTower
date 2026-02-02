@@ -16,10 +16,7 @@ import crypto from "crypto";
 export async function POST(request: NextRequest) {
 	const db = getDatabaseClient();
 	if (!db) {
-		return NextResponse.json(
-			{ error: "Database not available" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Database not available" }, { status: 500 });
 	}
 
 	try {
@@ -37,10 +34,9 @@ export async function POST(request: NextRequest) {
 		if (!file || !workflowId || !category || !documentType) {
 			return NextResponse.json(
 				{
-					error:
-						"Missing required fields: file, workflowId, category, documentType",
+					error: "Missing required fields: file, workflowId, category, documentType",
 				},
-				{ status: 400 },
+				{ status: 400 }
 			);
 		}
 
@@ -54,10 +50,7 @@ export async function POST(request: NextRequest) {
 			.limit(1);
 
 		if (workflow.length === 0) {
-			return NextResponse.json(
-				{ error: "Workflow not found" },
-				{ status: 404 },
-			);
+			return NextResponse.json({ error: "Workflow not found" }, { status: 404 });
 		}
 
 		// Validate file size (max 10MB)
@@ -65,7 +58,7 @@ export async function POST(request: NextRequest) {
 		if (file.size > maxSize) {
 			return NextResponse.json(
 				{ error: "File size exceeds 10MB limit" },
-				{ status: 400 },
+				{ status: 400 }
 			);
 		}
 
@@ -82,7 +75,7 @@ export async function POST(request: NextRequest) {
 		if (!allowedTypes.includes(file.type)) {
 			return NextResponse.json(
 				{ error: "File type not allowed. Accepted: PDF, JPG, PNG, DOC, DOCX" },
-				{ status: 400 },
+				{ status: 400 }
 			);
 		}
 
@@ -121,7 +114,7 @@ export async function POST(request: NextRequest) {
 		if (!document) {
 			return NextResponse.json(
 				{ error: "Failed to create document record" },
-				{ status: 500 },
+				{ status: 500 }
 			);
 		}
 
@@ -138,10 +131,7 @@ export async function POST(request: NextRequest) {
 		});
 	} catch (error) {
 		console.error("Failed to upload document:", error);
-		return NextResponse.json(
-			{ error: "Failed to upload document" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Failed to upload document" }, { status: 500 });
 	}
 }
 
@@ -152,20 +142,14 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
 	const db = getDatabaseClient();
 	if (!db) {
-		return NextResponse.json(
-			{ error: "Database not available" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Database not available" }, { status: 500 });
 	}
 
 	const { searchParams } = new URL(request.url);
 	const workflowId = searchParams.get("workflowId");
 
 	if (!workflowId) {
-		return NextResponse.json(
-			{ error: "workflowId is required" },
-			{ status: 400 },
-		);
+		return NextResponse.json({ error: "workflowId is required" }, { status: 400 });
 	}
 
 	try {
@@ -177,9 +161,6 @@ export async function GET(request: NextRequest) {
 		return NextResponse.json({ documents });
 	} catch (error) {
 		console.error("Failed to fetch documents:", error);
-		return NextResponse.json(
-			{ error: "Failed to fetch documents" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Failed to fetch documents" }, { status: 500 });
 	}
 }

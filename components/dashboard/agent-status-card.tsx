@@ -1,9 +1,4 @@
-import {
-	RiRobot2Line,
-	RiCheckLine,
-	RiAlertLine,
-	RiTimeLine,
-} from "@remixicon/react";
+import { RiRobot2Line, RiCheckLine, RiAlertLine, RiTimeLine } from "@remixicon/react";
 import { cn } from "@/lib/utils";
 
 interface Agent {
@@ -51,7 +46,7 @@ export function AgentStatusCard({ agent, onClick }: AgentStatusCardProps) {
 		"shadow-xl shadow-black/5",
 		"transition-all duration-300",
 		onClick &&
-			"cursor-pointer hover:bg-card/70 hover:border-secondary/10 hover:shadow-2xl hover:-translate-y-1",
+			"cursor-pointer hover:bg-card/70 hover:border-secondary/10 hover:shadow-2xl hover:-translate-y-1"
 	);
 
 	const content = (
@@ -62,7 +57,7 @@ export function AgentStatusCard({ agent, onClick }: AgentStatusCardProps) {
 					"absolute top-4 right-4 h-2.5 w-2.5 rounded-full",
 					agent.status === "active" && "bg-emerald-400 animate-pulse",
 					agent.status === "inactive" && "bg-muted-foreground/50",
-					agent.status === "error" && "bg-red-400 animate-pulse",
+					agent.status === "error" && "bg-red-400 animate-pulse"
 				)}
 			/>
 
@@ -71,9 +66,8 @@ export function AgentStatusCard({ agent, onClick }: AgentStatusCardProps) {
 				<div
 					className={cn(
 						"flex h-12 w-12 items-center justify-center rounded-xl",
-						config.bgColor,
-					)}
-				>
+						config.bgColor
+					)}>
 					<RiRobot2Line className={cn("h-6 w-6", config.color)} />
 				</div>
 				<div className="flex-1 min-w-0">
@@ -97,12 +91,7 @@ export function AgentStatusCard({ agent, onClick }: AgentStatusCardProps) {
 				</div>
 				<div>
 					<p className="text-xs text-muted-foreground">Errors</p>
-					<p
-						className={cn(
-							"text-lg font-bold",
-							agent.errorCount > 0 && "text-red-400",
-						)}
-					>
+					<p className={cn("text-lg font-bold", agent.errorCount > 0 && "text-red-400")}>
 						{agent.errorCount}
 					</p>
 				</div>
@@ -143,18 +132,14 @@ export function AgentStatusRow({ agent }: AgentStatusRowProps) {
 					"h-2 w-2 rounded-full",
 					agent.status === "active" && "bg-emerald-400",
 					agent.status === "inactive" && "bg-muted-foreground/50",
-					agent.status === "error" && "bg-red-400",
+					agent.status === "error" && "bg-red-400"
 				)}
 			/>
 			<div className="flex-1 min-w-0">
 				<p className="font-medium truncate">{agent.name}</p>
-				<p className="text-xs text-muted-foreground">
-					{formatTaskType(agent.taskType)}
-				</p>
+				<p className="text-xs text-muted-foreground">{formatTaskType(agent.taskType)}</p>
 			</div>
-			<span className={cn("text-xs font-medium", config.color)}>
-				{config.label}
-			</span>
+			<span className={cn("text-xs font-medium", config.color)}>{config.label}</span>
 		</div>
 	);
 }
@@ -163,7 +148,7 @@ export function AgentStatusRow({ agent }: AgentStatusRowProps) {
 function formatTaskType(type: string): string {
 	return type
 		.split("_")
-		.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+		.map(word => word.charAt(0).toUpperCase() + word.slice(1))
 		.join(" ");
 }
 

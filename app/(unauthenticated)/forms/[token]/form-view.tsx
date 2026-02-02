@@ -10,10 +10,7 @@ interface FormViewProps {
 	formType: Exclude<FormType, "DOCUMENT_UPLOADS">;
 }
 
-export default function FormView({
-	token,
-	formType,
-}: FormViewProps) {
+export default function FormView({ token, formType }: FormViewProps) {
 	const [submitted, setSubmitted] = useState(false);
 	const [submitMessage, setSubmitMessage] = useState<string | null>(null);
 	const content = formContent[formType];
@@ -21,9 +18,7 @@ export default function FormView({
 	if (submitted) {
 		return (
 			<div className="space-y-4 text-center">
-				<h2 className="text-xl font-semibold text-foreground">
-					Submission received
-				</h2>
+				<h2 className="text-xl font-semibold text-foreground">Submission received</h2>
 				<p className="text-sm text-muted-foreground">
 					Thank you. Your form has been submitted successfully.
 				</p>
@@ -51,7 +46,7 @@ export default function FormView({
 			defaultValues={content.defaultValues}
 			testData={content.testData}
 			submitLabel={content.submitLabel}
-			onSubmit={async (values) => {
+			onSubmit={async values => {
 				const response = await fetch("/api/forms/submit", {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },

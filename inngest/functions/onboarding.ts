@@ -23,10 +23,7 @@ import {
 	analyzeBankStatement,
 	canAutoApprove as canAutoApproveFica,
 } from "@/lib/services/fica-ai.service";
-import {
-	generateFormLinks,
-	sendFormLinksEmail,
-} from "@/lib/services/form-link.service";
+import { generateFormLinks, sendFormLinksEmail } from "@/lib/services/form-link.service";
 import { performITCCheck, shouldAutoDecline } from "@/lib/services/itc.service";
 import {
 	createWorkflowNotification,
@@ -90,11 +87,7 @@ type ContractSignedEvent = {
 };
 
 type FicaUploadDocument = {
-	type:
-		| "BANK_STATEMENT"
-		| "ACCOUNTANT_LETTER"
-		| "ID_DOCUMENT"
-		| "PROOF_OF_ADDRESS";
+	type: "BANK_STATEMENT" | "ACCOUNTANT_LETTER" | "ID_DOCUMENT" | "PROOF_OF_ADDRESS";
 	filename: string;
 	url: string;
 	uploadedAt: string;
@@ -136,14 +129,11 @@ async function runSafeStep<T>(
 	step: unknown,
 	stepId: string,
 	operation: () => Promise<T>,
-	context: { workflowId: number; applicantId: number; stage: number },
+	context: { workflowId: number; applicantId: number; stage: number }
 ): Promise<T | null> {
 	const stepInstance = step as {
 		run: (id: string, op: () => Promise<unknown>) => Promise<unknown>;
-		waitForEvent: (
-			id: string,
-			options: Record<string, unknown>,
-		) => Promise<unknown>;
+		waitForEvent: (id: string, options: Record<string, unknown>) => Promise<unknown>;
 	};
 
 	try {
@@ -158,7 +148,7 @@ async function runSafeStep<T>(
 				workflowId: context.workflowId,
 				eventType: "error",
 				payload: { step: stepId, error: errorMessage, stage: context.stage },
-			}),
+			})
 		);
 
 		// Create notification
@@ -171,27 +161,24 @@ async function runSafeStep<T>(
 				message: `Step "${stepId}" failed: ${errorMessage}`,
 				actionable: true,
 				errorDetails: { step: stepId, error: errorMessage },
-			}),
+			})
 		);
 
 		// Pause workflow status
 		await stepInstance.run(`${stepId}-set-paused`, () =>
-			updateWorkflowStatus(context.workflowId, "paused", context.stage),
+			updateWorkflowStatus(context.workflowId, "paused", context.stage)
 		);
 
 		// Wait for HITL resolution
-		const resolution = (await stepInstance.waitForEvent(
-			`${stepId}-wait-resolution`,
-			{
-				event: "workflow/error-resolved",
-				timeout: "30d",
-				match: "data.workflowId",
-			},
-		)) as WorkflowResolutionEvent | null;
+		const resolution = (await stepInstance.waitForEvent(`${stepId}-wait-resolution`, {
+			event: "workflow/error-resolved",
+			timeout: "30d",
+			match: "data.workflowId",
+		})) as WorkflowResolutionEvent | null;
 
 		if (!resolution || resolution.data.action === "cancel") {
 			await stepInstance.run(`${stepId}-handle-cancel`, () =>
-				updateWorkflowStatus(context.workflowId, "failed", context.stage),
+				updateWorkflowStatus(context.workflowId, "failed", context.stage)
 			);
 			throw new Error(`Workflow cancelled at step ${stepId}: ${errorMessage}`);
 		}
@@ -215,9 +202,7 @@ export const onboardingWorkflow = inngest.createFunction(
 	async ({ event, step }) => {
 		const { applicantId, workflowId } = event.data;
 
-		console.log(
-			`[Workflow] STARTED for applicant=${applicantId} workflow=${workflowId}`,
-		);
+		console.log(`[Workflow] STARTED for applicant=${applicantId} workflow=${workflowId}`);
 
 		// ================================================================
 		// Verification Veto Check (Blacklist)
@@ -249,7 +234,7 @@ export const onboardingWorkflow = inngest.createFunction(
 				workflowId,
 				applicantId,
 				stage: 1,
-			},
+			}
 		);
 
 		// (Zapier webhooks removed - using direct Inngest events)
@@ -259,9 +244,7 @@ export const onboardingWorkflow = inngest.createFunction(
 		// Mock API call to credit bureau. If score < 100, auto-decline
 		// ================================================================
 		const itcResult = (await step.run("run-itc-check", async () => {
-			console.log(
-				`[Workflow] Running ITC credit check for applicant ${applicantId}`,
-			);
+			console.log(`[Workflow] Running ITC credit check for applicant ${applicantId}`);
 			return performITCCheck({ applicantId, workflowId });
 		})) as unknown as ITCResult;
 
@@ -276,17 +259,17 @@ export const onboardingWorkflow = inngest.createFunction(
 					recommendation: itcResult.recommendation,
 					passed: itcResult.passed,
 				},
-			}),
+			})
 		);
 
 		// Handle ITC decision
 		if (shouldAutoDecline(itcResult)) {
 			console.log(
-				`[Workflow] ITC Auto-Decline: Score ${itcResult.creditScore} < ${ITC_THRESHOLDS.AUTO_DECLINE}`,
+				`[Workflow] ITC Auto-Decline: Score ${itcResult.creditScore} < ${ITC_THRESHOLDS.AUTO_DECLINE}`
 			);
 
 			await step.run("itc-decline-update", () =>
-				updateWorkflowStatus(workflowId, "failed", 1),
+				updateWorkflowStatus(workflowId, "failed", 1)
 			);
 
 			await step.run("itc-decline-notify", () =>
@@ -297,7 +280,7 @@ export const onboardingWorkflow = inngest.createFunction(
 					title: "Application Declined - Credit Check",
 					message: `ITC credit score (${itcResult.creditScore}) below minimum threshold.`,
 					actionable: false,
-				}),
+				})
 			);
 
 			return {
@@ -319,12 +302,12 @@ export const onboardingWorkflow = inngest.createFunction(
 				workflowId,
 				applicantId,
 				stage: 2,
-			},
+			}
 		);
 
 		// Generate quote based on ITC result and applicant data
 		const quoteResult = (await step.run("generate-legal-pack", () =>
-			generateQuote(applicantId, workflowId),
+			generateQuote(applicantId, workflowId)
 		)) as unknown as QuoteResult;
 
 		const quote = quoteResult.quote;
@@ -338,7 +321,7 @@ export const onboardingWorkflow = inngest.createFunction(
 					workflowId,
 					eventType: "error",
 					payload: { step: "generate-legal-pack", error: errorMessage },
-				}),
+				})
 			);
 
 			await step.run("stage-2-quote-notify", () =>
@@ -350,25 +333,22 @@ export const onboardingWorkflow = inngest.createFunction(
 					message: errorMessage,
 					actionable: true,
 					errorDetails: { error: errorMessage },
-				}),
+				})
 			);
 
 			await step.run("stage-2-quote-pause", () =>
-				updateWorkflowStatus(workflowId, "paused", 2),
+				updateWorkflowStatus(workflowId, "paused", 2)
 			);
 
-			const resolution = await step.waitForEvent(
-				"stage-2-quote-wait-resolution",
-				{
-					event: "workflow/error-resolved",
-					match: "data.workflowId",
-					timeout: "30d",
-				},
-			);
+			const resolution = await step.waitForEvent("stage-2-quote-wait-resolution", {
+				event: "workflow/error-resolved",
+				match: "data.workflowId",
+				timeout: "30d",
+			});
 
 			if (!resolution || resolution.data.action === "cancel") {
 				await step.run("stage-2-quote-cancel", () =>
-					updateWorkflowStatus(workflowId, "failed", 2),
+					updateWorkflowStatus(workflowId, "failed", 2)
 				);
 				return { status: "failed", error: errorMessage };
 			}
@@ -379,10 +359,10 @@ export const onboardingWorkflow = inngest.createFunction(
 		}
 
 		await step.run("stage-2-quote-created", () =>
-			updateWorkflowStatus(workflowId, "awaiting_human", 2),
+			updateWorkflowStatus(workflowId, "awaiting_human", 2)
 		);
 
-			await step.run("stage-2-quote-notify", () =>
+		await step.run("stage-2-quote-notify", () =>
 			createWorkflowNotification({
 				workflowId,
 				applicantId,
@@ -390,19 +370,19 @@ export const onboardingWorkflow = inngest.createFunction(
 				title: "Quote ready for approval",
 				message: "AI-generated quote is ready for staff review and approval.",
 				actionable: true,
-			}),
+			})
 		);
 
-        await step.run("stage-2-quote-email-alert", () => 
-            sendInternalAlertEmail({
-                title: "Quote Ready for Approval",
-                message: "A new quote generated by AI requires your review and approval.",
-                workflowId,
-                applicantId,
-                type: "info",
-                actionUrl: `https://stratcol-onboard-ai.vercel.app/dashboard/applicants/${applicantId}`
-            })
-        );
+		await step.run("stage-2-quote-email-alert", () =>
+			sendInternalAlertEmail({
+				title: "Quote Ready for Approval",
+				message: "A new quote generated by AI requires your review and approval.",
+				workflowId,
+				applicantId,
+				type: "info",
+				actionUrl: `https://stratcol-onboard-ai.vercel.app/dashboard/applicants/${applicantId}`,
+			})
+		);
 
 		console.log("[Workflow] Waiting for staff quote approval...");
 		const approvalEvent = (await step.waitForEvent("wait-for-quote-approval", {
@@ -413,7 +393,7 @@ export const onboardingWorkflow = inngest.createFunction(
 
 		if (!approvalEvent) {
 			await step.run("stage-2-quote-approval-timeout", () =>
-				updateWorkflowStatus(workflowId, "timeout", 2),
+				updateWorkflowStatus(workflowId, "timeout", 2)
 			);
 			await step.run("stage-2-quote-approval-timeout-notify", () =>
 				createWorkflowNotification({
@@ -423,7 +403,7 @@ export const onboardingWorkflow = inngest.createFunction(
 					title: "Quote approval timeout",
 					message: "No staff approval received within 30 days.",
 					actionable: true,
-				}),
+				})
 			);
 			return { status: "timeout", stage: 2, reason: "Quote approval timeout" };
 		}
@@ -475,7 +455,7 @@ export const onboardingWorkflow = inngest.createFunction(
 				workflowId,
 				applicantId,
 				stage: 2,
-			},
+			}
 		);
 
 		console.log("[Workflow] Waiting for Signed Quotation...");
@@ -488,7 +468,7 @@ export const onboardingWorkflow = inngest.createFunction(
 		if (!quoteSignedEvent) {
 			console.error("[Workflow] Quote signature timeout!");
 			await step.run("quote-signature-timeout", () =>
-				updateWorkflowStatus(workflowId, "timeout", 2),
+				updateWorkflowStatus(workflowId, "timeout", 2)
 			);
 			await step.run("quote-signature-timeout-notify", () =>
 				createWorkflowNotification({
@@ -498,7 +478,7 @@ export const onboardingWorkflow = inngest.createFunction(
 					title: "Quote signature timeout",
 					message: "Client did not sign the quotation within 30 days.",
 					actionable: true,
-				}),
+				})
 			);
 			return { status: "timeout", stage: 2, reason: "Quote signature timeout" };
 		}
@@ -512,7 +492,7 @@ export const onboardingWorkflow = inngest.createFunction(
 				workflowId,
 				applicantId,
 				stage: 2,
-			},
+			}
 		);
 
 		console.log("[Workflow] Waiting for Contract Signed signal...");
@@ -525,7 +505,7 @@ export const onboardingWorkflow = inngest.createFunction(
 		if (!contractEvent) {
 			console.error("[Workflow] Contract signing timeout!");
 			await step.run("contract-timeout", () =>
-				updateWorkflowStatus(workflowId, "timeout", 2),
+				updateWorkflowStatus(workflowId, "timeout", 2)
 			);
 			await step.run("contract-timeout-notify", () =>
 				createWorkflowNotification({
@@ -535,7 +515,7 @@ export const onboardingWorkflow = inngest.createFunction(
 					title: "Contract Signing Timeout",
 					message: "Workflow timed out waiting for contract signature.",
 					actionable: true,
-				}),
+				})
 			);
 			return {
 				status: "timeout",
@@ -558,7 +538,7 @@ export const onboardingWorkflow = inngest.createFunction(
 				workflowId,
 				applicantId,
 				stage: 3,
-			},
+			}
 		);
 
 		// SOP Step 2.3: Wait for FICA Documents (14-day timeout)
@@ -569,10 +549,9 @@ export const onboardingWorkflow = inngest.createFunction(
 				applicantId,
 				type: "awaiting",
 				title: "FICA Documents Required",
-				message:
-					"Please upload 3 months bank statements and accountant letter.",
+				message: "Please upload 3 months bank statements and accountant letter.",
 				actionable: true,
-			}),
+			})
 		);
 
 		const ficaUploadEvent = (await step.waitForEvent("wait-for-documents", {
@@ -584,7 +563,7 @@ export const onboardingWorkflow = inngest.createFunction(
 		if (!ficaUploadEvent) {
 			console.error("[Workflow] FICA document upload timeout!");
 			await step.run("fica-timeout", () =>
-				updateWorkflowStatus(workflowId, "timeout", 3),
+				updateWorkflowStatus(workflowId, "timeout", 3)
 			);
 			await step.run("fica-timeout-notify", () =>
 				createWorkflowNotification({
@@ -595,7 +574,7 @@ export const onboardingWorkflow = inngest.createFunction(
 					message:
 						"Client did not upload FICA documents within 14 days. Workflow paused.",
 					actionable: true,
-				}),
+				})
 			);
 			return {
 				status: "timeout",
@@ -606,11 +585,7 @@ export const onboardingWorkflow = inngest.createFunction(
 
 		const documents = ficaUploadEvent.data.documents;
 
-		console.log(
-			"[Workflow] FICA Documents received:",
-			documents.length,
-			"file(s)",
-		);
+		console.log("[Workflow] FICA Documents received:", documents.length, "file(s)");
 
 		// SOP Step 2.4: AI FICA Verification (Vercel AI SDK)
 		const ficaAnalysis = (await step.run("ai-fica-verification", async () => {
@@ -618,7 +593,7 @@ export const onboardingWorkflow = inngest.createFunction(
 
 			// Find bank statement in uploaded documents
 			const bankStatement = documents.find(
-				(document) => document.type === "BANK_STATEMENT",
+				document => document.type === "BANK_STATEMENT"
 			);
 
 			if (!bankStatement) {
@@ -651,7 +626,7 @@ export const onboardingWorkflow = inngest.createFunction(
 					accountMatchVerified: ficaAnalysis.accountMatchVerified,
 					analysisConfidence: ficaAnalysis.analysisConfidence,
 				},
-			}),
+			})
 		);
 
 		// SOP Step 2.5: Human Risk Review (HITL)
@@ -665,7 +640,7 @@ export const onboardingWorkflow = inngest.createFunction(
 
 		if (canAutoApproveFica(ficaAnalysis)) {
 			console.log(
-				`[Workflow] Auto-approving: AI Trust Score ${ficaAnalysis.aiTrustScore} >= ${AI_TRUST_THRESHOLDS.AUTO_APPROVE}`,
+				`[Workflow] Auto-approving: AI Trust Score ${ficaAnalysis.aiTrustScore} >= ${AI_TRUST_THRESHOLDS.AUTO_APPROVE}`
 			);
 			riskDecision = {
 				outcome: "APPROVED",
@@ -675,11 +650,11 @@ export const onboardingWorkflow = inngest.createFunction(
 		} else {
 			// Requires human review
 			console.log(
-				`[Workflow] Manual review required: AI Trust Score ${ficaAnalysis.aiTrustScore}`,
+				`[Workflow] Manual review required: AI Trust Score ${ficaAnalysis.aiTrustScore}`
 			);
 
 			await step.run("stage-3-awaiting-risk-review", () =>
-				updateWorkflowStatus(workflowId, "awaiting_human", 3),
+				updateWorkflowStatus(workflowId, "awaiting_human", 3)
 			);
 
 			await step.run("notify-risk-manager", () =>
@@ -695,22 +670,22 @@ export const onboardingWorkflow = inngest.createFunction(
 						riskFlags: ficaAnalysis.riskFlags,
 						summary: ficaAnalysis.summary,
 					},
-				}),
+				})
 			);
 
-            await step.run("notify-risk-manager-email", () => 
-                sendInternalAlertEmail({
-                    title: "Risk Review Required",
-                    message: `Applicant requires manual risk review. AI Trust Score: ${ficaAnalysis.aiTrustScore}%.`,
-                    workflowId,
-                    applicantId,
-                    type: "warning",
-                    details: {
-                        riskFlags: ficaAnalysis.riskFlags.join(", "),
-                        score: ficaAnalysis.aiTrustScore
-                    }
-                })
-            );
+			await step.run("notify-risk-manager-email", () =>
+				sendInternalAlertEmail({
+					title: "Risk Review Required",
+					message: `Applicant requires manual risk review. AI Trust Score: ${ficaAnalysis.aiTrustScore}%.`,
+					workflowId,
+					applicantId,
+					type: "warning",
+					details: {
+						riskFlags: ficaAnalysis.riskFlags.join(", "),
+						score: ficaAnalysis.aiTrustScore,
+					},
+				})
+			);
 
 			// Wait for Risk Manager decision
 			console.log("[Workflow] Waiting for Risk Manager decision...");
@@ -722,7 +697,7 @@ export const onboardingWorkflow = inngest.createFunction(
 
 			if (!riskEvent) {
 				await step.run("risk-timeout", () =>
-					updateWorkflowStatus(workflowId, "timeout", 3),
+					updateWorkflowStatus(workflowId, "timeout", 3)
 				);
 				return {
 					status: "timeout",
@@ -739,7 +714,7 @@ export const onboardingWorkflow = inngest.createFunction(
 			console.log("[Workflow] Application REJECTED:", riskDecision.reason);
 
 			await step.run("rejected-update", () =>
-				updateWorkflowStatus(workflowId, "failed", 3),
+				updateWorkflowStatus(workflowId, "failed", 3)
 			);
 
 			await step.run("rejected-notify", () =>
@@ -750,7 +725,7 @@ export const onboardingWorkflow = inngest.createFunction(
 					title: "Application Rejected",
 					message: riskDecision.reason || "Rejected by Risk Manager",
 					actionable: false,
-				}),
+				})
 			);
 
 			return {
@@ -786,7 +761,7 @@ export const onboardingWorkflow = inngest.createFunction(
 				workflowId,
 				applicantId,
 				stage: 4,
-			},
+			}
 		);
 
 		// SOP Step 4: V24 Integration
@@ -813,19 +788,19 @@ export const onboardingWorkflow = inngest.createFunction(
 					message: v24Result.error || "Failed to create client in V24",
 					actionable: true,
 					errorDetails: { error: v24Result.error },
-				}),
+				})
 			);
 
-            await step.run("v24-error-email-alert", () => 
-                sendInternalAlertEmail({
-                    title: "V24 Integration Error",
-                    message: "Failed to create client profile in V24 system.",
-                    workflowId,
-                    applicantId,
-                    type: "error",
-                    details: { error: v24Result.error }
-                })
-            );
+			await step.run("v24-error-email-alert", () =>
+				sendInternalAlertEmail({
+					title: "V24 Integration Error",
+					message: "Failed to create client profile in V24 system.",
+					workflowId,
+					applicantId,
+					type: "error",
+					details: { error: v24Result.error },
+				})
+			);
 
 			// Don't fail the workflow - log and continue
 		} else {
@@ -841,7 +816,7 @@ export const onboardingWorkflow = inngest.createFunction(
 						clientId: v24Result.clientId,
 						v24Reference: v24Result.v24Reference,
 					},
-				}),
+				})
 			);
 		}
 
@@ -854,10 +829,7 @@ export const onboardingWorkflow = inngest.createFunction(
 			});
 		});
 
-		console.log(
-			"[Workflow] Training session scheduled:",
-			trainingSession.sessionId,
-		);
+		console.log("[Workflow] Training session scheduled:", trainingSession.sessionId);
 
 		// Send welcome pack
 		await step.run("send-welcome-pack", async () => {
@@ -879,7 +851,7 @@ export const onboardingWorkflow = inngest.createFunction(
 				workflowId,
 				applicantId,
 				stage: 4,
-			},
+			}
 		);
 
 		// (Zapier webhooks removed - using direct Inngest events)
@@ -892,5 +864,5 @@ export const onboardingWorkflow = inngest.createFunction(
 			v24Reference: v24Result.v24Reference,
 			trainingSessionId: trainingSession.sessionId,
 		};
-	},
+	}
 );

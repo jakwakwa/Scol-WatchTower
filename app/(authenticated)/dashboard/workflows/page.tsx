@@ -55,7 +55,7 @@ export default async function WorkflowsPage() {
 				}
 			}
 
-			allWorkflows = workflowRows.map((w) => ({
+			allWorkflows = workflowRows.map(w => ({
 				...w,
 				// Parse metadata if it exists, otherwise use empty object
 				payload: w.metadata ? JSON.parse(w.metadata) : {},
@@ -64,10 +64,10 @@ export default async function WorkflowsPage() {
 
 			// Calculate stats
 			stageStats = {
-				lead_capture: allWorkflows.filter((w) => w.stage === 1).length,
-				quotation: allWorkflows.filter((w) => w.stage === 2).length,
-				verification: allWorkflows.filter((w) => w.stage === 3).length,
-				integration: allWorkflows.filter((w) => w.stage === 4).length,
+				lead_capture: allWorkflows.filter(w => w.stage === 1).length,
+				quotation: allWorkflows.filter(w => w.stage === 2).length,
+				verification: allWorkflows.filter(w => w.stage === 3).length,
+				integration: allWorkflows.filter(w => w.stage === 4).length,
 			};
 		} catch (error) {
 			console.error("Failed to fetch workflows:", error);
@@ -95,8 +95,7 @@ export default async function WorkflowsPage() {
 						Export
 					</Button>
 				</div>
-			}
-		>
+			}>
 			{/* Stage distribution */}
 			<DashboardGrid columns={4} className="mb-8">
 				<StatsCard

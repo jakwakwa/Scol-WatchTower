@@ -13,31 +13,25 @@ export async function POST(request: NextRequest) {
 		const db = await getDatabaseClient();
 
 		if (!db) {
-			return NextResponse.json(
-				{ error: "Database connection failed" },
-				{ status: 500 },
-			);
+			return NextResponse.json({ error: "Database connection failed" }, { status: 500 });
 		}
 
 		const body = await request.json();
-		console.log(
-			"📥 [API] Received Quote Payload:",
-			JSON.stringify(body, null, 2),
-		);
+		console.log("📥 [API] Received Quote Payload:", JSON.stringify(body, null, 2));
 
 		const validation = createQuoteSchema.safeParse(body);
 
 		if (!validation.success) {
 			console.error(
 				"❌ [API] Validation Failed:",
-				JSON.stringify(validation.error.flatten(), null, 2),
+				JSON.stringify(validation.error.flatten(), null, 2)
 			);
 			return NextResponse.json(
 				{
 					error: "Validation failed",
 					details: validation.error.flatten().fieldErrors,
 				},
-				{ status: 400 },
+				{ status: 400 }
 			);
 		}
 

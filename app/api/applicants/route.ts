@@ -13,10 +13,7 @@ export async function GET() {
 		const db = await getDatabaseClient();
 
 		if (!db) {
-			return NextResponse.json(
-				{ error: "Database connection failed" },
-				{ status: 500 },
-			);
+			return NextResponse.json({ error: "Database connection failed" }, { status: 500 });
 		}
 
 		const allApplicants = await db
@@ -41,10 +38,7 @@ export async function POST(request: NextRequest) {
 		const db = await getDatabaseClient();
 
 		if (!db) {
-			return NextResponse.json(
-				{ error: "Database connection failed" },
-				{ status: 500 },
-			);
+			return NextResponse.json({ error: "Database connection failed" }, { status: 500 });
 		}
 
 		const body = await request.json();
@@ -58,7 +52,7 @@ export async function POST(request: NextRequest) {
 					error: "Validation failed",
 					details: validation.error.flatten().fieldErrors,
 				},
-				{ status: 400 },
+				{ status: 400 }
 			);
 		}
 
@@ -113,16 +107,14 @@ export async function POST(request: NextRequest) {
 				name: "onboarding/lead.created",
 				data: { applicantId: newApplicant.id, workflowId: newWorkflow.id },
 			});
-			console.log(
-				`[API] Started Inngest workflow for applicant ${newApplicant.id}`,
-			);
+			console.log(`[API] Started Inngest workflow for applicant ${newApplicant.id}`);
 		} catch (inngestError) {
 			console.error("[API] Failed to start Inngest workflow:", inngestError);
 		}
 
 		return NextResponse.json(
 			{ applicant: newApplicant, workflow: newWorkflow },
-			{ status: 201 },
+			{ status: 201 }
 		);
 	} catch (error) {
 		console.error("Error creating applicant:", error);

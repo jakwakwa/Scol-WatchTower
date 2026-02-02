@@ -41,7 +41,7 @@ export default async function DashboardRootLayout({
 				.orderBy(desc(notifications.createdAt))
 				.limit(20);
 
-			workflowNotifications = notificationsResult.map((n) => ({
+			workflowNotifications = notificationsResult.map(n => ({
 				id: n.id.toString(),
 				workflowId: n.workflowId,
 				clientName: n.clientName || "Unknown",
@@ -57,8 +57,6 @@ export default async function DashboardRootLayout({
 	}
 
 	return (
-		<DashboardShell notifications={workflowNotifications}>
-			{children}
-		</DashboardShell>
+		<DashboardShell notifications={workflowNotifications}>{children}</DashboardShell>
 	);
 }

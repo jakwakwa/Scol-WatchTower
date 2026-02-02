@@ -1,26 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { DashboardLayout } from "@/components/dashboard";
 import {
 	RiBuildingLine,
+	RiFileTextLine,
 	RiHashtag,
 	RiMailLine,
 	RiPhoneLine,
 	RiShieldCheckLine,
-	RiFileTextLine,
 	RiUploadCloud2Line,
 } from "@remixicon/react";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
-import { GlassCard } from "@/components/dashboard";
-import {
-	StatusBadge,
-	RiskBadge,
-	StageBadge,
-} from "@/components/ui/status-badge";
 import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { DashboardLayout, GlassCard } from "@/components/dashboard";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { RiskBadge, StageBadge, StatusBadge } from "@/components/ui/status-badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface ApplicantDetail {
 	id: number;
@@ -128,9 +123,7 @@ export default function ApplicantDetailPage() {
 				setApplicantMagiclinkForms(data.applicantMagiclinkForms || []);
 			} catch (err) {
 				if (!mounted) return;
-				setError(
-					err instanceof Error ? err.message : "Failed to load applicant",
-				);
+				setError(err instanceof Error ? err.message : "Failed to load applicant");
 			} finally {
 				if (mounted) {
 					setLoading(false);
@@ -146,26 +139,16 @@ export default function ApplicantDetailPage() {
 
 	if (loading) {
 		return (
-			<DashboardLayout
-				title="Loading..."
-				description="Fetching applicant details"
-			>
-				<p className="text-sm text-muted-foreground">
-					Loading applicant details...
-				</p>
+			<DashboardLayout title="Loading..." description="Fetching applicant details">
+				<p className="text-sm text-muted-foreground">Loading applicant details...</p>
 			</DashboardLayout>
 		);
 	}
 
 	if (error || !applicant) {
 		return (
-			<DashboardLayout
-				title="Applicant not found"
-				description="Unable to load applicant"
-			>
-				<p className="text-sm text-destructive">
-					{error || "Applicant not found"}
-				</p>
+			<DashboardLayout title="Applicant not found" description="Unable to load applicant">
+				<p className="text-sm text-destructive">{error || "Applicant not found"}</p>
 			</DashboardLayout>
 		);
 	}
@@ -185,8 +168,7 @@ export default function ApplicantDetailPage() {
 						Action Application
 					</Button>
 				</div>
-			}
-		>
+			}>
 			<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 				{/* Left Sidebar: Quick Stats & status */}
 				<div className="space-y-6">
@@ -212,8 +194,7 @@ export default function ApplicantDetailPage() {
 											client.itcScore < 60
 												? "text-destructive-foreground"
 												: "text-emerald-500"
-										}`}
-									>
+										}`}>
 										ITC: {client.itcScore}
 									</span>
 								) : null}
@@ -236,9 +217,7 @@ export default function ApplicantDetailPage() {
 							<div className="flex items-center gap-3 text-sm">
 								<RiShieldCheckLine className="h-4 w-4 text-muted-foreground" />
 								<span className="capitalize">
-									{client.mandateType
-										? client.mandateType.replace("_", " ")
-										: "Not set"}
+									{client.mandateType ? client.mandateType.replace("_", " ") : "Not set"}
 								</span>
 							</div>
 						</div>
@@ -255,9 +234,7 @@ export default function ApplicantDetailPage() {
 								</div>
 								<div>
 									<p className="font-semibold text-sm">{client.contactName}</p>
-									<p className="text-xs text-muted-foreground">
-										Main Signatory
-									</p>
+									<p className="text-xs text-muted-foreground">Main Signatory</p>
 								</div>
 							</div>
 							<div className="space-y-2 text-sm">
@@ -280,32 +257,27 @@ export default function ApplicantDetailPage() {
 						<TabsList className="mb-6 w-full justify-start border-b border-border/40 rounded-none bg-transparent h-auto p-0 gap-6">
 							<TabsTrigger
 								value="overview"
-								className="rounded-none border-b-2 border-transparent data-[state=active]:bg-transparent px-4 py-3"
-							>
+								className="rounded-none border-b-2 border-transparent data-[state=active]:bg-transparent px-4 py-3">
 								Overview
 							</TabsTrigger>
 							<TabsTrigger
 								value="documents"
-								className=" border-b-2 border-transparent data-[state=active]:bg-transparent px-4 py-3"
-							>
+								className=" border-b-2 border-transparent data-[state=active]:bg-transparent px-4 py-3">
 								Documents & FICA
 							</TabsTrigger>
 							<TabsTrigger
 								value="forms"
-								className=" border-b-2 border-transparent data-[state=active]:bg-transparent px-4 py-3"
-							>
+								className=" border-b-2 border-transparent data-[state=active]:bg-transparent px-4 py-3">
 								Forms
 							</TabsTrigger>
 							<TabsTrigger
 								value="risk"
-								className=" border-b-2 border-transparent data-[state=active]:bg-transparent px-4 py-3"
-							>
+								className=" border-b-2 border-transparent data-[state=active]:bg-transparent px-4 py-3">
 								Risk Assessment
 							</TabsTrigger>
 							<TabsTrigger
 								value="activity"
-								className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
-							>
+								className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3">
 								Activity Log
 							</TabsTrigger>
 						</TabsList>
@@ -323,9 +295,7 @@ export default function ApplicantDetailPage() {
 										{client.accountExecutive || "Unassigned"}
 									</span>
 									. Currently in{" "}
-									<span className="font-medium text-foreground">
-										{client.status}
-									</span>{" "}
+									<span className="font-medium text-foreground">{client.status}</span>{" "}
 									stage awaiting next action.
 								</p>
 								<div className="grid grid-cols-2 gap-4">
@@ -367,11 +337,10 @@ export default function ApplicantDetailPage() {
 										No documents uploaded yet.
 									</p>
 								) : (
-									documents.map((doc) => (
+									documents.map(doc => (
 										<div
 											key={doc.id}
-											className="flex items-center justify-between p-4 rounded-xl border border-border/60 bg-card hover:bg-secondary/10 transition-colors"
-										>
+											className="flex items-center justify-between p-4 rounded-xl border border-border/60 bg-card hover:bg-secondary/10 transition-colors">
 											<div className="flex items-center gap-4">
 												<div className="h-10 w-10 rounded-lg flex items-center justify-center bg-secondary/40 text-secondary-foreground">
 													<RiFileTextLine className="h-5 w-5" />
@@ -394,8 +363,7 @@ export default function ApplicantDetailPage() {
 															: doc.status === "rejected"
 																? "error"
 																: "warning"
-													}
-												>
+													}>
 													{doc.status}
 												</StatusBadge>
 											</div>
@@ -414,15 +382,14 @@ export default function ApplicantDetailPage() {
 									</p>
 								) : (
 									<div className="space-y-3">
-										{applicantMagiclinkForms.map((instance) => {
+										{applicantMagiclinkForms.map(instance => {
 											const submission = applicantSubmissions.find(
-												(item) => item.formType === instance.formType,
+												item => item.formType === instance.formType
 											);
 											return (
 												<div
 													key={instance.id}
-													className="flex items-center justify-between rounded-xl border border-border/60 p-4"
-												>
+													className="flex items-center justify-between rounded-xl border border-border/60 p-4">
 													<div>
 														<p className="text-sm font-medium">
 															{instance.formType.replace(/_/g, " ")}
@@ -436,10 +403,7 @@ export default function ApplicantDetailPage() {
 																variant="link"
 																size="xs"
 																className="mt-1 px-0 text-primary"
-																onClick={() =>
-																	handleCopyMagicLink(instance)
-																}
-															>
+																onClick={() => handleCopyMagicLink(instance)}>
 																{copiedFormId === instance.id
 																	? "Copied"
 																	: "Copy magic link"}
@@ -472,10 +436,7 @@ export default function ApplicantDetailPage() {
 										Financial Health
 									</h4>
 									<div className="space-y-4 text-sm text-muted-foreground">
-										<p>
-											AI analysis results will appear once documents are
-											processed.
-										</p>
+										<p>AI analysis results will appear once documents are processed.</p>
 									</div>
 								</GlassCard>
 
@@ -497,9 +458,7 @@ export default function ApplicantDetailPage() {
 											<StatusBadge status="warning">Pending</StatusBadge>
 										</div>
 										<div className="flex justify-between items-center">
-											<span className="text-sm text-foreground">
-												CIPC Status
-											</span>
+											<span className="text-sm text-foreground">CIPC Status</span>
 											<StatusBadge status="warning">Pending</StatusBadge>
 										</div>
 									</div>
@@ -524,7 +483,7 @@ export default function ApplicantDetailPage() {
 										No recent activity logged.
 									</p>
 								) : (
-									applicantSubmissions.map((submission) => (
+									applicantSubmissions.map(submission => (
 										<div key={submission.id} className="relative pl-6">
 											<div className="absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full bg-border border-2 border-background"></div>
 											<p className="text-sm font-medium">

@@ -36,10 +36,12 @@ export default function RiskReviewPage() {
 			}
 			const data = await response.json();
 			// Parse dates from ISO strings
-			const parsedItems = (data.items || []).map((item: RiskReviewItem & { createdAt: string | Date }) => ({
-				...item,
-				createdAt: new Date(item.createdAt),
-			}));
+			const parsedItems = (data.items || []).map(
+				(item: RiskReviewItem & { createdAt: string | Date }) => ({
+					...item,
+					createdAt: new Date(item.createdAt),
+				})
+			);
 			setItems(parsedItems);
 		} catch (error) {
 			console.error("Error fetching risk review items:", error);
@@ -54,7 +56,7 @@ export default function RiskReviewPage() {
 	}, [fetchRiskReviewItems]);
 
 	const handleApprove = async (id: number, reason?: string) => {
-		const item = items.find((i) => i.id === id);
+		const item = items.find(i => i.id === id);
 		if (!item) {
 			toast.error("Workflow not found");
 			return;
@@ -87,13 +89,13 @@ export default function RiskReviewPage() {
 		} catch (error) {
 			console.error("Approval error:", error);
 			toast.error(
-				error instanceof Error ? error.message : "Failed to approve application",
+				error instanceof Error ? error.message : "Failed to approve application"
 			);
 		}
 	};
 
 	const handleReject = async (id: number, reason: string) => {
-		const item = items.find((i) => i.id === id);
+		const item = items.find(i => i.id === id);
 		if (!item) {
 			toast.error("Workflow not found");
 			return;
@@ -126,7 +128,7 @@ export default function RiskReviewPage() {
 		} catch (error) {
 			console.error("Rejection error:", error);
 			toast.error(
-				error instanceof Error ? error.message : "Failed to reject application",
+				error instanceof Error ? error.message : "Failed to reject application"
 			);
 		}
 	};
@@ -138,14 +140,12 @@ export default function RiskReviewPage() {
 
 	// Filter items based on search
 	const filteredItems = items.filter(
-		(item) =>
+		item =>
 			item.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-			item.companyName.toLowerCase().includes(searchTerm.toLowerCase()),
+			item.companyName.toLowerCase().includes(searchTerm.toLowerCase())
 	);
 
-	const highRiskCount = items.filter(
-		(item) => (item.aiTrustScore || 100) < 60,
-	).length;
+	const highRiskCount = items.filter(item => (item.aiTrustScore || 100) < 60).length;
 	const pendingCount = items.length;
 
 	return (
@@ -158,11 +158,8 @@ export default function RiskReviewPage() {
 						variant="outline"
 						className="gap-2"
 						onClick={fetchRiskReviewItems}
-						disabled={isLoading}
-					>
-						<RiRefreshLine
-							className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
-						/>
+						disabled={isLoading}>
+						<RiRefreshLine className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
 						Refresh
 					</Button>
 					<Button variant="outline" className="gap-2">
@@ -170,8 +167,7 @@ export default function RiskReviewPage() {
 						Filters
 					</Button>
 				</div>
-			}
-		>
+			}>
 			{/* Search and Stats Bar */}
 			<div className="flex flex-col md:flex-row gap-4 mb-6">
 				<div className="relative flex-1">
@@ -180,7 +176,7 @@ export default function RiskReviewPage() {
 						placeholder="Search company, contact name..."
 						className="pl-10"
 						value={searchTerm}
-						onChange={(e) => setSearchTerm(e.target.value)}
+						onChange={e => setSearchTerm(e.target.value)}
 					/>
 				</div>
 				<div className="flex gap-4">

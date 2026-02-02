@@ -55,8 +55,7 @@ export default async function ApplicantQuotePage({
 							Back to applicant
 						</Button>
 					</Link>
-				}
-			>
+				}>
 				<p className="text-sm text-muted-foreground">
 					Create a workflow before generating quotes.
 				</p>
@@ -84,8 +83,7 @@ export default async function ApplicantQuotePage({
 							Back to applicant
 						</Button>
 					</Link>
-				}
-			>
+				}>
 				<p className="text-sm text-muted-foreground">
 					No quote has been generated for this workflow yet.
 				</p>
@@ -110,8 +108,7 @@ export default async function ApplicantQuotePage({
 						</Button>
 					</Link>
 				</div>
-			}
-		>
+			}>
 			<QuoteApprovalForm
 				applicantId={applicant.id}
 				workflowId={workflow.id}

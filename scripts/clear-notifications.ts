@@ -10,7 +10,6 @@ async function clearNotifications() {
 
 	try {
 		await db.delete(notifications);
-		console.log("Successfully cleared all notifications");
 	} catch (e) {
 		console.error("Error clearing notifications:", e);
 	}

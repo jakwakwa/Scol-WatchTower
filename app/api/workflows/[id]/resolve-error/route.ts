@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(
 	request: NextRequest,
-	{ params }: { params: Promise<{ id: string }> },
+	{ params }: { params: Promise<{ id: string }> }
 ) {
 	const { id } = await params;
 	const workflowId = parseInt(id);
@@ -31,9 +31,6 @@ export async function POST(
 		return NextResponse.json({ success: true, action });
 	} catch (error) {
 		console.error("Failed to resolve workflow error:", error);
-		return NextResponse.json(
-			{ error: "Failed to process resolution" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Failed to process resolution" }, { status: 500 });
 	}
 }

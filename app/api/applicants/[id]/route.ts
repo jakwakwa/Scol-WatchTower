@@ -16,16 +16,13 @@ import { updateApplicantSchema } from "@/lib/validations";
  */
 export async function PUT(
 	request: NextRequest,
-	{ params }: { params: Promise<{ id: string }> },
+	{ params }: { params: Promise<{ id: string }> }
 ) {
 	try {
 		const db = await getDatabaseClient();
 
 		if (!db) {
-			return NextResponse.json(
-				{ error: "Database connection failed" },
-				{ status: 500 },
-			);
+			return NextResponse.json({ error: "Database connection failed" }, { status: 500 });
 		}
 
 		// Await params in Next.js 15
@@ -46,7 +43,7 @@ export async function PUT(
 					error: "Validation failed",
 					details: validation.error.flatten().fieldErrors,
 				},
-				{ status: 400 },
+				{ status: 400 }
 			);
 		}
 
@@ -63,10 +60,7 @@ export async function PUT(
 			.returning();
 
 		if (updatedApplicantResults.length === 0) {
-			return NextResponse.json(
-				{ error: "Applicant not found" },
-				{ status: 404 },
-			);
+			return NextResponse.json({ error: "Applicant not found" }, { status: 404 });
 		}
 
 		const updatedApplicant = updatedApplicantResults[0];
@@ -85,16 +79,13 @@ export async function PUT(
  */
 export async function GET(
 	_request: NextRequest,
-	{ params }: { params: Promise<{ id: string }> },
+	{ params }: { params: Promise<{ id: string }> }
 ) {
 	try {
 		const db = await getDatabaseClient();
 
 		if (!db) {
-			return NextResponse.json(
-				{ error: "Database connection failed" },
-				{ status: 500 },
-			);
+			return NextResponse.json({ error: "Database connection failed" }, { status: 500 });
 		}
 
 		const resolvedParams = await params;

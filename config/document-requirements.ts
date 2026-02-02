@@ -283,9 +283,7 @@ export function getDocumentRequirements(context: DocumentRequirementContext) {
 		});
 	}
 
-	if (
-		context.productTypes?.some((type) => type.toLowerCase().includes("premium"))
-	) {
+	if (context.productTypes?.some(type => type.toLowerCase().includes("premium"))) {
 		requirements.push({
 			type: "INTERMEDIARY_AGREEMENT",
 			label: "Intermediary agreement",
@@ -294,11 +292,7 @@ export function getDocumentRequirements(context: DocumentRequirementContext) {
 		});
 	}
 
-	if (
-		context.productTypes?.some((type) =>
-			type.toLowerCase().includes("call centre"),
-		)
-	) {
+	if (context.productTypes?.some(type => type.toLowerCase().includes("call centre"))) {
 		requirements.push(
 			{
 				type: "COLMS_APPLICATION",
@@ -329,7 +323,7 @@ export function getDocumentRequirements(context: DocumentRequirementContext) {
 				label: "Call script",
 				category: "product_specific",
 				required: true,
-			},
+			}
 		);
 	}
 
@@ -352,14 +346,11 @@ export function getDocumentRequirements(context: DocumentRequirementContext) {
 				label: "List of board members",
 				category: "industry_specific",
 				required: true,
-			},
+			}
 		);
 	}
 
-	if (
-		context.entityType === "trust" ||
-		hasIndustry(context.industry, "trust")
-	) {
+	if (context.entityType === "trust" || hasIndustry(context.industry, "trust")) {
 		requirements.push(
 			{
 				type: "TRUST_LETTER_OF_AUTHORITY",
@@ -384,7 +375,7 @@ export function getDocumentRequirements(context: DocumentRequirementContext) {
 				label: "Organogram",
 				category: "industry_specific",
 				required: false,
-			},
+			}
 		);
 	}
 
@@ -404,7 +395,7 @@ export function getDocumentRequirements(context: DocumentRequirementContext) {
 				label: "List of board members",
 				category: "industry_specific",
 				required: true,
-			},
+			}
 		);
 	}
 
@@ -435,10 +426,7 @@ export function getDocumentRequirements(context: DocumentRequirementContext) {
 		});
 	}
 
-	if (
-		hasIndustry(context.industry, "loan") ||
-		hasIndustry(context.industry, "debt")
-	) {
+	if (hasIndustry(context.industry, "loan") || hasIndustry(context.industry, "debt")) {
 		requirements.push({
 			type: "NCR_CERTIFICATE",
 			label: "NCR certificate",
@@ -478,7 +466,7 @@ export function getDocumentRequirements(context: DocumentRequirementContext) {
 				label: "Usage of consent form",
 				category: "risk_based",
 				required: true,
-			},
+			}
 		);
 	}
 

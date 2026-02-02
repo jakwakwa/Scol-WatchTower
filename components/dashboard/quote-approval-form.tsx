@@ -38,20 +38,17 @@ export function QuoteApprovalForm({
 }: QuoteApprovalFormProps) {
 	const [currentStatus, setCurrentStatus] = useState(status);
 	const [amount, setAmount] = useState(
-		initialAmount !== null && initialAmount !== undefined
-			? String(initialAmount)
-			: "",
+		initialAmount !== null && initialAmount !== undefined ? String(initialAmount) : ""
 	);
 	const [baseFeePercent, setBaseFeePercent] = useState(
 		initialBaseFeePercent !== null && initialBaseFeePercent !== undefined
 			? String(initialBaseFeePercent)
-			: "",
+			: ""
 	);
 	const [adjustedFeePercent, setAdjustedFeePercent] = useState(
-		initialAdjustedFeePercent !== null &&
-			initialAdjustedFeePercent !== undefined
+		initialAdjustedFeePercent !== null && initialAdjustedFeePercent !== undefined
 			? String(initialAdjustedFeePercent)
-			: "",
+			: ""
 	);
 	const [rationale, _setRationale] = useState(initialRationale || "");
 	const [errors, setErrors] = useState<QuoteFormErrors>({});
@@ -70,8 +67,7 @@ export function QuoteApprovalForm({
 		}
 	}, [details]);
 
-	const isLocked =
-		currentStatus === "pending_approval" || currentStatus === "approved";
+	const isLocked = currentStatus === "pending_approval" || currentStatus === "approved";
 
 	const validate = () => {
 		const nextErrors: QuoteFormErrors = {};
@@ -130,9 +126,7 @@ export function QuoteApprovalForm({
 			setCurrentStatus("pending_approval");
 			setSubmitMessage("Quote approved and sent to client.");
 		} catch (error) {
-			setSubmitMessage(
-				error instanceof Error ? error.message : "Approval failed",
-			);
+			setSubmitMessage(error instanceof Error ? error.message : "Approval failed");
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -148,7 +142,9 @@ export function QuoteApprovalForm({
 							Values are stored in cents and basis points.
 						</p>
 					</div>
-					<Badge variant="outline" className={`text-xs uppercase ${currentStatus === "pending_approval" ? "text-warning" : "text-success"}`}	>
+					<Badge
+						variant="outline"
+						className={`text-xs uppercase ${currentStatus === "pending_approval" ? "text-warning" : "text-success"}`}>
 						{currentStatus}
 					</Badge>
 				</div>
@@ -162,7 +158,7 @@ export function QuoteApprovalForm({
 							style={{ fontSize: "1.25rem" }}
 							type="number"
 							value={amount}
-							onChange={(event) => setAmount(event.target.value)}
+							onChange={event => setAmount(event.target.value)}
 							disabled={isLocked}
 						/>
 						{errors.amount ? (
@@ -178,13 +174,11 @@ export function QuoteApprovalForm({
 							style={{ fontSize: "1.25rem" }}
 							type="number"
 							value={baseFeePercent}
-							onChange={(event) => setBaseFeePercent(event.target.value)}
+							onChange={event => setBaseFeePercent(event.target.value)}
 							disabled={isLocked}
 						/>
 						{errors.baseFeePercent ? (
-							<p className="text-xs text-destructive">
-								{errors.baseFeePercent}
-							</p>
+							<p className="text-xs text-destructive">{errors.baseFeePercent}</p>
 						) : null}
 					</div>
 
@@ -196,19 +190,20 @@ export function QuoteApprovalForm({
 							style={{ fontSize: "1.25rem" }}
 							type="number"
 							value={adjustedFeePercent}
-							onChange={(event) => setAdjustedFeePercent(event.target.value)}
+							onChange={event => setAdjustedFeePercent(event.target.value)}
 							disabled={isLocked}
 						/>
 						{errors.adjustedFeePercent ? (
-							<p className="text-xs text-destructive">
-								{errors.adjustedFeePercent}
-							</p>
+							<p className="text-xs text-destructive">{errors.adjustedFeePercent}</p>
 						) : null}
 					</div>
 				</div>
 
 				<div className="space-y-2">
-					<Label htmlFor="quote-rationale" className="text-violet-400 text-lg"><RiAi color="var(--color-violet-500)" />rationale</Label>
+					<Label htmlFor="quote-rationale" className="text-violet-400 text-lg">
+						<RiAi color="var(--color-violet-500)" />
+						rationale
+					</Label>
 					{/* <Textarea
 						id="quote-rationale"
 						className="border-input-border font-mono font-light text-violet-400"
@@ -218,8 +213,10 @@ export function QuoteApprovalForm({
 						disabled={isLocked}
 						rows={5}
 					/> */}
-					<p className="bg-violet-900/80 outline-2 font-mono outline-violet-500 text-violet-400 p-4 rounded-lg">{rationale}</p>
-					</div>
+					<p className="bg-violet-900/80 outline-2 font-mono outline-violet-500 text-violet-400 p-4 rounded-lg">
+						{rationale}
+					</p>
+				</div>
 			</GlassCard>
 
 			<div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
@@ -229,8 +226,7 @@ export function QuoteApprovalForm({
 				<Button
 					onClick={handleApprove}
 					disabled={isSubmitting || isLocked}
-					className="gap-2"
-				>
+					className="gap-2">
 					{isSubmitting ? (
 						<>
 							<RiLoader4Line className="h-4 w-4 animate-spin" />

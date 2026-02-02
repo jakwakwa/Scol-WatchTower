@@ -67,12 +67,7 @@ export const DocumentCategorySchema = z.enum([
 
 export type DocumentCategory = z.infer<typeof DocumentCategorySchema>;
 
-export const DocumentSourceSchema = z.enum([
-	"client",
-	"agent",
-	"internal",
-	"system",
-]);
+export const DocumentSourceSchema = z.enum(["client", "agent", "internal", "system"]);
 
 export type DocumentSource = z.infer<typeof DocumentSourceSchema>;
 
@@ -175,7 +170,7 @@ export const FacilityApplicationSchema = z.object({
 		.string()
 		.regex(
 			/^\d{4}\/\d{6}\/\d{2}$/,
-			"Registration format: YYYY/NNNNNN/07 (e.g., 2020/123456/07)",
+			"Registration format: YYYY/NNNNNN/07 (e.g., 2020/123456/07)"
 		)
 		.optional(),
 	/** VAT Registration Number */
@@ -218,9 +213,7 @@ export const FacilityApplicationSchema = z.object({
 	}),
 
 	// Directors
-	directors: z
-		.array(DirectorInfoSchema)
-		.min(1, "At least one director required"),
+	directors: z.array(DirectorInfoSchema).min(1, "At least one director required"),
 
 	// Mandate Details
 	/** Selected mandate type */
@@ -280,7 +273,7 @@ export const ITCCheckResultSchema = z.object({
 				amount: z.number().optional(),
 				date: z.string().optional(),
 				creditor: z.string().optional(),
-			}),
+			})
 		)
 		.optional(),
 	/** Check timestamp */
@@ -453,9 +446,7 @@ export const AccountantLetterAnalysisSchema = z.object({
 	confidence: z.number().min(0).max(100),
 });
 
-export type AccountantLetterAnalysis = z.infer<
-	typeof AccountantLetterAnalysisSchema
->;
+export type AccountantLetterAnalysis = z.infer<typeof AccountantLetterAnalysisSchema>;
 
 // ============================================
 // V24 Integration Types

@@ -19,11 +19,7 @@ export type WorkflowStatus =
  * await step.run(dbSteps.updateStatus(workflowId, "processing", 1));
  */
 export const dbSteps = {
-	updateStatus: (
-		workflowId: number,
-		status: WorkflowStatus,
-		stage: number,
-	) => ({
+	updateStatus: (workflowId: number, status: WorkflowStatus, stage: number) => ({
 		id: `db-status-stage${stage}-${status}`,
 		fn: () => updateWorkflowStatus(workflowId, status, stage),
 	}),

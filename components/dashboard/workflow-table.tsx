@@ -106,11 +106,8 @@ export function StatusBadge({ status }: { status: WorkflowRow["status"] }) {
 
 	return (
 		<Badge
-			variant={
-				config.color as "default" | "secondary" | "destructive" | "outline"
-			}
-			className={cn("gap-1.5", hasPulse && "animate-pulse")}
-		>
+			variant={config.color as "default" | "secondary" | "destructive" | "outline"}
+			className={cn("gap-1.5", hasPulse && "animate-pulse")}>
 			<Icon className="h-3 w-3" />
 			{config.label}
 		</Badge>
@@ -128,7 +125,7 @@ export function WorkflowStageIndicator({
 
 	return (
 		<div className="flex items-center gap-1">
-			{stages.map((stage) => (
+			{stages.map(stage => (
 				<div key={`stage-w-${stage}`} className="flex items-center">
 					<div
 						className={cn(
@@ -137,9 +134,8 @@ export function WorkflowStageIndicator({
 							stage < currentStage && "bg-teal-500/40 text-emerald-600/80",
 							stage === currentStage &&
 								"bg-stone-500/20 text-stone-400 ring-2 ring-stone-500/30",
-							stage > currentStage && "bg-secondary/5 text-muted-foreground",
-						)}
-					>
+							stage > currentStage && "bg-secondary/5 text-muted-foreground"
+						)}>
 						{stage < currentStage ? (
 							<RiCheckLine className={compact ? "h-3 w-3" : "h-4 w-4"} />
 						) : (
@@ -151,7 +147,7 @@ export function WorkflowStageIndicator({
 							className={cn(
 								"h-0.5 transition-colors",
 								compact ? "w-2" : "w-4",
-								stage < currentStage ? "bg-teal-500/40" : "bg-secondary/10",
+								stage < currentStage ? "bg-teal-500/40" : "bg-secondary/10"
 							)}
 						/>
 					)}
@@ -175,7 +171,7 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 							? "indeterminate"
 							: false
 				}
-				onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+				onCheckedChange={value => table.toggleAllPageRowsSelected(!!value)}
 				aria-label="Select all"
 				className="translate-y-0.5"
 			/>
@@ -183,7 +179,7 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 		cell: ({ row }) => (
 			<Checkbox
 				checked={row.getIsSelected()}
-				onCheckedChange={(value) => row.toggleSelected(!!value)}
+				onCheckedChange={value => row.toggleSelected(!!value)}
 				aria-label="Select row"
 				className="translate-y-0.5"
 			/>
@@ -198,8 +194,7 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 				variant="ghost"
 				size="xs"
 				className="-ml-4 hover:bg-transparent hover:text-foreground"
-				onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-			>
+				onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
 				Client
 				{column.getIsSorted() === "asc" ? (
 					<RiArrowUpSLine className="ml-2 h-4 w-4" />
@@ -212,12 +207,8 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 		),
 		cell: ({ row }) => (
 			<div className="flex flex-col">
-				<span className="font-medium text-foreground">
-					{row.original.clientName}
-				</span>
-				<span className="text-xs text-muted-foreground">
-					#{row.original.id}
-				</span>
+				<span className="font-medium text-foreground">{row.original.clientName}</span>
+				<span className="text-xs text-muted-foreground">#{row.original.id}</span>
 			</div>
 		),
 	},
@@ -239,8 +230,7 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 				variant="ghost"
 				size="xs"
 				className="-ml-4 hover:bg-transparent hover:text-foreground"
-				onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-			>
+				onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
 				Status
 				{column.getIsSorted() === "asc" ? (
 					<RiArrowUpSLine className="ml-2 h-4 w-4" />
@@ -260,8 +250,7 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 				variant="ghost"
 				size="xs"
 				className="-ml-4 hover:bg-transparent hover:text-foreground"
-				onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-			>
+				onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
 				Agent
 				{column.getIsSorted() === "asc" ? (
 					<RiArrowUpSLine className="ml-2 h-4 w-4" />
@@ -285,8 +274,7 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 				variant="ghost"
 				size="xs"
 				className="-ml-4 hover:bg-transparent hover:text-foreground"
-				onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-			>
+				onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
 				Started
 				{column.getIsSorted() === "asc" ? (
 					<RiArrowUpSLine className="ml-2 h-4 w-4" />
@@ -305,9 +293,7 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 	},
 	{
 		id: "actions",
-		header: () => (
-			<span className="-ml-4 font-light text-xs uppercase">Actions</span>
-		),
+		header: () => <span className="-ml-4 font-light text-xs uppercase">Actions</span>,
 		cell: ({ row, table }) => {
 			const meta = table.options.meta as {
 				onManualOverride: (data: WorkflowRow) => void;
@@ -315,8 +301,7 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 				onQuickReject: (data: WorkflowRow) => void;
 			};
 			const isAwaiting = row.original.status === "awaiting_human";
-			const canViewQuote =
-				row.original.stage >= 2 && row.original.hasQuote;
+			const canViewQuote = row.original.stage >= 2 && row.original.hasQuote;
 
 			return (
 				<div className="flex items-center gap-1">
@@ -328,8 +313,7 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 								size="icon"
 								className="h-8 w-8 hover:bg-teal-500/40 hover:text-emerald-600/80 transition-colors"
 								onClick={() => meta?.onQuickApprove(row.original)}
-								title="Approve"
-							>
+								title="Approve">
 								<RiThumbUpLine className="h-4 w-4" />
 							</Button>
 							<Button
@@ -337,8 +321,7 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 								size="icon"
 								className="h-8 w-8 hover:bg-red-500/20 hover:text-red-400 transition-colors"
 								onClick={() => meta?.onQuickReject(row.original)}
-								title="Reject"
-							>
+								title="Reject">
 								<RiThumbDownLine className="h-4 w-4" />
 							</Button>
 						</>
@@ -348,9 +331,8 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 						<DropdownMenuTrigger
 							className={cn(
 								buttonVariants({ variant: "ghost", size: "icon" }),
-								"h-8 w-8 hover:bg-secondary/10",
-							)}
-						>
+								"h-8 w-8 hover:bg-secondary/10"
+							)}>
 							<RiMore2Fill className="h-4 w-4" />
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="end" className="w-[200px]">
@@ -358,8 +340,7 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 							<DropdownMenuItem asChild>
 								<Link
 									href={`/dashboard/applicants/${row.original.applicantId}`}
-									className="cursor-pointer flex items-center"
-								>
+									className="cursor-pointer flex items-center">
 									<RiUserLine className="mr-2 h-4 w-4" />
 									View Applicant Details
 								</Link>
@@ -368,8 +349,7 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 								<DropdownMenuItem asChild>
 									<Link
 										href={`/dashboard/applicants/${row.original.applicantId}/quote`}
-										className="cursor-pointer flex items-center"
-									>
+										className="cursor-pointer flex items-center">
 										<RiCheckLine className="mr-2 h-4 w-4" />
 										View Quotation
 									</Link>
@@ -379,8 +359,7 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 							<DropdownMenuItem asChild>
 								<Link
 									href={`/dashboard/workflows/${row.original.id}`}
-									className="cursor-pointer flex items-center"
-								>
+									className="cursor-pointer flex items-center">
 									<RiFlowChart className="mr-2 h-4 w-4" />
 									View Workflow Graph
 								</Link>
@@ -431,9 +410,8 @@ function HITLConfirmDialog({
 					<DialogTitle
 						className={cn(
 							"flex items-center gap-2",
-							isApprove ? "text-emerald-500" : "text-red-500",
-						)}
-					>
+							isApprove ? "text-emerald-500" : "text-red-500"
+						)}>
 						{isApprove ? (
 							<RiThumbUpLine className="h-5 w-5" />
 						) : (
@@ -471,19 +449,14 @@ function HITLConfirmDialog({
 					<Button
 						variant="ghost"
 						onClick={() => onOpenChange(false)}
-						disabled={isLoading}
-					>
+						disabled={isLoading}>
 						Cancel
 					</Button>
 					<Button
 						variant={isApprove ? "default" : "destructive"}
 						onClick={handleConfirm}
 						disabled={isLoading}
-						className={cn(
-							"gap-2",
-							isApprove && "bg-emerald-600 hover:bg-emerald-700",
-						)}
-					>
+						className={cn("gap-2", isApprove && "bg-emerald-600 hover:bg-emerald-700")}>
 						{isLoading ? "Processing..." : isApprove ? "Approve" : "Reject"}
 					</Button>
 				</DialogFooter>
@@ -500,12 +473,11 @@ interface WorkflowTableProps {
 }
 
 export function WorkflowTable({ workflows, onRefresh }: WorkflowTableProps) {
-	const [selectedWorkflow, setSelectedWorkflow] =
-		React.useState<WorkflowRow | null>(null);
+	const [selectedWorkflow, setSelectedWorkflow] = React.useState<WorkflowRow | null>(
+		null
+	);
 	const [isHITLOpen, setIsHITLOpen] = React.useState(false);
-	const [hitlAction, setHitlAction] = React.useState<
-		"approve" | "reject" | null
-	>(null);
+	const [hitlAction, setHitlAction] = React.useState<"approve" | "reject" | null>(null);
 
 	const handleQuickApprove = React.useCallback((workflow: WorkflowRow) => {
 		setSelectedWorkflow(workflow);
@@ -539,14 +511,11 @@ export function WorkflowTable({ workflows, onRefresh }: WorkflowTableProps) {
 		};
 
 		try {
-			const response = await fetch(
-				`/api/workflows/${selectedWorkflow.id}/signal`,
-				{
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify(payload),
-				},
-			);
+			const response = await fetch(`/api/workflows/${selectedWorkflow.id}/signal`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(payload),
+			});
 
 			if (!response.ok) {
 				const data = await response.json();
@@ -557,7 +526,7 @@ export function WorkflowTable({ workflows, onRefresh }: WorkflowTableProps) {
 				hitlAction === "approve"
 					? `Workflow approved for ${selectedWorkflow.clientName}`
 					: `Workflow rejected for ${selectedWorkflow.clientName}`,
-				{ description: "Signal sent successfully" },
+				{ description: "Signal sent successfully" }
 			);
 
 			onRefresh?.();

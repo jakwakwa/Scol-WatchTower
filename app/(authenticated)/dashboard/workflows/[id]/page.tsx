@@ -13,11 +13,7 @@ import {
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 
-import {
-	DashboardLayout,
-	DashboardSection,
-	DashboardGrid,
-} from "@/components/dashboard";
+import { DashboardLayout, DashboardSection, DashboardGrid } from "@/components/dashboard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -45,50 +41,45 @@ type WorkflowStatus =
 	| "timeout";
 
 // --- Status Config ---
-const statusConfig: Record<
-	WorkflowStatus,
-	{ label: string; color: string; icon: any }
-> = {
-	pending: {
-		label: "Pending",
-		color: "bg-muted text-muted-foreground border-border",
-		icon: RiTimeLine,
-	},
-	in_progress: {
-		label: "Processing",
-		color: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-		icon: RiTimeLine,
-	},
-	awaiting_human: {
-		label: "Awaiting Input",
-		color: "bg-warning/50 text-warning-foreground border-warning",
-		icon: RiUserLine,
-	},
-	completed: {
-		label: "Completed",
-		color: "bg-emerald-500/10 text-emerald-500 border-emerald-500/40",
-		icon: RiCheckLine,
-	},
-	failed: {
-		label: "Failed",
-		color: "bg-red-500/10 text-red-500 border-red-500/20",
-		icon: RiErrorWarningLine,
-	},
-	timeout: {
-		label: "Timeout",
-		color: "bg-orange-500/10 text-orange-500 border-orange-500/20",
-		icon: RiTimeLine,
-	},
-};
+const statusConfig: Record<WorkflowStatus, { label: string; color: string; icon: any }> =
+	{
+		pending: {
+			label: "Pending",
+			color: "bg-muted text-muted-foreground border-border",
+			icon: RiTimeLine,
+		},
+		in_progress: {
+			label: "Processing",
+			color: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+			icon: RiTimeLine,
+		},
+		awaiting_human: {
+			label: "Awaiting Input",
+			color: "bg-warning/50 text-warning-foreground border-warning",
+			icon: RiUserLine,
+		},
+		completed: {
+			label: "Completed",
+			color: "bg-emerald-500/10 text-emerald-500 border-emerald-500/40",
+			icon: RiCheckLine,
+		},
+		failed: {
+			label: "Failed",
+			color: "bg-red-500/10 text-red-500 border-red-500/20",
+			icon: RiErrorWarningLine,
+		},
+		timeout: {
+			label: "Timeout",
+			color: "bg-orange-500/10 text-orange-500 border-orange-500/20",
+			icon: RiTimeLine,
+		},
+	};
 
 function StatusBadge({ status }: { status: string }) {
 	const config = statusConfig[status as WorkflowStatus] || statusConfig.pending;
 	const Icon = config.icon;
 	return (
-		<Badge
-			variant="outline"
-			className={cn("gap-1.5 pl-1.5 pr-2.5 py-1", config.color)}
-		>
+		<Badge variant="outline" className={cn("gap-1.5 pl-1.5 pr-2.5 py-1", config.color)}>
 			<Icon size={14} />
 			{config.label}
 		</Badge>
@@ -96,14 +87,11 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 function StageBadge({ stage, name }: { stage: number; name: string }) {
-	const formattedName = name
-		.replace(/_/g, " ")
-		.replace(/\b\w/g, (c) => c.toUpperCase());
+	const formattedName = name.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 	return (
 		<Badge
 			variant="secondary"
-			className="bg-muted hover:bg-muted/80 text-muted-foreground border-border"
-		>
+			className="bg-muted hover:bg-muted/80 text-muted-foreground border-border">
 			Stage {stage}: {formattedName}
 		</Badge>
 	);
@@ -166,9 +154,7 @@ export default async function WorkflowDetailsPage({
 	const latestQuote = workflowQuotes[0];
 
 	// Helper for stage badge
-	const stageName = applicant?.status
-		? applicant.status.replace("_", " ")
-		: "Unknown";
+	const stageName = applicant?.status ? applicant.status.replace("_", " ") : "Unknown";
 	const stageNumber = workflow.stage || 0;
 
 	return (
@@ -180,8 +166,7 @@ export default async function WorkflowDetailsPage({
 							<Button
 								variant="ghost"
 								size="icon"
-								className="h-8 w-8 -ml-2 text-muted-foreground hover:text-foreground"
-							>
+								className="h-8 w-8 -ml-2 text-muted-foreground hover:text-foreground">
 								<RiArrowLeftLine size={20} />
 							</Button>
 						</Link>
@@ -199,8 +184,7 @@ export default async function WorkflowDetailsPage({
 						<StageBadge stage={stageNumber} name={stageName} />
 					</div>
 				</>
-			}
-		>
+			}>
 			<div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
 				{/* Left Column: Timeline & Main Content */}
 				<div className="lg:col-span-3 space-y-8">
@@ -220,9 +204,7 @@ export default async function WorkflowDetailsPage({
 							<CardContent>
 								<div className="flex items-end justify-between p-4 rounded-xl bg-muted/50">
 									<div>
-										<p className="text-sm text-muted-foreground mb-1">
-											Total Amount
-										</p>
+										<p className="text-sm text-muted-foreground mb-1">Total Amount</p>
 										<p className="text-3xl font-bold text-foreground">
 											${(latestQuote.amount / 100).toLocaleString()}
 										</p>
@@ -232,18 +214,15 @@ export default async function WorkflowDetailsPage({
 										className={cn(
 											latestQuote.status === "approved"
 												? "text-emerald-500 border-emerald-500/40"
-												: "text-warning-foreground border-warning",
-										)}
-									>
+												: "text-warning-foreground border-warning"
+										)}>
 										{latestQuote.status.toUpperCase()}
 									</Badge>
 								</div>
 
 								{latestQuote.rationale && (
 									<div className="mt-4 space-y-2">
-										<p className="text-sm font-medium text-foreground">
-											AI Rationale
-										</p>
+										<p className="text-sm font-medium text-foreground">AI Rationale</p>
 										<p className="text-sm text-muted-foreground leading-relaxed">
 											{latestQuote.rationale}
 										</p>
@@ -253,17 +232,11 @@ export default async function WorkflowDetailsPage({
 								<div className="mt-4 pt-4 border-t border-border flex gap-4 text-xs text-muted-foreground">
 									<div>
 										<span className="block text-foreground/70">Base Fee</span>
-										<span>
-											{(latestQuote.baseFeePercent / 100).toFixed(2)}%
-										</span>
+										<span>{(latestQuote.baseFeePercent / 100).toFixed(2)}%</span>
 									</div>
 									<div>
-										<span className="block text-foreground/70">
-											Adjusted Fee
-										</span>
-										<span>
-											{(latestQuote.adjustedFeePercent || 0 / 100).toFixed(2)}%
-										</span>
+										<span className="block text-foreground/70">Adjusted Fee</span>
+										<span>{(latestQuote.adjustedFeePercent || 0 / 100).toFixed(2)}%</span>
 									</div>
 									<div>
 										<span className="block text-foreground/70">Terms</span>
@@ -277,15 +250,13 @@ export default async function WorkflowDetailsPage({
 					{/* Timeline */}
 					<DashboardSection title="Activity Timeline">
 						<div className="relative pl-8 space-y-8 before:absolute before:left-[11px] before:top-2 before:bottom-0 before:w-px before:bg-border">
-							{events.map((event) => (
+							{events.map(event => (
 								<div key={event.id} className="relative">
 									{/* Dot */}
 									<div
 										className={cn(
 											"absolute -left-[29px] top-1 h-2.5 w-2.5 rounded-full border border-background ring-4 ring-background",
-											event.eventType === "error"
-												? "bg-red-500"
-												: "bg-emerald-500",
+											event.eventType === "error" ? "bg-red-500" : "bg-emerald-500"
 										)}
 									/>
 
@@ -308,8 +279,7 @@ export default async function WorkflowDetailsPage({
 										<div className="flex items-center gap-2 mt-1">
 											<Badge
 												variant="secondary"
-												className="h-5 px-1.5 text-[10px] bg-muted text-muted-foreground hover:bg-muted/80"
-											>
+												className="h-5 px-1.5 text-[10px] bg-muted text-muted-foreground hover:bg-muted/80">
 												{event.actorType || "system"}
 											</Badge>
 											{event.actorId && (
@@ -375,17 +345,13 @@ export default async function WorkflowDetailsPage({
 											<RiMailLine size={16} className="text-muted-foreground" />
 											<a
 												href={`mailto:${applicant.email}`}
-												className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-											>
+												className="text-sm text-muted-foreground hover:text-foreground transition-colors">
 												{applicant.email}
 											</a>
 										</div>
 										{applicant.phone && (
 											<div className="flex items-center gap-3">
-												<RiPhoneLine
-													size={16}
-													className="text-muted-foreground"
-												/>
+												<RiPhoneLine size={16} className="text-muted-foreground" />
 												<span className="text-sm text-muted-foreground">
 													{applicant.phone}
 												</span>
@@ -410,17 +376,10 @@ export default async function WorkflowDetailsPage({
 						</CardHeader>
 						<CardContent className="space-y-4">
 							<div className="flex items-center gap-3 p-3 rounded-lg bg-blue-500/5 border border-blue-500/10">
-								<RiRobot2Line
-									className="text-blue-500 animate-bounce"
-									size={20}
-								/>
+								<RiRobot2Line className="text-blue-500 animate-bounce" size={20} />
 								<div>
-									<p className="text-xs text-blue-500 font-medium">
-										Current Agent
-									</p>
-									<p className="text-sm text-foreground">
-										System (Orchestrator)
-									</p>
+									<p className="text-xs text-blue-500 font-medium">Current Agent</p>
+									<p className="text-sm text-foreground">System (Orchestrator)</p>
 								</div>
 							</div>
 						</CardContent>
@@ -436,7 +395,7 @@ export default async function WorkflowDetailsPage({
 function formatEventType(type: string) {
 	return type
 		.split("_")
-		.map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+		.map(w => w.charAt(0).toUpperCase() + w.slice(1))
 		.join(" ");
 }
 

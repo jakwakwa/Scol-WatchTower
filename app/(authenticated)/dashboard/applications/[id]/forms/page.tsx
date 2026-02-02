@@ -1,26 +1,26 @@
-import { notFound } from "next/navigation";
-import Link from "next/link";
-import { getDatabaseClient } from "@/app/utils";
-import { workflows, applicants, internalForms } from "@/db/schema";
-import { eq } from "drizzle-orm";
 import {
-	RiArrowLeftLine,
-	RiFileTextLine,
-	RiCheckLine,
-	RiTimeLine,
 	RiAlertLine,
+	RiArrowLeftLine,
+	RiCheckLine,
 	RiEditLine,
+	RiFileTextLine,
+	RiTimeLine,
 } from "@remixicon/react";
+import { eq } from "drizzle-orm";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { getDatabaseClient } from "@/app/utils";
 import { DashboardLayout } from "@/components/dashboard";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardContent,
+	CardDescription,
 	CardHeader,
 	CardTitle,
-	CardDescription,
 } from "@/components/ui/card";
+import { applicants, internalForms, workflows } from "@/db/schema";
 import { cn } from "@/lib/utils";
 
 // ============================================
@@ -49,8 +49,7 @@ const FORM_CONFIGS: FormConfig[] = [
 	{
 		type: "stratcol_agreement",
 		title: "StratCol Agreement",
-		description:
-			"Core contract establishing legal relationship and entity data",
+		description: "Core contract establishing legal relationship and entity data",
 		stage: 2,
 		icon: RiFileTextLine,
 	},
@@ -124,9 +123,9 @@ export default async function FormsHubPage({
 	params: Promise<{ id: string }>;
 }) {
 	const { id } = await params;
-	const workflowId = parseInt(id);
+	const workflowId = parseInt(id, 10);
 
-	if (isNaN(workflowId)) {
+	if (Number.isNaN(workflowId)) {
 		notFound();
 	}
 
@@ -160,12 +159,12 @@ export default async function FormsHubPage({
 		.where(eq(internalForms.workflowId, workflowId));
 
 	// Create a map of form type to form data
-	const formMap = new Map(forms.map((f) => [f.formType, f]));
+	const formMap = new Map(forms.map(f => [f.formType, f]));
 
 	// Calculate progress
 	const totalForms = FORM_CONFIGS.length;
 	const completedForms = forms.filter(
-		(f) => f.status === "approved" || f.status === "submitted",
+		f => f.status === "approved" || f.status === "submitted"
 	).length;
 	const progressPercent = Math.round((completedForms / totalForms) * 100);
 
@@ -180,17 +179,14 @@ export default async function FormsHubPage({
 						</Button>
 					</Link>
 				</div>
-			}
-		>
+			}>
 			<div className="space-y-8">
 				{/* Header */}
 				<div>
-					<h1 className="text-2xl font-bold text-foreground">
-						Onboarding Forms
-					</h1>
+					<h1 className="text-2xl font-bold text-foreground">Onboarding Forms</h1>
 					<p className="text-muted-foreground mt-1">
-						{applicant?.companyName || "Unknown"} - Complete all required forms to
-						proceed with onboarding
+						{applicant?.companyName || "Unknown"} - Complete all required forms to proceed
+						with onboarding
 					</p>
 				</div>
 
@@ -220,11 +216,10 @@ export default async function FormsHubPage({
 
 				{/* Forms Grid */}
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-					{FORM_CONFIGS.map((config) => {
+					{FORM_CONFIGS.map(config => {
 						const form = formMap.get(config.type);
 						const status = form?.status || "not_started";
-						const statusConfig =
-							STATUS_CONFIG[status as keyof typeof STATUS_CONFIG];
+						const statusConfig = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG];
 						const Icon = config.icon;
 						const StatusIcon = statusConfig.icon;
 
@@ -240,11 +235,8 @@ export default async function FormsHubPage({
 								key={config.type}
 								className={cn(
 									"transition-all duration-200",
-									isAccessible
-										? "hover:border-primary/50 hover:shadow-lg"
-										: "opacity-50",
-								)}
-							>
+									isAccessible ? "hover:border-primary/50 hover:shadow-lg" : "opacity-50"
+								)}>
 								<CardHeader>
 									<div className="flex items-start justify-between">
 										<div className="flex items-center gap-3">
@@ -252,18 +244,13 @@ export default async function FormsHubPage({
 												<Icon className="h-5 w-5 text-muted-foreground" />
 											</div>
 											<div>
-												<CardTitle className="text-base">
-													{config.title}
-												</CardTitle>
+												<CardTitle className="text-base">{config.title}</CardTitle>
 												<p className="text-xs text-muted-foreground mt-0.5">
 													Stage {config.stage}
 												</p>
 											</div>
 										</div>
-										<Badge
-											variant="outline"
-											className={cn("gap-1", statusConfig.colour)}
-										>
+										<Badge variant="outline" className={cn("gap-1", statusConfig.colour)}>
 											<StatusIcon className="h-3 w-3" />
 											{statusConfig.label}
 										</Badge>
@@ -278,8 +265,7 @@ export default async function FormsHubPage({
 										<div className="text-xs text-muted-foreground mb-4 space-y-1">
 											{form.lastSavedAt && (
 												<p>
-													Last saved:{" "}
-													{new Date(form.lastSavedAt).toLocaleDateString()}
+													Last saved: {new Date(form.lastSavedAt).toLocaleDateString()}
 												</p>
 											)}
 											{form.currentStep && form.totalSteps && (
@@ -295,19 +281,16 @@ export default async function FormsHubPage({
 											isAccessible
 												? `/dashboard/applications/${workflowId}/forms/${config.type}`
 												: "#"
-										}
-									>
+										}>
 										<Button
 											variant={canEdit ? "default" : "outline"}
 											size="sm"
 											className="w-full"
-											disabled={!isAccessible}
-										>
+											disabled={!isAccessible}>
 											{status === "not_started" && "Start Form"}
 											{status === "in_progress" && "Continue"}
 											{status === "revision_required" && "Revise"}
-											{(status === "submitted" || status === "approved") &&
-												"View"}
+											{(status === "submitted" || status === "approved") && "View"}
 											{status === "rejected" && "View & Resubmit"}
 										</Button>
 									</Link>

@@ -82,7 +82,7 @@ const mockAgents = [
 
 const stats = {
 	totalAgents: mockAgents.length,
-	activeAgents: mockAgents.filter((a) => a.status === "active").length,
+	activeAgents: mockAgents.filter(a => a.status === "active").length,
 	totalCallbacks: mockAgents.reduce((acc, a) => acc + a.callbackCount, 0),
 	totalErrors: mockAgents.reduce((acc, a) => acc + a.errorCount, 0),
 };
@@ -96,8 +96,7 @@ export default function AgentsPage({
 		<DashboardLayout
 			title="Agents"
 			description="Monitor your external agent fleet"
-			notifications={workflowNotifications}
-		>
+			notifications={workflowNotifications}>
 			{/* Agent Stats */}
 			<DashboardGrid columns={4} className="mb-8">
 				<StatsCard
@@ -132,7 +131,7 @@ export default function AgentsPage({
 			{/* Agent Grid */}
 			<DashboardSection title="Agent Fleet">
 				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-					{mockAgents.map((agent) => (
+					{mockAgents.map(agent => (
 						<AgentStatusCard key={agent.id} agent={agent} />
 					))}
 				</div>

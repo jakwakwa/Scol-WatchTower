@@ -32,11 +32,7 @@ interface DashboardGridProps {
 	className?: string;
 }
 
-export function DashboardGrid({
-	children,
-	columns = 4,
-	className,
-}: DashboardGridProps) {
+export function DashboardGrid({ children, columns = 4, className }: DashboardGridProps) {
 	return (
 		<div
 			className={`grid gap-6 ${
@@ -47,8 +43,7 @@ export function DashboardGrid({
 						: columns === 3
 							? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
 							: "grid-cols-1 md:grid-cols-2 lg:grid-cols-4"
-			} ${className || ""}`}
-		>
+			} ${className || ""}`}>
 			{children}
 		</div>
 	);
@@ -61,19 +56,14 @@ interface GlassCardProps {
 	hover?: boolean;
 }
 
-export function GlassCard({
-	children,
-	className,
-	hover = false,
-}: GlassCardProps) {
+export function GlassCard({ children, className, hover = false }: GlassCardProps) {
 	return (
 		<div
 			className={`rounded-2xl border border-sidebar-border bg-card/90 backdrop-blur-sm p-6 shadow-xl shadow-black/5 ${
 				hover
 					? "transition-all duration-300 hover:bg-card/70 hover:border-secondary/10 hover:shadow-2xl hover:-translate-y-1"
 					: ""
-			} ${className || ""}`}
-		>
+			} ${className || ""}`}>
 			{children}
 		</div>
 	);
@@ -100,9 +90,7 @@ export function DashboardSection({
 			<div className="flex items-center justify-between">
 				<div>
 					<h2 className="text-lg font-semibold">{title}</h2>
-					{description && (
-						<p className="text-sm text-muted-foreground">{description}</p>
-					)}
+					{description && <p className="text-sm text-muted-foreground">{description}</p>}
 				</div>
 				{action}
 			</div>

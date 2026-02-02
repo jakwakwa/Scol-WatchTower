@@ -1,19 +1,19 @@
 "use client";
 
 import type { DropResult } from "@hello-pangea/dnd";
-import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
 import {
-	RiFileTextLine,
-	RiShieldCheckLine,
 	RiCheckboxCircleLine,
+	RiFileTextLine,
 	RiMoreLine,
+	RiShieldCheckLine,
 } from "@remixicon/react";
+import { useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
 import { RiskBadge } from "../ui/status-badge";
-import { useState, useEffect } from "react";
-import { cn } from "@/lib/utils";
 
-type PipelineWorkflow = {
+export type PipelineWorkflow = {
 	id: number | string;
 	stage: string;
 	clientName?: string;
@@ -60,15 +60,12 @@ export function PipelineView({
 	workflows: PipelineWorkflow[];
 	onDragEnd?: (result: DropResult) => void;
 }) {
-	const [columns, setColumns] = useState<Record<
-		string,
-		PipelineWorkflow[]
-	> | null>(null);
+	const [columns, setColumns] = useState<Record<string, PipelineWorkflow[]> | null>(null);
 
 	useEffect(() => {
 		const cols = PIPELINE_STAGES.reduce(
 			(acc, stage) => {
-				acc[stage.id] = workflows.filter((workflow) => {
+				acc[stage.id] = workflows.filter(workflow => {
 					const stageValue = workflow.stage;
 					if (
 						stage.id === "new" &&
@@ -85,16 +82,13 @@ export function PipelineView({
 						["review", "fica_review"].includes(stageValue)
 					)
 						return true;
-					if (
-						stage.id === "activation" &&
-						["won", "activation"].includes(stageValue)
-					)
+					if (stage.id === "activation" && ["won", "activation"].includes(stageValue))
 						return true;
 					return false;
 				});
 				return acc;
 			},
-			{} as Record<string, PipelineWorkflow[]>,
+			{} as Record<string, PipelineWorkflow[]>
 		);
 		setColumns(cols || {});
 	}, [workflows]);
@@ -110,19 +104,15 @@ export function PipelineView({
 		<div className="h-full overflow-x-auto pb-4">
 			<DragDropContext onDragEnd={handleDragEnd}>
 				<div className="flex gap-6 min-w-[1000px]">
-					{PIPELINE_STAGES.map((stage) => (
-						<div
-							key={stage.id}
-							className="flex-1 min-w-[280px] flex flex-col gap-4"
-						>
+					{PIPELINE_STAGES.map(stage => (
+						<div key={stage.id} className="flex-1 min-w-[280px] flex flex-col gap-4">
 							{/* Column Header */}
 							<div
 								className={cn(
 									"flex items-center justify-between p-4 rounded-xl shadow-sm border border-t-4 backdrop-blur-md",
 									"bg-card/50 border-sidebar-border", // Dark mode friendly styling
-									stage.color,
-								)}
-							>
+									stage.color
+								)}>
 								<div className="flex items-center gap-2">
 									<stage.icon className="h-5 w-5 text-muted-foreground" />
 									<h3 className="font-bold text-foreground">{stage.title}</h3>
@@ -140,22 +130,19 @@ export function PipelineView({
 										ref={provided.innerRef}
 										className={cn(
 											"flex-1 flex flex-col gap-3 transition-colors rounded-xl min-h-[100px]",
-											snapshot.isDraggingOver ? "bg-secondary/10" : "",
-										)}
-									>
+											snapshot.isDraggingOver ? "bg-secondary/10" : ""
+										)}>
 										{columns[stage.id]?.map((workflow, index) => (
 											<Draggable
 												key={workflow.id.toString()}
 												draggableId={workflow.id.toString()}
-												index={index}
-											>
-												{(provided) => (
+												index={index}>
+												{provided => (
 													<div
 														ref={provided.innerRef}
 														{...provided.draggableProps}
 														{...provided.dragHandleProps}
-														style={{ ...provided.draggableProps.style }}
-													>
+														style={{ ...provided.draggableProps.style }}>
 														<PipelineCard workflow={workflow} />
 													</div>
 												)}
@@ -181,9 +168,7 @@ function PipelineCard({ workflow }: { workflow: PipelineWorkflow }) {
 				<h4 className="font-bold text-foreground text-sm leading-tight line-clamp-2 pr-6">
 					{workflow.clientName || "Unknown Company"}
 				</h4>
-				{workflow.payload?.riskLevel && (
-					<RiskBadge level={workflow.payload.riskLevel} />
-				)}
+				{workflow.payload?.riskLevel && <RiskBadge level={workflow.payload.riskLevel} />}
 			</div>
 
 			{/* Subtitle: Registration Number */}
@@ -217,8 +202,7 @@ function PipelineCard({ workflow }: { workflow: PipelineWorkflow }) {
 				<Button
 					variant="ghost"
 					size="icon"
-					className="h-6 w-6 text-muted-foreground hover:text-primary"
-				>
+					className="h-6 w-6 text-muted-foreground hover:text-primary">
 					<RiMoreLine className="h-4 w-4" />
 				</Button>
 			</div>

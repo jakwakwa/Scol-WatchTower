@@ -52,8 +52,8 @@ export interface RiskReviewItem {
 	itcScore?: number;
 	recommendation?: string;
 	summary?: string;
-	reasoning?: string;  // AI's detailed reasoning for the score
-	analysisConfidence?: number;  // AI confidence in the analysis (0-100)
+	reasoning?: string; // AI's detailed reasoning for the score
+	analysisConfidence?: number; // AI confidence in the analysis (0-100)
 	// Document Status
 	bankStatementVerified?: boolean;
 	accountantLetterVerified?: boolean;
@@ -179,9 +179,9 @@ export function RiskReviewCard({
 }: RiskReviewCardProps) {
 	const [isApproving, setIsApproving] = React.useState(false);
 	const [showDecisionDialog, setShowDecisionDialog] = React.useState(false);
-	const [decisionAction, setDecisionAction] = React.useState<
-		"approve" | "reject" | null
-	>(null);
+	const [decisionAction, setDecisionAction] = React.useState<"approve" | "reject" | null>(
+		null
+	);
 
 	const handleApproveClick = () => {
 		setDecisionAction("approve");
@@ -220,9 +220,7 @@ export function RiskReviewCard({
 	};
 
 	// Sort flags by severity for display (CRITICAL > HIGH > MEDIUM > LOW)
-	const displayFlags = [
-		...(item.riskFlags || []),
-	].sort((a, b) => {
+	const displayFlags = [...(item.riskFlags || [])].sort((a, b) => {
 		const weight = { CRITICAL: 3, HIGH: 2, MEDIUM: 1, LOW: 0 };
 		return (
 			(weight[b.severity as keyof typeof weight] || 0) -
@@ -241,7 +239,7 @@ export function RiskReviewCard({
 							? "bg-emerald-500"
 							: item.aiTrustScore && item.aiTrustScore >= 60
 								? "bg-warning"
-								: "bg-red-500",
+								: "bg-red-500"
 					)}
 				/>
 
@@ -250,9 +248,7 @@ export function RiskReviewCard({
 					<div className="flex items-start justify-between gap-4">
 						<div className="flex-1 min-w-0">
 							<div className="flex items-center gap-2">
-								<h3 className="text-base font-semibold ">
-									{item.clientName}
-								</h3>
+								<h3 className="text-base font-semibold ">{item.clientName}</h3>
 								<Badge variant="secondary" className="text-[10px] shrink-0">
 									WF-{item.workflowId}
 								</Badge>
@@ -281,9 +277,7 @@ export function RiskReviewCard({
 						<div className="text-center">
 							<div className="flex items-center justify-center gap-1.5 text-muted-foreground">
 								<RiPercentLine className="h-4 w-4" />
-								<span className="text-[10px] uppercase tracking-wider">
-									ITC Score
-								</span>
+								<span className="text-[10px] uppercase tracking-wider">ITC Score</span>
 							</div>
 							<p
 								className={cn(
@@ -292,9 +286,8 @@ export function RiskReviewCard({
 										? "text-emerald-400"
 										: item.itcScore && item.itcScore >= 600
 											? "text-warning-foreground"
-											: "text-red-400",
-								)}
-							>
+											: "text-red-400"
+								)}>
 								{item.itcScore || "N/A"}
 							</p>
 						</div>
@@ -303,22 +296,19 @@ export function RiskReviewCard({
 						<div className="text-center">
 							<div className="flex items-center justify-center gap-1.5 text-muted-foreground">
 								<RiAlertLine className="h-4 w-4" />
-								<span className="text-[10px] uppercase tracking-wider">
-									Risk Flags
-								</span>
+								<span className="text-[10px] uppercase tracking-wider">Risk Flags</span>
 							</div>
 							<p
 								className={cn(
 									"text-lg font-semibold mt-1",
 									displayFlags.some(
-										(f) => f.severity === "HIGH" || f.severity === "CRITICAL",
+										f => f.severity === "HIGH" || f.severity === "CRITICAL"
 									)
 										? "text-red-400"
 										: displayFlags.length > 0
 											? "text-warning-foreground"
-											: "text-emerald-400",
-								)}
-							>
+											: "text-emerald-400"
+								)}>
 								{item.riskFlags?.length || 0}
 							</p>
 						</div>
@@ -327,9 +317,7 @@ export function RiskReviewCard({
 						<div className="text-center">
 							<div className="flex items-center justify-center gap-1.5 text-muted-foreground mb-1">
 								<RiShieldCheckLine className="h-4 w-4" />
-								<span className="text-[10px] uppercase tracking-wider">
-									Verified
-								</span>
+								<span className="text-[10px] uppercase tracking-wider">Verified</span>
 							</div>
 							<div className="flex flex-col gap-0.5 text-[10px] mt-1">
 								<div className="flex items-center justify-center gap-1">
@@ -371,19 +359,12 @@ export function RiskReviewCard({
 									<Badge
 										key={flag.type}
 										variant="outline"
-										className={cn(
-											"text-[10px]",
-											getSeverityColor(flag.severity),
-										)}
-									>
+										className={cn("text-[10px]", getSeverityColor(flag.severity))}>
 										{flag.type.replace(/_/g, " ")}
 									</Badge>
 								))}
 								{displayFlags.length > 3 && (
-									<Badge
-										variant="outline"
-										className="text-[10px] text-muted-foreground"
-									>
+									<Badge variant="outline" className="text-[10px] text-muted-foreground">
 										+{displayFlags.length - 3} more
 									</Badge>
 								)}
@@ -394,9 +375,7 @@ export function RiskReviewCard({
 					{/* AI Summary */}
 					{item.summary && (
 						<div className="mt-4 p-3 rounded-lg bg-secondary/5 border border-secondary/10">
-							<p className="text-xs text-muted-foreground">
-								{item.summary}
-							</p>
+							<p className="text-xs text-muted-foreground">{item.summary}</p>
 						</div>
 					)}
 
@@ -406,8 +385,7 @@ export function RiskReviewCard({
 							variant="ghost"
 							size="sm"
 							className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-							onClick={() => onViewDetails(item)}
-						>
+							onClick={() => onViewDetails(item)}>
 							<RiEyeLine className="h-3.5 w-3.5" />
 							View Details
 						</Button>
@@ -417,16 +395,14 @@ export function RiskReviewCard({
 								variant="outline"
 								size="sm"
 								className="gap-1.5 text-xs border-red-500/20 text-red-400 hover:bg-red-500/10 hover:border-red-500/30"
-								onClick={handleRejectClick}
-							>
+								onClick={handleRejectClick}>
 								<RiCloseLine className="h-3.5 w-3.5" />
 								Reject
 							</Button>
 							<Button
 								size="sm"
 								className="gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-700"
-								onClick={handleApproveClick}
-							>
+								onClick={handleApproveClick}>
 								<RiCheckLine className="h-3.5 w-3.5" />
 								Approve
 							</Button>
@@ -515,11 +491,7 @@ export function RiskDecisionDialog({
 					<div className="flex justify-between text-sm">
 						<span className="text-muted-foreground">AI Trust Score</span>
 						<span
-							className={cn(
-								"font-medium",
-								getTrustScoreColor(item.aiTrustScore || 0),
-							)}
-						>
+							className={cn("font-medium", getTrustScoreColor(item.aiTrustScore || 0))}>
 							{item.aiTrustScore}%
 						</span>
 					</div>
@@ -534,9 +506,8 @@ export function RiskDecisionDialog({
 								"font-medium",
 								(item.riskFlags?.length || 0) > 0
 									? "text-warning-foreground"
-									: "text-emerald-400",
-							)}
-						>
+									: "text-emerald-400"
+							)}>
 							{item.riskFlags?.length || 0}
 						</span>
 					</div>
@@ -555,7 +526,7 @@ export function RiskDecisionDialog({
 								: "Please explain why this application is being rejected..."
 						}
 						value={reason}
-						onChange={(e) => setReason(e.target.value)}
+						onChange={e => setReason(e.target.value)}
 						className="min-h-[100px] bg-secondary/5 border-secondary/20"
 					/>
 				</div>
@@ -564,8 +535,7 @@ export function RiskDecisionDialog({
 					<Button
 						variant="ghost"
 						onClick={() => onOpenChange(false)}
-						disabled={isSubmitting}
-					>
+						disabled={isSubmitting}>
 						Cancel
 					</Button>
 					<Button
@@ -574,9 +544,8 @@ export function RiskDecisionDialog({
 						className={cn(
 							action === "approve"
 								? "bg-emerald-600 hover:bg-emerald-700"
-								: "bg-red-600 hover:bg-red-700",
-						)}
-					>
+								: "bg-red-600 hover:bg-red-700"
+						)}>
 						{isSubmitting ? (
 							<RiRefreshLine className="h-4 w-4 animate-spin" />
 						) : action === "approve" ? (
@@ -612,10 +581,8 @@ export function RiskReviewQueue({
 	onViewDetails,
 	onRefresh,
 }: RiskReviewQueueProps) {
-	const highPriorityItems = items.filter(
-		(item) => (item.aiTrustScore || 100) < 60,
-	);
-	const normalItems = items.filter((item) => (item.aiTrustScore || 100) >= 60);
+	const highPriorityItems = items.filter(item => (item.aiTrustScore || 100) < 60);
+	const normalItems = items.filter(item => (item.aiTrustScore || 100) >= 60);
 
 	if (isLoading) {
 		return (
@@ -636,12 +603,7 @@ export function RiskReviewQueue({
 					No applications pending review at this time.
 				</p>
 				{onRefresh && (
-					<Button
-						variant="outline"
-						size="sm"
-						className="mt-4"
-						onClick={onRefresh}
-					>
+					<Button variant="outline" size="sm" className="mt-4" onClick={onRefresh}>
 						<RiRefreshLine className="h-4 w-4 mr-1.5" />
 						Refresh
 					</Button>
@@ -662,7 +624,7 @@ export function RiskReviewQueue({
 						</h2>
 					</div>
 					<div className="grid gap-4 md:grid-cols-2">
-						{highPriorityItems.map((item) => (
+						{highPriorityItems.map(item => (
 							<RiskReviewCard
 								key={item.id}
 								item={item}
@@ -685,7 +647,7 @@ export function RiskReviewQueue({
 						</h2>
 					</div>
 					<div className="grid gap-4 md:grid-cols-2">
-						{normalItems.map((item) => (
+						{normalItems.map(item => (
 							<RiskReviewCard
 								key={item.id}
 								item={item}

@@ -12,15 +12,15 @@
  * - Multi-model strategy: Gemini 2.0 Flash for complex analysis
  */
 
-import { generateObject } from "ai";
-import { getThinkingModel, isAIConfigured, AI_CONFIG } from "@/lib/ai/models";
+import { generateText, Output } from "ai";
+import { AI_CONFIG, getThinkingModel, isAIConfigured } from "@/lib/ai/models";
 import {
-	type FicaDocumentAnalysis,
 	type AccountantLetterAnalysis,
-	type FacilityApplication,
-	FicaDocumentAnalysisSchema,
 	AccountantLetterAnalysisSchema,
 	AI_TRUST_THRESHOLDS,
+	type FacilityApplication,
+	type FicaDocumentAnalysis,
+	FicaDocumentAnalysisSchema,
 } from "@/lib/types";
 
 // ============================================
@@ -57,11 +57,9 @@ export interface AnalyzeAccountantLetterOptions {
  * Analyze a bank statement using AI
  */
 export async function analyzeBankStatement(
-	options: AnalyzeBankStatementOptions,
+	options: AnalyzeBankStatementOptions
 ): Promise<FicaDocumentAnalysis> {
-	const { content, contentType, facilityApplication, workflowId } = options;
-
-	console.log(`[FicaAI] Analyzing bank statement for workflow ${workflowId}`);
+	const { content, contentType, facilityApplication } = options;
 
 	if (isAIConfigured()) {
 		try {
@@ -82,7 +80,7 @@ export async function analyzeBankStatement(
 async function analyzeWithAI(
 	content: string,
 	contentType: "base64" | "text",
-	facilityApplication?: Partial<FacilityApplication>,
+	facilityApplication?: Partial<FacilityApplication>
 ): Promise<FicaDocumentAnalysis> {
 	const verificationContext = facilityApplication
 		? `
@@ -128,22 +126,13 @@ ANALYSIS REQUIREMENTS:
 
 Be thorough but concise. Flag any concerning patterns immediately.`;
 
-	console.log("[FicaAI] Calling AI model for analysis...");
-
-	const { object } = await generateObject({
+	const { experimental_output: object } = await generateText({
 		model: getThinkingModel(),
-		schema: FicaDocumentAnalysisSchema,
-		schemaName: "FicaDocumentAnalysis",
-		schemaDescription:
-			"Structured analysis of a South African bank statement for FICA compliance and risk assessment",
 		prompt,
+		experimental_output: Output.object({
+			schema: FicaDocumentAnalysisSchema,
+		}),
 		temperature: AI_CONFIG.ANALYSIS_TEMPERATURE,
-	});
-
-	console.log(`[FicaAI] AI analysis complete:`, {
-		aiTrustScore: object.aiTrustScore,
-		recommendation: object.recommendation,
-		riskFlagsCount: object.riskFlags.length,
 	});
 
 	return object;
@@ -157,20 +146,16 @@ Be thorough but concise. Flag any concerning patterns immediately.`;
  * Analyze an accountant letter using AI
  */
 export async function analyzeAccountantLetter(
-	options: AnalyzeAccountantLetterOptions,
+	options: AnalyzeAccountantLetterOptions
 ): Promise<AccountantLetterAnalysis> {
-	const { content, contentType, facilityApplication, workflowId } = options;
-
-	console.log(
-		`[FicaAI] Analyzing accountant letter for workflow ${workflowId}`,
-	);
+	const { content, contentType, facilityApplication } = options;
 
 	if (isAIConfigured()) {
 		try {
 			return await analyzeAccountantLetterWithAI(
 				content,
 				contentType,
-				facilityApplication,
+				facilityApplication
 			);
 		} catch (err) {
 			console.error("[FicaAI] AI analysis failed:", err);
@@ -187,7 +172,7 @@ export async function analyzeAccountantLetter(
 async function analyzeAccountantLetterWithAI(
 	content: string,
 	contentType: "base64" | "text",
-	facilityApplication?: Partial<FacilityApplication>,
+	facilityApplication?: Partial<FacilityApplication>
 ): Promise<AccountantLetterAnalysis> {
 	const prompt = `You are a FICA compliance analyst. Analyze this accountant's letterhead letter and extract verification data.
 
@@ -208,13 +193,12 @@ ANALYSIS REQUIREMENTS:
 8. List any concerns mentioned
 9. Determine verification confidence (0-100)`;
 
-	const { object } = await generateObject({
+	const { experimental_output: object } = await generateText({
 		model: getThinkingModel(),
-		schema: AccountantLetterAnalysisSchema,
-		schemaName: "AccountantLetterAnalysis",
-		schemaDescription:
-			"Structured analysis of an accountant verification letter",
 		prompt,
+		experimental_output: Output.object({
+			schema: AccountantLetterAnalysisSchema,
+		}),
 		temperature: AI_CONFIG.ANALYSIS_TEMPERATURE,
 	});
 
@@ -229,10 +213,9 @@ ANALYSIS REQUIREMENTS:
  * Generate mock bank statement analysis for testing
  */
 function generateMockBankStatementAnalysis(
-	facilityApplication?: Partial<FacilityApplication>,
+	facilityApplication?: Partial<FacilityApplication>
 ): FicaDocumentAnalysis {
-	const companyName =
-		facilityApplication?.companyName || "Test Company (Pty) Ltd";
+	const companyName = facilityApplication?.companyName || "Test Company (Pty) Ltd";
 	const accountNumber =
 		facilityApplication?.bankingDetails?.accountNumber || "1234567890";
 
@@ -262,7 +245,7 @@ function generateMockBankStatementAnalysis(
 				severity: "MEDIUM" as const,
 				description: "Irregular deposit patterns detected",
 				evidence: "Large cash deposits on random dates",
-			},
+			}
 		);
 	} else if (!isLowRisk) {
 		aiTrustScore = 72;
@@ -317,12 +300,6 @@ function generateMockBankStatementAnalysis(
 				: "The risk score of 72% is influenced by the 'Cash Intensive' flag, as 15% of credits are cash deposits. However, no dishonoured payments were found, and the closing balance has grown by 14% over the period.",
 	};
 
-	console.log(`[FicaAI] Mock analysis complete:`, {
-		aiTrustScore: analysis.aiTrustScore,
-		recommendation: analysis.recommendation,
-		riskFlagsCount: analysis.riskFlags.length,
-	});
-
 	return analysis;
 }
 
@@ -330,10 +307,9 @@ function generateMockBankStatementAnalysis(
  * Generate mock accountant letter analysis
  */
 function generateMockAccountantLetterAnalysis(
-	facilityApplication?: Partial<FacilityApplication>,
+	facilityApplication?: Partial<FacilityApplication>
 ): AccountantLetterAnalysis {
-	const companyName =
-		facilityApplication?.companyName || "Test Company (Pty) Ltd";
+	const companyName = facilityApplication?.companyName || "Test Company (Pty) Ltd";
 
 	return {
 		practitionerName: "Smith & Associates Chartered Accountants",
@@ -358,7 +334,7 @@ function generateMockAccountantLetterAnalysis(
  * Determine if analysis allows auto-approval
  * DISABLED: All applications require human review
  */
-export function canAutoApprove(analysis: FicaDocumentAnalysis): boolean {
+export function canAutoApprove(_analysis: FicaDocumentAnalysis): boolean {
 	// Auto-approve is disabled - all applications go to human review
 	return false;
 }
@@ -372,9 +348,7 @@ export function requiresManualReview(analysis: FicaDocumentAnalysis): boolean {
 		!analysis.nameMatchVerified ||
 		!analysis.accountMatchVerified ||
 		analysis.recommendation === "MANUAL_REVIEW" ||
-		analysis.riskFlags.some(
-			(f) => f.severity === "HIGH" || f.severity === "CRITICAL",
-		)
+		analysis.riskFlags.some(f => f.severity === "HIGH" || f.severity === "CRITICAL")
 	);
 }
 
@@ -383,7 +357,7 @@ export function requiresManualReview(analysis: FicaDocumentAnalysis): boolean {
  */
 export function calculateCombinedRiskScore(
 	bankAnalysis: FicaDocumentAnalysis,
-	accountantAnalysis?: AccountantLetterAnalysis,
+	accountantAnalysis?: AccountantLetterAnalysis
 ): number {
 	const bankWeight = 0.7;
 	const accountantWeight = 0.3;

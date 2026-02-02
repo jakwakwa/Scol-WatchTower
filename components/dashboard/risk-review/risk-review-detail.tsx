@@ -45,12 +45,7 @@ interface RiskReviewDetailProps {
 
 interface TimelineEvent {
 	id: string;
-	type:
-		| "stage_change"
-		| "agent_dispatch"
-		| "agent_callback"
-		| "human_override"
-		| "error";
+	type: "stage_change" | "agent_dispatch" | "agent_callback" | "human_override" | "error";
 	title: string;
 	description: string;
 	timestamp: Date;
@@ -114,12 +109,7 @@ function MetricCard({
 				<p className="text-[10px] uppercase tracking-wider text-muted-foreground">
 					{label}
 				</p>
-				<p
-					className={cn(
-						"text-sm font-semibold",
-						status && statusColors[status],
-					)}
-				>
+				<p className={cn("text-sm font-semibold", status && statusColors[status])}>
 					{value}
 				</p>
 			</div>
@@ -149,13 +139,12 @@ function DocumentCard({
 			<div
 				className={cn(
 					"p-2 rounded-lg",
-					verified ? "bg-emerald-500/10" : "bg-warning/50",
-				)}
-			>
+					verified ? "bg-emerald-500/10" : "bg-warning/50"
+				)}>
 				<RiFileTextLine
 					className={cn(
 						"h-5 w-5",
-						verified ? "text-emerald-400" : "text-warning-foreground",
+						verified ? "text-emerald-400" : "text-warning-foreground"
 					)}
 				/>
 			</div>
@@ -175,25 +164,18 @@ function DocumentCard({
 				{verified ? (
 					<Badge
 						variant="outline"
-						className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[10px]"
-					>
+						className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[10px]">
 						Verified
 					</Badge>
 				) : (
 					<Badge
 						variant="outline"
-						className="bg-warning/50 text-warning-foreground border-warning text-[10px]"
-					>
+						className="bg-warning/50 text-warning-foreground border-warning text-[10px]">
 						Pending
 					</Badge>
 				)}
 				{onView && (
-					<Button
-						variant="ghost"
-						size="icon"
-						className="h-7 w-7"
-						onClick={onView}
-					>
+					<Button variant="ghost" size="icon" className="h-7 w-7" onClick={onView}>
 						<RiEyeLine className="h-3.5 w-3.5" />
 					</Button>
 				)}
@@ -246,13 +228,9 @@ function TimelineEventCard({ event }: { event: TimelineEvent }) {
 						{formatDate(event.timestamp)}
 					</span>
 				</div>
-				<p className="text-xs text-muted-foreground mt-0.5">
-					{event.description}
-				</p>
+				<p className="text-xs text-muted-foreground mt-0.5">{event.description}</p>
 				{event.actor && (
-					<p className="text-[10px] text-muted-foreground/70 mt-1">
-						By: {event.actor}
-					</p>
+					<p className="text-[10px] text-muted-foreground/70 mt-1">By: {event.actor}</p>
 				)}
 			</div>
 		</div>
@@ -341,9 +319,8 @@ export function RiskReviewDetail({
 									? "bg-emerald-500/10"
 									: item.aiTrustScore && item.aiTrustScore >= 60
 										? "bg-warning/50"
-										: "bg-red-500/10",
-							)}
-						>
+										: "bg-red-500/10"
+							)}>
 							<p className="text-2xl font-bold">{item.aiTrustScore || "?"}</p>
 							<p className="text-[10px] text-muted-foreground">AI Score</p>
 						</div>
@@ -398,9 +375,7 @@ export function RiskReviewDetail({
 								icon={RiAlertLine}
 								label="Risk Flags"
 								value={item.riskFlags?.length || 0}
-								status={
-									(item.riskFlags?.length || 0) === 0 ? "good" : "warning"
-								}
+								status={(item.riskFlags?.length || 0) === 0 ? "good" : "warning"}
 							/>
 							<MetricCard
 								icon={RiShieldCheckLine}
@@ -433,7 +408,7 @@ export function RiskReviewDetail({
 								<p className="text-sm text-foreground leading-relaxed">
 									{item.reasoning}
 								</p>
-								
+
 								{item.riskFlags && item.riskFlags.length > 0 && (
 									<div className="mt-4 pt-4 border-t border-primary/10">
 										<p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
@@ -443,15 +418,13 @@ export function RiskReviewDetail({
 											{item.riskFlags.map((flag, idx) => (
 												<div
 													key={idx}
-													className="flex items-start gap-2 bg-background/40 p-2 rounded border border-primary/10"
-												>
+													className="flex items-start gap-2 bg-background/40 p-2 rounded border border-primary/10">
 													<Badge
 														variant="outline"
 														className={cn(
 															"text-[10px] shrink-0",
-															getSeverityColor(flag.severity),
-														)}
-													>
+															getSeverityColor(flag.severity)
+														)}>
 														{flag.severity}
 													</Badge>
 													<div className="text-xs">
@@ -487,9 +460,8 @@ export function RiskReviewDetail({
 										? "bg-emerald-500/10 text-emerald-400"
 										: item.recommendation === "MANUAL_REVIEW"
 											? "bg-warning/50 text-warning-foreground"
-											: "bg-red-500/10 text-red-400",
-								)}
-							>
+											: "bg-red-500/10 text-red-400"
+								)}>
 								{item.recommendation || "Manual Review Required"}
 							</Badge>
 						</div>
@@ -523,18 +495,13 @@ export function RiskReviewDetail({
 							item.riskFlags.map((flag, idx) => (
 								<div
 									key={idx}
-									className="p-4 rounded-lg bg-secondary/5 border border-secondary/10"
-								>
+									className="p-4 rounded-lg bg-secondary/5 border border-secondary/10">
 									<div className="flex items-start justify-between gap-3">
 										<div className="flex-1">
 											<div className="flex items-center gap-2">
 												<Badge
 													variant="outline"
-													className={cn(
-														"text-[10px]",
-														getSeverityColor(flag.severity),
-													)}
-												>
+													className={cn("text-[10px]", getSeverityColor(flag.severity))}>
 													{flag.severity}
 												</Badge>
 												<h4 className="text-sm font-semibold">
@@ -564,7 +531,7 @@ export function RiskReviewDetail({
 					{/* Timeline Tab */}
 					<TabsContent value="timeline" className="mt-4">
 						<div className="relative pl-2 border-l border-secondary/20 ml-2">
-							{mockTimeline.map((event) => (
+							{mockTimeline.map(event => (
 								<TimelineEventCard key={event.id} event={event} />
 							))}
 						</div>
@@ -579,8 +546,7 @@ export function RiskReviewDetail({
 						className="flex-1 border-red-500/20 text-red-400 hover:bg-red-500/10"
 						onClick={() => {
 							// Would open reject dialog
-						}}
-					>
+						}}>
 						<RiCloseLine className="h-4 w-4 mr-2" />
 						Reject
 					</Button>
@@ -588,8 +554,7 @@ export function RiskReviewDetail({
 						className="flex-1 bg-emerald-600 hover:bg-emerald-700"
 						onClick={() => {
 							// Would open approve dialog
-						}}
-					>
+						}}>
 						<RiCheckLine className="h-4 w-4 mr-2" />
 						Approve
 					</Button>
