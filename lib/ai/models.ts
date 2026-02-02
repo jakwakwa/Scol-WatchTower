@@ -1,35 +1,15 @@
 /**
  * AI Models Configuration
  *
- * Uses Vercel AI SDK with multi-model strategy:
- * - Gemini 2.0 Flash: Complex analysis, risk scoring (thinking model)
- * - Gemini 2.0 Flash Lite: Fast document parsing, simple extractions
- *
- * Models are lazily initialized to prevent build errors when env vars aren't set.
+ * Uses Vercel AI SDK v6 with AI Gateway for centralized model access.
+ * Requires AI_GATEWAY_API_KEY environment variable.
+ * 
+ * Available models through the gateway:
+ * - anthropic/claude-sonnet-4: Complex analysis, risk scoring
+ * - google/gemini-2.0-flash: Fast document parsing
  */
 
-import { createVertex } from "@ai-sdk/google-vertex";
-
-// Lazy initialization - models created on first use
-let _google: ReturnType<typeof createVertex> | null = null;
-
-/**
- * Get Google Vertex AI provider (lazy initialization)
- */
-function getGoogle() {
-	if (!_google) {
-		if (!process.env.GOOGLE_VERTEX_PROJECT) {
-			throw new Error(
-				"GOOGLE_VERTEX_PROJECT environment variable is required for AI features",
-			);
-		}
-		_google = createVertex({
-			project: process.env.GOOGLE_VERTEX_PROJECT,
-			location: process.env.GOOGLE_VERTEX_LOCATION || "us-central1",
-		});
-	}
-	return _google;
-}
+import { gateway } from "@ai-sdk/gateway";
 
 /**
  * Get thinking model for complex analysis tasks
@@ -38,7 +18,7 @@ function getGoogle() {
  * - AI trust score calculation
  */
 export function getThinkingModel() {
-	return getGoogle()("gemini-2.0-flash");
+	return gateway("google/gemini-3-flash");
 }
 
 /**
@@ -47,7 +27,7 @@ export function getThinkingModel() {
  * - Quick validation checks
  */
 export function getFastModel() {
-	return getGoogle()("gemini-2.0-flash-lite");
+	return gateway("google/gemini-2.0-flash");
 }
 
 /**
@@ -61,7 +41,7 @@ export function getModel(complexity: "fast" | "thinking" = "thinking") {
  * Check if AI is configured
  */
 export function isAIConfigured(): boolean {
-	return !!process.env.GOOGLE_VERTEX_PROJECT;
+	return !!process.env.AI_GATEWAY_API_KEY;
 }
 
 /**

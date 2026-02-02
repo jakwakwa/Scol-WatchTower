@@ -643,6 +643,13 @@ export const onboardingWorkflow = inngest.createFunction(
 					aiTrustScore: ficaAnalysis.aiTrustScore,
 					recommendation: ficaAnalysis.recommendation,
 					riskFlagsCount: ficaAnalysis.riskFlags.length,
+					// Full analysis data for risk review UI
+					summary: ficaAnalysis.summary,
+					reasoning: ficaAnalysis.reasoning,
+					riskFlags: ficaAnalysis.riskFlags,
+					nameMatchVerified: ficaAnalysis.nameMatchVerified,
+					accountMatchVerified: ficaAnalysis.accountMatchVerified,
+					analysisConfidence: ficaAnalysis.analysisConfidence,
 				},
 			}),
 		);

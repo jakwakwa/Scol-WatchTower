@@ -423,6 +423,24 @@ export function RiskReviewDetail({
 							</div>
 						)}
 
+						{/* AI Explanation - Why this score? */}
+						{item.reasoning && (
+							<div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+								<h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
+									<RiAlertLine className="h-4 w-4 text-primary" />
+									Why This Score?
+								</h4>
+								<p className="text-sm text-foreground leading-relaxed">
+									{item.reasoning}
+								</p>
+								{item.analysisConfidence && (
+									<p className="text-xs text-muted-foreground mt-2">
+										AI Confidence: {item.analysisConfidence}%
+									</p>
+								)}
+							</div>
+						)}
+
 						{/* Recommendation */}
 						<div className="p-4 rounded-lg bg-secondary/5 border border-secondary/10">
 							<h4 className="text-sm font-semibold mb-2">Recommendation</h4>
