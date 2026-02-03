@@ -9,9 +9,9 @@
   },
 	"favicon": "/favicon.svg",
 	"navigation": {
-    "tabs": [
+    "dropdowns": [
       {
-        "tab": "Guides",
+        "dropdown": "Guides",
         "groups": [
           {
             "group": "User guides",
@@ -52,7 +52,7 @@
         ]
       },
       {
-        "tab": "API reference",
+        "dropdown": "API reference",
         "groups": [
           {
             "group": "API documentation",
