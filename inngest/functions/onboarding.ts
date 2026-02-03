@@ -15,10 +15,12 @@
  * - AI Trust Score < 80%: Risk Manager (Paula) reviews
  * - 14-day timeout for FICA document uploads
  */
-import { getDatabaseClient } from "@/app/utils";
-import { applicants } from "@/db/schema";
+
 import { eq } from "drizzle-orm";
 import { NonRetriableError } from "inngest";
+import { getDatabaseClient } from "@/app/utils";
+import { applicants } from "@/db/schema";
+import { sendInternalAlertEmail } from "@/lib/services/email.service";
 import {
 	analyzeBankStatement,
 	canAutoApprove as canAutoApproveFica,
@@ -29,20 +31,18 @@ import {
 	createWorkflowNotification,
 	logWorkflowEvent,
 } from "@/lib/services/notification-events.service";
-import { generateQuote } from "@/lib/services/quote.service";
 import type { QuoteResult } from "@/lib/services/quote.service";
-import { updateWorkflowStatus } from "@/lib/services/workflow.service";
+import { generateQuote } from "@/lib/services/quote.service";
 import {
 	createV24ClientProfile,
 	generateTemporaryPassword,
 	scheduleTrainingSession,
 	sendWelcomePack,
 } from "@/lib/services/v24.service";
-import { AI_TRUST_THRESHOLDS, ITC_THRESHOLDS } from "@/lib/types";
+import { updateWorkflowStatus } from "@/lib/services/workflow.service";
 import type { FicaDocumentAnalysis } from "@/lib/types";
 import { inngest } from "../client";
 import blacklist from "../data/mock_blacklist.json";
-import { sendInternalAlertEmail } from "@/lib/services/email.service";
 
 // ============================================
 // Helper: Safe Step Execution with HITL
@@ -202,8 +202,6 @@ export const onboardingWorkflow = inngest.createFunction(
 	async ({ event, step }) => {
 		const { applicantId, workflowId } = event.data;
 
-		console.log(`[Workflow] STARTED for applicant=${applicantId} workflow=${workflowId}`);
-
 		// ================================================================
 		// Verification Veto Check (Blacklist)
 		// ================================================================
@@ -244,7 +242,6 @@ export const onboardingWorkflow = inngest.createFunction(
 		// Mock API call to credit bureau. If score < 100, auto-decline
 		// ================================================================
 		const itcResult = (await step.run("run-itc-check", async () => {
-			console.log(`[Workflow] Running ITC credit check for applicant ${applicantId}`);
 			return performITCCheck({ applicantId, workflowId });
 		})) as unknown as ITCResult;
 
@@ -264,10 +261,6 @@ export const onboardingWorkflow = inngest.createFunction(
 
 		// Handle ITC decision
 		if (shouldAutoDecline(itcResult)) {
-			console.log(
-				`[Workflow] ITC Auto-Decline: Score ${itcResult.creditScore} < ${ITC_THRESHOLDS.AUTO_DECLINE}`
-			);
-
 			await step.run("itc-decline-update", () =>
 				updateWorkflowStatus(workflowId, "failed", 1)
 			);
@@ -313,7 +306,7 @@ export const onboardingWorkflow = inngest.createFunction(
 		const quote = quoteResult.quote;
 
 		// Handle quote error with HITL
-		if (!quoteResult.success || !quote) {
+		if (!(quoteResult.success && quote)) {
 			const errorMessage = quoteResult.error || "Quote generation failed";
 
 			await step.run("stage-2-quote-error-log", () =>
@@ -383,8 +376,6 @@ export const onboardingWorkflow = inngest.createFunction(
 				actionUrl: `https://stratcol-onboard-ai.vercel.app/dashboard/applicants/${applicantId}`,
 			})
 		);
-
-		console.log("[Workflow] Waiting for staff quote approval...");
 		const approvalEvent = (await step.waitForEvent("wait-for-quote-approval", {
 			event: "quote/approved",
 			match: "data.workflowId",
@@ -447,6 +438,54 @@ export const onboardingWorkflow = inngest.createFunction(
 			});
 		});
 
+		// ================================================================
+		// PARALLEL STEP: ProcureCheck (Early Risk Detection)
+		// Run this *before* waiting for documents so Risk Manager gets data ASAP.
+		// ================================================================
+		const _procureCheckThread = step.run("run-procurecheck-verification", async () => {
+			// Dynamic import to avoid circular dep issues in some layouts, though unused here
+			const { analyzeRisk } = await import("@/lib/services/risk.service");
+
+			try {
+				const result = await analyzeRisk(applicantId);
+
+				// Log detailed event
+				await logWorkflowEvent({
+					workflowId,
+					eventType: "risk_check_completed",
+					payload: {
+						source: "ProcureCheck",
+						riskScore: result.riskScore,
+						anomalies: result.anomalies,
+						recommendedAction: result.recommendedAction,
+						data: result.procureCheckData,
+					},
+				});
+
+				// Alert Risk Manager immediately if risks are found
+				if (result.recommendedAction !== "APPROVE") {
+					await sendInternalAlertEmail({
+						title: `Risk Alert: ${result.recommendedAction}`,
+						message: `ProcureCheck flagged this applicant. Score: ${result.riskScore}. Anomalies: ${result.anomalies.join(", ")}`,
+						workflowId,
+						applicantId,
+						type: "warning",
+						actionUrl: `https://stratcol-onboard-ai.vercel.app/dashboard/applicants/${applicantId}`,
+					});
+				}
+
+				return result;
+			} catch (err) {
+				console.error("[Workflow] ProcureCheck failed:", err);
+				// Don't fail the whole workflow, just log warning
+				return {
+					riskScore: 50,
+					anomalies: ["Check Failed"],
+					recommendedAction: "MANUAL_REVIEW",
+				};
+			}
+		});
+
 		await runSafeStep(
 			step,
 			"stage-2-awaiting-quote-signature",
@@ -457,8 +496,6 @@ export const onboardingWorkflow = inngest.createFunction(
 				stage: 2,
 			}
 		);
-
-		console.log("[Workflow] Waiting for Signed Quotation...");
 		const quoteSignedEvent = (await step.waitForEvent("wait-for-quote-signed", {
 			event: "quote/signed",
 			match: "data.workflowId",
@@ -494,8 +531,6 @@ export const onboardingWorkflow = inngest.createFunction(
 				stage: 2,
 			}
 		);
-
-		console.log("[Workflow] Waiting for Contract Signed signal...");
 		const contractEvent = (await step.waitForEvent("wait-for-contract", {
 			event: "contract/signed",
 			match: "data.workflowId",
@@ -524,8 +559,6 @@ export const onboardingWorkflow = inngest.createFunction(
 			};
 		}
 
-		console.log("[Workflow] Contract Signed!");
-
 		// ================================================================
 		// STAGE 3: Intelligent Verification (Digital Forensic Lab)
 		// Wait for FICA documents, then run AI analysis
@@ -540,9 +573,6 @@ export const onboardingWorkflow = inngest.createFunction(
 				stage: 3,
 			}
 		);
-
-		// SOP Step 2.3: Wait for FICA Documents (14-day timeout)
-		console.log("[Workflow] Waiting for FICA documents (14-day timeout)...");
 		await step.run("stage-3-request-fica", () =>
 			createWorkflowNotification({
 				workflowId,
@@ -585,12 +615,8 @@ export const onboardingWorkflow = inngest.createFunction(
 
 		const documents = ficaUploadEvent.data.documents;
 
-		console.log("[Workflow] FICA Documents received:", documents.length, "file(s)");
-
 		// SOP Step 2.4: AI FICA Verification (Vercel AI SDK)
 		const ficaAnalysis = (await step.run("ai-fica-verification", async () => {
-			console.log("[Workflow] Running AI FICA verification...");
-
 			// Find bank statement in uploaded documents
 			const bankStatement = documents.find(
 				document => document.type === "BANK_STATEMENT"
@@ -639,20 +665,12 @@ export const onboardingWorkflow = inngest.createFunction(
 		};
 
 		if (canAutoApproveFica(ficaAnalysis)) {
-			console.log(
-				`[Workflow] Auto-approving: AI Trust Score ${ficaAnalysis.aiTrustScore} >= ${AI_TRUST_THRESHOLDS.AUTO_APPROVE}`
-			);
 			riskDecision = {
 				outcome: "APPROVED",
 				decidedBy: "ai_auto_approval",
 				reason: `Auto-approved: AI Trust Score ${ficaAnalysis.aiTrustScore}%`,
 			};
 		} else {
-			// Requires human review
-			console.log(
-				`[Workflow] Manual review required: AI Trust Score ${ficaAnalysis.aiTrustScore}`
-			);
-
 			await step.run("stage-3-awaiting-risk-review", () =>
 				updateWorkflowStatus(workflowId, "awaiting_human", 3)
 			);
@@ -686,9 +704,6 @@ export const onboardingWorkflow = inngest.createFunction(
 					},
 				})
 			);
-
-			// Wait for Risk Manager decision
-			console.log("[Workflow] Waiting for Risk Manager decision...");
 			const riskEvent = (await step.waitForEvent("human-risk-review", {
 				event: "risk/decision.received",
 				match: "data.workflowId",
@@ -711,8 +726,6 @@ export const onboardingWorkflow = inngest.createFunction(
 
 		// Handle rejection
 		if (riskDecision.outcome === "REJECTED") {
-			console.log("[Workflow] Application REJECTED:", riskDecision.reason);
-
 			await step.run("rejected-update", () =>
 				updateWorkflowStatus(workflowId, "failed", 3)
 			);
@@ -738,8 +751,6 @@ export const onboardingWorkflow = inngest.createFunction(
 
 		// Handle request for more info
 		if (riskDecision.outcome === "REQUEST_MORE_INFO") {
-			// Loop back to document upload
-			console.log("[Workflow] Additional information requested");
 			// For now, treat as timeout - in full implementation, loop back
 			return {
 				status: "pending_info",
@@ -747,11 +758,6 @@ export const onboardingWorkflow = inngest.createFunction(
 				reason: riskDecision.reason,
 			};
 		}
-
-		// ================================================================
-		// STAGE 4: Integration & V24 Handover (Activation)
-		// ================================================================
-		console.log("[Workflow] Application APPROVED - Starting V24 handoff");
 
 		await runSafeStep(
 			step,
@@ -804,8 +810,6 @@ export const onboardingWorkflow = inngest.createFunction(
 
 			// Don't fail the workflow - log and continue
 		} else {
-			console.log("[Workflow] V24 client created:", v24Result.v24Reference);
-
 			// Log V24 success
 			await step.run("log-v24-success", () =>
 				logWorkflowEvent({
@@ -829,8 +833,6 @@ export const onboardingWorkflow = inngest.createFunction(
 			});
 		});
 
-		console.log("[Workflow] Training session scheduled:", trainingSession.sessionId);
-
 		// Send welcome pack
 		await step.run("send-welcome-pack", async () => {
 			return sendWelcomePack({
@@ -853,10 +855,6 @@ export const onboardingWorkflow = inngest.createFunction(
 				stage: 4,
 			}
 		);
-
-		// (Zapier webhooks removed - using direct Inngest events)
-
-		console.log("[Workflow] COMPLETED successfully!");
 
 		return {
 			status: "completed",
