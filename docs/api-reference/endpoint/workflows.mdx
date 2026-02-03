@@ -10,9 +10,44 @@ description: 'Track onboarding progress'
   <SegmentDescription>Get current stage and status of an onboarding workflow.</SegmentDescription>
 </Segment>
 
-## Trigger Event
+### Response
+
+```json
+{
+  "workflow": {
+    "id": 45,
+    "applicantId": 12,
+    "stage": 2,
+    "status": "in_progress",
+    "startedAt": "2023-11-21T10:00:00Z"
+  },
+  "events": [
+    { "type": "stage_change", "payload": { "from": 1, "to": 2 } }
+  ]
+}
+```
+
+## Create Workflow
 
 <Segment>
-  <SegmentTitle>POST /api/workflows/trigger</SegmentTitle>
-  <SegmentDescription>Manually trigger a workflow event (e.g., retry step).</SegmentDescription>
+  <SegmentTitle>POST /api/workflows</SegmentTitle>
+  <SegmentDescription>Initialize a new onboarding workflow manually.</SegmentDescription>
 </Segment>
+
+### Request Body
+
+<ParamField body="applicantId" type="integer" required>
+  ID of the existing applicant to onboard.
+</ParamField>
+
+### Response
+
+```json
+{
+  "workflow": {
+    "id": 46,
+    "status": "pending",
+    "stage": 1
+  }
+}
+```

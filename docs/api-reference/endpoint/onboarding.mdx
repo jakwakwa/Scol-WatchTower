@@ -1,18 +1,13 @@
----
-title: 'Onboarding'
-description: 'Onboarding workflow management'
----
-
 ## List Leads
 
 <Segment>
-  <SegmentTitle>GET /api/onboarding/leads</SegmentTitle>
+  <SegmentTitle>GET /api/leads</SegmentTitle>
   <SegmentDescription>Retrieve active onboarding leads.</SegmentDescription>
 </Segment>
 
-## Update Lead Status
+## Create Lead
 
 <Segment>
-  <SegmentTitle>PATCH /api/onboarding/leads/{id}</SegmentTitle>
-  <SegmentDescription>Update the status of an onboarding lead.</SegmentDescription>
+  <SegmentTitle>POST /api/leads</SegmentTitle>
+  <SegmentDescription>Manually create a lead (used by external forms).</SegmentDescription>
 </Segment>

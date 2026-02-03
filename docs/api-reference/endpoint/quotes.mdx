@@ -6,9 +6,54 @@ description: 'Manage pricing quotes'
 ## Generate Quote
 
 <Segment>
-  <SegmentTitle>POST /api/quotes/generate</SegmentTitle>
-  <SegmentDescription>Trigger AI quote generation for an applicant.</SegmentDescription>
+  <SegmentTitle>POST /api/quotes</SegmentTitle>
+  <SegmentDescription>Create a new quote record manually or via AI.</SegmentDescription>
 </Segment>
+
+### Request Body
+
+<ParamField body="workflowId" type="integer" required>
+  ID of the workflow this quote belongs to.
+</ParamField>
+
+<ParamField body="applicantId" type="integer" required>
+  ID of the applicant.
+</ParamField>
+
+<ParamField body="amount" type="integer" required>
+  Quote amount in cents.
+</ParamField>
+
+<ParamField body="baseFeePercent" type="integer" required>
+  Base fee in basis points (e.g. 150 = 1.5%).
+</ParamField>
+
+<ParamField body="adjustedFeePercent" type="integer" required>
+  Risk-adjusted fee in basis points.
+</ParamField>
+
+<ParamField body="rationale" type="string">
+  Explanation for the pricing decision.
+</ParamField>
+
+<ParamField body="generatedBy" type="string" default="platform">
+  Origin of the quote ("platform" or "gemini").
+</ParamField>
+
+### Response
+
+```json
+{
+  "quote": {
+    "id": 101,
+    "amount": 500000,
+    "baseFeePercent": 150,
+    "adjustedFeePercent": 175,
+    "status": "draft",
+    "createdAt": "2023-11-21T10:05:00Z"
+  }
+}
+```
 
 ## List Quotes
 

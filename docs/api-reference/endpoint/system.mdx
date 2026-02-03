@@ -3,11 +3,16 @@ title: 'System Integration'
 description: 'Webhooks and Agent Callhooks'
 ---
 
-## External Webhooks
+## Webhooks
 
 <Segment>
-  <SegmentTitle>POST /api/webhooks/clerk</SegmentTitle>
-  <SegmentDescription>Handle Clerk user authentication events.</SegmentDescription>
+  <SegmentTitle>POST /api/webhooks/lead-capture</SegmentTitle>
+  <SegmentDescription>External webhook to capture new leads (e.g. from Website).</SegmentDescription>
+</Segment>
+
+<Segment>
+  <SegmentTitle>POST /api/webhooks/contract-signed</SegmentTitle>
+  <SegmentDescription>Webhook for contract signature confirmation (DocuSign/Adobe).</SegmentDescription>
 </Segment>
 
 ## Agent Callbacks
