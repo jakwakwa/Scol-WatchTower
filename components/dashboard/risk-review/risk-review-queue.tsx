@@ -59,6 +59,15 @@ export interface RiskReviewItem {
 	accountantLetterVerified?: boolean;
 	nameMatchVerified?: boolean;
 	accountMatchVerified?: boolean;
+	// V2 Workflow - Review Type (Phase 3)
+	/** Review type: "procurement" for Stage 3, "general" for Stage 4 */
+	reviewType?: "procurement" | "general";
+	/** Procurement-specific: ProcureCheck risk score */
+	procurementScore?: number;
+	/** Procurement-specific: Has anomalies detected */
+	hasAnomalies?: boolean;
+	/** Procurement-specific: Anomaly descriptions */
+	anomalies?: string[];
 }
 
 interface RiskReviewCardProps {

@@ -6,7 +6,10 @@ import {
 	RiCheckboxCircleLine,
 	RiFileTextLine,
 	RiMoreLine,
-	RiShieldCheckLine,
+	RiMoneyDollarCircleLine,
+	RiEditLine,
+	RiRobot2Line,
+	RiContractLine,
 } from "@remixicon/react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -25,31 +28,58 @@ export type PipelineWorkflow = {
 	startedAt?: string | Date;
 };
 
-// Define Pipeline Stages based on screenshot
+/**
+ * V2 Workflow Pipeline Stages (6-stage system)
+ * Maps to the workflow stage numbers: 1-6
+ */
 const PIPELINE_STAGES = [
 	{
-		id: "new",
-		title: "Applicant Engagement",
+		id: "entry_quote",
+		stageNumber: 1,
+		title: "Entry & Quote",
 		color: "border-t-blue-400",
-		icon: RiFileTextLine,
+		icon: RiMoneyDollarCircleLine,
+		shortTitle: "Entry",
 	},
 	{
-		id: "contracting",
-		title: "Contracting",
+		id: "quote_signing",
+		stageNumber: 2,
+		title: "Quote Signing",
+		color: "border-t-indigo-400",
+		icon: RiEditLine,
+		shortTitle: "Signing",
+	},
+	{
+		id: "mandate_processing",
+		stageNumber: 3,
+		title: "Mandate Processing",
 		color: "border-t-purple-400",
 		icon: RiFileTextLine,
+		shortTitle: "Mandate",
 	},
 	{
-		id: "fica_review",
-		title: "FICA Review",
+		id: "ai_analysis",
+		stageNumber: 4,
+		title: "AI Analysis",
 		color: "border-t-amber-400",
-		icon: RiShieldCheckLine,
+		icon: RiRobot2Line,
+		shortTitle: "Analysis",
 	},
 	{
-		id: "activation",
-		title: "Activation",
+		id: "contract_forms",
+		stageNumber: 5,
+		title: "Contract & Forms",
+		color: "border-t-orange-400",
+		icon: RiContractLine,
+		shortTitle: "Contract",
+	},
+	{
+		id: "completion",
+		stageNumber: 6,
+		title: "Completion",
 		color: "border-t-emerald-400",
 		icon: RiCheckboxCircleLine,
+		shortTitle: "Complete",
 	},
 ];
 
@@ -65,26 +95,33 @@ export function PipelineView({
 	useEffect(() => {
 		const cols = PIPELINE_STAGES.reduce(
 			(acc, stage) => {
-				acc[stage.id] = workflows.filter(workflow => {
+					acc[stage.id] = workflows.filter(workflow => {
+					// Handle both string stage names and numeric stage numbers
 					const stageValue = workflow.stage;
-					if (
-						stage.id === "new" &&
-						["new", "contacted", "qualified"].includes(stageValue)
-					)
-						return true;
-					if (
-						stage.id === "contracting" &&
-						["proposal", "negotiation"].includes(stageValue)
-					)
-						return true;
-					if (
-						stage.id === "fica_review" &&
-						["review", "fica_review"].includes(stageValue)
-					)
-						return true;
-					if (stage.id === "activation" && ["won", "activation"].includes(stageValue))
-						return true;
-					return false;
+					
+					// Numeric stage matching (V2 workflow)
+					if (typeof stageValue === "number" || !Number.isNaN(Number(stageValue))) {
+						return Number(stageValue) === stage.stageNumber;
+					}
+					
+					// Legacy string-based stage matching for backwards compatibility
+					const stageString = String(stageValue).toLowerCase();
+					switch (stage.id) {
+						case "entry_quote":
+							return ["new", "contacted", "qualified", "lead_capture", "entry"].includes(stageString);
+						case "quote_signing":
+							return ["proposal", "quotation", "quote_signing", "signing"].includes(stageString);
+						case "mandate_processing":
+							return ["negotiation", "mandate", "mandate_processing", "verification"].includes(stageString);
+						case "ai_analysis":
+							return ["review", "fica_review", "ai_analysis", "analysis"].includes(stageString);
+						case "contract_forms":
+							return ["contract", "contract_forms", "absa_form", "forms"].includes(stageString);
+						case "completion":
+							return ["won", "activation", "completed", "integration", "completion"].includes(stageString);
+						default:
+							return false;
+					}
 				});
 				return acc;
 			},
@@ -103,9 +140,10 @@ export function PipelineView({
 	return (
 		<div className="h-full overflow-x-auto pb-4">
 			<DragDropContext onDragEnd={handleDragEnd}>
-				<div className="flex gap-6 min-w-[1000px]">
+				{/* 6-column layout with reduced gaps for smaller screens */}
+				<div className="flex gap-3 lg:gap-4 min-w-[1200px]">
 					{PIPELINE_STAGES.map(stage => (
-						<div key={stage.id} className="flex-1 min-w-[280px] flex flex-col gap-4">
+						<div key={stage.id} className="flex-1 min-w-[180px] max-w-[240px] flex flex-col gap-3">
 							{/* Column Header */}
 							<div
 								className={cn(

@@ -28,6 +28,8 @@ import {
 	RiExternalLinkLine,
 	RiHistoryLine,
 	RiEyeLine,
+	RiLoader4Line,
+	RiShoppingBag3Line,
 } from "@remixicon/react";
 import type { RiskReviewItem } from "./risk-review-queue";
 
@@ -249,6 +251,56 @@ export function RiskReviewDetail({
 	onReject,
 }: RiskReviewDetailProps) {
 	const [activeTab, setActiveTab] = React.useState("overview");
+	const [isSubmitting, setIsSubmitting] = React.useState(false);
+	const [actionType, setActionType] = React.useState<"approve" | "reject" | null>(null);
+
+	/**
+	 * Determine review type based on workflow stage (V2 Workflow Phase 3)
+	 * Stage 3 = Procurement review, Stage 4 = General/Final review
+	 */
+	const reviewType: "procurement" | "general" = 
+		item?.reviewType || (item?.stage === 3 ? "procurement" : "general");
+
+	/**
+	 * Get the appropriate API endpoint based on review type
+	 */
+	const getApiEndpoint = () => {
+		return reviewType === "procurement" 
+			? "/api/risk-decision/procurement"
+			: "/api/risk-decision";
+	};
+
+	/**
+	 * Handle approve action with appropriate API routing
+	 */
+	const handleApprove = async () => {
+		if (!item) return;
+		setIsSubmitting(true);
+		setActionType("approve");
+		try {
+			await onApprove(item.id, `Approved via ${reviewType} review`);
+			onOpenChange(false);
+		} finally {
+			setIsSubmitting(false);
+			setActionType(null);
+		}
+	};
+
+	/**
+	 * Handle reject action with appropriate API routing
+	 */
+	const handleReject = async () => {
+		if (!item) return;
+		setIsSubmitting(true);
+		setActionType("reject");
+		try {
+			await onReject(item.id, `Rejected via ${reviewType} review`);
+			onOpenChange(false);
+		} finally {
+			setIsSubmitting(false);
+			setActionType(null);
+		}
+	};
 
 	// Mock timeline events - in production, fetch from API
 	const mockTimeline: TimelineEvent[] = item
@@ -303,12 +355,33 @@ export function RiskReviewDetail({
 					<div className="flex items-start justify-between">
 						<div>
 							<SheetTitle className="text-xl">{item.clientName}</SheetTitle>
-							<SheetDescription className="flex items-center gap-2 mt-1">
+							<SheetDescription className="flex items-center gap-2 mt-1 flex-wrap">
 								<RiBuilding2Line className="h-3.5 w-3.5" />
 								{item.companyName}
 								<span className="text-muted-foreground">•</span>
 								<Badge variant="secondary" className="text-[10px]">
 									WF-{item.workflowId}
+								</Badge>
+								{/* Review Type Badge (Phase 3) */}
+								<Badge 
+									variant="outline" 
+									className={cn(
+										"text-[10px] gap-1",
+										reviewType === "procurement"
+											? "bg-purple-500/10 text-purple-400 border-purple-500/20"
+											: "bg-blue-500/10 text-blue-400 border-blue-500/20"
+									)}>
+									{reviewType === "procurement" ? (
+										<>
+											<RiShoppingBag3Line className="h-3 w-3" />
+											Procurement
+										</>
+									) : (
+										<>
+											<RiShieldCheckLine className="h-3 w-3" />
+											General
+										</>
+									)}
 								</Badge>
 							</SheetDescription>
 						</div>
@@ -540,22 +613,87 @@ export function RiskReviewDetail({
 
 				{/* Action Buttons - Always visible */}
 				<Separator className="my-6 bg-secondary/10" />
+				
+				{/* Review Type Context (Phase 3) */}
+				<div className="mb-4 p-3 rounded-lg bg-secondary/5 border border-secondary/10">
+					<p className="text-xs text-muted-foreground">
+						<span className="font-medium text-foreground">Review Type:</span>{" "}
+						{reviewType === "procurement" ? (
+							<>
+								Procurement Review (Stage 3) - Routes to{" "}
+								<code className="text-purple-400">/api/risk-decision/procurement</code>
+							</>
+						) : (
+							<>
+								General Review (Stage 4) - Routes to{" "}
+								<code className="text-blue-400">/api/risk-decision</code>
+							</>
+						)}
+					</p>
+					
+					{/* Procurement-specific data display */}
+					{reviewType === "procurement" && item.procurementScore !== undefined && (
+						<div className="mt-2 pt-2 border-t border-secondary/10 grid grid-cols-2 gap-2">
+							<div>
+								<p className="text-[10px] text-muted-foreground uppercase">ProcureCheck Score</p>
+								<p className={cn(
+									"text-sm font-semibold",
+									item.procurementScore <= 30 ? "text-emerald-400" :
+									item.procurementScore <= 60 ? "text-yellow-400" : "text-red-400"
+								)}>
+									{item.procurementScore}%
+								</p>
+							</div>
+							<div>
+								<p className="text-[10px] text-muted-foreground uppercase">Anomalies</p>
+								<p className={cn(
+									"text-sm font-semibold",
+									item.hasAnomalies ? "text-red-400" : "text-emerald-400"
+								)}>
+									{item.hasAnomalies ? "Detected" : "None"}
+								</p>
+							</div>
+						</div>
+					)}
+					
+					{/* Anomaly list if present */}
+					{reviewType === "procurement" && item.anomalies && item.anomalies.length > 0 && (
+						<div className="mt-2 pt-2 border-t border-secondary/10">
+							<p className="text-[10px] text-muted-foreground uppercase mb-1">Anomaly Details</p>
+							<ul className="text-xs text-red-400 space-y-0.5">
+								{item.anomalies.map((anomaly, idx) => (
+									<li key={idx} className="flex items-start gap-1">
+										<RiAlertLine className="h-3 w-3 shrink-0 mt-0.5" />
+										{anomaly}
+									</li>
+								))}
+							</ul>
+						</div>
+					)}
+				</div>
+				
 				<div className="flex gap-3">
 					<Button
 						variant="outline"
+						disabled={isSubmitting}
 						className="flex-1 border-red-500/20 text-red-400 hover:bg-red-500/10"
-						onClick={() => {
-							// Would open reject dialog
-						}}>
-						<RiCloseLine className="h-4 w-4 mr-2" />
+						onClick={handleReject}>
+						{isSubmitting && actionType === "reject" ? (
+							<RiLoader4Line className="h-4 w-4 mr-2 animate-spin" />
+						) : (
+							<RiCloseLine className="h-4 w-4 mr-2" />
+						)}
 						Reject
 					</Button>
 					<Button
+						disabled={isSubmitting}
 						className="flex-1 bg-emerald-600 hover:bg-emerald-700"
-						onClick={() => {
-							// Would open approve dialog
-						}}>
-						<RiCheckLine className="h-4 w-4 mr-2" />
+						onClick={handleApprove}>
+						{isSubmitting && actionType === "approve" ? (
+							<RiLoader4Line className="h-4 w-4 mr-2 animate-spin" />
+						) : (
+							<RiCheckLine className="h-4 w-4 mr-2" />
+						)}
 						Approve
 					</Button>
 				</div>

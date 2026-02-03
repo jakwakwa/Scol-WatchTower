@@ -1,12 +1,30 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { RiAi, RiLoader4Line } from "@remixicon/react";
+import {
+	RiAi,
+	RiLoader4Line,
+	RiCloseLine,
+	RiAlertLine,
+	RiErrorWarningLine,
+} from "@remixicon/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import { GlassCard } from "@/components/dashboard";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+
+/** Overlimit threshold in cents (R500,000 = 50,000,000 cents) */
+const OVERLIMIT_THRESHOLD = 50000000;
 
 interface QuoteApprovalFormProps {
 	applicantId: number;
@@ -54,6 +72,17 @@ export function QuoteApprovalForm({
 	const [errors, setErrors] = useState<QuoteFormErrors>({});
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [submitMessage, setSubmitMessage] = useState<string | null>(null);
+
+	// --- Rejection State (Phase 2: Quote Rejection UI) ---
+	const [showRejectModal, setShowRejectModal] = useState(false);
+	const [rejectReason, setRejectReason] = useState("");
+	const [isRejecting, setIsRejecting] = useState(false);
+
+	/** Check if quote amount exceeds the overlimit threshold */
+	const isOverlimit = useMemo(() => {
+		const amountValue = Number(amount);
+		return amountValue > OVERLIMIT_THRESHOLD;
+	}, [amount]);
 
 	const _parsedDetails = useMemo(() => {
 		if (!details) return null;
@@ -132,6 +161,45 @@ export function QuoteApprovalForm({
 		}
 	};
 
+	/**
+	 * Handle quote rejection (Phase 2: Quote Rejection UI)
+	 * Calls POST /api/quotes/[id]/reject with reason and overlimit flag
+	 */
+	const handleReject = async () => {
+		if (!rejectReason.trim()) {
+			setSubmitMessage("Please provide a reason for rejection.");
+			return;
+		}
+
+		setIsRejecting(true);
+		setSubmitMessage(null);
+
+		try {
+			const response = await fetch(`/api/quotes/${quoteId}/reject`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					reason: rejectReason,
+					isOverlimit,
+				}),
+			});
+
+			if (!response.ok) {
+				const payload = await response.json().catch(() => ({}));
+				throw new Error(payload?.error || "Failed to reject quote");
+			}
+
+			setCurrentStatus("rejected");
+			setSubmitMessage("Quote has been rejected.");
+			setShowRejectModal(false);
+			setRejectReason("");
+		} catch (error) {
+			setSubmitMessage(error instanceof Error ? error.message : "Rejection failed");
+		} finally {
+			setIsRejecting(false);
+		}
+	};
+
 	return (
 		<div className="space-y-6">
 			<GlassCard className="space-y-6">
@@ -142,11 +210,27 @@ export function QuoteApprovalForm({
 							Values are stored in cents and basis points.
 						</p>
 					</div>
+				<div className="flex items-center gap-3">
 					<Badge
 						variant="outline"
-						className={`text-xs uppercase ${currentStatus === "pending_approval" ? "text-warning" : "text-success"}`}>
+						className={`text-xs uppercase ${
+							currentStatus === "rejected"
+								? "text-red-400 border-red-500/40"
+								: currentStatus === "pending_approval"
+									? "text-warning"
+									: "text-success"
+						}`}>
 						{currentStatus}
 					</Badge>
+					{isOverlimit && (
+						<Badge
+							variant="outline"
+							className="text-xs uppercase text-orange-400 border-orange-500/40 gap-1">
+							<RiAlertLine className="h-3 w-3" />
+							Overlimit
+						</Badge>
+					)}
+				</div>
 				</div>
 
 				<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -219,24 +303,112 @@ export function QuoteApprovalForm({
 				</div>
 			</GlassCard>
 
+			{/* Overlimit Warning Banner */}
+			{isOverlimit && (
+				<div className="flex items-center gap-3 p-4 rounded-lg bg-orange-500/10 border border-orange-500/20">
+					<RiErrorWarningLine className="h-5 w-5 text-orange-400 shrink-0" />
+					<div>
+						<p className="text-sm font-medium text-orange-400">
+							Quote exceeds limit threshold
+						</p>
+						<p className="text-xs text-muted-foreground">
+							This quote amount exceeds R{(OVERLIMIT_THRESHOLD / 100).toLocaleString()}. 
+							Additional review may be required before approval.
+						</p>
+					</div>
+				</div>
+			)}
+
 			<div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
 				<p className="text-sm text-warning">
 					{submitMessage || "*Review the quote before sending to the client."}
 				</p>
-				<Button
-					onClick={handleApprove}
-					disabled={isSubmitting || isLocked}
-					className="gap-2">
-					{isSubmitting ? (
-						<>
-							<RiLoader4Line className="h-4 w-4 animate-spin" />
-							Sending...
-						</>
-					) : (
-						"Approve & Send to Client"
-					)}
-				</Button>
+				<div className="flex gap-2">
+					{/* Reject Button */}
+					<Button
+						variant="outline"
+						onClick={() => setShowRejectModal(true)}
+						disabled={isSubmitting || isRejecting || currentStatus === "rejected"}
+						className="gap-2 border-red-500/20 text-red-400 hover:bg-red-500/10">
+						<RiCloseLine className="h-4 w-4" />
+						Reject Quote
+					</Button>
+					{/* Approve Button */}
+					<Button
+						onClick={handleApprove}
+						disabled={isSubmitting || isRejecting || isLocked}
+						className="gap-2">
+						{isSubmitting ? (
+							<>
+								<RiLoader4Line className="h-4 w-4 animate-spin" />
+								Sending...
+							</>
+						) : (
+							"Approve & Send to Client"
+						)}
+					</Button>
+				</div>
 			</div>
+
+			{/* Quote Rejection Modal */}
+			<Dialog open={showRejectModal} onOpenChange={setShowRejectModal}>
+				<DialogContent className="max-w-md border-secondary/10 bg-zinc-100/10 backdrop-blur-xl">
+					<DialogHeader>
+						<DialogTitle className="flex items-center gap-2 text-red-400">
+							<RiCloseLine className="h-5 w-5" />
+							Reject Quote
+						</DialogTitle>
+						<DialogDescription>
+							Please provide a reason for rejecting this quote. This action cannot be undone.
+						</DialogDescription>
+					</DialogHeader>
+
+					<div className="py-4 space-y-4">
+						{isOverlimit && (
+							<div className="flex items-center gap-2 p-3 rounded-lg bg-orange-500/10 border border-orange-500/20">
+								<RiAlertLine className="h-4 w-4 text-orange-400" />
+								<span className="text-xs text-orange-400">
+									This quote exceeds the overlimit threshold
+								</span>
+							</div>
+						)}
+						<div className="space-y-2">
+							<Label htmlFor="reject-reason">Rejection Reason</Label>
+							<Textarea
+								id="reject-reason"
+								placeholder="Enter the reason for rejection..."
+								value={rejectReason}
+								onChange={(e) => setRejectReason(e.target.value)}
+								rows={4}
+								className="resize-none"
+							/>
+						</div>
+					</div>
+
+					<DialogFooter>
+						<Button
+							variant="ghost"
+							onClick={() => setShowRejectModal(false)}
+							disabled={isRejecting}>
+							Cancel
+						</Button>
+						<Button
+							variant="destructive"
+							onClick={handleReject}
+							disabled={isRejecting || !rejectReason.trim()}
+							className="gap-2">
+							{isRejecting ? (
+								<>
+									<RiLoader4Line className="h-4 w-4 animate-spin" />
+									Rejecting...
+								</>
+							) : (
+								"Confirm Rejection"
+							)}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }

@@ -46,7 +46,7 @@ export interface WorkflowRow {
 	id: number;
 	applicantId: number;
 	clientName: string;
-	stage: 1 | 2 | 3 | 4;
+	stage: 1 | 2 | 3 | 4 | 5 | 6;
 	stageName: string;
 	status:
 		| "pending"
@@ -60,7 +60,19 @@ export interface WorkflowRow {
 	startedAt: Date;
 	payload?: Record<string, unknown>;
 	hasQuote?: boolean;
+	/** Review type for stage 3/4 routing */
+	reviewType?: "procurement" | "general";
 }
+
+/** V2 Workflow Stage Names */
+export const STAGE_NAMES: Record<number, string> = {
+	1: "Entry & Quote",
+	2: "Quote Signing",
+	3: "Mandate Processing",
+	4: "AI Analysis",
+	5: "Contract & Forms",
+	6: "Completion",
+};
 
 // --- Components ---
 
@@ -117,42 +129,53 @@ export function StatusBadge({ status }: { status: WorkflowRow["status"] }) {
 export function WorkflowStageIndicator({
 	currentStage,
 	compact = false,
+	showLabels = false,
 }: {
-	currentStage: 1 | 2 | 3 | 4;
+	currentStage: 1 | 2 | 3 | 4 | 5 | 6;
 	compact?: boolean;
+	/** Show stage name labels below indicators */
+	showLabels?: boolean;
 }) {
-	const stages = [1, 2, 3, 4] as const;
+	const stages = [1, 2, 3, 4, 5, 6] as const;
 
 	return (
-		<div className="flex items-center gap-1">
-			{stages.map(stage => (
-				<div key={`stage-w-${stage}`} className="flex items-center">
-					<div
-						className={cn(
-							"flex items-center justify-center rounded-full font-medium transition-all",
-							compact ? "h-6 w-6 text-[10px]" : "h-8 w-8 text-xs",
-							stage < currentStage && "bg-teal-500/40 text-emerald-600/80",
-							stage === currentStage &&
-								"bg-stone-500/20 text-stone-400 ring-2 ring-stone-500/30",
-							stage > currentStage && "bg-secondary/5 text-muted-foreground"
-						)}>
-						{stage < currentStage ? (
-							<RiCheckLine className={compact ? "h-3 w-3" : "h-4 w-4"} />
-						) : (
-							stage
-						)}
-					</div>
-					{stages.indexOf(stage) < stages.length - 1 && (
+		<div className="flex flex-col gap-1">
+			<div className="flex items-center gap-0.5">
+				{stages.map(stage => (
+					<div key={`stage-w-${stage}`} className="flex items-center">
 						<div
 							className={cn(
-								"h-0.5 transition-colors",
-								compact ? "w-2" : "w-4",
-								stage < currentStage ? "bg-teal-500/40" : "bg-secondary/10"
+								"flex items-center justify-center rounded-full font-medium transition-all",
+								compact ? "h-5 w-5 text-[9px]" : "h-7 w-7 text-xs",
+								stage < currentStage && "bg-teal-500/40 text-emerald-600/80",
+								stage === currentStage &&
+									"bg-stone-500/20 text-stone-400 ring-2 ring-stone-500/30",
+								stage > currentStage && "bg-secondary/5 text-muted-foreground"
 							)}
-						/>
-					)}
-				</div>
-			))}
+							title={STAGE_NAMES[stage]}>
+							{stage < currentStage ? (
+								<RiCheckLine className={compact ? "h-2.5 w-2.5" : "h-3.5 w-3.5"} />
+							) : (
+								stage
+							)}
+						</div>
+						{stage < 6 && (
+							<div
+								className={cn(
+									"h-0.5 transition-colors",
+									compact ? "w-1.5" : "w-2.5",
+									stage < currentStage ? "bg-teal-500/40" : "bg-secondary/10"
+								)}
+							/>
+						)}
+					</div>
+				))}
+			</div>
+			{showLabels && (
+				<span className="text-[9px] text-muted-foreground truncate max-w-[120px]">
+					{STAGE_NAMES[currentStage]}
+				</span>
+			)}
 		</div>
 	);
 }
