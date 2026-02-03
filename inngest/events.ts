@@ -91,6 +91,19 @@ export type Events = {
 		};
 	};
 
+	/** Quote rejected by staff (overlimit or other reason) */
+	"quote/rejected": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			quoteId: number;
+			reason: string;
+			isOverlimit: boolean;
+			rejectedBy: string;
+			rejectedAt: string;
+		};
+	};
+
 	/** Quote signed by client */
 	"quote/signed": {
 		data: {
@@ -98,6 +111,21 @@ export type Events = {
 			applicantId: number;
 			quoteId: number;
 			signedAt: string;
+		};
+	};
+
+	/** Applicant feedback received on quote */
+	"quote/feedback.received": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			quoteId: number;
+			feedback: {
+				accepted: boolean;
+				comments?: string;
+				requestedChanges?: string[];
+			};
+			receivedAt: string;
 		};
 	};
 
@@ -126,6 +154,22 @@ export type Events = {
 			applicantId: number;
 			formType: string;
 			applicantMagiclinkFormId: number;
+			submittedAt: string;
+		};
+	};
+
+	/** Facility application form submitted - triggers mandate determination */
+	"form/facility.submitted": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			submissionId: number;
+			formData: {
+				mandateVolume: number;
+				mandateType: "EFT" | "DEBIT_ORDER" | "CASH" | "MIXED";
+				businessType: string;
+				annualTurnover?: number;
+			};
 			submittedAt: string;
 		};
 	};
@@ -235,6 +279,57 @@ export type Events = {
 				conditions?: string[];
 				timestamp: string;
 			};
+		};
+	};
+
+	/** Procurement check completed by Risk Manager */
+	"risk/procurement.completed": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			procureCheckResult: {
+				riskScore: number;
+				anomalies: string[];
+				recommendedAction: "APPROVE" | "MANUAL_REVIEW" | "DECLINE";
+				rawData?: Record<string, unknown>;
+			};
+			decision: {
+				outcome: "CLEARED" | "DENIED";
+				decidedBy: string;
+				reason?: string;
+				timestamp: string;
+			};
+		};
+	};
+
+	// ================================================================
+	// Mandate & Document Events
+	// ================================================================
+
+	/** Internal event: mandate type determined from facility application */
+	"mandate/determined": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			mandateType: "EFT" | "DEBIT_ORDER" | "CASH" | "MIXED";
+			requiredDocuments: string[];
+			requiresProcurementCheck: boolean;
+		};
+	};
+
+	/** Mandate-specific documents submitted */
+	"document/mandate.submitted": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			mandateType: "EFT" | "DEBIT_ORDER" | "CASH" | "MIXED";
+			documents: Array<{
+				documentId: number;
+				documentType: string;
+				fileName: string;
+				uploadedAt: string;
+			}>;
+			allRequiredDocsReceived: boolean;
 		};
 	};
 
@@ -366,6 +461,52 @@ export type Events = {
 			validationType: "identity" | "entity" | "risk" | "social";
 			passed: boolean;
 			details: Record<string, unknown>;
+		};
+	};
+
+	/**
+	 * Final approval button pressed by Account Manager - ends workflow
+	 */
+	"onboarding/final-approval.received": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			approvedBy: string; // Account Manager ID
+			contractSigned: boolean;
+			absaFormComplete: boolean;
+			notes?: string;
+			timestamp: string;
+		};
+	};
+
+	/**
+	 * AI analysis aggregation completed (bank validation, sanctions, risk)
+	 */
+	"onboarding/ai-analysis.completed": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			analysis: {
+				bankValidation: {
+					verified: boolean;
+					accountHolder?: string;
+					accountNumber?: string;
+					flags: string[];
+				};
+				sanctionsCheck: {
+					passed: boolean;
+					matchesFound: number;
+					details?: string;
+				};
+				riskAnalysis: {
+					overallScore: number;
+					category: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+					flags: string[];
+				};
+			};
+			aggregatedScore: number;
+			recommendation: "APPROVE" | "MANUAL_REVIEW" | "DECLINE";
+			timestamp: string;
 		};
 	};
 };

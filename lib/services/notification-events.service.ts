@@ -4,7 +4,7 @@ import { notifications, workflowEvents } from "@/db/schema";
 export interface CreateNotificationParams {
 	workflowId: number;
 	applicantId: number;
-	type: "awaiting" | "completed" | "failed" | "timeout" | "paused" | "error";
+	type: "awaiting" | "completed" | "failed" | "timeout" | "paused" | "error" | "warning" | "success" | "info";
 	title: string;
 	message: string;
 	actionable?: boolean;
@@ -20,7 +20,14 @@ export interface LogEventParams {
 		| "human_override"
 		| "timeout"
 		| "error"
-		| "risk_check_completed";
+		| "risk_check_completed"
+		| "itc_check_completed"
+		| "quote_generated"
+		| "quote_sent"
+		| "mandate_determined"
+		| "procurement_check_completed"
+		| "ai_analysis_completed"
+		| "v24_integration_completed";
 	payload: object;
 	actorType?: "user" | "agent" | "platform";
 	actorId?: string;
