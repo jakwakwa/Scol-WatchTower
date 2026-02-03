@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDatabaseClient } from "@/app/utils";
-import { documentUploads, workflows } from "@/db/schema";
+import { documentUploads, workflows, applicants } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import crypto from "crypto";
+import { inngest } from "@/inngest/client";
 
 /**
  * POST /api/onboarding/documents/upload
@@ -116,6 +117,78 @@ export async function POST(request: NextRequest) {
 				{ error: "Failed to create document record" },
 				{ status: 500 }
 			);
+		}
+
+		// Send document uploaded event for aggregation
+		await inngest.send({
+			name: "document/uploaded",
+			data: {
+				workflowId: workflowIdNum,
+				applicantId: workflow[0].applicantId,
+				documentId: document.id,
+				documentType: documentType,
+				category: category,
+				uploadedAt: new Date().toISOString(),
+			},
+		});
+
+		// Check if this is a mandate document and trigger mandate submission check
+		const mandateDocTypes = [
+			"BANK_CONFIRMATION",
+			"MANDATE_FORM",
+			"DEBIT_ORDER_MANDATE",
+			"PROOF_OF_REGISTRATION",
+		];
+
+		if (mandateDocTypes.includes(documentType.toUpperCase())) {
+			// Fetch all mandate documents for this workflow
+			const allMandateDocs = await db
+				.select()
+				.from(documentUploads)
+				.where(eq(documentUploads.workflowId, workflowIdNum));
+
+			const uploadedMandateTypes = allMandateDocs
+				.filter(d => mandateDocTypes.includes(d.documentType?.toUpperCase() || ""))
+				.map(d => d.documentType?.toUpperCase() || "");
+
+			// Get applicant mandate type to determine required docs
+			const applicantResult = await db
+				.select()
+				.from(applicants)
+				.where(eq(applicants.id, workflow[0].applicantId));
+
+			const applicant = applicantResult[0];
+			const mandateType = applicant?.mandateType || "EFT";
+
+			// Determine required documents based on mandate type
+			const requiredDocs: Record<string, string[]> = {
+				EFT: ["BANK_CONFIRMATION", "MANDATE_FORM"],
+				DEBIT_ORDER: ["DEBIT_ORDER_MANDATE", "BANK_CONFIRMATION"],
+				CASH: ["PROOF_OF_REGISTRATION"],
+				MIXED: ["BANK_CONFIRMATION", "MANDATE_FORM", "DEBIT_ORDER_MANDATE"],
+			};
+
+			const required = requiredDocs[mandateType] || ["MANDATE_FORM"];
+			const allReceived = required.every(doc => uploadedMandateTypes.includes(doc));
+
+			// Send mandate document submitted event
+			await inngest.send({
+				name: "document/mandate.submitted",
+				data: {
+					workflowId: workflowIdNum,
+					applicantId: workflow[0].applicantId,
+					mandateType: mandateType as "EFT" | "DEBIT_ORDER" | "CASH" | "MIXED",
+					documents: allMandateDocs
+						.filter(d => mandateDocTypes.includes(d.documentType?.toUpperCase() || ""))
+						.map(d => ({
+							documentId: d.id,
+							documentType: d.documentType || "",
+							fileName: d.fileName || "",
+							uploadedAt: d.uploadedAt?.toISOString() || new Date().toISOString(),
+						})),
+					allRequiredDocsReceived: allReceived,
+				},
+			});
 		}
 
 		return NextResponse.json({

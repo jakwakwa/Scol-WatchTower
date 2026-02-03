@@ -201,6 +201,31 @@ export async function POST(
 					submissionId: submission.id,
 				},
 			});
+
+			// For facility_application, also send the specific event for V2 workflow
+			if (formType === "facility_application") {
+				// Extract mandate info from form data
+				const mandateVolume = formData.mandateVolume ?? formData.mandate_volume ?? 0;
+				const mandateType = formData.mandateType ?? formData.mandate_type ?? "EFT";
+				const businessType = formData.businessType ?? formData.business_type ?? "Unknown";
+				const annualTurnover = formData.annualTurnover ?? formData.annual_turnover;
+
+				await inngest.send({
+					name: "form/facility.submitted",
+					data: {
+						workflowId: workflowIdNum,
+						applicantId: workflow[0].applicantId,
+						submissionId: submission.id,
+						formData: {
+							mandateVolume: typeof mandateVolume === "number" ? mandateVolume : parseInt(mandateVolume) || 0,
+							mandateType: mandateType as "EFT" | "DEBIT_ORDER" | "CASH" | "MIXED",
+							businessType: String(businessType),
+							annualTurnover: annualTurnover ? (typeof annualTurnover === "number" ? annualTurnover : parseInt(annualTurnover)) : undefined,
+						},
+						submittedAt: new Date().toISOString(),
+					},
+				});
+			}
 		}
 
 		return NextResponse.json({
