@@ -1,0 +1,40 @@
+---
+title: 'Applicants'
+description: 'Manage onboarding applicants'
+---
+
+## List Applicants
+
+<Segment>
+  <SegmentTitle>GET /api/applicants</SegmentTitle>
+  <SegmentDescription>Retrieve a paginated list of all applicants.</SegmentDescription>
+</Segment>
+
+### Response
+
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "companyName": "Acme Corp",
+      "status": "new",
+      "riskLevel": "green"
+    }
+  ]
+}
+```
+
+## Get Applicant
+
+<Segment>
+  <SegmentTitle>GET /api/applicants/{id}</SegmentTitle>
+  <SegmentDescription>Retrieve details for a specific applicant.</SegmentDescription>
+</Segment>
+
+## Create Applicant
+
+<Segment>
+  <SegmentTitle>POST /api/applicants</SegmentTitle>
+  <SegmentDescription>Register a new applicant in the system.</SegmentDescription>
+</Segment>
