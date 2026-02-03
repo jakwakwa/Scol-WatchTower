@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { RiLoader4Line } from "@remixicon/react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { GlassCard } from "@/components/dashboard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { GlassCard } from "@/components/dashboard";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
 interface ApplicantFormData {
@@ -126,7 +126,12 @@ export function ApplicantForm({
 					throw new Error("Failed to create applicant");
 				}
 
-				router.push("/dashboard/applicants");
+				const data = await response.json();
+				if (data.applicant?.id) {
+					router.push(`/dashboard/applicants/${data.applicant.id}`);
+				} else {
+					router.push("/dashboard");
+				}
 				router.refresh();
 			}
 		} catch (error) {
