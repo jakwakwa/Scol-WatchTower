@@ -1,6 +1,5 @@
 import { getDatabaseClient } from "@/app/utils";
 import { notifications, workflowEvents } from "@/db/schema";
-import { eq } from "drizzle-orm";
 
 export interface CreateNotificationParams {
 	workflowId: number;
@@ -20,7 +19,8 @@ export interface LogEventParams {
 		| "agent_callback"
 		| "human_override"
 		| "timeout"
-		| "error";
+		| "error"
+		| "risk_check_completed";
 	payload: object;
 	actorType?: "user" | "agent" | "platform";
 	actorId?: string;
@@ -30,12 +30,8 @@ export interface LogEventParams {
  * Create a notification in the Control Tower UI
  */
 export async function createWorkflowNotification(
-	params: CreateNotificationParams,
+	params: CreateNotificationParams
 ): Promise<void> {
-	console.log(
-		`[NotificationEvents] Creating notification: ${params.title} - ${params.message}`,
-	);
-
 	const db = getDatabaseClient();
 	if (!db) {
 		console.error("[NotificationEvents] Failed to get database client");
@@ -63,10 +59,6 @@ export async function createWorkflowNotification(
  * Log a workflow event to the activity feed
  */
 export async function logWorkflowEvent(params: LogEventParams): Promise<void> {
-	console.log(
-		`[NotificationEvents] Logging event: ${params.eventType} for workflow ${params.workflowId}`,
-	);
-
 	const db = getDatabaseClient();
 	if (!db) {
 		console.error("[NotificationEvents] Failed to get database client");
