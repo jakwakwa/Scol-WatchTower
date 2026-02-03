@@ -1,4 +1,4 @@
-import { RiRobot2Line, RiCheckLine, RiAlertLine, RiTimeLine } from "@remixicon/react";
+import { RiAlertLine, RiCheckLine, RiRobot2Line, RiTimeLine } from "@remixicon/react";
 import { cn } from "@/lib/utils";
 
 interface Agent {
@@ -10,6 +10,9 @@ interface Agent {
 	lastCallbackAt?: Date;
 	callbackCount: number;
 	errorCount: number;
+	aiModel: string;
+	provider: string;
+	description: string;
 }
 
 const statusConfig = {
@@ -76,8 +79,22 @@ export function AgentStatusCard({ agent, onClick }: AgentStatusCardProps) {
 				</div>
 			</div>
 
+			{/* Description */}
+			<div className="mt-3">
+				<p className="text-sm text-muted-foreground line-clamp-2 min-h-10">
+					{agent.description}
+				</p>
+			</div>
+
+			{/* AI Model Info */}
+			<div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground bg-secondary/5 p-2 rounded-lg border border-secondary/10">
+				<div className="font-medium text-foreground">{agent.provider}</div>
+				<div className="w-1 h-1 rounded-full bg-border" />
+				<div>{agent.aiModel}</div>
+			</div>
+
 			{/* Task type badge */}
-			<div className="mt-4">
+			<div className="mt-3">
 				<span className="inline-flex items-center rounded-full bg-stone-500/10 px-2.5 py-1 text-xs font-medium text-stone-400">
 					{formatTaskType(agent.taskType)}
 				</span>
@@ -138,6 +155,9 @@ export function AgentStatusRow({ agent }: AgentStatusRowProps) {
 			<div className="flex-1 min-w-0">
 				<p className="font-medium truncate">{agent.name}</p>
 				<p className="text-xs text-muted-foreground">{formatTaskType(agent.taskType)}</p>
+			</div>
+			<div className="hidden sm:block text-xs text-muted-foreground">
+				{agent.provider} • {agent.aiModel}
 			</div>
 			<span className={cn("text-xs font-medium", config.color)}>{config.label}</span>
 		</div>
