@@ -15,7 +15,7 @@ import {
 	type PipelineWorkflow,
 } from "@/components/dashboard/pipeline-view";
 import { Button } from "@/components/ui/button";
-import { applicants, notifications, workflows } from "@/db/schema";
+import { applicants, notifications, quotes, workflows } from "@/db/schema";
 
 export default async function DashboardPage() {
 	const db = getDatabaseClient();
@@ -30,25 +30,38 @@ export default async function DashboardPage() {
 				.select({
 					id: workflows.id,
 					applicantId: workflows.applicantId,
-					stage: applicants.status, // Use applicant status for pipeline view
+					stage: workflows.stage, // Use workflow stage number for pipeline view
 					status: workflows.status,
 					startedAt: workflows.startedAt,
 					metadata: workflows.metadata,
 					clientName: applicants.companyName,
+					registrationNumber: applicants.registrationNumber,
+					mandateType: applicants.mandateType,
+					riskLevel: applicants.riskLevel,
 				})
 				.from(workflows)
 				.leftJoin(applicants, eq(workflows.applicantId, applicants.id))
 				.orderBy(desc(workflows.startedAt))
-				.limit(10);
+				.limit(20);
+
+			// Fetch quotes to check which workflows have quotes
+			const quoteRows = await db.select({ workflowId: quotes.workflowId }).from(quotes);
+			const workflowsWithQuotes = new Set(quoteRows.map(q => q.workflowId));
 
 			activeWorkflows = result.map(w => ({
 				id: w.id,
-				stage: w.stage || "new",
+				applicantId: w.applicantId,
+				stage: String(w.stage || 1),
 				status: w.status || "pending",
 				clientName: w.clientName || "Unknown",
 				startedAt: w.startedAt?.toISOString(),
-				// Parse metadata if it exists, otherwise use empty object
-				payload: w.metadata ? JSON.parse(w.metadata) : {},
+				hasQuote: workflowsWithQuotes.has(w.id),
+				payload: {
+					registrationNumber: w.registrationNumber || undefined,
+					mandateType: w.mandateType || undefined,
+					riskLevel: w.riskLevel || undefined,
+					...(w.metadata ? JSON.parse(w.metadata) : {}),
+				},
 			}));
 
 			const wfCountResult = await db.select({ count: count() }).from(workflows);

@@ -1,25 +1,38 @@
 "use client";
 
-import type { DropResult } from "@hello-pangea/dnd";
-import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
 import {
 	RiCheckboxCircleLine,
-	RiFileTextLine,
-	RiMoreLine,
-	RiMoneyDollarCircleLine,
-	RiEditLine,
-	RiRobot2Line,
+	RiCheckLine,
 	RiContractLine,
+	RiEditLine,
+	RiFileTextLine,
+	RiFlowChart,
+	RiMoneyDollarCircleLine,
+	RiMoreLine,
+	RiRobot2Line,
+	RiUserLine,
 } from "@remixicon/react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
 import { RiskBadge } from "../ui/status-badge";
 
 export type PipelineWorkflow = {
 	id: number | string;
 	stage: string;
+	status?: string;
 	clientName?: string;
+	applicantId?: number;
+	hasQuote?: boolean;
 	payload?: {
 		riskLevel?: string;
 		registrationNumber?: string;
@@ -85,40 +98,61 @@ const PIPELINE_STAGES = [
 
 export function PipelineView({
 	workflows,
-	onDragEnd,
 }: {
 	workflows: PipelineWorkflow[];
-	onDragEnd?: (result: DropResult) => void;
 }) {
 	const [columns, setColumns] = useState<Record<string, PipelineWorkflow[]> | null>(null);
 
 	useEffect(() => {
 		const cols = PIPELINE_STAGES.reduce(
 			(acc, stage) => {
-					acc[stage.id] = workflows.filter(workflow => {
+				acc[stage.id] = workflows.filter(workflow => {
 					// Handle both string stage names and numeric stage numbers
 					const stageValue = workflow.stage;
-					
+
 					// Numeric stage matching (V2 workflow)
 					if (typeof stageValue === "number" || !Number.isNaN(Number(stageValue))) {
 						return Number(stageValue) === stage.stageNumber;
 					}
-					
+
 					// Legacy string-based stage matching for backwards compatibility
 					const stageString = String(stageValue).toLowerCase();
 					switch (stage.id) {
 						case "entry_quote":
-							return ["new", "contacted", "qualified", "lead_capture", "entry"].includes(stageString);
+							return [
+								"new",
+								"contacted",
+								"qualified",
+								"lead_capture",
+								"entry",
+							].includes(stageString);
 						case "quote_signing":
-							return ["proposal", "quotation", "quote_signing", "signing"].includes(stageString);
+							return ["proposal", "quotation", "quote_signing", "signing"].includes(
+								stageString
+							);
 						case "mandate_processing":
-							return ["negotiation", "mandate", "mandate_processing", "verification"].includes(stageString);
+							return [
+								"negotiation",
+								"mandate",
+								"mandate_processing",
+								"verification",
+							].includes(stageString);
 						case "ai_analysis":
-							return ["review", "fica_review", "ai_analysis", "analysis"].includes(stageString);
+							return ["review", "fica_review", "ai_analysis", "analysis"].includes(
+								stageString
+							);
 						case "contract_forms":
-							return ["contract", "contract_forms", "absa_form", "forms"].includes(stageString);
+							return ["contract", "contract_forms", "absa_form", "forms"].includes(
+								stageString
+							);
 						case "completion":
-							return ["won", "activation", "completed", "integration", "completion"].includes(stageString);
+							return [
+								"won",
+								"activation",
+								"completed",
+								"integration",
+								"completion",
+							].includes(stageString);
 						default:
 							return false;
 					}
@@ -132,75 +166,69 @@ export function PipelineView({
 
 	if (!columns) return <div>Loading pipeline...</div>;
 
-	const handleDragEnd = (result: DropResult) => {
-		if (!result.destination) return;
-		if (onDragEnd) onDragEnd(result);
-	};
-
 	return (
 		<div className="h-full overflow-x-auto pb-4">
-			<DragDropContext onDragEnd={handleDragEnd}>
-				{/* 6-column layout with reduced gaps for smaller screens */}
-				<div className="flex gap-3 lg:gap-4 min-w-[1200px]">
-					{PIPELINE_STAGES.map(stage => (
-						<div key={stage.id} className="flex-1 min-w-[180px] max-w-[240px] flex flex-col gap-3">
-							{/* Column Header */}
-							<div
-								className={cn(
-									"flex items-center justify-between p-4 rounded-xl shadow-sm border border-t-4 backdrop-blur-md",
-									"bg-card/50 border-sidebar-border", // Dark mode friendly styling
-									stage.color
-								)}>
-								<div className="flex items-center gap-2">
-									<stage.icon className="h-5 w-5 text-muted-foreground" />
-									<h3 className="font-bold text-foreground">{stage.title}</h3>
-								</div>
-								<span className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary/20 text-xs font-bold text-muted-foreground border border-sidebar-border">
-									{columns[stage.id]?.length || 0}
-								</span>
+			{/* 6-column layout with reduced gaps for smaller screens */}
+			<div className="flex gap-3 lg:gap-4 min-w-[1200px]">
+				{PIPELINE_STAGES.map(stage => (
+					<div
+						key={stage.id}
+						className="flex-1 min-w-[180px] max-w-[240px] flex flex-col gap-3">
+						{/* Column Header */}
+						<div
+							className={cn(
+								"flex items-center justify-between p-4 rounded-xl shadow-sm border border-t-4 backdrop-blur-md",
+								"bg-card/50 border-sidebar-border",
+								stage.color
+							)}>
+							<div className="flex items-center gap-2">
+								<stage.icon className="h-5 w-5 text-muted-foreground" />
+								<h3 className="font-bold text-foreground">{stage.title}</h3>
 							</div>
-
-							{/* Droppable Area */}
-							<Droppable droppableId={stage.id}>
-								{(provided, snapshot) => (
-									<div
-										{...provided.droppableProps}
-										ref={provided.innerRef}
-										className={cn(
-											"flex-1 flex flex-col gap-3 transition-colors rounded-xl min-h-[100px]",
-											snapshot.isDraggingOver ? "bg-secondary/10" : ""
-										)}>
-										{columns[stage.id]?.map((workflow, index) => (
-											<Draggable
-												key={workflow.id.toString()}
-												draggableId={workflow.id.toString()}
-												index={index}>
-												{provided => (
-													<div
-														ref={provided.innerRef}
-														{...provided.draggableProps}
-														{...provided.dragHandleProps}
-														style={{ ...provided.draggableProps.style }}>
-														<PipelineCard workflow={workflow} />
-													</div>
-												)}
-											</Draggable>
-										))}
-										{provided.placeholder}
-									</div>
-								)}
-							</Droppable>
+							<span className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary/20 text-xs font-bold text-muted-foreground border border-sidebar-border">
+								{columns[stage.id]?.length || 0}
+							</span>
 						</div>
-					))}
-				</div>
-			</DragDropContext>
+
+						{/* Static Card List (drag-and-drop disabled) */}
+						<div className="flex-1 flex flex-col gap-3 rounded-xl min-h-[100px]">
+							{columns[stage.id]?.map(workflow => (
+								<PipelineCard key={workflow.id.toString()} workflow={workflow} />
+							))}
+						</div>
+					</div>
+				))}
+			</div>
 		</div>
 	);
 }
 
+function formatRelativeTime(date?: string | Date): string {
+	if (!date) return "Just now";
+	const now = new Date();
+	const d = typeof date === "string" ? new Date(date) : date;
+	const diff = now.getTime() - d.getTime();
+	const minutes = Math.floor(diff / 60000);
+	const hours = Math.floor(diff / 3600000);
+	const days = Math.floor(diff / 86400000);
+
+	if (minutes < 1) return "Just now";
+	if (minutes < 60) return `${minutes}m ago`;
+	if (hours < 24) return `${hours}h ago`;
+	return `${days}d ago`;
+}
+
 function PipelineCard({ workflow }: { workflow: PipelineWorkflow }) {
+	const stageNumber =
+		typeof workflow.stage === "number"
+			? workflow.stage
+			: Number.isNaN(Number(workflow.stage))
+				? 1
+				: Number(workflow.stage);
+	const canViewQuote = stageNumber >= 2 && workflow.hasQuote;
+
 	return (
-		<div className="bg-card/80 backdrop-blur-sm p-4 rounded-xl border border-sidebar-border shadow-sm hover:shadow-md transition-all group cursor-pointer relative hover:border-primary/20">
+		<div className="bg-card/80 backdrop-blur-sm p-4 rounded-xl border border-sidebar-border shadow-sm hover:shadow-md transition-all group relative hover:border-primary/20">
 			{/* Header: Company Name & Risk if applicable */}
 			<div className="flex justify-between items-start mb-2">
 				<h4 className="font-bold text-foreground text-sm leading-tight line-clamp-2 pr-6">
@@ -230,19 +258,57 @@ function PipelineCard({ workflow }: { workflow: PipelineWorkflow }) {
 						Updated
 					</span>
 					<span className="text-xs text-muted-foreground">
-						{workflow.startedAt ? "2 days ago" : "Just now"}
+						{formatRelativeTime(workflow.startedAt)}
 					</span>
 				</div>
 			</div>
 
 			{/* Action Menu (Hidden until Hover) */}
 			<div className="absolute top-3 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-				<Button
-					variant="ghost"
-					size="icon"
-					className="h-6 w-6 text-muted-foreground hover:text-primary">
-					<RiMoreLine className="h-4 w-4" />
-				</Button>
+				<DropdownMenu>
+					<DropdownMenuTrigger asChild>
+						<Button
+							variant="ghost"
+							size="icon"
+							className="h-6 w-6 text-muted-foreground hover:text-primary">
+							<RiMoreLine className="h-4 w-4" />
+						</Button>
+					</DropdownMenuTrigger>
+					<DropdownMenuContent align="end" className="w-[180px]">
+						<DropdownMenuLabel>Actions</DropdownMenuLabel>
+						{workflow.applicantId && (
+							<DropdownMenuItem asChild>
+								<Link
+									href={`/dashboard/applicants/${workflow.applicantId}`}
+									className="cursor-pointer flex items-center">
+									<RiUserLine className="mr-2 h-4 w-4" />
+									View Applicant
+								</Link>
+							</DropdownMenuItem>
+						)}
+						<DropdownMenuItem asChild>
+							<Link
+								href={`/dashboard/workflows/${workflow.id}`}
+								className="cursor-pointer flex items-center">
+								<RiFlowChart className="mr-2 h-4 w-4" />
+								View Workflow
+							</Link>
+						</DropdownMenuItem>
+						{canViewQuote && workflow.applicantId && (
+							<>
+								<DropdownMenuSeparator />
+								<DropdownMenuItem asChild>
+									<Link
+										href={`/dashboard/applicants/${workflow.applicantId}/quote`}
+										className="cursor-pointer flex items-center">
+										<RiCheckLine className="mr-2 h-4 w-4" />
+										View Quote
+									</Link>
+								</DropdownMenuItem>
+							</>
+						)}
+					</DropdownMenuContent>
+				</DropdownMenu>
 			</div>
 		</div>
 	);

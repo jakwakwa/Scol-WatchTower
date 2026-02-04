@@ -27,11 +27,11 @@ import {
 	RiArrowDownSLine,
 	RiArrowUpSLine,
 	RiCheckLine,
+	RiCloseLine,
 	RiFlowChart,
 	RiMore2Fill,
 	RiTimeLine,
 	RiUserLine,
-	RiCodeSSlashLine,
 	RiThumbUpLine,
 	RiThumbDownLine,
 	RiPauseCircleLine,
@@ -322,6 +322,7 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 				onManualOverride: (data: WorkflowRow) => void;
 				onQuickApprove: (data: WorkflowRow) => void;
 				onQuickReject: (data: WorkflowRow) => void;
+				onRejectWorkflow: (data: WorkflowRow) => void;
 			};
 			const isAwaiting = row.original.status === "awaiting_human";
 			const canViewQuote = row.original.stage >= 2 && row.original.hasQuote;
@@ -386,6 +387,13 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 									<RiFlowChart className="mr-2 h-4 w-4" />
 									View Workflow Graph
 								</Link>
+							</DropdownMenuItem>
+							<DropdownMenuSeparator />
+							<DropdownMenuItem
+								className="cursor-pointer flex items-center text-destructive focus:text-destructive"
+								onClick={() => meta?.onRejectWorkflow(row.original)}>
+								<RiCloseLine className="mr-2 h-4 w-4" />
+								Reject Workflow
 							</DropdownMenuItem>
 						</DropdownMenuContent>
 					</DropdownMenu>
@@ -488,6 +496,84 @@ function HITLConfirmDialog({
 	);
 }
 
+// --- Workflow Rejection Dialog ---
+
+function WorkflowRejectDialog({
+	workflow,
+	open,
+	onOpenChange,
+	onConfirm,
+}: {
+	workflow: WorkflowRow | null;
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
+	onConfirm: () => Promise<void>;
+}) {
+	const [isLoading, setIsLoading] = React.useState(false);
+
+	const handleConfirm = async () => {
+		setIsLoading(true);
+		try {
+			await onConfirm();
+			onOpenChange(false);
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	if (!workflow) return null;
+
+	return (
+		<Dialog open={open} onOpenChange={onOpenChange}>
+			<DialogContent className="max-w-md border-secondary/10 bg-zinc-100/10 backdrop-blur-xl">
+				<DialogHeader>
+					<DialogTitle className="flex items-center gap-2 text-destructive">
+						<RiAlertLine className="h-5 w-5" />
+						Reject Workflow
+					</DialogTitle>
+					<DialogDescription>
+						This will permanently remove the workflow for{" "}
+						<strong>{workflow.clientName}</strong>. The applicant record will be
+						preserved, but the workflow and all related data (quotes, events) will be
+						deleted.
+					</DialogDescription>
+				</DialogHeader>
+
+				<div className="py-4">
+					<div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4 space-y-2">
+						<div className="flex justify-between text-sm">
+							<span className="text-muted-foreground">Client</span>
+							<span className="font-medium">{workflow.clientName}</span>
+						</div>
+						<div className="flex justify-between text-sm">
+							<span className="text-muted-foreground">Stage</span>
+							<span className="font-medium">{workflow.stageName}</span>
+						</div>
+						<div className="flex justify-between text-sm">
+							<span className="text-muted-foreground">Workflow ID</span>
+							<code className="text-xs bg-black/50 px-2 py-0.5 rounded">
+								#{workflow.id}
+							</code>
+						</div>
+					</div>
+					<p className="mt-4 text-xs text-muted-foreground">
+						This action cannot be undone.
+					</p>
+				</div>
+
+				<DialogFooter>
+					<Button variant="ghost" onClick={() => onOpenChange(false)} disabled={isLoading}>
+						Cancel
+					</Button>
+					<Button variant="destructive" onClick={handleConfirm} disabled={isLoading}>
+						{isLoading ? "Rejecting..." : "Reject Workflow"}
+					</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
+	);
+}
+
 // --- Main Component ---
 
 interface WorkflowTableProps {
@@ -501,6 +587,7 @@ export function WorkflowTable({ workflows, onRefresh }: WorkflowTableProps) {
 	);
 	const [isHITLOpen, setIsHITLOpen] = React.useState(false);
 	const [hitlAction, setHitlAction] = React.useState<"approve" | "reject" | null>(null);
+	const [isRejectOpen, setIsRejectOpen] = React.useState(false);
 
 	const handleQuickApprove = React.useCallback((workflow: WorkflowRow) => {
 		setSelectedWorkflow(workflow);
@@ -512,6 +599,11 @@ export function WorkflowTable({ workflows, onRefresh }: WorkflowTableProps) {
 		setSelectedWorkflow(workflow);
 		setHitlAction("reject");
 		setIsHITLOpen(true);
+	}, []);
+
+	const handleRejectWorkflow = React.useCallback((workflow: WorkflowRow) => {
+		setSelectedWorkflow(workflow);
+		setIsRejectOpen(true);
 	}, []);
 
 	const handleHITLConfirm = React.useCallback(async () => {
@@ -562,6 +654,38 @@ export function WorkflowTable({ workflows, onRefresh }: WorkflowTableProps) {
 		}
 	}, [selectedWorkflow, hitlAction, onRefresh]);
 
+	const handleRejectConfirm = React.useCallback(async () => {
+		if (!selectedWorkflow) return;
+
+		try {
+			const response = await fetch(`/api/workflows/${selectedWorkflow.id}/reject`, {
+				method: "DELETE",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					reason: "Rejected via Control Tower",
+					actor: "admin",
+				}),
+			});
+
+			if (!response.ok) {
+				const data = await response.json();
+				throw new Error(data.error || "Failed to reject workflow");
+			}
+
+			toast.success(`Workflow rejected for ${selectedWorkflow.clientName}`, {
+				description: "Workflow has been removed",
+			});
+
+			onRefresh?.();
+		} catch (err: unknown) {
+			const message = err instanceof Error ? err.message : "Unexpected error";
+			toast.error("Failed to reject workflow", {
+				description: message,
+			});
+			throw err;
+		}
+	}, [selectedWorkflow, onRefresh]);
+
 	if (workflows.length === 0) {
 		return (
 			<div className="rounded-2xl border border-sidebar-border bg-card/90 p-12 text-center">
@@ -582,6 +706,7 @@ export function WorkflowTable({ workflows, onRefresh }: WorkflowTableProps) {
 				meta={{
 					onQuickApprove: handleQuickApprove,
 					onQuickReject: handleQuickReject,
+					onRejectWorkflow: handleRejectWorkflow,
 				}}
 			/>
 
@@ -591,6 +716,13 @@ export function WorkflowTable({ workflows, onRefresh }: WorkflowTableProps) {
 				open={isHITLOpen}
 				onOpenChange={setIsHITLOpen}
 				onConfirm={handleHITLConfirm}
+			/>
+
+			<WorkflowRejectDialog
+				workflow={selectedWorkflow}
+				open={isRejectOpen}
+				onOpenChange={setIsRejectOpen}
+				onConfirm={handleRejectConfirm}
 			/>
 		</div>
 	);
