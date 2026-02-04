@@ -9,6 +9,22 @@ import { text, integer, sqliteTable } from "drizzle-orm/sqlite-core";
  * Applicants table - Central entity
  * Renamed specific fields to match user preference: mandateVolume, itcScore, etc.
  */
+/**
+ * Business Type enumeration for conditional document logic
+ * Maps to document requirements in document-requirements.service.ts
+ */
+export const BUSINESS_TYPES = [
+	"NPO",
+	"PROPRIETOR",
+	"COMPANY",
+	"TRUST",
+	"BODY_CORPORATE",
+	"PARTNERSHIP",
+	"CLOSE_CORPORATION",
+] as const;
+
+export type BusinessType = (typeof BUSINESS_TYPES)[number];
+
 export const applicants = sqliteTable("applicants", {
 	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
 	// Basic Info
@@ -19,6 +35,19 @@ export const applicants = sqliteTable("applicants", {
 	email: text("email").notNull(), // contact_email
 	phone: text("phone"), // contact_phone
 	industry: text("industry"),
+
+	// Business Type - for conditional document logic
+	businessType: text("business_type", {
+		enum: [
+			"NPO",
+			"PROPRIETOR",
+			"COMPANY",
+			"TRUST",
+			"BODY_CORPORATE",
+			"PARTNERSHIP",
+			"CLOSE_CORPORATION",
+		],
+	}),
 
 	// Mandate Info
 	mandateType: text("mandate_type"), // debit_order, eft_collection, etc.
@@ -109,14 +138,46 @@ export const activityLogs = sqliteTable("activity_logs", {
 // Workflow Engine Tables (Keeping these for Inngest compatibility)
 // ============================================
 
+/**
+ * Workflow status enumeration
+ * Includes 'terminated' status for kill switch functionality
+ */
+export const WORKFLOW_STATUSES = [
+	"pending",
+	"processing",
+	"awaiting_human",
+	"paused",
+	"completed",
+	"failed",
+	"timeout",
+	"terminated", // Kill switch activated
+] as const;
+
+export type WorkflowStatus = (typeof WORKFLOW_STATUSES)[number];
+
 export const workflows = sqliteTable("workflows", {
 	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
 	applicantId: integer("applicant_id")
 		.notNull()
 		.references(() => applicants.id),
 	stage: integer("stage", { mode: "number" }).default(1),
-	status: text("status").default("pending"),
+	status: text("status", {
+		enum: [
+			"pending",
+			"processing",
+			"awaiting_human",
+			"paused",
+			"completed",
+			"failed",
+			"timeout",
+			"terminated",
+		],
+	}).default("pending"),
 	startedAt: integer("started_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+	completedAt: integer("completed_at", { mode: "timestamp" }),
+	terminatedAt: integer("terminated_at", { mode: "timestamp" }),
+	terminatedBy: text("terminated_by"), // User ID who triggered kill switch
+	terminationReason: text("termination_reason"), // Kill switch reason
 	metadata: text("metadata"),
 });
 
