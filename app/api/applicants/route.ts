@@ -101,19 +101,13 @@ export async function POST(request: NextRequest) {
 			throw new Error("Failed to create workflow record");
 		}
 
-		// Start the Inngest Workflow
-		// Use Control Tower workflow (PRD-aligned) by default, or V2 if explicitly requested
-		const useControlTower = process.env.USE_CONTROL_TOWER_WORKFLOW !== "false";
-		const workflowEvent = useControlTower
-			? "onboarding/control-tower.start"
-			: "onboarding/lead.created";
-
+		// Start the Control Tower workflow
 		try {
 			await inngest.send({
-				name: workflowEvent,
+				name: "onboarding/lead.created",
 				data: { applicantId: newApplicant.id, workflowId: newWorkflow.id },
 			});
-			console.log(`[API] Started ${useControlTower ? "Control Tower" : "V2"} workflow for applicant ${newApplicant.id}`);
+			console.log(`[API] Started Control Tower workflow for applicant ${newApplicant.id}`);
 		} catch (inngestError) {
 			console.error("[API] Failed to start Inngest workflow:", inngestError);
 		}

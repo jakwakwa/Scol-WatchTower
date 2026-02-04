@@ -22,32 +22,35 @@ export const BUSINESS_TYPES = [
 export type BusinessType = (typeof BUSINESS_TYPES)[number];
 
 /**
- * Applicants table - Central entity
- * Renamed specific fields to match user preference: mandateVolume, itcScore, etc.
+ * Applicants table - Central entity for onboarding
  */
 export const applicants = sqliteTable("applicants", {
 	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
-	// Basic Info
+
+	// Company Info
 	companyName: text("company_name").notNull(),
 	tradingName: text("trading_name"),
 	registrationNumber: text("registration_number"),
+
+	// Contact Info
 	contactName: text("contact_name").notNull(),
-	email: text("email").notNull(), // contact_email
-	phone: text("phone"), // contact_phone
+	email: text("email").notNull(),
+	phone: text("phone"),
+
+	// Business Classification (PRD: Conditional Document Logic)
+	businessType: text("business_type"), // NPO, PROPRIETOR, COMPANY, TRUST, etc.
 	industry: text("industry"),
+	employeeCount: integer("employee_count"),
 
 	// Mandate Info
-	mandateType: text("mandate_type"), // debit_order, eft_collection, etc.
-	mandateVolume: integer("mandate_volume"), // Renamed from estimatedVolume (was text), now integer cents or rand value? User used integer.
+	mandateType: text("mandate_type"), // EFT, DEBIT_ORDER, CASH, MIXED
+	mandateVolume: integer("mandate_volume"), // In cents
 
 	// Status & Risk
-	status: text("status").notNull().default("new"), // aka 'stage' in user schema
+	status: text("status").notNull().default("new"),
 	riskLevel: text("risk_level"), // green, amber, red
 	itcScore: integer("itc_score"),
 	itcStatus: text("itc_status"),
-
-	// Employee Info (Our legacy field, keeping for now)
-	employeeCount: integer("employee_count"),
 
 	// System
 	accountExecutive: text("account_executive"),
@@ -137,11 +140,15 @@ export const WORKFLOW_STATUSES = [
 	"completed",
 	"failed",
 	"timeout",
-	"terminated", // Kill switch activated
+	"terminated",
 ] as const;
 
 export type WorkflowStatus = (typeof WORKFLOW_STATUSES)[number];
 
+/**
+ * Workflows table - Tracks onboarding workflow state
+ * PRD: Kill switch sets status to 'terminated'
+ */
 export const workflows = sqliteTable("workflows", {
 	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
 	applicantId: integer("applicant_id")
@@ -150,6 +157,18 @@ export const workflows = sqliteTable("workflows", {
 	stage: integer("stage", { mode: "number" }).default(1),
 	status: text("status").default("pending"),
 	startedAt: integer("started_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+	completedAt: integer("completed_at", { mode: "timestamp" }),
+
+	// Kill Switch tracking (PRD Critical)
+	terminatedAt: integer("terminated_at", { mode: "timestamp" }),
+	terminatedBy: text("terminated_by"),
+	terminationReason: text("termination_reason"),
+
+	// Parallel processing state
+	procurementCleared: integer("procurement_cleared", { mode: "boolean" }),
+	documentsComplete: integer("documents_complete", { mode: "boolean" }),
+	aiAnalysisComplete: integer("ai_analysis_complete", { mode: "boolean" }),
+
 	metadata: text("metadata"),
 });
 

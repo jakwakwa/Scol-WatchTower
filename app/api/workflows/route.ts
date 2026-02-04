@@ -86,16 +86,10 @@ export async function POST(request: NextRequest) {
 			throw new Error("Failed to create workflow record");
 		}
 
-		// Trigger Inngest Workflow
-		// Use Control Tower workflow (PRD-aligned) by default
-		const useControlTower = process.env.USE_CONTROL_TOWER_WORKFLOW !== "false";
-		const workflowEvent = useControlTower
-			? "onboarding/control-tower.start"
-			: "onboarding/lead.created";
-
+		// Trigger Control Tower workflow
 		try {
 			await inngest.send({
-				name: workflowEvent,
+				name: "onboarding/lead.created",
 				data: {
 					applicantId: newWorkflow.applicantId,
 					workflowId: newWorkflow.id,

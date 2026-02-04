@@ -3,19 +3,9 @@
  * Use these in workflow functions for consistent DB state updates
  */
 import { updateWorkflowStatus } from "@/lib/services/workflow.service";
+import type { WorkflowStatus } from "@/db/schema";
 
-/**
- * Workflow status type - includes terminated for kill switch
- */
-export type WorkflowStatus =
-	| "pending"
-	| "processing"
-	| "awaiting_human"
-	| "paused"
-	| "completed"
-	| "failed"
-	| "timeout"
-	| "terminated";
+export type { WorkflowStatus };
 
 /**
  * Creates a step configuration for updating workflow status
