@@ -23,7 +23,7 @@ export function hashToken(token: string) {
 }
 
 export async function createFormInstance(
-	options: CreateFormInstanceOptions,
+	options: CreateFormInstanceOptions
 ): Promise<CreateFormInstanceResult> {
 	const db = getDatabaseClient();
 	if (!db) {
@@ -80,7 +80,7 @@ export async function getFormInstanceByToken(token: string) {
 
 export async function markFormInstanceStatus(
 	formInstanceId: number,
-	status: FormInstanceStatus,
+	status: FormInstanceStatus
 ) {
 	const db = getDatabaseClient();
 	if (!db) {
@@ -110,17 +110,22 @@ export async function recordFormSubmission(options: {
 		throw new Error("Database connection failed");
 	}
 
-	await db.insert(applicantSubmissions).values([
-		{
-			applicantMagiclinkFormId: options.applicantMagiclinkFormId,
-			applicantId: options.applicantId,
-			workflowId: options.workflowId ?? null,
-			formType: options.formType,
-			data: JSON.stringify(options.data),
-			submittedBy: options.submittedBy,
-			submittedAt: new Date(),
-		},
-	]);
+	const [submission] = await db
+		.insert(applicantSubmissions)
+		.values([
+			{
+				applicantMagiclinkFormId: options.applicantMagiclinkFormId,
+				applicantId: options.applicantId,
+				workflowId: options.workflowId ?? null,
+				formType: options.formType,
+				data: JSON.stringify(options.data),
+				submittedBy: options.submittedBy,
+				submittedAt: new Date(),
+			},
+		])
+		.returning();
 
 	await markFormInstanceStatus(options.applicantMagiclinkFormId, "submitted");
+
+	return submission;
 }

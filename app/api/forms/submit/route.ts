@@ -11,6 +11,7 @@ import {
 	facilityApplicationSchema,
 	signedQuotationSchema,
 	stratcolContractSchema,
+	type FacilityApplicationForm,
 } from "@/lib/validations/forms";
 import {
 	getFormInstanceByToken,
@@ -131,7 +132,7 @@ export async function POST(request: NextRequest) {
 			latestQuoteId = quoteResults[0].id;
 		}
 
-		await recordFormSubmission({
+		const submission = await recordFormSubmission({
 			applicantMagiclinkFormId: formInstance.id,
 			applicantId: formInstance.applicantId,
 			workflowId: formInstance.workflowId,
@@ -175,6 +176,44 @@ export async function POST(request: NextRequest) {
 					submittedAt: new Date().toISOString(),
 				},
 			});
+
+			if (formType === "FACILITY_APPLICATION") {
+				const facilityData = validation.data as FacilityApplicationForm;
+				const serviceTypes = facilityData.serviceTypes || [];
+
+				let mandateType: "EFT" | "DEBIT_ORDER" | "CASH" | "MIXED" = "EFT";
+				const hasDebicheck = serviceTypes.includes("DebiCheck");
+				// Consider other service types as EFT for now
+				const hasEft = serviceTypes.some(type => type !== "DebiCheck");
+
+				if (hasDebicheck && hasEft) {
+					mandateType = "MIXED";
+				} else if (hasDebicheck) {
+					mandateType = "DEBIT_ORDER";
+				}
+
+				// Assuming maxRandValue is in Rands, convert to cents
+				const mandateVolume = (facilityData.maxRandValue || 0) * 100;
+
+				await inngest.send({
+					name: "form/facility.submitted",
+					data: {
+						workflowId: formInstance.workflowId,
+						applicantId: formInstance.applicantId,
+						submissionId: submission.id,
+						formData: {
+							mandateVolume,
+							mandateType,
+							businessType: "Unknown",
+							annualTurnover:
+								(facilityData.forecastVolume || 0) *
+								(facilityData.forecastAverageValue || 0) *
+								12,
+						},
+						submittedAt: new Date().toISOString(),
+					},
+				});
+			}
 
 			if (formType === "STRATCOL_CONTRACT") {
 				await inngest.send({
