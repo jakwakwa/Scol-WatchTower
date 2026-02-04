@@ -48,7 +48,7 @@ async function setupTestData() {
 				{
 					applicantId: testApplicant.id,
 					stage: 2,
-					status: "in_progress",
+					status: "processing",
 				},
 			])
 			.returning();

@@ -5,6 +5,9 @@
  * procurement check results. Sends 'risk/procurement.completed' event
  * to resume the V2 workflow.
  *
+ * CRITICAL: When procurement is DENIED, this triggers the kill switch
+ * to immediately halt all parallel processes.
+ *
  * POST /api/risk-decision/procurement
  * Body: { workflowId, applicantId, procureCheckResult, decision }
  */
@@ -16,6 +19,7 @@ import { getDatabaseClient } from "@/app/utils";
 import { workflows, workflowEvents } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { auth } from "@clerk/nextjs/server";
+import { executeKillSwitch } from "@/lib/services/kill-switch.service";
 
 // ============================================
 // Request Schema
@@ -109,7 +113,24 @@ export async function POST(request: NextRequest) {
 			actorType: "user",
 		});
 
-		// Send the event to Inngest to resume the workflow
+		// CRITICAL: If procurement is DENIED, trigger kill switch
+		if (decision.outcome === "DENIED") {
+			console.log(`[ProcurementDecision] DENIED - Executing kill switch for workflow ${workflowId}`);
+			
+			const killSwitchResult = await executeKillSwitch({
+				workflowId,
+				applicantId,
+				reason: "PROCUREMENT_DENIED",
+				decidedBy: userId,
+				notes: decision.reason || "Procurement check denied by Risk Manager",
+			});
+
+			if (!killSwitchResult.success) {
+				console.error("[ProcurementDecision] Kill switch execution failed:", killSwitchResult.error);
+			}
+		}
+
+		// Send the event to Inngest to resume/terminate the workflow
 		await inngest.send({
 			name: "risk/procurement.completed",
 			data: {
@@ -143,6 +164,7 @@ export async function POST(request: NextRequest) {
 				decidedBy: userId,
 				timestamp: new Date().toISOString(),
 			},
+			killSwitchActivated: decision.outcome === "DENIED",
 		});
 	} catch (error) {
 		console.error("[ProcurementDecision] Error processing decision:", error);

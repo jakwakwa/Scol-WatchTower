@@ -2,9 +2,8 @@
  * Workflow service - database operations for workflow state
  */
 import { getDatabaseClient } from "@/app/utils";
-import { workflows } from "@/db/schema";
+import { workflows, type WorkflowStatus } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import type { WorkflowStatus } from "@/inngest/steps/database";
 
 /**
  * Update workflow status and stage in the database
