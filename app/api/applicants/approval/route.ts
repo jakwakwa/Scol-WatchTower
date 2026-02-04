@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
 		} else {
 			// Ambiguous or missing specific fields. Infer from Status.
 			if (workflow?.stage === 2) {
-				if (workflow.status === "in_progress") {
+				if (workflow.status === "processing") {
 					// Likely waiting for Quote (Stage 2 processing)
 					eventName = "onboarding/quote-generated";
 					eventData.quote = {

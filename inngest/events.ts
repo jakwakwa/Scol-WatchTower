@@ -509,4 +509,127 @@ export type Events = {
 			timestamp: string;
 		};
 	};
+
+	// ================================================================
+	// Kill Switch / Workflow Termination Events
+	// ================================================================
+
+	/**
+	 * Kill switch activated - workflow terminated immediately
+	 * This event signals all parallel processes to halt
+	 */
+	"workflow/terminated": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			reason: "PROCUREMENT_DENIED" | "COMPLIANCE_VIOLATION" | "FRAUD_DETECTED" | "MANUAL_TERMINATION";
+			decidedBy: string;
+			terminatedAt: string;
+			notes?: string;
+		};
+	};
+
+	/**
+	 * Workflow termination check - used by parallel processes to verify status
+	 */
+	"workflow/termination-check": {
+		data: {
+			workflowId: number;
+			checkingProcess: string;
+		};
+	};
+
+	// ================================================================
+	// Business Type & Document Events
+	// ================================================================
+
+	/**
+	 * Business type determined from facility application
+	 */
+	"onboarding/business-type.determined": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			businessType: "NPO" | "PROPRIETOR" | "COMPANY" | "TRUST" | "BODY_CORPORATE" | "PARTNERSHIP" | "CLOSE_CORPORATION";
+			requiredDocuments: string[];
+			optionalDocuments: string[];
+		};
+	};
+
+	/**
+	 * Conditional documents requested based on business type
+	 */
+	"document/conditional-request.sent": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			businessType: string;
+			documentsRequested: string[];
+			sentAt: string;
+		};
+	};
+
+	// ================================================================
+	// AI Agent Events
+	// ================================================================
+
+	/**
+	 * Validation agent completed document analysis
+	 */
+	"agent/validation.completed": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			validationScore: number;
+			documentsValidated: number;
+			passed: number;
+			failed: number;
+			recommendation: "PROCEED" | "REVIEW_REQUIRED" | "STOP";
+		};
+	};
+
+	/**
+	 * Risk agent completed financial analysis
+	 */
+	"agent/risk.completed": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			riskScore: number;
+			riskCategory: "LOW" | "MEDIUM" | "HIGH" | "VERY_HIGH";
+			recommendation: "APPROVE" | "CONDITIONAL_APPROVE" | "MANUAL_REVIEW" | "DECLINE";
+			flags: string[];
+		};
+	};
+
+	/**
+	 * Sanctions agent completed compliance screening
+	 */
+	"agent/sanctions.completed": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			riskLevel: "CLEAR" | "LOW" | "MEDIUM" | "HIGH" | "BLOCKED";
+			passed: boolean;
+			isPEP: boolean;
+			requiresEDD: boolean;
+			adverseMediaCount: number;
+		};
+	};
+
+	/**
+	 * Aggregated AI analysis completed (all agents)
+	 */
+	"agent/analysis.aggregated": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			aggregatedScore: number;
+			canAutoApprove: boolean;
+			requiresManualReview: boolean;
+			isBlocked: boolean;
+			recommendation: "AUTO_APPROVE" | "PROCEED_WITH_CONDITIONS" | "MANUAL_REVIEW" | "BLOCK";
+			flags: string[];
+		};
+	};
 };
