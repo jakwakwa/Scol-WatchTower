@@ -12,6 +12,7 @@ import {
 	RiShieldCheckLine,
 	RiUploadCloud2Line,
 } from "@remixicon/react";
+import { retryFacilitySubmission } from "@/lib/actions/workflow.actions";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { DashboardLayout, GlassCard } from "@/components/dashboard";
@@ -116,9 +117,10 @@ export default function ApplicantDetailPage() {
 	>([]);
 	const [riskAssessment, setRiskAssessment] = useState<RiskAssessment | null>(null);
 	const [quote, setQuote] = useState<Quote | null>(null);
-	// Workflow data is fetched but currently used only for quote association
-	const [_workflow, setWorkflow] = useState<Workflow | null>(null);
+	// Workflow instance for actions
+	const [workflow, setWorkflow] = useState<Workflow | null>(null);
 	const [loading, setLoading] = useState(true);
+	const [actionLoading, setActionLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [copiedFormId, setCopiedFormId] = useState<number | null>(null);
 	const [expandedSubmission, setExpandedSubmission] = useState<number | null>(null);
@@ -147,6 +149,35 @@ export default function ApplicantDetailPage() {
 		} catch (copyError) {
 			console.error("Failed to copy magic link:", copyError);
 			window.prompt("Copy magic link", url);
+		}
+	};
+
+	const handleRetrySubmission = async () => {
+		if (!workflow?.id) return;
+
+		if (
+			!window.confirm(
+				"Are you sure you want to retry the facility submission event? This should only be done if the workflow is stuck."
+			)
+		) {
+			return;
+		}
+
+		setActionLoading(true);
+		try {
+			const result = await retryFacilitySubmission(workflow.id);
+			if (result.success) {
+				alert("Success: " + result.message);
+				// Optional: reload the page or re-fetch data
+				window.location.reload();
+			} else {
+				alert("Error: " + result.error);
+			}
+		} catch (e) {
+			console.error(e);
+			alert("Failed to retry submission due to an unexpected error.");
+		} finally {
+			setActionLoading(false);
 		}
 	};
 
@@ -216,8 +247,12 @@ export default function ApplicantDetailPage() {
 					<Button variant="outline" size="sm">
 						Edit Details
 					</Button>
-					<Button size="sm" className="bg-action hover:bg-action/85">
-						Action Application
+					<Button
+						size="sm"
+						className="bg-action hover:bg-action/85"
+						onClick={handleRetrySubmission}
+						disabled={actionLoading || !workflow}>
+						{actionLoading ? "Retrying..." : "Retry Facility Submission"}
 					</Button>
 				</div>
 			}>
