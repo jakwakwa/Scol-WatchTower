@@ -89,17 +89,14 @@ export async function executeKillSwitch(
 
 	try {
 		// Step 1: Update workflow status to terminated
-		// Store termination details in metadata field for backward compatibility
 		await db
 			.update(workflows)
 			.set({
-				status: "terminated" as any, // Cast to any since schema might not have terminated in enum yet
-				metadata: JSON.stringify({
-					terminatedAt: terminatedAt.toISOString(),
-					terminatedBy: decidedBy,
-					terminationReason: reason,
-					notes,
-				}),
+				status: "terminated",
+				terminatedAt: terminatedAt,
+				terminatedBy: decidedBy,
+				terminationReason: reason,
+				metadata: notes ? JSON.stringify({ notes }) : undefined,
 			})
 			.where(eq(workflows.id, workflowId));
 

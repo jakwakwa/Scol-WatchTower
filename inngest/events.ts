@@ -24,16 +24,8 @@ export type Events = {
 	// Applicant & Workflow Events
 	// ================================================================
 
-	/** Triggered when a new applicant is created and workflow starts (V2 workflow) */
+	/** Triggered when a new applicant is created - starts Control Tower workflow */
 	"onboarding/lead.created": {
-		data: {
-			applicantId: number;
-			workflowId: number;
-		};
-	};
-
-	/** Triggered to start the Control Tower workflow (PRD-aligned with kill switch) */
-	"onboarding/control-tower.start": {
 		data: {
 			applicantId: number;
 			workflowId: number;
