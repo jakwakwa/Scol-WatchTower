@@ -102,12 +102,18 @@ export async function POST(request: NextRequest) {
 		}
 
 		// Start the Inngest Workflow
+		// Use Control Tower workflow (PRD-aligned) by default, or V2 if explicitly requested
+		const useControlTower = process.env.USE_CONTROL_TOWER_WORKFLOW !== "false";
+		const workflowEvent = useControlTower
+			? "onboarding/control-tower.start"
+			: "onboarding/lead.created";
+
 		try {
 			await inngest.send({
-				name: "onboarding/lead.created",
+				name: workflowEvent,
 				data: { applicantId: newApplicant.id, workflowId: newWorkflow.id },
 			});
-			console.log(`[API] Started Inngest workflow for applicant ${newApplicant.id}`);
+			console.log(`[API] Started ${useControlTower ? "Control Tower" : "V2"} workflow for applicant ${newApplicant.id}`);
 		} catch (inngestError) {
 			console.error("[API] Failed to start Inngest workflow:", inngestError);
 		}

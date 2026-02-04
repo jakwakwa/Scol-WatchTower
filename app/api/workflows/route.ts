@@ -87,9 +87,15 @@ export async function POST(request: NextRequest) {
 		}
 
 		// Trigger Inngest Workflow
+		// Use Control Tower workflow (PRD-aligned) by default
+		const useControlTower = process.env.USE_CONTROL_TOWER_WORKFLOW !== "false";
+		const workflowEvent = useControlTower
+			? "onboarding/control-tower.start"
+			: "onboarding/lead.created";
+
 		try {
 			await inngest.send({
-				name: "onboarding/lead.created",
+				name: workflowEvent,
 				data: {
 					applicantId: newWorkflow.applicantId,
 					workflowId: newWorkflow.id,

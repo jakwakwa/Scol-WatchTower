@@ -102,7 +102,8 @@ export const controlTowerWorkflow = inngest.createFunction(
 			},
 		],
 	},
-	{ event: "onboarding/lead.created" },
+	// Listen to the new control tower event - use this for PRD-aligned workflow
+	{ event: "onboarding/control-tower.start" },
 	async ({ event, step }) => {
 		const { applicantId, workflowId } = event.data;
 		const context: WorkflowContext = { applicantId, workflowId };
