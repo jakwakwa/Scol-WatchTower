@@ -436,7 +436,7 @@ function HITLConfirmDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-w-md border-secondary/10 bg-zinc-100/10 backdrop-blur-xl">
+			<DialogContent className="max-w-md border-secondary/10 bg-white/90 backdrop-blur-xl">
 				<DialogHeader>
 					<DialogTitle
 						className={cn(
@@ -525,7 +525,7 @@ function WorkflowRejectDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-w-md border-secondary/10 bg-zinc-100/10 backdrop-blur-xl">
+			<DialogContent className="max-w-md border-secondary/10 bg-zinc-100 backdrop-blur-xl">
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2 text-destructive">
 						<RiAlertLine className="h-5 w-5" />
@@ -562,7 +562,10 @@ function WorkflowRejectDialog({
 				</div>
 
 				<DialogFooter>
-					<Button variant="ghost" onClick={() => onOpenChange(false)} disabled={isLoading}>
+					<Button
+						variant="ghost"
+						onClick={() => onOpenChange(false)}
+						disabled={isLoading}>
 						Cancel
 					</Button>
 					<Button variant="destructive" onClick={handleConfirm} disabled={isLoading}>

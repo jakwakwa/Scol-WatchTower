@@ -245,7 +245,7 @@ export default function ApplicantDetailPage() {
 										className={`text-sm font-bold ${
 											client.itcScore < 60
 												? "text-destructive-foreground"
-												: "text-emerald-500"
+												: "text-emerald-900"
 										}`}>
 										ITC: {client.itcScore}
 									</span>
@@ -306,30 +306,30 @@ export default function ApplicantDetailPage() {
 				{/* Main Content Area */}
 				<div className="lg:col-span-2">
 					<Tabs defaultValue="overview" className="w-full">
-						<TabsList className="mb-6 w-full justify-start border-b border-border/40 rounded-none bg-transparent h-auto p-0 gap-6">
+						<TabsList className="mb-0 bg-black w-full justify-start border-b border-border/40 rounded-b-none rounded-t-3xl h-auto p-0 gap-2">
 							<TabsTrigger
 								value="overview"
-								className="rounded-none border-b-2 border-transparent data-[state=active]:bg-transparent px-4 py-3">
+								className="rounded-b-none border-b-2 border-transparent  px-4 py-3">
 								Overview
 							</TabsTrigger>
 							<TabsTrigger
 								value="documents"
-								className="border-b-2 border-transparent data-[state=active]:bg-transparent px-4 py-3">
+								className="border-b-2 border-transparent  px-4 py-3">
 								Documents & FICA
 							</TabsTrigger>
 							<TabsTrigger
 								value="forms"
-								className="border-b-2 border-transparent data-[state=active]:bg-transparent px-4 py-3">
+								className="border-b-2 border-transparent  px-4 py-3">
 								Forms
 							</TabsTrigger>
 							<TabsTrigger
 								value="risk"
-								className="border-b-2 border-transparent data-[state=active]:bg-transparent px-4 py-3">
+								className="border-b-2 border-transparent  px-4 py-3">
 								Risk Assessment
 							</TabsTrigger>
 							<TabsTrigger
 								value="reviews"
-								className="border-b-2 border-transparent data-[state=active]:bg-transparent px-4 py-3">
+								className="border-b-2 border-transparent  px-4 py-3">
 								Reviews
 							</TabsTrigger>
 						</TabsList>
@@ -392,7 +392,7 @@ export default function ApplicantDetailPage() {
 									documents.map(doc => (
 										<div
 											key={doc.id}
-											className="flex items-center justify-between p-4 rounded-xl border border-border/60 bg-card hover:bg-secondary/10 transition-colors">
+											className="flex items-center justify-between p-4 rounded-xl border-2 border-b-white bg-card hover:bg-secondary/10 transition-colors">
 											<div className="flex items-center gap-4">
 												<div className="h-10 w-10 rounded-lg flex items-center justify-center bg-secondary/40 text-secondary-foreground">
 													<RiFileTextLine className="h-5 w-5" />
@@ -462,7 +462,7 @@ export default function ApplicantDetailPage() {
 												<div
 													key={instance.id}
 													className="rounded-xl border border-border/60 overflow-hidden">
-													<div className="flex items-center justify-between p-4">
+													<div className="flex items-center justify-between p-4 bg-primary/10">
 														<div>
 															<p className="text-sm font-medium">
 																{instance.formType.replace(/_/g, " ")}
@@ -473,13 +473,11 @@ export default function ApplicantDetailPage() {
 															{instance.token ? (
 																<Button
 																	type="button"
-																	variant="link"
+																	variant="default"
 																	size="xs"
-																	className="mt-1 px-0 text-primary"
+																	className="mt-1 px-1"
 																	onClick={() => handleCopyMagicLink(instance)}>
-																	{copiedFormId === instance.id
-																		? "Copied"
-																		: "Copy magic link"}
+																	{copiedFormId === instance.id ? "Copied" : "Copy link"}
 																</Button>
 															) : (
 																<p className="mt-1 text-xs text-muted-foreground">
@@ -497,8 +495,8 @@ export default function ApplicantDetailPage() {
 															</div>
 															{submission?.data && (
 																<Button
-																	variant="ghost"
-																	size="sm"
+																	variant="secondary"
+																	size="xs"
 																	onClick={() =>
 																		setExpandedSubmission(
 																			isExpanded ? null : submission.id
@@ -557,7 +555,7 @@ export default function ApplicantDetailPage() {
 													className={
 														riskAssessment.cashFlowConsistency === "consistent"
 															? "text-emerald-500"
-															: "text-amber-500"
+															: "text-amber-800"
 													}>
 													{riskAssessment.cashFlowConsistency || "Pending"}
 												</Badge>
@@ -571,9 +569,7 @@ export default function ApplicantDetailPage() {
 												</span>
 											</div>
 											<div className="flex justify-between items-center">
-												<span className="text-sm text-foreground">
-													Avg Daily Balance
-												</span>
+												<span className="text-sm text-foreground">Avg Daily Balance</span>
 												<span className="text-sm font-medium">
 													{riskAssessment.averageDailyBalance
 														? `R ${(riskAssessment.averageDailyBalance / 100).toLocaleString()}`
@@ -624,9 +620,7 @@ export default function ApplicantDetailPage() {
 											</StatusBadge>
 										</div>
 										<div className="flex justify-between items-center">
-											<span className="text-sm text-foreground">
-												Overall Risk Level
-											</span>
+											<span className="text-sm text-foreground">Overall Risk Level</span>
 											{riskAssessment?.overallRisk ? (
 												<RiskBadge level={riskAssessment.overallRisk} />
 											) : (
@@ -710,14 +704,20 @@ export default function ApplicantDetailPage() {
 												variant="outline"
 												className={
 													quote.status === "approved"
-														? "text-emerald-500 border-emerald-500"
+														? "text-emerald-100 bg-emerald-600/80 border-emerald-500"
 														: quote.status === "rejected"
 															? "text-red-500 border-red-500"
 															: quote.status === "pending_approval"
-																? "text-amber-500 border-amber-500"
-																: "text-muted-foreground"
+																? "text-amber-900 bg-amber-600/80 border-amber-500"
+																: quote.status === "pending_signature"
+																	? "text-blue-600 bg-blue-100 border-blue-500"
+																	: "text-muted-foreground"
 												}>
-												{quote.status === "pending_approval" ? (
+												{quote.status === "pending_signature" ? (
+													<span className="flex items-center gap-1">
+														Pending Signature
+													</span>
+												) : quote.status === "pending_approval" ? (
 													<span className="flex items-center gap-1">
 														Pending Approval
 													</span>
@@ -735,17 +735,13 @@ export default function ApplicantDetailPage() {
 
 										<div className="grid grid-cols-2 gap-4 mb-6">
 											<div className="p-3 rounded-lg bg-secondary/10 border border-border/40">
-												<p className="text-xs text-muted-foreground mb-1">
-													Base Fee
-												</p>
+												<p className="text-xs text-muted-foreground mb-1">Base Fee</p>
 												<p className="font-bold text-lg">
 													{(quote.baseFeePercent / 100).toFixed(2)}%
 												</p>
 											</div>
 											<div className="p-3 rounded-lg bg-secondary/10 border border-border/40">
-												<p className="text-xs text-muted-foreground mb-1">
-													Adjusted Fee
-												</p>
+												<p className="text-xs text-muted-foreground mb-1">Adjusted Fee</p>
 												<p className="font-bold text-lg">
 													{quote.adjustedFeePercent
 														? `${(quote.adjustedFeePercent / 100).toFixed(2)}%`
@@ -759,9 +755,7 @@ export default function ApplicantDetailPage() {
 												<h5 className="text-xs font-bold uppercase text-muted-foreground mb-2">
 													Rationale
 												</h5>
-												<p className="text-sm text-muted-foreground">
-													{quote.rationale}
-												</p>
+												<p className="text-sm text-muted-foreground">{quote.rationale}</p>
 											</div>
 										)}
 
@@ -783,9 +777,7 @@ export default function ApplicantDetailPage() {
 																			<span className="capitalize">
 																				{key.replace(/_/g, " ")}
 																			</span>
-																			<span className="font-medium">
-																				{String(value)}
-																			</span>
+																			<span className="font-medium">{String(value)}</span>
 																		</div>
 																	))}
 																</div>

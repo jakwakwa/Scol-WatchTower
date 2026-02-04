@@ -12,7 +12,7 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { inngest } from "@/inngest/client";
-import { getDatabaseClient } from "@/app/utils";
+import { getDatabaseClient, getBaseUrl } from "@/app/utils";
 import { documents, workflows } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { auth } from "@clerk/nextjs/server";
@@ -231,7 +231,7 @@ async function mockUploadFile(file: File, workflowId: number): Promise<string> {
 	// Generate a mock URL
 	const timestamp = Date.now();
 	const safeFilename = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
-	const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+	const baseUrl = getBaseUrl();
 
 	return `${baseUrl}/uploads/workflows/${workflowId}/${timestamp}-${safeFilename}`;
 }

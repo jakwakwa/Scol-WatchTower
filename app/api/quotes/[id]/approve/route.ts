@@ -36,7 +36,7 @@ export async function POST(
 		const updatedQuoteResults = await db
 			.update(quotes)
 			.set({
-				status: "pending_approval",
+				status: "pending_signature",
 				updatedAt: new Date(),
 			})
 			.where(eq(quotes.id, id))

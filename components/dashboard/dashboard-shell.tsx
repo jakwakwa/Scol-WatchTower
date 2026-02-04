@@ -20,7 +20,7 @@ export function DashboardShell({ children, notifications = [] }: DashboardShellP
 	const { title, description, actions } = useDashboardStore();
 
 	return (
-		<div className="min-h-screen bg-linear-to-br from-popover/40 via-popover/40 to-secondary/45 ">
+		<div className="min-h-screen bg-linear-to-br from-background via-background/50 to-background/10 ">
 			<Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
 
 			{/* Main content */}
@@ -55,6 +55,16 @@ export function DashboardShell({ children, notifications = [] }: DashboardShellP
 								}}
 								onAction={async (notification, action) => {
 									try {
+										if (action === "view") {
+											const isQuote = notification.message
+												.toLowerCase()
+												.includes("quote");
+											const route = isQuote
+												? `/dashboard/applicants/${notification.applicantId}/quote`
+												: `/dashboard/applicants/${notification.applicantId}`;
+											router.push(route);
+										}
+
 										if (action === "retry" || action === "cancel") {
 											// Call resolve-error API for workflow actions
 											await fetch(
@@ -75,6 +85,24 @@ export function DashboardShell({ children, notifications = [] }: DashboardShellP
 										router.refresh();
 									} catch (e) {
 										console.error("Action failed", e);
+									}
+								}}
+								onNotificationClick={async notification => {
+									try {
+										const isQuote = notification.message.toLowerCase().includes("quote");
+										const route = isQuote
+											? `/dashboard/applicants/${notification.applicantId}/quote`
+											: `/dashboard/applicants/${notification.applicantId}`;
+										router.push(route);
+
+										// Mark notification as read
+										await fetch(`/api/notifications/${notification.id}`, {
+											method: "PATCH",
+										});
+
+										router.refresh();
+									} catch (e) {
+										console.error("Click handler failed", e);
 									}
 								}}
 								onDelete={async notification => {

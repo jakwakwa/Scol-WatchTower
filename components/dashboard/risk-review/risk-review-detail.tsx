@@ -258,14 +258,14 @@ export function RiskReviewDetail({
 	 * Determine review type based on workflow stage (V2 Workflow Phase 3)
 	 * Stage 3 = Procurement review, Stage 4 = General/Final review
 	 */
-	const reviewType: "procurement" | "general" = 
+	const reviewType: "procurement" | "general" =
 		item?.reviewType || (item?.stage === 3 ? "procurement" : "general");
 
 	/**
 	 * Get the appropriate API endpoint based on review type
 	 */
 	const getApiEndpoint = () => {
-		return reviewType === "procurement" 
+		return reviewType === "procurement"
 			? "/api/risk-decision/procurement"
 			: "/api/risk-decision";
 	};
@@ -350,7 +350,7 @@ export function RiskReviewDetail({
 
 	return (
 		<Sheet open={open} onOpenChange={onOpenChange}>
-			<SheetContent className="w-full sm:max-w-xl border-secondary/20 bg-zinc-900/95 backdrop-blur-xl overflow-y-auto">
+			<SheetContent className="w-full sm:max-w-xl border-secondary/20 bg-zinc-100/95 backdrop-blur-xl overflow-y-auto">
 				<SheetHeader className="pb-4">
 					<div className="flex items-start justify-between">
 						<div>
@@ -363,8 +363,8 @@ export function RiskReviewDetail({
 									WF-{item.workflowId}
 								</Badge>
 								{/* Review Type Badge (Phase 3) */}
-								<Badge 
-									variant="outline" 
+								<Badge
+									variant="outline"
 									className={cn(
 										"text-[10px] gap-1",
 										reviewType === "procurement"
@@ -613,7 +613,7 @@ export function RiskReviewDetail({
 
 				{/* Action Buttons - Always visible */}
 				<Separator className="my-6 bg-secondary/10" />
-				
+
 				{/* Review Type Context (Phase 3) */}
 				<div className="mb-4 p-3 rounded-lg bg-secondary/5 border border-secondary/10">
 					<p className="text-xs text-muted-foreground">
@@ -630,48 +630,59 @@ export function RiskReviewDetail({
 							</>
 						)}
 					</p>
-					
+
 					{/* Procurement-specific data display */}
 					{reviewType === "procurement" && item.procurementScore !== undefined && (
 						<div className="mt-2 pt-2 border-t border-secondary/10 grid grid-cols-2 gap-2">
 							<div>
-								<p className="text-[10px] text-muted-foreground uppercase">ProcureCheck Score</p>
-								<p className={cn(
-									"text-sm font-semibold",
-									item.procurementScore <= 30 ? "text-emerald-400" :
-									item.procurementScore <= 60 ? "text-yellow-400" : "text-red-400"
-								)}>
+								<p className="text-[10px] text-muted-foreground uppercase">
+									ProcureCheck Score
+								</p>
+								<p
+									className={cn(
+										"text-sm font-semibold",
+										item.procurementScore <= 30
+											? "text-emerald-400"
+											: item.procurementScore <= 60
+												? "text-yellow-400"
+												: "text-red-400"
+									)}>
 									{item.procurementScore}%
 								</p>
 							</div>
 							<div>
 								<p className="text-[10px] text-muted-foreground uppercase">Anomalies</p>
-								<p className={cn(
-									"text-sm font-semibold",
-									item.hasAnomalies ? "text-red-400" : "text-emerald-400"
-								)}>
+								<p
+									className={cn(
+										"text-sm font-semibold",
+										item.hasAnomalies ? "text-red-400" : "text-emerald-400"
+									)}>
 									{item.hasAnomalies ? "Detected" : "None"}
 								</p>
 							</div>
 						</div>
 					)}
-					
+
 					{/* Anomaly list if present */}
-					{reviewType === "procurement" && item.anomalies && item.anomalies.length > 0 && (
-						<div className="mt-2 pt-2 border-t border-secondary/10">
-							<p className="text-[10px] text-muted-foreground uppercase mb-1">Anomaly Details</p>
-							<ul className="text-xs text-red-400 space-y-0.5">
-								{item.anomalies.map((anomaly, idx) => (
-									<li key={idx} className="flex items-start gap-1">
-										<RiAlertLine className="h-3 w-3 shrink-0 mt-0.5" />
-										{anomaly}
-									</li>
-								))}
-							</ul>
-						</div>
-					)}
+					{reviewType === "procurement" &&
+						item.anomalies &&
+						item.anomalies.length > 0 && (
+							<div className="mt-2 pt-2 border-t border-secondary/10">
+								<p className="text-[10px] text-muted-foreground uppercase mb-1">
+									Anomaly Details
+								</p>
+								<ul className="text-xs text-red-400 space-y-0.5">
+									{item.anomalies.map((anomaly, idx) => (
+										<li key={idx} className="flex items-start gap-1">
+											<RiAlertLine className="h-3 w-3 shrink-0 mt-0.5" />
+											{anomaly}
+										</li>
+									))}
+								</ul>
+							</div>
+						)}
 				</div>
-				
+
 				<div className="flex gap-3">
 					<Button
 						variant="outline"

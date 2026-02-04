@@ -43,8 +43,7 @@ export function DashboardGrid({ children, columns = 4, className }: DashboardGri
 	};
 
 	return (
-		<div
-			className={`grid gap-4 lg:gap-6 ${gridClasses[columns]} ${className || ""}`}>
+		<div className={`grid gap-4 lg:gap-6 ${gridClasses[columns]} ${className || ""}`}>
 			{children}
 		</div>
 	);
@@ -60,7 +59,7 @@ interface GlassCardProps {
 export function GlassCard({ children, className, hover = false }: GlassCardProps) {
 	return (
 		<div
-			className={`rounded-2xl border border-sidebar-border bg-card/90 backdrop-blur-sm p-6 shadow-xl shadow-black/5 ${
+			className={`rounded-2xl bg-card border border-sidebar-border backdrop-blur-sm p-6 shadow-xl shadow-black/5 ${
 				hover
 					? "transition-all duration-300 hover:bg-card/70 hover:border-secondary/10 hover:shadow-2xl hover:-translate-y-1"
 					: ""

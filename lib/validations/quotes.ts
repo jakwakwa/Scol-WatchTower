@@ -45,5 +45,7 @@ export const updateQuoteSchema = z.object({
 	adjustedFeePercent: z.coerce.number().int().positive().optional(),
 	rationale: z.string().optional(),
 	details: z.string().optional(),
-	status: z.enum(["draft", "pending_approval", "approved", "rejected"]).optional(),
+	status: z
+		.enum(["draft", "pending_approval", "pending_signature", "approved", "rejected"])
+		.optional(),
 });

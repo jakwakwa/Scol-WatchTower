@@ -96,7 +96,10 @@ export function QuoteApprovalForm({
 		}
 	}, [details]);
 
-	const isLocked = currentStatus === "pending_approval" || currentStatus === "approved";
+	const isLocked =
+		currentStatus === "pending_approval" ||
+		currentStatus === "pending_signature" ||
+		currentStatus === "approved";
 
 	const validate = () => {
 		const nextErrors: QuoteFormErrors = {};
@@ -152,7 +155,7 @@ export function QuoteApprovalForm({
 				throw new Error(payload?.error || "Failed to approve quote");
 			}
 
-			setCurrentStatus("pending_approval");
+			setCurrentStatus("pending_signature");
 			setSubmitMessage("Quote approved and sent to client.");
 		} catch (error) {
 			setSubmitMessage(error instanceof Error ? error.message : "Approval failed");
@@ -210,27 +213,31 @@ export function QuoteApprovalForm({
 							Values are stored in cents and basis points.
 						</p>
 					</div>
-				<div className="flex items-center gap-3">
-					<Badge
-						variant="outline"
-						className={`text-xs uppercase ${
-							currentStatus === "rejected"
-								? "text-red-400 border-red-500/40"
-								: currentStatus === "pending_approval"
-									? "text-warning"
-									: "text-success"
-						}`}>
-						{currentStatus}
-					</Badge>
-					{isOverlimit && (
+					<div className="flex items-center gap-3">
 						<Badge
 							variant="outline"
-							className="text-xs uppercase text-orange-400 border-orange-500/40 gap-1">
-							<RiAlertLine className="h-3 w-3" />
-							Overlimit
+							className={`text-xs uppercase ${
+								currentStatus === "rejected"
+									? "text-red-400 border-red-500/40"
+									: currentStatus === "pending_approval"
+										? "text-warning"
+										: currentStatus === "pending_signature"
+											? "text-blue-600 bg-blue-100 border-blue-500/40"
+											: currentStatus === "approved"
+												? "text-emerald-800 bg-emerald-100 border-emerald-500/40"
+												: "text-foreground"
+							}`}>
+							{currentStatus}
 						</Badge>
-					)}
-				</div>
+						{isOverlimit && (
+							<Badge
+								variant="outline"
+								className="text-xs uppercase text-muted-foreground border-muted-foreground/40 gap-1">
+								<RiAlertLine className="h-3 w-3" />
+								Overlimit
+							</Badge>
+						)}
+					</div>
 				</div>
 
 				<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -238,8 +245,7 @@ export function QuoteApprovalForm({
 						<Label htmlFor="quote-amount">Amount (cents)</Label>
 						<Input
 							id="quote-amount"
-							className="border-input-border border-none font-mono text-xl font-light text-amber-300"
-							style={{ fontSize: "1.25rem" }}
+							className="font-mono font-light text-muted"
 							type="number"
 							value={amount}
 							onChange={event => setAmount(event.target.value)}
@@ -254,8 +260,7 @@ export function QuoteApprovalForm({
 						<Label htmlFor="quote-base-fee">Base fee (bps)</Label>
 						<Input
 							id="quote-base-fee"
-							className="border-input-border border-none font-mono text-xl font-light text-amber-300"
-							style={{ fontSize: "1.25rem" }}
+							className=" font-mono text-xl font-light text-muted"
 							type="number"
 							value={baseFeePercent}
 							onChange={event => setBaseFeePercent(event.target.value)}
@@ -270,8 +275,7 @@ export function QuoteApprovalForm({
 						<Label htmlFor="quote-adjusted-fee">Adjusted fee (bps)</Label>
 						<Input
 							id="quote-adjusted-fee"
-							className="border-input-border border-none font-mono text-xl font-light text-amber-300"
-							style={{ fontSize: "1.25rem" }}
+							className=" font-mono text-xl font-light text-muted"
 							type="number"
 							value={adjustedFeePercent}
 							onChange={event => setAdjustedFeePercent(event.target.value)}
@@ -283,10 +287,12 @@ export function QuoteApprovalForm({
 					</div>
 				</div>
 
-				<div className="space-y-2">
-					<Label htmlFor="quote-rationale" className="text-violet-400 text-lg">
-						<RiAi color="var(--color-violet-500)" />
-						rationale
+				<div className="space-y-2 mt-4">
+					<Label
+						htmlFor="quote-rationale"
+						className="text-violet-400/90 uppercase italic text-sm">
+						<RiAi color="var(--color-violet-600)" className="mb-2" />
+						Analysis
 					</Label>
 					{/* <Textarea
 						id="quote-rationale"
@@ -297,7 +303,7 @@ export function QuoteApprovalForm({
 						disabled={isLocked}
 						rows={5}
 					/> */}
-					<p className="bg-violet-900/80 outline-2 font-mono outline-violet-500 text-violet-400 p-4 rounded-lg">
+					<p className="bg-violet-900/5 outline-2 text-sm font-mono outline-violet-500 text-violet-400 p-4 rounded-lg">
 						{rationale}
 					</p>
 				</div>
@@ -312,7 +318,7 @@ export function QuoteApprovalForm({
 							Quote exceeds limit threshold
 						</p>
 						<p className="text-xs text-muted-foreground">
-							This quote amount exceeds R{(OVERLIMIT_THRESHOLD / 100).toLocaleString()}. 
+							This quote amount exceeds R{(OVERLIMIT_THRESHOLD / 100).toLocaleString()}.
 							Additional review may be required before approval.
 						</p>
 					</div>
@@ -325,41 +331,46 @@ export function QuoteApprovalForm({
 				</p>
 				<div className="flex gap-2">
 					{/* Reject Button */}
-					<Button
-						variant="outline"
-						onClick={() => setShowRejectModal(true)}
-						disabled={isSubmitting || isRejecting || currentStatus === "rejected"}
-						className="gap-2 border-red-500/20 text-red-400 hover:bg-red-500/10">
-						<RiCloseLine className="h-4 w-4" />
-						Reject Quote
-					</Button>
+					{currentStatus === "rejected" || currentStatus === "approved" ? null : (
+						<Button
+							variant="outline"
+							onClick={() => setShowRejectModal(true)}
+							disabled={isSubmitting || isRejecting}
+							className="gap-2 border-red-500/20 text-red-400 hover:bg-red-500/10">
+							<RiCloseLine className="h-4 w-4" />
+							Reject Quote
+						</Button>
+					)}
 					{/* Approve Button */}
-					<Button
-						onClick={handleApprove}
-						disabled={isSubmitting || isRejecting || isLocked}
-						className="gap-2">
-						{isSubmitting ? (
-							<>
-								<RiLoader4Line className="h-4 w-4 animate-spin" />
-								Sending...
-							</>
-						) : (
-							"Approve & Send to Client"
-						)}
-					</Button>
+					{currentStatus === "rejected" || currentStatus === "approved" ? null : (
+						<Button
+							onClick={handleApprove}
+							disabled={isSubmitting || isRejecting || isLocked}
+							className="gap-2">
+							{isSubmitting ? (
+								<>
+									<RiLoader4Line className="h-4 w-4 animate-spin" />
+									Sending...
+								</>
+							) : (
+								"Approve & Send to Client"
+							)}
+						</Button>
+					)}
 				</div>
 			</div>
 
 			{/* Quote Rejection Modal */}
 			<Dialog open={showRejectModal} onOpenChange={setShowRejectModal}>
-				<DialogContent className="max-w-md border-secondary/10 bg-zinc-100/10 backdrop-blur-xl">
+				<DialogContent className="max-w-md border-secondary/10 bg-zinc-100 backdrop-blur-xl">
 					<DialogHeader>
 						<DialogTitle className="flex items-center gap-2 text-red-400">
 							<RiCloseLine className="h-5 w-5" />
 							Reject Quote
 						</DialogTitle>
 						<DialogDescription>
-							Please provide a reason for rejecting this quote. This action cannot be undone.
+							Please provide a reason for rejecting this quote. This action cannot be
+							undone.
 						</DialogDescription>
 					</DialogHeader>
 
@@ -378,7 +389,7 @@ export function QuoteApprovalForm({
 								id="reject-reason"
 								placeholder="Enter the reason for rejection..."
 								value={rejectReason}
-								onChange={(e) => setRejectReason(e.target.value)}
+								onChange={e => setRejectReason(e.target.value)}
 								rows={4}
 								className="resize-none"
 							/>

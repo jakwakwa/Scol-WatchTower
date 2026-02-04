@@ -2,20 +2,20 @@ import { RiUserAddLine } from "@remixicon/react";
 import { desc } from "drizzle-orm";
 import Link from "next/link";
 import { getDatabaseClient } from "@/app/utils";
-import { ApplicantsTable, type ApplicantRow } from "@/components/dashboard/applicants-table";
+import {
+	ApplicantsTable,
+	type ApplicantRow,
+} from "@/components/dashboard/applicants-table";
 import { DashboardLayout, DashboardSection } from "@/components/dashboard";
 import { Button } from "@/components/ui/button";
 import { applicants, quotes, workflows } from "@/db/schema";
 import { cn } from "@/lib/utils";
 
 const statusConfig = {
-	new: { label: "New", color: "bg-blue-500/20 text-blue-400" },
-	contacted: { label: "Contacted", color: "bg-purple-500/20 text-purple-400" },
-	qualified: { label: "Qualified", color: "bg-stone-500/20 text-stone-400" },
-	proposal: { label: "Proposal", color: "bg-stone-500/20 text-stone-400" },
-	negotiation: { label: "Negotiation", color: "bg-pink-500/20 text-pink-400" },
-	won: { label: "Won", color: "bg-teal-500/40 text-emerald-600/80" },
-	lost: { label: "Lost", color: "bg-red-500/20 text-red-400" },
+	new: { label: "New", color: "bg-white/10 text-slate-400/80" },
+	in_progress: { label: "In Progress", color: "bg-blue-500/5 text-blue-400" },
+	approved: { label: "Approved", color: "bg-emerald-500/5 text-emerald-400" },
+	rejected: { label: "Rejected", color: "bg-red-500/5 text-red-400" },
 } as const;
 
 export default async function ApplicantsPage() {
@@ -32,7 +32,7 @@ export default async function ApplicantsPage() {
 			const workflowRows = await db.select().from(workflows);
 			const quoteRows = await db.select().from(quotes);
 
-			const workflowsByApplicant = new Map<number, (typeof workflows.$inferSelect)>();
+			const workflowsByApplicant = new Map<number, typeof workflows.$inferSelect>();
 			for (const workflow of workflowRows.sort((a, b) => {
 				const aTime = new Date(a.startedAt || 0).getTime();
 				const bTime = new Date(b.startedAt || 0).getTime();
@@ -43,7 +43,7 @@ export default async function ApplicantsPage() {
 				}
 			}
 
-			const quotesByWorkflow = new Map<number, (typeof quotes.$inferSelect)>();
+			const quotesByWorkflow = new Map<number, typeof quotes.$inferSelect>();
 			for (const quote of quoteRows.sort((a, b) => {
 				const aTime = new Date(a.createdAt || 0).getTime();
 				const bTime = new Date(b.createdAt || 0).getTime();
@@ -84,20 +84,20 @@ export default async function ApplicantsPage() {
 				<Link href="/dashboard/applicants/new">
 					<Button variant="secondary">
 						<RiUserAddLine />
-						New Applicant
+						Onboard Applicant
 					</Button>
 				</Link>
 			}>
 			{/* Pipeline Stats */}
-			<div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-8">
+			<div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4 mb-8">
 				{Object.entries(statusConfig).map(([status, config]) => {
 					const count = allApplicants.filter(l => l.status === status).length;
 					return (
 						<div
 							key={status}
 							className={cn(
-								"rounded-xl bg-secondary/2 border border-sidebar-border p-4 text-center",
-								"transition-colors hover:bg-secondary/4"
+								`rounded-xl  shadow-[0_5px_10px_0_rgba(0,0,0,.15)] bg-${config.color} border border-sidebar-border p-4 text-center`,
+								`transition-colors ${config.color}`
 							)}>
 							<p className="text-2xl font-bold">{count}</p>
 							<p className="text-xs text-muted-foreground">{config.label}</p>

@@ -17,17 +17,27 @@
 
 import { eq } from "drizzle-orm";
 import { NonRetriableError } from "inngest";
-import { getDatabaseClient } from "@/app/utils";
+import { getDatabaseClient, getBaseUrl } from "@/app/utils";
 import { applicants, quotes, workflows, riskAssessments } from "@/db/schema";
-import { sendInternalAlertEmail, sendApplicantFormLinksEmail } from "@/lib/services/email.service";
-import { analyzeBankStatement, canAutoApprove as canAutoApproveFica } from "@/lib/services/fica-ai.service";
+import {
+	sendInternalAlertEmail,
+	sendApplicantFormLinksEmail,
+} from "@/lib/services/email.service";
+import {
+	analyzeBankStatement,
+	canAutoApprove as canAutoApproveFica,
+} from "@/lib/services/fica-ai.service";
 import { createFormInstance } from "@/lib/services/form.service";
 import { performITCCheck } from "@/lib/services/itc.service";
 import {
 	createWorkflowNotification,
 	logWorkflowEvent,
 } from "@/lib/services/notification-events.service";
-import { generateQuote, type QuoteResult, type Quote } from "@/lib/services/quote.service";
+import {
+	generateQuote,
+	type QuoteResult,
+	type Quote,
+} from "@/lib/services/quote.service";
 import { analyzeRisk, type RiskResult } from "@/lib/services/risk.service";
 import {
 	createV24ClientProfile,
@@ -212,7 +222,9 @@ function determineMandateRequirements(mandateType: string): {
 	requiredDocuments: string[];
 	requiresProcurementCheck: boolean;
 } {
-	const requiredDocuments = MANDATE_DOCUMENT_REQUIREMENTS[mandateType] || ["MANDATE_FORM"];
+	const requiredDocuments = MANDATE_DOCUMENT_REQUIREMENTS[mandateType] || [
+		"MANDATE_FORM",
+	];
 	// Procurement check required for EFT and MIXED mandates
 	const requiresProcurementCheck = mandateType === "EFT" || mandateType === "MIXED";
 
@@ -220,7 +232,9 @@ function determineMandateRequirements(mandateType: string): {
 }
 
 // Map workflow mandate types to V24 mandate types
-function mapToV24MandateType(mandateType: string): "EFT" | "NAEDO" | "DEBICHECK" | "AVSR" {
+function mapToV24MandateType(
+	mandateType: string
+): "EFT" | "NAEDO" | "DEBICHECK" | "AVSR" {
 	const mapping: Record<string, "EFT" | "NAEDO" | "DEBICHECK" | "AVSR"> = {
 		EFT: "EFT",
 		DEBIT_ORDER: "NAEDO",
@@ -265,7 +279,9 @@ export const onboardingWorkflowV2 = inngest.createFunction(
 			}
 		});
 
-		await step.run("stage-1-start", () => updateWorkflowStatus(workflowId, "processing", 1));
+		await step.run("stage-1-start", () =>
+			updateWorkflowStatus(workflowId, "processing", 1)
+		);
 
 		// Step 1.2: AI Calculate Quotation (replaces ITC check as primary)
 		// This step calculates quote AND checks for overlimits
@@ -293,7 +309,11 @@ export const onboardingWorkflowV2 = inngest.createFunction(
 					error: quoteResult.error || "Quote generation failed",
 					itcResult,
 					quote: null as Quote | null,
-					overlimitCheck: null as { isOverlimit: boolean; threshold: number; amount: number } | null,
+					overlimitCheck: null as {
+						isOverlimit: boolean;
+						threshold: number;
+						amount: number;
+					} | null,
 				};
 			}
 
@@ -312,7 +332,7 @@ export const onboardingWorkflowV2 = inngest.createFunction(
 		// Handle quotation failure
 		if (!quotationResult.success) {
 			const errorMessage = quotationResult.error || "Failed to generate quotation";
-			
+
 			await step.run("quotation-failed-notify", () =>
 				createWorkflowNotification({
 					workflowId,
@@ -383,16 +403,16 @@ export const onboardingWorkflowV2 = inngest.createFunction(
 				workflowId,
 				applicantId,
 				type: isOverlimit ? "warning" : "info",
-				actionUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/applicants/${applicantId}`,
+				actionUrl: `${getBaseUrl()}/dashboard/applicants/${applicantId}`,
 			});
 		});
 
 		// Wait for manager decision (approve or reject)
-		const managerDecision = await step.waitForEvent("wait-for-manager-decision", {
+		const managerDecision = (await step.waitForEvent("wait-for-manager-decision", {
 			event: "quote/approved",
 			timeout: "30d",
 			match: "data.workflowId",
-		}) as QuoteApprovedEvent | null;
+		})) as QuoteApprovedEvent | null;
 
 		// Also check for rejection event (race condition handled by Inngest)
 		// In practice, we wait for approved. If rejected, a separate path handles it.
@@ -424,7 +444,9 @@ export const onboardingWorkflowV2 = inngest.createFunction(
 		// STAGE 2: Quote Signing & Facility Application
 		// ================================================================
 
-		await step.run("stage-2-start", () => updateWorkflowStatus(workflowId, "processing", 2));
+		await step.run("stage-2-start", () =>
+			updateWorkflowStatus(workflowId, "processing", 2)
+		);
 
 		// Step 2.1: Email Quote to Applicant
 		await step.run("email-quote-to-applicant", async () => {
@@ -448,7 +470,7 @@ export const onboardingWorkflowV2 = inngest.createFunction(
 				formType: "SIGNED_QUOTATION" as FormType,
 			});
 
-			const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+			const baseUrl = getBaseUrl();
 			const quoteLink = `${baseUrl}/forms/${token}`;
 
 			await sendApplicantFormLinksEmail({
@@ -469,11 +491,11 @@ export const onboardingWorkflowV2 = inngest.createFunction(
 		);
 
 		// Step 2.2: Wait for Quote Signature
-		const quoteSignedEvent = await step.waitForEvent("wait-for-quote-signed", {
+		const quoteSignedEvent = (await step.waitForEvent("wait-for-quote-signed", {
 			event: "quote/signed",
 			timeout: "30d",
 			match: "data.workflowId",
-		}) as QuoteSignedEvent | null;
+		})) as QuoteSignedEvent | null;
 
 		if (!quoteSignedEvent) {
 			await step.run("quote-signature-timeout", () =>
@@ -520,7 +542,7 @@ export const onboardingWorkflowV2 = inngest.createFunction(
 				formType: "FACILITY_APPLICATION" as FormType,
 			});
 
-			const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+			const baseUrl = getBaseUrl();
 			const facilityLink = `${baseUrl}/forms/${token}`;
 
 			await sendApplicantFormLinksEmail({
@@ -544,11 +566,11 @@ export const onboardingWorkflowV2 = inngest.createFunction(
 		);
 
 		// Step 2.4: Wait for Facility Application
-		const facilityFormEvent = await step.waitForEvent("wait-for-facility-app", {
+		const facilityFormEvent = (await step.waitForEvent("wait-for-facility-app", {
 			event: "form/facility.submitted",
 			timeout: "14d",
 			match: "data.workflowId",
-		}) as FacilityFormSubmittedEvent | null;
+		})) as FacilityFormSubmittedEvent | null;
 
 		if (!facilityFormEvent) {
 			await step.run("facility-app-timeout", () =>
@@ -577,14 +599,15 @@ export const onboardingWorkflowV2 = inngest.createFunction(
 		// STAGE 3: Mandate Determination & Parallel Processing
 		// ================================================================
 
-		await step.run("stage-3-start", () => updateWorkflowStatus(workflowId, "processing", 3));
+		await step.run("stage-3-start", () =>
+			updateWorkflowStatus(workflowId, "processing", 3)
+		);
 
 		// Step 3.1: Determine Mandate Type from Facility Application
 		const mandateInfo = await step.run("determine-mandate-type", async () => {
 			const { formData } = facilityFormEvent.data;
-			const { requiredDocuments, requiresProcurementCheck } = determineMandateRequirements(
-				formData.mandateType
-			);
+			const { requiredDocuments, requiresProcurementCheck } =
+				determineMandateRequirements(formData.mandateType);
 
 			await logWorkflowEvent({
 				workflowId,
@@ -643,7 +666,7 @@ export const onboardingWorkflowV2 = inngest.createFunction(
 							workflowId,
 							applicantId,
 							type: "warning",
-							actionUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/applicants/${applicantId}`,
+							actionUrl: `${getBaseUrl()}/dashboard/applicants/${applicantId}`,
 						});
 					}
 
@@ -673,7 +696,7 @@ export const onboardingWorkflowV2 = inngest.createFunction(
 				formType: "DOCUMENT_UPLOADS" as FormType,
 			});
 
-			const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+			const baseUrl = getBaseUrl();
 			const uploadLink = `${baseUrl}/uploads/${token}`;
 
 			await sendApplicantFormLinksEmail({
@@ -721,11 +744,11 @@ export const onboardingWorkflowV2 = inngest.createFunction(
 				})
 			);
 
-			const riskReviewEvent = await step.waitForEvent("wait-for-procurement-review", {
+			const riskReviewEvent = (await step.waitForEvent("wait-for-procurement-review", {
 				event: "risk/procurement.completed",
 				timeout: "7d",
 				match: "data.workflowId",
-			}) as ProcurementCompletedEvent | null;
+			})) as ProcurementCompletedEvent | null;
 
 			if (!riskReviewEvent) {
 				// Default to manual review required
@@ -760,11 +783,11 @@ export const onboardingWorkflowV2 = inngest.createFunction(
 		}
 
 		// Step 3.4: Wait for Mandate Documents
-		const mandateDocsEvent = await step.waitForEvent("wait-for-mandate-docs", {
+		const mandateDocsEvent = (await step.waitForEvent("wait-for-mandate-docs", {
 			event: "document/mandate.submitted",
 			timeout: "14d",
 			match: "data.workflowId",
-		}) as MandateDocumentsSubmittedEvent | null;
+		})) as MandateDocumentsSubmittedEvent | null;
 
 		if (!mandateDocsEvent) {
 			await step.run("mandate-docs-timeout", () =>
@@ -794,7 +817,9 @@ export const onboardingWorkflowV2 = inngest.createFunction(
 		// (Continues in Phase 3 implementation)
 		// ================================================================
 
-		await step.run("stage-4-start", () => updateWorkflowStatus(workflowId, "processing", 4));
+		await step.run("stage-4-start", () =>
+			updateWorkflowStatus(workflowId, "processing", 4)
+		);
 
 		// Step 4.1: Request FICA Documents for AI Analysis
 		await step.run("request-fica-documents", async () => {
@@ -814,17 +839,18 @@ export const onboardingWorkflowV2 = inngest.createFunction(
 				applicantId,
 				type: "awaiting",
 				title: "FICA Documents Required",
-				message: "Please upload 3 months bank statements and accountant letter for verification.",
+				message:
+					"Please upload 3 months bank statements and accountant letter for verification.",
 				actionable: true,
 			});
 		});
 
 		// Step 4.2: Wait for FICA Documents
-		const ficaUploadEvent = await step.waitForEvent("wait-for-fica-documents", {
+		const ficaUploadEvent = (await step.waitForEvent("wait-for-fica-documents", {
 			event: "upload/fica.received",
 			timeout: "14d",
 			match: "data.workflowId",
-		}) as FicaUploadEvent | null;
+		})) as FicaUploadEvent | null;
 
 		if (!ficaUploadEvent) {
 			await step.run("fica-docs-timeout", () =>
@@ -856,7 +882,9 @@ export const onboardingWorkflowV2 = inngest.createFunction(
 
 			// Aggregate results
 			const aggregatedScore = ficaAnalysis.aiTrustScore;
-			const recommendation = canAutoApproveFica(ficaAnalysis) ? "APPROVE" : "MANUAL_REVIEW";
+			const recommendation = canAutoApproveFica(ficaAnalysis)
+				? "APPROVE"
+				: "MANUAL_REVIEW";
 
 			await logWorkflowEvent({
 				workflowId,
@@ -913,15 +941,15 @@ export const onboardingWorkflowV2 = inngest.createFunction(
 					workflowId,
 					applicantId,
 					type: "warning",
-					actionUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/applicants/${applicantId}`,
+					actionUrl: `${getBaseUrl()}/dashboard/applicants/${applicantId}`,
 				})
 			);
 
-			const riskEvent = await step.waitForEvent("wait-for-final-risk-decision", {
+			const riskEvent = (await step.waitForEvent("wait-for-final-risk-decision", {
 				event: "risk/decision.received",
 				timeout: "7d",
 				match: "data.workflowId",
-			}) as RiskDecisionEvent | null;
+			})) as RiskDecisionEvent | null;
 
 			if (!riskEvent) {
 				await step.run("final-review-timeout", () =>
@@ -967,7 +995,9 @@ export const onboardingWorkflowV2 = inngest.createFunction(
 		// STAGE 5: Contract & Absa Form, Final Approval
 		// ================================================================
 
-		await step.run("stage-5-start", () => updateWorkflowStatus(workflowId, "processing", 5));
+		await step.run("stage-5-start", () =>
+			updateWorkflowStatus(workflowId, "processing", 5)
+		);
 
 		// Step 5.1: Request Contract Signature and Absa Form
 		await step.run("request-contract-and-absa", async () => {
@@ -995,13 +1025,16 @@ export const onboardingWorkflowV2 = inngest.createFunction(
 				formType: "ABSA_6995" as FormType,
 			});
 
-			const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+			const baseUrl = getBaseUrl();
 
 			await sendApplicantFormLinksEmail({
 				email: applicant.email,
 				contactName: applicant.contactName,
 				links: [
-					{ formType: "STRATCOL_CONTRACT", url: `${baseUrl}/forms/${contractToken.token}` },
+					{
+						formType: "STRATCOL_CONTRACT",
+						url: `${baseUrl}/forms/${contractToken.token}`,
+					},
 					{ formType: "ABSA_6995", url: `${baseUrl}/forms/${absaToken.token}` },
 				],
 			});
@@ -1021,11 +1054,11 @@ export const onboardingWorkflowV2 = inngest.createFunction(
 		);
 
 		// Step 5.2: Wait for Contract Signature
-		const contractEvent = await step.waitForEvent("wait-for-contract-signed", {
+		const contractEvent = (await step.waitForEvent("wait-for-contract-signed", {
 			event: "contract/signed",
 			timeout: "7d",
 			match: "data.workflowId",
-		}) as ContractSignedEvent | null;
+		})) as ContractSignedEvent | null;
 
 		if (!contractEvent) {
 			await step.run("contract-timeout", () =>
@@ -1055,11 +1088,11 @@ export const onboardingWorkflowV2 = inngest.createFunction(
 			})
 		);
 
-		const finalApprovalEvent = await step.waitForEvent("wait-for-final-approval", {
+		const finalApprovalEvent = (await step.waitForEvent("wait-for-final-approval", {
 			event: "onboarding/final-approval.received",
 			timeout: "7d",
 			match: "data.workflowId",
-		}) as FinalApprovalEvent | null;
+		})) as FinalApprovalEvent | null;
 
 		if (!finalApprovalEvent) {
 			await step.run("final-approval-timeout", () =>
@@ -1077,7 +1110,9 @@ export const onboardingWorkflowV2 = inngest.createFunction(
 		// STAGE 6: Integration & Completion
 		// ================================================================
 
-		await step.run("stage-6-start", () => updateWorkflowStatus(workflowId, "processing", 6));
+		await step.run("stage-6-start", () =>
+			updateWorkflowStatus(workflowId, "processing", 6)
+		);
 
 		// Step 6.1: V24 Integration
 		const v24Result = await step.run("v24-create-client", async () => {
@@ -1140,7 +1175,7 @@ export const onboardingWorkflowV2 = inngest.createFunction(
 				email: applicant?.email || "client@example.com",
 				clientName: applicant?.companyName || "Client",
 				v24Reference: v24Result.v24Reference || `SC-${workflowId}`,
-				portalUrl: `${process.env.NEXT_PUBLIC_APP_URL}/portal`,
+				portalUrl: `${getBaseUrl()}/portal`,
 				temporaryPassword: generateTemporaryPassword(),
 			});
 		});

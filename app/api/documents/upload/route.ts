@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { inngest } from "@/inngest";
-import { getDatabaseClient } from "@/app/utils";
+import { getDatabaseClient, getBaseUrl } from "@/app/utils";
 import { documents } from "@/db/schema";
 import { DocumentCategorySchema, DocumentTypeSchema } from "@/lib/types";
 import {
@@ -147,6 +147,6 @@ async function mockUploadFile(file: File, workflowId: number): Promise<string> {
 	await new Promise(resolve => setTimeout(resolve, 100));
 	const timestamp = Date.now();
 	const safeFilename = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
-	const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+	const baseUrl = getBaseUrl();
 	return `${baseUrl}/uploads/workflows/${workflowId}/${timestamp}-${safeFilename}`;
 }

@@ -465,7 +465,7 @@ export function RiskDecisionDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-md border-secondary/20 bg-zinc-900/95 backdrop-blur-xl">
+			<DialogContent className="sm:max-w-md border-secondary/20 bg-zinc-100/95 backdrop-blur-xl">
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2">
 						{action === "approve" ? (

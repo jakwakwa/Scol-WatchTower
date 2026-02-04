@@ -50,7 +50,7 @@ const PIPELINE_STAGES = [
 		id: "entry_quote",
 		stageNumber: 1,
 		title: "Entry & Quote",
-		color: "border-t-blue-400",
+		color: "bg-blue-500/5 border-blue-500/70",
 		icon: RiMoneyDollarCircleLine,
 		shortTitle: "Entry",
 	},
@@ -58,7 +58,7 @@ const PIPELINE_STAGES = [
 		id: "quote_signing",
 		stageNumber: 2,
 		title: "Quote Signing",
-		color: "border-t-indigo-400",
+		color: "bg-indigo-500/5 border-indigo-500/70",
 		icon: RiEditLine,
 		shortTitle: "Signing",
 	},
@@ -66,7 +66,7 @@ const PIPELINE_STAGES = [
 		id: "mandate_processing",
 		stageNumber: 3,
 		title: "Mandate Processing",
-		color: "border-t-purple-400",
+		color: "bg-chart-4/5 border-chart-4/70",
 		icon: RiFileTextLine,
 		shortTitle: "Mandate",
 	},
@@ -74,7 +74,7 @@ const PIPELINE_STAGES = [
 		id: "ai_analysis",
 		stageNumber: 4,
 		title: "AI Analysis",
-		color: "border-t-amber-400",
+		color: "bg-primary/5 border-primary/70",
 		icon: RiRobot2Line,
 		shortTitle: "Analysis",
 	},
@@ -82,7 +82,7 @@ const PIPELINE_STAGES = [
 		id: "contract_forms",
 		stageNumber: 5,
 		title: "Contract & Forms",
-		color: "border-t-orange-400",
+		color: "bg-red-500/5 border-red-500/70",
 		icon: RiContractLine,
 		shortTitle: "Contract",
 	},
@@ -90,17 +90,13 @@ const PIPELINE_STAGES = [
 		id: "completion",
 		stageNumber: 6,
 		title: "Completion",
-		color: "border-t-emerald-400",
+		color: "bg-emerald-500/5 border-emerald-500/70",
 		icon: RiCheckboxCircleLine,
 		shortTitle: "Complete",
 	},
 ];
 
-export function PipelineView({
-	workflows,
-}: {
-	workflows: PipelineWorkflow[];
-}) {
+export function PipelineView({ workflows }: { workflows: PipelineWorkflow[] }) {
 	const [columns, setColumns] = useState<Record<string, PipelineWorkflow[]> | null>(null);
 
 	useEffect(() => {
@@ -119,13 +115,9 @@ export function PipelineView({
 					const stageString = String(stageValue).toLowerCase();
 					switch (stage.id) {
 						case "entry_quote":
-							return [
-								"new",
-								"contacted",
-								"qualified",
-								"lead_capture",
-								"entry",
-							].includes(stageString);
+							return ["new", "contacted", "qualified", "lead_capture", "entry"].includes(
+								stageString
+							);
 						case "quote_signing":
 							return ["proposal", "quotation", "quote_signing", "signing"].includes(
 								stageString
@@ -167,25 +159,23 @@ export function PipelineView({
 	if (!columns) return <div>Loading pipeline...</div>;
 
 	return (
-		<div className="h-full overflow-x-auto pb-4">
+		<div className="h-full overflow-x-auto  rounded-xl  bg-linear-to-br from-slate-200/10  to-slate-100/10 border border-sidebar-border  m-4 p-4 shadow-[inset_-10px_-1px_10px_rgba(0,0,0,0.1)]">
 			{/* 6-column layout with reduced gaps for smaller screens */}
-			<div className="flex gap-3 lg:gap-4 min-w-[1200px]">
+			<div className="flex gap-3 min-w-[1400px] ">
 				{PIPELINE_STAGES.map(stage => (
 					<div
-						key={stage.id}
-						className="flex-1 min-w-[180px] max-w-[240px] flex flex-col gap-3">
-						{/* Column Header */}
+						key={stage.id + 11}
+						className={`flex-1 min-w-[180px] max-w-[240px] flex flex-col gap-3`}>
 						<div
 							className={cn(
-								"flex items-center justify-between p-4 rounded-xl shadow-sm border border-t-4 backdrop-blur-md",
-								"bg-card/50 border-sidebar-border",
+								`flex items-center justify-between p-4 rounded-xl shadow-sm border-t-4 border-t-${stage.color} min-h-[70px]`,
 								stage.color
 							)}>
 							<div className="flex items-center gap-2">
 								<stage.icon className="h-5 w-5 text-muted-foreground" />
-								<h3 className="font-bold text-foreground">{stage.title}</h3>
+								<h3 className="font-bold text-xs text-foreground">{stage.title}</h3>
 							</div>
-							<span className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary/20 text-xs font-bold text-muted-foreground border border-sidebar-border">
+							<span className="flex h-6 w-6 items-center justify-center rounded-full  text-xs font-bold text-muted-foreground border border-sidebar-border">
 								{columns[stage.id]?.length || 0}
 							</span>
 						</div>
@@ -228,53 +218,48 @@ function PipelineCard({ workflow }: { workflow: PipelineWorkflow }) {
 	const canViewQuote = stageNumber >= 2 && workflow.hasQuote;
 
 	return (
-		<div className="bg-card/80 backdrop-blur-sm p-4 rounded-xl border border-sidebar-border shadow-sm hover:shadow-md transition-all group relative hover:border-primary/20">
+		<div className="bg-card backdrop-blur-xs p-4 rounded-xl border border-white/10 shadow-[0px_10px_10px_rgba(0,0,0,0.05)] hover:shadow-md transition-all group relative hover:border-primary/20">
 			{/* Header: Company Name & Risk if applicable */}
 			<div className="flex justify-between items-start mb-2">
-				<h4 className="font-bold text-foreground text-sm leading-tight line-clamp-2 pr-6">
+				<h4 className="font-medium line-clamp-1 text-ellipsis  whitespace-nowrap uppercase   text-[11px] text-card-foreground leading-tight pr-6">
 					{workflow.clientName || "Unknown Company"}
 				</h4>
 				{workflow.payload?.riskLevel && <RiskBadge level={workflow.payload.riskLevel} />}
 			</div>
-
+			<div className="flex gap-1">
+				<p className="text-[10px] text-card-foreground/50 font-mono mb-4">
+					{`Reg No: ${workflow.payload?.registrationNumber ? workflow.payload.registrationNumber : " #"}`}
+				</p>
+				<p className="text-[10px] text-card-foreground/50 font-mono mb-4">
+					{`| ID: ${workflow.applicantId ? workflow.applicantId : " #"}`}
+				</p>
+			</div>
 			{/* Subtitle: Registration Number */}
-			<p className="text-xs text-muted-foreground font-mono mb-4">
-				{workflow.payload?.registrationNumber || "No Reg #"}
-			</p>
 
 			{/* Footer: Details & Time */}
 			<div className="flex items-center justify-between pt-3 border-t border-sidebar-border/50 mt-2">
 				<div className="flex flex-col">
-					<span className="text-[10px] text-muted-foreground uppercase tracking-wide">
-						Mandate
-					</span>
-					<span className="text-xs font-medium text-foreground/80">
+					<span className="text-[11px] font-semibold text-secondary/50">
 						{workflow.payload?.mandateType || "Debit Order"}
 					</span>
 				</div>
 
 				<div className="flex flex-col items-end">
-					<span className="text-[10px] text-muted-foreground uppercase tracking-wide">
-						Updated
-					</span>
-					<span className="text-xs text-muted-foreground">
+					<span className="text-[11px] text-secondary/80">
 						{formatRelativeTime(workflow.startedAt)}
 					</span>
 				</div>
 			</div>
 
 			{/* Action Menu (Hidden until Hover) */}
-			<div className="absolute top-3 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+			<div className="absolute top-3 right-2 opacity-0 group-hover:opacity-100 backdrop-blur-sm transition-opacity">
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
-						<Button
-							variant="ghost"
-							size="icon"
-							className="h-6 w-6 text-muted-foreground hover:text-primary">
+						<Button variant="ghost" size="icon" className="h-6 w-6">
 							<RiMoreLine className="h-4 w-4" />
 						</Button>
 					</DropdownMenuTrigger>
-					<DropdownMenuContent align="end" className="w-[180px]">
+					<DropdownMenuContent align="end" className="w-[180px] backdrop-blur-xs">
 						<DropdownMenuLabel>Actions</DropdownMenuLabel>
 						{workflow.applicantId && (
 							<DropdownMenuItem asChild>

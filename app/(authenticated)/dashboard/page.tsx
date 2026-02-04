@@ -83,6 +83,7 @@ export default async function DashboardPage() {
 				.select({
 					id: notifications.id,
 					workflowId: notifications.workflowId,
+					applicantId: notifications.applicantId,
 					type: notifications.type,
 					message: notifications.message,
 					read: notifications.read,
@@ -98,12 +99,13 @@ export default async function DashboardPage() {
 			workflowNotifications = notificationsResult.map(n => ({
 				id: n.id.toString(),
 				workflowId: n.workflowId || 0,
+				applicantId: n.applicantId || 0,
 				clientName: n.clientName || "Unknown",
 				type: (n.type as WorkflowNotification["type"]) || "awaiting",
 				message: n.message,
 				timestamp: n.createdAt || new Date(),
-				read: n.read,
-				actionable: n.actionable,
+				read: n.read || false,
+				actionable: n.actionable || false,
 			}));
 		} catch (error) {
 			console.error("Failed to fetch notifications:", error);

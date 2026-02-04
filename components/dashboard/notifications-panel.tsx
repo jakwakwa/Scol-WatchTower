@@ -15,14 +15,25 @@ import {
 	RiUserLine,
 } from "@remixicon/react";
 import Link from "next/link";
+import router from "next/router";
 import * as React from "react";
 import { toast } from "sonner";
 
 export interface WorkflowNotification {
 	id: string;
 	workflowId: number;
+	applicantId: number;
 	clientName: string;
-	type: "awaiting" | "completed" | "failed" | "timeout" | "paused" | "error";
+	type:
+		| "awaiting"
+		| "completed"
+		| "failed"
+		| "timeout"
+		| "paused"
+		| "error"
+		| "warning"
+		| "info"
+		| "success";
 	message: string;
 	timestamp: Date;
 	read: boolean;
@@ -60,6 +71,21 @@ const notificationConfig = {
 		color: "text-red-500",
 		bgColor: "bg-red-500/10",
 	},
+	warning: {
+		icon: RiAlertLine,
+		color: "text-amber-500",
+		bgColor: "bg-amber-500/20",
+	},
+	info: {
+		icon: RiNotification3Line,
+		color: "text-blue-500",
+		bgColor: "bg-blue-500/10",
+	},
+	success: {
+		icon: RiCheckLine,
+		color: "text-emerald-500",
+		bgColor: "bg-emerald-500/10",
+	},
 };
 
 interface NotificationsPanelProps {
@@ -68,7 +94,7 @@ interface NotificationsPanelProps {
 	onNotificationClick?: (notification: WorkflowNotification) => void;
 	onAction?: (
 		notification: WorkflowNotification,
-		action: "approve" | "reject" | "retry" | "cancel"
+		action: "approve" | "reject" | "retry" | "cancel" | "view"
 	) => void;
 	onDelete?: (notification: WorkflowNotification) => void;
 }
@@ -92,12 +118,13 @@ export function NotificationsPanel({
 	const handleAction = async (
 		e: React.MouseEvent,
 		notification: WorkflowNotification,
-		action: "approve" | "reject" | "retry" | "cancel"
+		action: "approve" | "reject" | "retry" | "cancel" | "view"
 	) => {
 		e.stopPropagation();
 
 		try {
-			await onAction?.(notification, action);
+			onAction?.(notification, action);
+
 			// Toast is handled by the caller or we can add it here if needed
 			// Removing the generic success toast here as it might be confusing for retry/cancel
 		} catch {
@@ -185,7 +212,7 @@ export function NotificationsPanel({
 									{/* Main Action Button */}
 									<button
 										type="button"
-										className="absolute inset-0 z-0 w-full h-full cursor-pointer focus:outline-none"
+										className="absolute inset-0 z-0 w-full h-full focus:outline-none"
 										onClick={() => onNotificationClick?.(notification)}>
 										<span className="sr-only">
 											View notification from {notification?.clientName}
@@ -236,21 +263,15 @@ export function NotificationsPanel({
 											{notification?.actionable && (
 												<div className="flex gap-1 pointer-events-auto">
 													{/* Approval Actions */}
-													{notification?.type === "awaiting" && (
+													{(notification?.type === "awaiting" ||
+														notification?.type === "warning") && (
 														<>
 															<Button
 																variant="ghost"
 																size="sm"
 																className="h-6 px-2 text-xs hover:bg-teal-500/40 hover:text-emerald-600/80"
-																onClick={e => handleAction(e, notification, "approve")}>
-																Approve
-															</Button>
-															<Button
-																variant="ghost"
-																size="sm"
-																className="h-6 px-2 text-xs hover:bg-red-500/20 hover:text-red-400"
-																onClick={e => handleAction(e, notification, "reject")}>
-																Reject
+																onClick={e => handleAction(e, notification, "view")}>
+																View
 															</Button>
 														</>
 													)}

@@ -273,7 +273,7 @@ export const quotes = sqliteTable("quotes", {
 	details: text("details"), // JSON string with AI quote details
 	rationale: text("rationale"), // AI reasoning for the fee
 	status: text("status", {
-		enum: ["draft", "pending_approval", "approved", "rejected"],
+		enum: ["draft", "pending_approval", "pending_signature", "approved", "rejected"],
 	})
 		.notNull()
 		.default("draft"),
