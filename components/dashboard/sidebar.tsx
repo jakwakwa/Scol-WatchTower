@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import {
 	RiDashboardLine,
 	RiUserAddLine,
-	RiFlowChart,
+	RiBarChartBoxAiFill,
 	RiRobot2Line,
 	RiMenuFoldLine,
 	RiMenuUnfoldLine,
@@ -18,7 +18,7 @@ import { Button } from "../ui/button";
 const navigation = [
 	{ name: "Overview", href: "/dashboard", icon: RiDashboardLine },
 	{ name: "Applicants", href: "/dashboard/applicants", icon: RiUserAddLine },
-	{ name: "Workflows", href: "/dashboard/workflows", icon: RiFlowChart },
+	{ name: "Workflows", href: "/dashboard/workflows", icon: RiBarChartBoxAiFill },
 	{
 		name: "Risk Review",
 		href: "/dashboard/risk-review",

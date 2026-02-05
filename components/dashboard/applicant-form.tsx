@@ -1,6 +1,6 @@
 "use client";
 
-import { RiLoader4Line } from "@remixicon/react";
+import { RiLoader4Line, RiTestTubeLine } from "@remixicon/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { GlassCard } from "@/components/dashboard";
@@ -59,15 +59,15 @@ export function ApplicantForm({
 	// Fill form with test data for Mockaroo testing
 	const fillTestData = () => {
 		setFormData({
-			companyName: "Test Company (Pty) Ltd",
-			registrationNumber: "2024/123456/07",
-			contactName: "John Test",
-			email: "john.test@testcompany.co.za",
-			phone: "+27 82 123 4567",
-			industry: "Financial Services",
-			mandateType: "debit_order",
-			employeeCount: "50",
-			estimatedVolume: "R500,000",
+			companyName: `${isMockarooTestMode ? "Jacob Kotzee T/a Doodles Digital" : "Test Company Inc"}`,
+			registrationNumber: `${isMockarooTestMode ? "0787173160001" : "2024/123456/07"}`,
+			contactName: `${isMockarooTestMode ? "Jacob Kotzee" : "John Test"}`,
+			email: `${isMockarooTestMode ? "jkotzee@icloud.com" : "john.test@testcompany.co.za"}`,
+			phone: `${isMockarooTestMode ? "+27 76 341 0291" : "+27 82 123 4567"}`,
+			industry: `${isMockarooTestMode ? "Software Development" : "Financial Services"}`,
+			mandateType: `${isMockarooTestMode ? "Debit Order" : "debit_order"}`,
+			employeeCount: `${isMockarooTestMode ? "1" : "50"}`,
+			estimatedVolume: `${isMockarooTestMode ? `R ${Math.floor(Math.random() * 100000)}` : "R500,000"}`,
 			notes: "Mockaroo test applicant - auto-generated for credit check testing",
 		});
 	};
@@ -145,10 +145,10 @@ export function ApplicantForm({
 		<form onSubmit={handleSubmit} className="space-y-8">
 			{/* Test Mode Banner */}
 			{isMockarooTestMode && (
-				<div className="flex items-center justify-between p-4 rounded-lg border border-warning bg-warning shadow-lg shadow-amber-900/20">
+				<div className="flex items-center justify-between p-4 rounded-lg border border-warning bg-warning shadow-lg shadow-amber-800/10">
 					<div className="flex items-center gap-2">
-						<span className="text-warning-foreground text-sm font-medium">
-							🧪 Mockaroo Test Mode
+						<span className="text-warning-foreground animate-pulse text-sm font-medium">
+						<RiTestTubeLine className="h-8 w-8 animate-pulse" /> Test Mode
 						</span>
 					</div>
 					<Button
@@ -215,14 +215,16 @@ export function ApplicantForm({
 							placeholder="e.g., 250"
 						/>
 					</div>
-
+					<div className="space-y-2">
+						<Label htmlFor="estimatedVolume">Estimated Volume</Label>
 					<Input
 						className="border-input-border"
 						id="estimatedVolume"
 						value={formData.estimatedVolume}
 						onChange={e => updateField("estimatedVolume", e.target.value)}
-						placeholder="e.g., R500,000"
-					/>
+							placeholder="e.g., R500,000"
+						/>
+					</div>
 				</div>
 
 				<div className="space-y-2 mt-4">
