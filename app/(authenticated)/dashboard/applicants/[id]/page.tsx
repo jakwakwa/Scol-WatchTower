@@ -501,30 +501,30 @@ export default function ApplicantDetailPage() {
 				{/* Main Content Area */}
 				<div className="lg:col-span-2">
 					<Tabs defaultValue={defaultTab} className="w-full">
-						<TabsList className="mb-0 bg-black w-full justify-start border-b border-border/40 rounded-b-none rounded-t-3xl h-auto p-0 gap-2">
+						<TabsList className="mb-0 bg-slate-700 w-full justify-start border-b border-border/40 rounded-b-none rounded-t-xl h-auto p-0 gap-2">
 							<TabsTrigger
 								value="overview"
-								className="rounded-b-none border-b-2 border-transparent  px-4 py-3">
+								className="rounded-b-none border-b-2 border-none outline-0 shadow-none px-4 py-3">
 								Overview
 							</TabsTrigger>
 							<TabsTrigger
 								value="documents"
-								className="border-b-2 border-transparent  px-4 py-3">
+								className="border-b-2 border-none outline-0 shadow-none px-4 py-3">
 								Documents & FICA
 							</TabsTrigger>
 							<TabsTrigger
 								value="forms"
-								className="border-b-2 border-transparent  px-4 py-3">
+								className="border-b-2 border-none outline-0 shadow-none px-4 py-3">
 								Forms
 							</TabsTrigger>
 							<TabsTrigger
 								value="risk"
-								className="border-b-2 border-transparent  px-4 py-3">
+								className="border-b-2 border-none outline-0 shadow-none px-4 py-3">
 								Risk Assessment
 							</TabsTrigger>
 							<TabsTrigger
 								value="reviews"
-								className="border-b-2 border-transparent  px-4 py-3">
+								className="border-b-2 border-none outline-0 shadow-none px-4 py-3">
 								Reviews
 							</TabsTrigger>
 						</TabsList>
@@ -659,20 +659,20 @@ export default function ApplicantDetailPage() {
 													className="rounded-xl border border-border/60 overflow-hidden">
 													<div className="flex items-center justify-between p-4 bg-primary/10">
 														<div>
-															<p className="text-sm font-medium capitalize">
+															<p className="text-xs uppercase font-bold">
 																{instance.formType.replace(/_/g, " ").toLowerCase()}
 															</p>
-															<p className="text-xs text-muted-foreground">
-																Status: {instance.status}
+															<p className="text-sm text-success/90 my-1 font-sans italic">
+															{instance.status}
 															</p>
 															{instance.token ? (
 																<Button
 																	type="button"
 																	variant="default"
 																	size="xs"
-																	className="mt-1 px-1"
+																	className="mt-1 px-2 bg-slate-700/50 text-xs"
 																	onClick={() => handleCopyMagicLink(instance)}>
-																	{copiedFormId === instance.id ? "Copied" : "Copy link"}
+																	{copiedFormId === instance.id ? "Copied" : "Copy Client link"}
 																</Button>
 															) : (
 																<p className="mt-1 text-xs text-muted-foreground">
