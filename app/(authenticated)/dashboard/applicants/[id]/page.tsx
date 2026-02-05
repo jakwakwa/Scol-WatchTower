@@ -327,11 +327,11 @@ export default function ApplicantDetailPage() {
 		try {
 			const result = await retryFacilitySubmission(workflow.id);
 			if (result.success) {
-				alert("Success: " + result.message);
+				alert(`Success: ${result.message}`);
 				// Optional: reload the page or re-fetch data
 				window.location.reload();
 			} else {
-				alert("Error: " + result.error);
+				alert(`Error: ${result.error}`);
 			}
 		} catch (e) {
 			console.error(e);
