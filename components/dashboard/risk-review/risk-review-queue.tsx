@@ -96,7 +96,7 @@ function getTrustScoreColor(score: number): string {
 	return "text-red-400";
 }
 
-function getTrustScoreBg(score: number): string {
+function _getTrustScoreBg(score: number): string {
 	if (score >= 80) return "bg-emerald-500/10";
 	if (score >= 60) return "bg-warning/50";
 	if (score >= 40) return "bg-orange-500/10";
@@ -186,7 +186,7 @@ export function RiskReviewCard({
 	onReject,
 	onViewDetails,
 }: RiskReviewCardProps) {
-	const [isApproving, setIsApproving] = React.useState(false);
+	const [_isApproving, setIsApproving] = React.useState(false);
 	const [showDecisionDialog, setShowDecisionDialog] = React.useState(false);
 	const [decisionAction, setDecisionAction] = React.useState<"approve" | "reject" | null>(
 		null
@@ -221,7 +221,7 @@ export function RiskReviewCard({
 				});
 			}
 			setShowDecisionDialog(false);
-		} catch (error) {
+		} catch (_error) {
 			toast.error("Failed to process decision");
 		} finally {
 			setIsApproving(false);
@@ -364,7 +364,7 @@ export function RiskReviewCard({
 								Flags Detected:
 							</p>
 							<div className="flex flex-wrap gap-1.5">
-								{displayFlags.slice(0, 3).map((flag, idx) => (
+								{displayFlags.slice(0, 3).map((flag, _idx) => (
 									<Badge
 										key={flag.type}
 										variant="outline"
