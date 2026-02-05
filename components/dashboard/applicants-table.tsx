@@ -221,7 +221,7 @@ export const columns: ColumnDef<ApplicantRow>[] = [
 							</DropdownMenuItem>
 							{canViewQuote ? (
 								<DropdownMenuItem asChild>
-									<Link href={`/dashboard/applicants/${row.original.id}/quote`}>
+									<Link href={`/dashboard/applicants/${row.original.id}?tab=reviews`}>
 										Review Quote
 									</Link>
 								</DropdownMenuItem>
