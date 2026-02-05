@@ -464,7 +464,7 @@ export default function ApplicantDetailPage() {
 							<div className="flex items-center gap-3 text-sm">
 								<RiShieldCheckLine className="h-4 w-4 text-muted-foreground" />
 								<span className="capitalize">
-									{client.mandateType ? client.mandateType.replace("_", " ") : "Not set"}
+									{client.mandateType ? client.mandateType.replace(/_/g, " ").toLowerCase() : "Not set"}
 								</span>
 							</div>
 						</div>
@@ -659,8 +659,8 @@ export default function ApplicantDetailPage() {
 													className="rounded-xl border border-border/60 overflow-hidden">
 													<div className="flex items-center justify-between p-4 bg-primary/10">
 														<div>
-															<p className="text-sm font-medium">
-																{instance.formType.replace(/_/g, " ")}
+															<p className="text-sm font-medium capitalize">
+																{instance.formType.replace(/_/g, " ").toLowerCase()}
 															</p>
 															<p className="text-xs text-muted-foreground">
 																Status: {instance.status}
@@ -713,11 +713,13 @@ export default function ApplicantDetailPage() {
 																		key={key}
 																		className="flex justify-between items-start p-2 rounded-lg bg-card border border-border/40">
 																		<span className="text-xs text-muted-foreground capitalize">
-																			{key.replace(/_/g, " ")}
+																			{key.replace(/([A-Z])/g, " $1").replace(/_/g, " ").toLowerCase()}
 																		</span>
-																		<span className="text-xs font-medium text-foreground text-right max-w-[60%] wrap-break-word">
-																			{typeof value === "object"
-																				? JSON.stringify(value)
+																		<span className="text-xs font-medium text-foreground text-right max-w-[60%] wrap-break-word capitalize">
+																			{typeof value === "string"
+																				? /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/i.test(value)
+																					? formatDateTime(value)
+																					: value.replace(/_/g, " ").toLowerCase()
 																				: String(value)}
 																		</span>
 																	</div>
@@ -850,9 +852,15 @@ export default function ApplicantDetailPage() {
 														{Object.entries(analysis).map(([key, value]) => (
 															<p key={key}>
 																<span className="font-medium capitalize">
-																	{key.replace(/_/g, " ")}:
+																	{key.replace(/([A-Z])/g, " $1").replace(/_/g, " ").toLowerCase()}:
 																</span>{" "}
-																{String(value)}
+																<span className="capitalize">
+																	{typeof value === "string"
+																		? /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/i.test(value)
+																			? formatDateTime(value)
+																			: value.replace(/_/g, " ").toLowerCase()
+																		: String(value)}
+																</span>
 															</p>
 														))}
 													</div>
