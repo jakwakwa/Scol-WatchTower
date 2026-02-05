@@ -93,12 +93,10 @@ export async function executeKillSwitch(
 			.update(workflows)
 			.set({
 				status: "terminated",
-				metadata: JSON.stringify({
-					terminatedAt: terminatedAt.toISOString(),
-					reason,
-					decidedBy,
-					notes,
-				}),
+				terminatedAt: terminatedAt,
+				terminatedBy: decidedBy,
+				terminationReason: reason,
+				metadata: notes ? JSON.stringify({ notes }) : undefined,
 			})
 			.where(eq(workflows.id, workflowId));
 

@@ -369,16 +369,16 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 									View Applicant Details
 								</Link>
 							</DropdownMenuItem>
-							{canViewQuote && (
-								<DropdownMenuItem asChild>
-									<Link
-										href={`/dashboard/applicants/${row.original.applicantId}/quote`}
-										className="cursor-pointer flex items-center">
-										<RiCheckLine className="mr-2 h-4 w-4" />
-										View Quotation
-									</Link>
-								</DropdownMenuItem>
-							)}
+						{canViewQuote && (
+							<DropdownMenuItem asChild>
+								<Link
+									href={`/dashboard/applicants/${row.original.applicantId}?tab=reviews`}
+									className="cursor-pointer flex items-center">
+									<RiCheckLine className="mr-2 h-4 w-4" />
+									View Quotation
+								</Link>
+							</DropdownMenuItem>
+						)}
 							<DropdownMenuSeparator />
 							<DropdownMenuItem asChild>
 								<Link

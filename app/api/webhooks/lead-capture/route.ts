@@ -86,8 +86,7 @@ export async function POST(request: NextRequest) {
 			throw new Error("Failed to create workflow record");
 		}
 
-		// 5. Trigger Inngest
-		// We use the existing 'onboarding/started' event which expects { applicantId, workflowId }
+		// 5. Trigger Control Tower workflow
 		await inngest.send({
 			name: "onboarding/lead.created",
 			data: {

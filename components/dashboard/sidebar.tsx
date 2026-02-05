@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import {
 	RiDashboardLine,
 	RiUserAddLine,
-	RiFlowChart,
+	RiBarChartBoxAiFill,
 	RiRobot2Line,
 	RiMenuFoldLine,
 	RiMenuUnfoldLine,
@@ -18,7 +18,7 @@ import { Button } from "../ui/button";
 const navigation = [
 	{ name: "Overview", href: "/dashboard", icon: RiDashboardLine },
 	{ name: "Applicants", href: "/dashboard/applicants", icon: RiUserAddLine },
-	{ name: "Workflows", href: "/dashboard/workflows", icon: RiFlowChart },
+	{ name: "Workflows", href: "/dashboard/workflows", icon: RiBarChartBoxAiFill },
 	{
 		name: "Risk Review",
 		href: "/dashboard/risk-review",
@@ -47,11 +47,12 @@ export function Sidebar({
 			<div className="flex h-24 items-center justify-between px-6 border-b border-secondary/5">
 				<div className={cn("flex items-center gap-1 ", isCollapsed && "hidden")}>
 					<div className="flex flex-col w-full h-fit items-start px-4 py-2 justify-center rounded-2xl  border-stone-500/20">
-						<div className="text-base font-bold bg-linear-to-r from-primary to-ring/90 bg-clip-text text-transparent">
-							<RiSignalTowerFill className="h-6 w-6 text-sidebar-foreground" />
-							SCol
-						</div>
-						<span className="text-muted-foreground/90 text-xs uppercase leading-[14px]">
+						<img
+							src="/assets/logo-dark.svg"
+							alt="StratCol"
+							className="h-8 w-auto"
+						/>
+						<span className="text-secondary text-xs uppercase leading-[14px]">
 							Control Tower
 						</span>
 					</div>
@@ -69,9 +70,9 @@ export function Sidebar({
 					)}
 					aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}>
 					{isCollapsed ? (
-						<RiMenuUnfoldLine className="h-5 w-5" />
+						<RiMenuUnfoldLine className="h-5 w-5 text-sidebar-primary" />
 					) : (
-						<RiMenuFoldLine className="h-5 w-5" />
+						<RiMenuFoldLine className="h-5 w-5 text-sidebar-primary" />
 					)}
 				</Button>
 			</div>
@@ -102,12 +103,12 @@ export function Sidebar({
 							<item.icon
 								className={cn(
 									"h-5 w-5 shrink-0 transition-transform duration-200",
-									isActive && "text-action",
+									isActive && "text-sidebar-primary",
 									!isActive && "group-hover:scale-110"
 								)}
 							/>
 
-							{!isCollapsed && <span>{item.name}</span>}
+							{!isCollapsed && <span className={cn("text-sidebar-accent focus-visible:text-sidebar-primary font-medium font-sans", isActive && "text-sidebar-primary")}>{item.name}</span>}
 
 							{/* Tooltip for collapsed state */}
 							{isCollapsed && (
@@ -128,7 +129,7 @@ export function Sidebar({
 						isCollapsed && "justify-center p-2"
 					)}>
 					<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-stone-500/20">
-						<RiFlowChart className="h-4 w-4 text-stone-400" />
+						<RiBarChartBoxAiFill className="h-4 w-4 text-stone-400" />
 					</div>
 					{!isCollapsed && (
 						<div className="flex-1 min-w-0">

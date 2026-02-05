@@ -112,19 +112,125 @@ export const controlTowerWorkflow = inngest.createFunction(
 		);
 
 		// ================================================================
-		// PHASE 1: Origination & Quotation
+		// PHASE 1: Facility Application, ITC & Quotation
 		// ================================================================
 
 		await step.run("phase-1-start", () =>
 			updateWorkflowStatus(workflowId, "processing", 1)
 		);
 
-		// Step 1.1: Initial checks and ITC
+		// Step 1.1: Send Facility Application immediately
+		await step.run("send-facility-application", async () => {
+			await guardKillSwitch(workflowId, "send-facility-application");
+
+			const db = getDatabaseClient();
+			if (!db) throw new Error("Database connection failed");
+
+			const [applicant] = await db
+				.select()
+				.from(applicants)
+				.where(eq(applicants.id, applicantId));
+
+			if (!applicant) throw new Error(`Applicant ${applicantId} not found`);
+
+			const { token } = await createFormInstance({
+				applicantId,
+				workflowId,
+				formType: "FACILITY_APPLICATION" as FormType,
+			});
+
+			await sendApplicantFormLinksEmail({
+				email: applicant.email,
+				contactName: applicant.contactName,
+				links: [{ formType: "FACILITY_APPLICATION", url: `${getBaseUrl()}/forms/${token}` }],
+			});
+
+			await createWorkflowNotification({
+				workflowId,
+				applicantId,
+				type: "awaiting",
+				title: "Facility Application Sent",
+				message: "Waiting for applicant to complete facility application form",
+				actionable: false,
+			});
+		});
+
+		await step.run("phase-1-awaiting-facility", () =>
+			updateWorkflowStatus(workflowId, "awaiting_human", 1)
+		);
+
+		// Wait for facility application submission
+		const facilitySubmission = await step.waitForEvent("wait-facility-app", {
+			event: "form/facility.submitted",
+			timeout: STAGE_TIMEOUT,
+			match: "data.workflowId",
+		});
+
+		if (!facilitySubmission) {
+			return { status: "timeout", phase: 1, reason: "Facility application timeout" };
+		}
+
+		// Step 1.2: Determine mandate and update applicant record
+		const mandateInfo = await step.run("determine-mandate", async () => {
+			await guardKillSwitch(workflowId, "determine-mandate");
+
+			const formData = facilitySubmission.data.formData;
+			const businessType = determineBusinessType(formData as Record<string, unknown>);
+			const docRequirements = getDocumentRequirements(businessType);
+
+			context.businessType = businessType;
+			context.mandateType = formData.mandateType;
+			context.mandateVolume = formData.mandateVolume;
+
+			// Update applicant record with mandate info
+			const db = getDatabaseClient();
+			if (db) {
+				await db
+					.update(applicants)
+					.set({
+						mandateType: formData.mandateType,
+						mandateVolume: formData.mandateVolume,
+						businessType: businessType,
+					})
+					.where(eq(applicants.id, applicantId));
+			}
+
+			await logWorkflowEvent({
+				workflowId,
+				eventType: "mandate_determined",
+				payload: {
+					businessType,
+					mandateType: formData.mandateType,
+					requiredDocuments: docRequirements.documents.filter(d => d.required).map(d => d.id),
+				},
+			});
+
+			return {
+				businessType,
+				mandateType: formData.mandateType,
+				mandateVolume: formData.mandateVolume,
+				requiredDocuments: docRequirements.documents.filter(d => d.required),
+			};
+		});
+
+		// Step 1.3: ITC check and persist to applicant
 		const initialChecks = await step.run("initial-checks", async () => {
 			await guardKillSwitch(workflowId, "initial-checks");
 
 			// Run ITC check
 			const itcResult = await performITCCheck({ applicantId, workflowId });
+
+			// Persist ITC results to applicant record
+			const db = getDatabaseClient();
+			if (db) {
+				await db
+					.update(applicants)
+					.set({
+						itcScore: itcResult.creditScore,
+						itcStatus: itcResult.recommendation,
+					})
+					.where(eq(applicants.id, applicantId));
+			}
 
 			await logWorkflowEvent({
 				workflowId,
@@ -139,7 +245,7 @@ export const controlTowerWorkflow = inngest.createFunction(
 			return itcResult;
 		});
 
-		// Step 1.2: AI Generate Quotation
+		// Step 1.4: AI Generate Quotation (now with mandate and ITC data available)
 		const quotationResult = await step.run("ai-generate-quote", async () => {
 			await guardKillSwitch(workflowId, "ai-generate-quote");
 
@@ -180,7 +286,7 @@ export const controlTowerWorkflow = inngest.createFunction(
 		// Extract values after success check for cleaner code
 		const { quote, isOverlimit } = quotationResult;
 
-		// Step 1.3: Manager Quote Review
+		// Step 1.5: Manager Quote Review
 		await step.run("notify-manager-quote", async () => {
 			const title = isOverlimit
 				? "🚨 OVERLIMIT: Quote Requires Special Approval"
@@ -201,7 +307,7 @@ export const controlTowerWorkflow = inngest.createFunction(
 				workflowId,
 				applicantId,
 				type: isOverlimit ? "warning" : "info",
-				actionUrl: `${getBaseUrl()}/dashboard/applicants/${applicantId}`,
+				actionUrl: `${getBaseUrl()}/dashboard/applicants/${applicantId}?tab=reviews`,
 			});
 		});
 
@@ -224,7 +330,7 @@ export const controlTowerWorkflow = inngest.createFunction(
 		}
 
 		// ================================================================
-		// PHASE 2: Quote Signing & Facility Application
+		// PHASE 2: Quote Signing
 		// ================================================================
 
 		await step.run("phase-2-start", async () => {
@@ -274,44 +380,6 @@ export const controlTowerWorkflow = inngest.createFunction(
 			return { status: "timeout", phase: 2, reason: "Quote signature timeout" };
 		}
 
-		// Send Facility Application
-		await step.run("send-facility-application", async () => {
-			await guardKillSwitch(workflowId, "send-facility-application");
-
-			const db = getDatabaseClient();
-			if (!db) throw new Error("Database connection failed");
-
-			const [applicant] = await db
-				.select()
-				.from(applicants)
-				.where(eq(applicants.id, applicantId));
-
-			if (!applicant) throw new Error(`Applicant ${applicantId} not found`);
-
-			const { token } = await createFormInstance({
-				applicantId,
-				workflowId,
-				formType: "FACILITY_APPLICATION" as FormType,
-			});
-
-			await sendApplicantFormLinksEmail({
-				email: applicant.email,
-				contactName: applicant.contactName,
-				links: [{ formType: "FACILITY_APPLICATION", url: `${getBaseUrl()}/forms/${token}` }],
-			});
-		});
-
-		// Wait for facility application
-		const facilitySubmission = await step.waitForEvent("wait-facility-app", {
-			event: "form/facility.submitted",
-			timeout: STAGE_TIMEOUT,
-			match: "data.workflowId",
-		});
-
-		if (!facilitySubmission) {
-			return { status: "timeout", phase: 2, reason: "Facility application timeout" };
-		}
-
 		// ================================================================
 		// PHASE 3: Parallel Processing Streams
 		// Stream A: Procurement Check (can trigger kill switch)
@@ -323,58 +391,19 @@ export const controlTowerWorkflow = inngest.createFunction(
 			return updateWorkflowStatus(workflowId, "processing", 3);
 		});
 
-		// Determine business type and mandate requirements
-		const mandateInfo = await step.run("determine-mandate", async () => {
-			await guardKillSwitch(workflowId, "determine-mandate");
-
-			const formData = facilitySubmission.data.formData;
-			const businessType = determineBusinessType(formData as Record<string, unknown>);
-			const docRequirements = getDocumentRequirements(businessType);
-
-			context.businessType = businessType;
-			context.mandateType = formData.mandateType;
-			context.mandateVolume = formData.mandateVolume;
-
-			// Update applicant record
-			const db = getDatabaseClient();
-			if (db) {
-				await db
-					.update(applicants)
-					.set({
-						mandateType: formData.mandateType,
-						mandateVolume: formData.mandateVolume,
-					})
-					.where(eq(applicants.id, applicantId));
-			}
-
-			await logWorkflowEvent({
-				workflowId,
-				eventType: "mandate_determined",
-				payload: {
-					businessType,
-					mandateType: formData.mandateType,
-					requiredDocuments: docRequirements.documents.filter(d => d.required).map(d => d.id),
-				},
-			});
-
-			// Send Inngest event for business type determined
+		// Send Inngest event for business type determined (for external consumers)
+		await step.run("emit-business-type-event", async () => {
+			const docRequirements = getDocumentRequirements(mandateInfo.businessType);
 			await inngest.send({
 				name: "onboarding/business-type.determined",
 				data: {
 					workflowId,
 					applicantId,
-					businessType,
+					businessType: mandateInfo.businessType,
 					requiredDocuments: docRequirements.documents.filter(d => d.required).map(d => d.id),
 					optionalDocuments: docRequirements.documents.filter(d => !d.required).map(d => d.id),
 				},
 			});
-
-			return {
-				businessType,
-				mandateType: formData.mandateType,
-				mandateVolume: formData.mandateVolume,
-				requiredDocuments: docRequirements.documents.filter(d => d.required),
-			};
 		});
 
 		// ================================================================

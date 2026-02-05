@@ -5,7 +5,6 @@
 import { updateWorkflowStatus } from "@/lib/services/workflow.service";
 import type { WorkflowStatus } from "@/db/schema";
 
-// Re-export for backwards compatibility
 export type { WorkflowStatus };
 
 /**

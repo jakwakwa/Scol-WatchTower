@@ -60,7 +60,7 @@ export function DashboardShell({ children, notifications = [] }: DashboardShellP
 												.toLowerCase()
 												.includes("quote");
 											const route = isQuote
-												? `/dashboard/applicants/${notification.applicantId}/quote`
+												? `/dashboard/applicants/${notification.applicantId}?tab=reviews`
 												: `/dashboard/applicants/${notification.applicantId}`;
 											router.push(route);
 										}
@@ -91,7 +91,7 @@ export function DashboardShell({ children, notifications = [] }: DashboardShellP
 									try {
 										const isQuote = notification.message.toLowerCase().includes("quote");
 										const route = isQuote
-											? `/dashboard/applicants/${notification.applicantId}/quote`
+											? `/dashboard/applicants/${notification.applicantId}?tab=reviews`
 											: `/dashboard/applicants/${notification.applicantId}`;
 										router.push(route);
 

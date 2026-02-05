@@ -284,7 +284,7 @@ function PipelineCard({ workflow }: { workflow: PipelineWorkflow }) {
 								<DropdownMenuSeparator />
 								<DropdownMenuItem asChild>
 									<Link
-										href={`/dashboard/applicants/${workflow.applicantId}/quote`}
+										href={`/dashboard/applicants/${workflow.applicantId}?tab=reviews`}
 										className="cursor-pointer flex items-center">
 										<RiCheckLine className="mr-2 h-4 w-4" />
 										View Quote

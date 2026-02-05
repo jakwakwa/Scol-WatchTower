@@ -264,7 +264,7 @@ export function RiskReviewDetail({
 	/**
 	 * Get the appropriate API endpoint based on review type
 	 */
-	const getApiEndpoint = () => {
+	const _getApiEndpoint = () => {
 		return reviewType === "procurement"
 			? "/api/risk-decision/procurement"
 			: "/api/risk-decision";
@@ -350,57 +350,58 @@ export function RiskReviewDetail({
 
 	return (
 		<Sheet open={open} onOpenChange={onOpenChange}>
-			<SheetContent className="w-full sm:max-w-xl border-secondary/20 bg-zinc-100/95 backdrop-blur-xl overflow-y-auto">
+			<SheetContent className="w-full sm:max-w-xl border-secondary/20 bg-transparent bg-linear-to-br from-slate-950/60 to-slate-950/30 backdrop-blur-lg overflow-y-auto">
 				<SheetHeader className="pb-4">
 					<div className="flex items-start justify-between">
 						<div>
-							<SheetTitle className="text-xl">{item.clientName}</SheetTitle>
-							<SheetDescription className="flex items-center gap-2 mt-1 flex-wrap">
-								<RiBuilding2Line className="h-3.5 w-3.5" />
+							<SheetTitle className="text-xl text-white/90">{item.clientName}</SheetTitle>
+							<SheetDescription className="flex items-center gap-2 mt-1 flex-wrap text-accent-foreground">
+								<RiBuilding2Line className="h-3.5 w-3.5 text-white" />
 								{item.companyName}
-								<span className="text-muted-foreground">•</span>
-								<Badge variant="secondary" className="text-[10px]">
+								<span className="text-muted">•</span>
+								<Badge variant="secondary" className=" bg-white/10 text-[10px] text-white/90">
 									WF-{item.workflowId}
 								</Badge>
 								{/* Review Type Badge (Phase 3) */}
 								<Badge
-									variant="outline"
+								
 									className={cn(
-										"text-[10px] gap-1",
+										"text-[13px] gap-2 h-8",
 										reviewType === "procurement"
-											? "bg-purple-500/10 text-purple-400 border-purple-500/20"
-											: "bg-blue-500/10 text-blue-400 border-blue-500/20"
+											? "bg-indigo-500/40 text-indigo-200 border-indigo-500/20"
+											: "bg-indigo-500/40 text-indigo-300 border-blue-500/20"
 									)}>
 									{reviewType === "procurement" ? (
-										<>
-											<RiShoppingBag3Line className="h-3 w-3" />
+										<div className="flex items-center gap-2">
+											<RiShoppingBag3Line className="h-4 w-4 text-indigo-400" />
 											Procurement
-										</>
+										</div>
 									) : (
-										<>
-											<RiShieldCheckLine className="h-3 w-3" />
+										<div className="flex items-center gap-2">
+											<RiShieldCheckLine className="h-4 w-4" />
 											General
-										</>
+										</div>
 									)}
 								</Badge>
 							</SheetDescription>
 						</div>
 						<div
 							className={cn(
-								"px-3 py-1.5 rounded-lg text-center",
+								"px-3 py-1.5 bg-secondary/10 w-20 rounded-lg text-center",
 								item.aiTrustScore && item.aiTrustScore >= 80
 									? "bg-emerald-500/10"
 									: item.aiTrustScore && item.aiTrustScore >= 60
-										? "bg-warning/50"
-										: "bg-red-500/10"
+										? "bg-warning"
+										: "bg-destructive-foreground/70"
 							)}>
-							<p className="text-2xl font-bold">{item.aiTrustScore || "?"}</p>
-							<p className="text-[10px] text-muted-foreground">AI Score</p>
+								<p className="text-[10px] text-white">AI Score</p>
+							<p className="text-xl font-bold text-white">{item.aiTrustScore || "N/A"}</p>
+							
 						</div>
 					</div>
 				</SheetHeader>
 
-				<Tabs value={activeTab} onValueChange={setActiveTab} className="mt-2">
+				<Tabs value={activeTab} onValueChange={setActiveTab} className="mt-0">
 					<TabsList className="w-full bg-secondary/10">
 						<TabsTrigger value="overview" className="flex-1 text-xs">
 							Overview
@@ -417,7 +418,7 @@ export function RiskReviewDetail({
 					</TabsList>
 
 					{/* Overview Tab */}
-					<TabsContent value="overview" className="mt-4 space-y-4">
+					<TabsContent value="overview" className="mt-0 space-y-4">
 						{/* Key Metrics */}
 						<div className="grid grid-cols-2 gap-3">
 							<MetricCard
@@ -541,7 +542,7 @@ export function RiskReviewDetail({
 					</TabsContent>
 
 					{/* Documents Tab */}
-					<TabsContent value="documents" className="mt-4 space-y-3">
+					<TabsContent value="documents" className="mt-0 space-y-3">
 						<DocumentCard
 							name="Bank Statement - Jan to Mar 2026"
 							type="Bank Statement"
@@ -563,7 +564,7 @@ export function RiskReviewDetail({
 					</TabsContent>
 
 					{/* Risk Flags Tab */}
-					<TabsContent value="risks" className="mt-4 space-y-3">
+					<TabsContent value="risks" className="mt-0 space-y-3">
 						{item.riskFlags && item.riskFlags.length > 0 ? (
 							item.riskFlags.map((flag, idx) => (
 								<div
@@ -602,7 +603,7 @@ export function RiskReviewDetail({
 					</TabsContent>
 
 					{/* Timeline Tab */}
-					<TabsContent value="timeline" className="mt-4">
+					<TabsContent value="timeline" className="mt-0">
 						<div className="relative pl-2 border-l border-secondary/20 ml-2">
 							{mockTimeline.map(event => (
 								<TimelineEventCard key={event.id} event={event} />
@@ -612,17 +613,17 @@ export function RiskReviewDetail({
 				</Tabs>
 
 				{/* Action Buttons - Always visible */}
-				<Separator className="my-6 bg-secondary/10" />
+				<Separator className="my-0 bg-secondary/10" />
 
 				{/* Review Type Context (Phase 3) */}
-				<div className="mb-4 p-3 rounded-lg bg-secondary/5 border border-secondary/10">
+				<div className="mb-0 p-3 rounded-lg bg-white/10 border border-secondary/10 my-4">
 					<p className="text-xs text-muted-foreground">
-						<span className="font-medium text-foreground">Review Type:</span>{" "}
+						<span className="font-medium text-accent-foreground">Review Type:</span>{" "}
 						{reviewType === "procurement" ? (
-							<>
+							<span className="text-white/90">
 								Procurement Review (Stage 3) - Routes to{" "}
-								<code className="text-purple-400">/api/risk-decision/procurement</code>
-							</>
+								<code className="text-emerald-100">/api/risk-decision/procurement</code>
+							</span>
 						) : (
 							<>
 								General Review (Stage 4) - Routes to{" "}
@@ -683,16 +684,16 @@ export function RiskReviewDetail({
 						)}
 				</div>
 
-				<div className="flex gap-3">
+				<div className="flex gap-4 mt-4">
 					<Button
-						variant="outline"
+						variant="destructive"
 						disabled={isSubmitting}
-						className="flex-1 border-red-500/20 text-red-400 hover:bg-red-500/10"
+						className="flex-1 border-red-500/20 bg-destructive-foreground/90 shadow-md shadow-red-900/70 w-fit max-w-[100px] text-white/90 hover:bg-red-500/10"
 						onClick={handleReject}>
 						{isSubmitting && actionType === "reject" ? (
-							<RiLoader4Line className="h-4 w-4 mr-2 animate-spin" />
+							<RiLoader4Line className="h-4 w-4 mr-0 animate-spin" />
 						) : (
-							<RiCloseLine className="h-4 w-4 mr-2" />
+							<RiCloseLine className="h-4 w-4 mr-0" />
 						)}
 						Reject
 					</Button>
