@@ -258,7 +258,7 @@ export function RiskReviewCard({
 						<div className="flex-1 min-w-0">
 							<div className="flex items-center gap-2">
 								<h3 className="text-base font-semibold ">{item.clientName}</h3>
-								<Badge variant="secondary" className="text-[10px] shrink-0">
+								<Badge  className="bg-secondary/10 text-secondary text-[10px] shrink-0">
 									WF-{item.workflowId}
 								</Badge>
 							</div>
