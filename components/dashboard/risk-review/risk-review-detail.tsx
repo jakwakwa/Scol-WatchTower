@@ -264,7 +264,7 @@ export function RiskReviewDetail({
 	/**
 	 * Get the appropriate API endpoint based on review type
 	 */
-	const getApiEndpoint = () => {
+	const _getApiEndpoint = () => {
 		return reviewType === "procurement"
 			? "/api/risk-decision/procurement"
 			: "/api/risk-decision";
