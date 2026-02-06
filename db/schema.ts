@@ -39,6 +39,8 @@ export const applicants = sqliteTable("applicants", {
 
 	// Business Classification (PRD: Conditional Document Logic)
 	businessType: text("business_type"), // NPO, PROPRIETOR, COMPANY, TRUST, etc.
+	entityType: text("entity_type"), // company, close_corporation, proprietor, partnership, npo, trust, body_corporate, other
+	productType: text("product_type"), // standard, premium_collections, call_centre
 	industry: text("industry"),
 	employeeCount: integer("employee_count"),
 

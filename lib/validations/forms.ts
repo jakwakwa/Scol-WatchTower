@@ -245,3 +245,52 @@ export const absa6995Schema = z.object({
 });
 
 export type Absa6995Form = z.infer<typeof absa6995Schema>;
+
+// ============================================
+// Accountant Letter Form
+// ============================================
+
+export const accountantLetterSchema = z.object({
+	businessName: z.string().min(2, "Business name is required"),
+	physicalAddress: z.string().min(5, "Physical address is required"),
+	accountantName: z.string().min(2, "Accountant name is required"),
+	practiceNumber: z.string().min(2, "Practice number is required"),
+	confirmLegitimate: z.literal(true, {
+		message:
+			"You must confirm the business is legitimate and you are not aware of any investigation",
+	}),
+	signatureName: z.string().min(2, "Signature is required"),
+	signatureDate: z.string().min(2, "Signature date is required"),
+});
+
+export type AccountantLetterForm = z.infer<typeof accountantLetterSchema>;
+
+// ============================================
+// Call Centre Application Form
+// ============================================
+
+export const callCentreApplicationSchema = z.object({
+	// Service Agreement
+	serviceAgreementAccepted: z.literal(true, {
+		message: "You must accept the service agreement",
+	}),
+	serviceAgreementSignature: z.string().min(2, "Signature is required"),
+
+	// Product Description
+	productDescription: z.string().min(10, "Product description is required"),
+
+	// Supplier Contact Information
+	supplierName: z.string().min(2, "Supplier name is required"),
+	supplierPhone: z.string().min(5, "Supplier phone is required"),
+	supplierEmail: z.string().email("Valid email is required"),
+	supplierAddress: z.string().min(5, "Supplier address is required"),
+
+	// Call Script
+	callScript: z.string().min(10, "Call script is required"),
+
+	// Final Signature
+	signatureName: z.string().min(2, "Signature is required"),
+	signatureDate: z.string().min(2, "Signature date is required"),
+});
+
+export type CallCentreApplicationForm = z.infer<typeof callCentreApplicationSchema>;

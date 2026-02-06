@@ -481,6 +481,26 @@ export const INDUSTRY_REQUIREMENTS: Record<string, DocumentRequirement[]> = {
 // ============================================
 
 /**
+ * Resolve business type from either explicit entityType (DB) or derived businessType
+ */
+export function resolveBusinessType(
+	entityType?: string | null,
+	businessType?: BusinessType | string | null
+): BusinessType {
+	// Prefer explicit entityType from DB
+	if (entityType) {
+		const mapped = determineBusinessType({ entityType });
+		return mapped;
+	}
+	// Fallback to derived businessType
+	if (businessType) {
+		const parsed = BusinessTypeSchema.safeParse(businessType);
+		if (parsed.success) return parsed.data;
+	}
+	return "COMPANY";
+}
+
+/**
  * Get document requirements based on business type
  */
 export function getDocumentRequirements(

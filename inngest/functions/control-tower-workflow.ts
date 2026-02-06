@@ -39,6 +39,7 @@ import {
 import {
 	getDocumentRequirements,
 	determineBusinessType,
+	resolveBusinessType,
 	type BusinessType,
 } from "@/lib/services/document-requirements.service";
 import { performAggregatedAnalysis } from "@/lib/services/agents";
@@ -175,15 +176,31 @@ export const controlTowerWorkflow = inngest.createFunction(
 			await guardKillSwitch(workflowId, "determine-mandate");
 
 			const formData = facilitySubmission.data.formData;
-			const businessType = determineBusinessType(formData as Record<string, unknown>);
-			const docRequirements = getDocumentRequirements(businessType);
+
+			// Resolve business type: prefer DB entityType, fallback to form data
+			const db = getDatabaseClient();
+			let applicantEntityType: string | null = null;
+			let applicantIndustry: string | null = null;
+			if (db) {
+				const [applicant] = await db
+					.select()
+					.from(applicants)
+					.where(eq(applicants.id, applicantId));
+				applicantEntityType = applicant?.entityType ?? null;
+				applicantIndustry = applicant?.industry ?? null;
+			}
+
+			const businessType = resolveBusinessType(
+				applicantEntityType,
+				determineBusinessType(formData as Record<string, unknown>)
+			);
+			const docRequirements = getDocumentRequirements(businessType, applicantIndustry ?? undefined);
 
 			context.businessType = businessType;
 			context.mandateType = formData.mandateType;
 			context.mandateVolume = formData.mandateVolume;
 
 			// Update applicant record with mandate info
-			const db = getDatabaseClient();
 			if (db) {
 				await db
 					.update(applicants)
@@ -506,17 +523,51 @@ export const controlTowerWorkflow = inngest.createFunction(
 
 			if (!applicant) throw new Error(`Applicant ${applicantId} not found`);
 
-			// Create document upload link
-			const { token } = await createFormInstance({
+			// Build conditional links based on entityType, productType, and context
+			const links: Array<{ formType: string; url: string }> = [];
+
+			// Always: DOCUMENT_UPLOADS with conditional docs rendered by the page
+			const uploadToken = await createFormInstance({
 				applicantId,
 				workflowId,
 				formType: "DOCUMENT_UPLOADS" as FormType,
 			});
+			links.push({
+				formType: "DOCUMENT_UPLOADS",
+				url: `${getBaseUrl()}/uploads/${uploadToken.token}`,
+			});
 
+			// If business needs accountant letter (all business types except call_centre-only)
+			if (applicant.productType !== "call_centre") {
+				const accountantToken = await createFormInstance({
+					applicantId,
+					workflowId,
+					formType: "ACCOUNTANT_LETTER" as FormType,
+				});
+				links.push({
+					formType: "ACCOUNTANT_LETTER",
+					url: `${getBaseUrl()}/forms/${accountantToken.token}`,
+				});
+			}
+
+			// If call centre product type
+			if (applicant.productType === "call_centre") {
+				const callCentreToken = await createFormInstance({
+					applicantId,
+					workflowId,
+					formType: "CALL_CENTRE_APPLICATION" as FormType,
+				});
+				links.push({
+					formType: "CALL_CENTRE_APPLICATION",
+					url: `${getBaseUrl()}/forms/${callCentreToken.token}`,
+				});
+			}
+
+			// Send all applicable links in a single email
 			await sendApplicantFormLinksEmail({
 				email: applicant.email,
 				contactName: applicant.contactName,
-				links: [{ formType: "DOCUMENT_UPLOADS", url: `${getBaseUrl()}/uploads/${token}` }],
+				links,
 			});
 
 			await createWorkflowNotification({
@@ -540,7 +591,11 @@ export const controlTowerWorkflow = inngest.createFunction(
 				},
 			});
 
-			return { requested: true, documentCount: mandateInfo.requiredDocuments.length };
+			return {
+				requested: true,
+				documentCount: mandateInfo.requiredDocuments.length,
+				linksCount: links.length,
+			};
 		});
 
 		// Execute both streams in parallel
@@ -755,6 +810,78 @@ export const controlTowerWorkflow = inngest.createFunction(
 				decidedBy: riskDecision.data.decision.decidedBy,
 				reason: riskDecision.data.decision.reason,
 			};
+		}
+
+		// ================================================================
+		// HIGH-RISK: Financial Statements Confirmation
+		// If applicant is high-risk (red), the risk manager must confirm
+		// that financial statements were sent and received before proceeding.
+		// ================================================================
+
+		const isHighRisk = await step.run("check-high-risk", async () => {
+			const db = getDatabaseClient();
+			if (!db) return false;
+			const [applicant] = await db
+				.select()
+				.from(applicants)
+				.where(eq(applicants.id, applicantId));
+			return applicant?.riskLevel === "red";
+		});
+
+		if (isHighRisk) {
+			await step.run("notify-financial-statements-required", async () => {
+				await createWorkflowNotification({
+					workflowId,
+					applicantId,
+					type: "warning",
+					title: "Financial Statements Required (High-Risk)",
+					message:
+						"This is a high-risk applicant. Please confirm that financial statements have been sent and received before proceeding.",
+					actionable: true,
+				});
+
+				await sendInternalAlertEmail({
+					title: "🔴 High-Risk: Financial Statements Required",
+					message:
+						"High-risk applicant requires financial statements confirmation before proceeding to contract phase.",
+					workflowId,
+					applicantId,
+					type: "warning",
+					actionUrl: `${getBaseUrl()}/dashboard/applicants/${applicantId}?tab=risk`,
+				});
+			});
+
+			await step.run("phase-4-awaiting-financial-statements", () =>
+				updateWorkflowStatus(workflowId, "awaiting_human", 4)
+			);
+
+			const financialStatementsConfirmed = await step.waitForEvent(
+				"wait-financial-statements",
+				{
+					event: "risk/financial-statements.confirmed",
+					timeout: STAGE_TIMEOUT,
+					match: "data.workflowId",
+				}
+			);
+
+			if (!financialStatementsConfirmed) {
+				return {
+					status: "timeout",
+					phase: 4,
+					reason: "Financial statements confirmation timeout (high-risk)",
+				};
+			}
+
+			await step.run("log-financial-statements-confirmed", async () => {
+				await logWorkflowEvent({
+					workflowId,
+					eventType: "financial_statements_confirmed",
+					payload: {
+						confirmedBy: financialStatementsConfirmed.data.confirmedBy,
+						confirmedAt: financialStatementsConfirmed.data.confirmedAt,
+					},
+				});
+			});
 		}
 
 		// ================================================================

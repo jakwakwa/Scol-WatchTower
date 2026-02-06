@@ -8,6 +8,8 @@ import { quotes } from "@/db/schema";
 import { desc, eq } from "drizzle-orm";
 import {
 	absa6995Schema,
+	accountantLetterSchema,
+	callCentreApplicationSchema,
 	facilityApplicationSchema,
 	signedQuotationSchema,
 	stratcolContractSchema,
@@ -29,6 +31,8 @@ const formSubmissionSchema = z.object({
 		"SIGNED_QUOTATION",
 		"STRATCOL_CONTRACT",
 		"ABSA_6995",
+		"ACCOUNTANT_LETTER",
+		"CALL_CENTRE_APPLICATION",
 	]),
 	data: z.record(z.string(), z.unknown()),
 });
@@ -38,6 +42,8 @@ const formSchemaMap: Record<FormType, z.ZodSchema> = {
 	SIGNED_QUOTATION: signedQuotationSchema,
 	STRATCOL_CONTRACT: stratcolContractSchema,
 	ABSA_6995: absa6995Schema,
+	ACCOUNTANT_LETTER: accountantLetterSchema,
+	CALL_CENTRE_APPLICATION: callCentreApplicationSchema,
 	DOCUMENT_UPLOADS: z.any(),
 };
 
@@ -253,6 +259,30 @@ export async function POST(request: NextRequest) {
 						});
 					}
 				}
+			}
+
+			if (formType === "ACCOUNTANT_LETTER") {
+				await inngest.send({
+					name: "form/accountant-letter.submitted",
+					data: {
+						workflowId: formInstance.workflowId,
+						applicantId: formInstance.applicantId,
+						submissionId: submission.id,
+						submittedAt: new Date().toISOString(),
+					},
+				});
+			}
+
+			if (formType === "CALL_CENTRE_APPLICATION") {
+				await inngest.send({
+					name: "form/call-centre.submitted",
+					data: {
+						workflowId: formInstance.workflowId,
+						applicantId: formInstance.applicantId,
+						submissionId: submission.id,
+						submittedAt: new Date().toISOString(),
+					},
+				});
 			}
 		}
 

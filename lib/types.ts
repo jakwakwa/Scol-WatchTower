@@ -39,6 +39,8 @@ export const FormTypeSchema = z.enum([
 	"STRATCOL_CONTRACT",
 	"ABSA_6995",
 	"DOCUMENT_UPLOADS",
+	"ACCOUNTANT_LETTER",
+	"CALL_CENTRE_APPLICATION",
 ]);
 
 export type FormType = z.infer<typeof FormTypeSchema>;

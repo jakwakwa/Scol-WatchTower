@@ -36,7 +36,8 @@ export interface LogEventParams {
 		| "documents_requested"
 		| "validation_completed"
 		| "sanctions_completed"
-		| "risk_analysis_completed";
+		| "risk_analysis_completed"
+		| "financial_statements_confirmed";
 	payload: object;
 	actorType?: "user" | "agent" | "platform";
 	actorId?: string;

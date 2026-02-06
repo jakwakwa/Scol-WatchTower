@@ -1,10 +1,16 @@
+import { eq } from "drizzle-orm";
 import FormShell from "@/components/forms/form-shell";
 import UploadView from "./upload-view";
-import { getAllDocumentRequirements } from "@/config/document-requirements";
+import {
+	getDocumentRequirements,
+	type DocumentRequirementContext,
+} from "@/config/document-requirements";
 import {
 	getFormInstanceByToken,
 	markFormInstanceStatus,
 } from "@/lib/services/form.service";
+import { getDatabaseClient } from "@/app/utils";
+import { applicants } from "@/db/schema";
 
 interface UploadPageProps {
 	params: Promise<{ token: string }>;
@@ -40,7 +46,26 @@ export default async function UploadPage({ params }: UploadPageProps) {
 		await markFormInstanceStatus(formInstance.id, "viewed");
 	}
 
-	const requirements = getAllDocumentRequirements();
+	// Look up applicant to build document requirement context
+	const db = getDatabaseClient();
+	let requirements = getDocumentRequirements({});
+
+	if (db) {
+		const [applicant] = await db
+			.select()
+			.from(applicants)
+			.where(eq(applicants.id, formInstance.applicantId));
+
+		if (applicant) {
+			const context: DocumentRequirementContext = {
+				entityType: (applicant.entityType as DocumentRequirementContext["entityType"]) ?? undefined,
+				productType: (applicant.productType as DocumentRequirementContext["productType"]) ?? undefined,
+				industry: applicant.industry ?? undefined,
+				isHighRisk: applicant.riskLevel === "red",
+			};
+			requirements = getDocumentRequirements(context);
+		}
+	}
 
 	return (
 		<FormShell

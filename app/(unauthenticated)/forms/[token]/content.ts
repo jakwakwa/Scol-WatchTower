@@ -3,6 +3,8 @@ import type { FormType } from "@/lib/types";
 import type { ZodTypeAny } from "zod";
 import {
 	absa6995Schema,
+	accountantLetterSchema,
+	callCentreApplicationSchema,
 	facilityApplicationSchema,
 	signedQuotationSchema,
 	stratcolContractSchema,
@@ -1180,6 +1182,215 @@ export const formContent: Record<
 			"businessMetrics.directorsUnderAdministration": "no",
 			"businessMetrics.formalComplaints": "no",
 			"businessMetrics.complianceConcerns": "no",
+		},
+	},
+	ACCOUNTANT_LETTER: {
+		title: "Confirmation of Accounting Officer Letter",
+		description:
+			"This letter confirms the legitimacy of the business and the accounting officer's professional standing. Please complete all fields below.",
+		schema: accountantLetterSchema,
+		submitLabel: "Submit accountant letter",
+		defaultValues: {
+			confirmLegitimate: false,
+		},
+		sections: [
+			{
+				title: "Business Information",
+				description:
+					"The accounting officer confirms the following details for the business applying for a StratCol collections facility.",
+				fields: [
+					{
+						name: "businessName",
+						label: "Business name",
+						type: "text",
+						required: true,
+						colSpan: 2,
+					},
+					{
+						name: "physicalAddress",
+						label: "Physical business address",
+						type: "textarea",
+						required: true,
+						colSpan: 2,
+					},
+				],
+			},
+			{
+				title: "Accounting Officer Details",
+				description: "Provide the details of the accounting officer or auditor.",
+				fields: [
+					{
+						name: "accountantName",
+						label: "Full name of accounting officer / auditor",
+						type: "text",
+						required: true,
+					},
+					{
+						name: "practiceNumber",
+						label: "Practice registration number",
+						type: "text",
+						required: true,
+					},
+				],
+			},
+			{
+				title: "Confirmation & Signature",
+				description:
+					"By signing below, you confirm that the above business is legitimate, operating as a going concern, and you are not aware of any investigation or pending legal action against the business.",
+				fields: [
+					{
+						name: "confirmLegitimate",
+						label:
+							"I confirm the business is legitimate and I am not aware of any investigation or pending legal action against the business.",
+						type: "checkbox",
+						required: true,
+						colSpan: 2,
+					},
+					{
+						name: "signatureName",
+						label: "Typed signature",
+						type: "signature",
+						required: true,
+					},
+					{
+						name: "signatureDate",
+						label: "Signature date",
+						type: "date",
+						required: true,
+					},
+				],
+			},
+		],
+		testData: {
+			businessName: "Test Company (Pty) Ltd",
+			physicalAddress: "123 Test Street, Sandton, 2196",
+			accountantName: "John Accountant",
+			practiceNumber: "PR-12345",
+			confirmLegitimate: true,
+			signatureName: "John Accountant",
+			signatureDate: new Date().toISOString().split("T")[0],
+		},
+	},
+	CALL_CENTRE_APPLICATION: {
+		title: "Call Centre Application",
+		description:
+			"Complete this application if your business will use call centre collections. All sections are required.",
+		schema: callCentreApplicationSchema,
+		submitLabel: "Submit call centre application",
+		defaultValues: {
+			serviceAgreementAccepted: false,
+		},
+		sections: [
+			{
+				title: "Service Agreement",
+				description:
+					"By accepting this agreement, you confirm that your call centre operations will comply with StratCol's terms of service and all applicable regulations.",
+				fields: [
+					{
+						name: "serviceAgreementAccepted",
+						label:
+							"I accept the StratCol call centre service agreement and confirm compliance with all applicable regulations.",
+						type: "checkbox",
+						required: true,
+						colSpan: 2,
+					},
+					{
+						name: "serviceAgreementSignature",
+						label: "Typed signature",
+						type: "signature",
+						required: true,
+					},
+				],
+			},
+			{
+				title: "Product Description",
+				description: "Describe the product or service being collected for.",
+				fields: [
+					{
+						name: "productDescription",
+						label: "Product / service description",
+						type: "textarea",
+						required: true,
+						colSpan: 2,
+					},
+				],
+			},
+			{
+				title: "Supplier Contact Information",
+				description: "Provide the contact details of the supplier or ultimate creditor.",
+				fields: [
+					{
+						name: "supplierName",
+						label: "Contact name",
+						type: "text",
+						required: true,
+					},
+					{
+						name: "supplierPhone",
+						label: "Phone number",
+						type: "tel",
+						required: true,
+					},
+					{
+						name: "supplierEmail",
+						label: "Email address",
+						type: "email",
+						required: true,
+					},
+					{
+						name: "supplierAddress",
+						label: "Business address",
+						type: "text",
+						required: true,
+						colSpan: 2,
+					},
+				],
+			},
+			{
+				title: "Call Script",
+				description:
+					"Provide the call script that will be used by the call centre when contacting debtors.",
+				fields: [
+					{
+						name: "callScript",
+						label: "Call script",
+						type: "textarea",
+						required: true,
+						colSpan: 2,
+					},
+				],
+			},
+			{
+				title: "Final Signature",
+				description: "Confirm and sign the application.",
+				fields: [
+					{
+						name: "signatureName",
+						label: "Typed signature",
+						type: "signature",
+						required: true,
+					},
+					{
+						name: "signatureDate",
+						label: "Signature date",
+						type: "date",
+						required: true,
+					},
+				],
+			},
+		],
+		testData: {
+			serviceAgreementAccepted: true,
+			serviceAgreementSignature: "John Smith",
+			productDescription: "Subscription-based software product with monthly billing",
+			supplierName: "Jane Supplier",
+			supplierPhone: "+27 82 123 4567",
+			supplierEmail: "supplier@example.com",
+			supplierAddress: "456 Supply Road, Johannesburg, 2001",
+			callScript:
+				"Good day, this is [Agent Name] calling from [Company Name] regarding your account...",
+			signatureName: "John Smith",
+			signatureDate: new Date().toISOString().split("T")[0],
 		},
 	},
 };

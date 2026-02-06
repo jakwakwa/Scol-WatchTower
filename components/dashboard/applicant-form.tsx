@@ -16,6 +16,8 @@ interface ApplicantFormData {
 	contactName: string;
 	email: string;
 	phone: string;
+	entityType: string;
+	productType: string;
 	industry: string;
 	employeeCount: string;
 	estimatedVolume: string;
@@ -46,6 +48,8 @@ export function ApplicantForm({
 		contactName: initialData?.contactName || "",
 		email: initialData?.email || "",
 		phone: initialData?.phone || "",
+		entityType: initialData?.entityType || "",
+		productType: initialData?.productType || "",
 		industry: initialData?.industry || "",
 		mandateType: initialData?.mandateType || "",
 		employeeCount: initialData?.employeeCount || "",
@@ -64,6 +68,8 @@ export function ApplicantForm({
 			contactName: `${isMockarooTestMode ? "Jacob Kotzee" : "John Test"}`,
 			email: `${isMockarooTestMode ? "jkotzee@icloud.com" : "john.test@testcompany.co.za"}`,
 			phone: `${isMockarooTestMode ? "+27 76 341 0291" : "+27 82 123 4567"}`,
+			entityType: "company",
+			productType: "standard",
 			industry: `${isMockarooTestMode ? "Software Development" : "Financial Services"}`,
 			mandateType: `${isMockarooTestMode ? "Debit Order" : "debit_order"}`,
 			employeeCount: `${isMockarooTestMode ? "1" : "50"}`,
@@ -191,6 +197,39 @@ export function ApplicantForm({
 							onChange={e => updateField("registrationNumber", e.target.value)}
 							placeholder="e.g., 2024/123456/07"
 						/>
+					</div>
+
+					<div className="space-y-2">
+						<Label htmlFor="entityType">Entity Type</Label>
+						<select
+							id="entityType"
+							value={formData.entityType}
+							onChange={e => updateField("entityType", e.target.value)}
+							className="flex h-10 w-full rounded-md border border-input-border bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+							<option value="">Select Entity Type</option>
+							<option value="proprietor">Proprietor</option>
+							<option value="company">Company (Pty Ltd)</option>
+							<option value="close_corporation">Close Corporation</option>
+							<option value="partnership">Partnership</option>
+							<option value="npo">NPO</option>
+							<option value="trust">Trust</option>
+							<option value="body_corporate">Body Corporate</option>
+							<option value="other">Other</option>
+						</select>
+					</div>
+
+					<div className="space-y-2">
+						<Label htmlFor="productType">Product Type</Label>
+						<select
+							id="productType"
+							value={formData.productType}
+							onChange={e => updateField("productType", e.target.value)}
+							className="flex h-10 w-full rounded-md border border-input-border bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+							<option value="">Select Product Type</option>
+							<option value="standard">Standard</option>
+							<option value="premium_collections">Premium Collections</option>
+							<option value="call_centre">Call Centre</option>
+						</select>
 					</div>
 
 					<div className="space-y-2">
