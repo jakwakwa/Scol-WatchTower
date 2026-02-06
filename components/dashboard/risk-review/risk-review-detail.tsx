@@ -372,15 +372,15 @@ export function RiskReviewDetail({
 											: "bg-indigo-500/40 text-indigo-300 border-blue-500/20"
 									)}>
 									{reviewType === "procurement" ? (
-										<div className="flex items-center gap-2">
+										<span className="flex items-center gap-2">
 											<RiShoppingBag3Line className="h-4 w-4 text-indigo-400" />
 											Procurement
-										</div>
+										</span>
 									) : (
-										<div className="flex items-center gap-2">
+										<span className="flex items-center gap-2">
 											<RiShieldCheckLine className="h-4 w-4" />
 											General
-										</div>
+										</span>
 									)}
 								</Badge>
 							</SheetDescription>
