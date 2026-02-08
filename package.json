@@ -10,6 +10,11 @@
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate",
 		"db:studio": "drizzle-kit studio",
+		"test:e2e": "playwright test",
+		"test:e2e:ui": "playwright test --ui",
+		"test:e2e:headed": "playwright test --headed",
+		"test:e2e:debug": "playwright test --debug",
+		"test:db:reset": "bun run scripts/reset-test-db.ts",
 		"dev:all": "./setup-dev.sh"
 	},
 	"dependencies": {
@@ -66,6 +71,8 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.3.13",
+		"@clerk/testing": "^1.13.35",
+		"@playwright/test": "^1.58.2",
 		"@types/md5": "^2.3.6",
 		"@types/node": "^25.1.0",
 		"@types/react": "^19.2.3",
