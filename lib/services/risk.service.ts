@@ -1,31 +1,25 @@
 /**
  * Risk service - AI risk analysis operations
  */
+
+import { eq } from "drizzle-orm";
 import { getDatabaseClient } from "@/app/utils";
 import { applicants } from "@/db/schema";
-import { eq } from "drizzle-orm";
+
+import { createTestVendor, getVendorResults } from "@/lib/procurecheck";
 
 export interface RiskResult {
 	riskScore: number;
 	anomalies: string[];
 	recommendedAction: string;
+	procureCheckId?: string;
+	procureCheckData?: Record<string, unknown>;
 }
 
 /**
- * Perform AI risk analysis for an applicant
+ * Perform Risk Analysis using ProcureCheck (Sandbox)
  */
 export async function analyzeRisk(applicantId: number): Promise<RiskResult> {
-	console.log(
-		`[RiskService] Performing AI Risk Analysis for Applicant ${applicantId}`,
-	);
-
-	const aiServiceUrl = process.env.WEBHOOK_ZAP_AI_RISK_ANALYSIS;
-	if (!aiServiceUrl) {
-		throw new Error(
-			"[RiskService] WEBHOOK_ZAP_AI_RISK_ANALYSIS not configured",
-		);
-	}
-
 	// Fetch applicant data
 	const db = getDatabaseClient();
 	let applicantData = null;
@@ -48,38 +42,80 @@ export async function analyzeRisk(applicantId: number): Promise<RiskResult> {
 		throw new Error(`[RiskService] Applicant ${applicantId} not found`);
 	}
 
-	const payload = {
-		applicantId,
-		companyName: applicantData.companyName,
-		industry: applicantData.industry,
-		employeeCount: applicantData.employeeCount,
-		estimatedVolume: applicantData.mandateVolume,
-		callbackUrl: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/risk-analysis/callback`,
-	};
-
-	const response = await fetch(aiServiceUrl, {
-		method: "POST",
-		body: JSON.stringify(payload),
-		headers: { "Content-Type": "application/json" },
-	});
-
-	if (!response.ok) {
-		throw new Error(
-			`AI risk service failed: ${response.status} ${response.statusText}`,
-		);
+	// 1. Initiate Check
+	let checkResult: Record<string, unknown> | undefined;
+	try {
+		checkResult = await createTestVendor({
+			applicantId,
+			vendorName: applicantData.companyName,
+			registrationNumber: applicantData.registrationNumber,
+		});
+	} catch (error) {
+		console.error("[RiskService] ProcureCheck creation failed:", error);
+		// Fallback for demo/dev if API fails (e.g. strict sandbox limits)
+		return {
+			riskScore: 50,
+			anomalies: ["ProcureCheck API Request Failed - Manual Review Needed"],
+			recommendedAction: "MANUAL_REVIEW",
+		};
 	}
 
-	const result = await response.json();
+	// 2. Poll for Results (Short wait in sandbox, real world might be async job)
+	// For this synchronous/blocking step, we'll wait 2 seconds then fetch.
+	await new Promise(resolve => setTimeout(resolve, 2000));
 
-	if (result.riskScore === undefined) {
-		throw new Error(
-			`[RiskService] Invalid response: ${JSON.stringify(result)}`,
-		);
+	const vendorId = (checkResult?.ProcureCheckVendorID || checkResult?.id) as
+		| string
+		| undefined; // Adjust based on actual response key
+	if (!vendorId) {
+		return {
+			riskScore: 50,
+			anomalies: ["ProcureCheck did not return a Vendor ID"],
+			recommendedAction: "MANUAL_REVIEW",
+			procureCheckData: checkResult,
+		};
 	}
+
+	let results: any = null; // Ideally type this fully based on API docs, but explicit any/unknown is better than implicit
+	try {
+		results = await getVendorResults(vendorId);
+	} catch (error) {
+		console.error("[RiskService] Failed to fetch results:", error);
+	}
+
+	// 3. Parse Results (Mock logic for sandbox response parsing)
+	// "Failed" checks in response usually indicate risk.
+	const failures = results?.RiskSummary?.FailedChecks || 0;
+	// Unused variable 'passed' removed to fix lint warning if any
+
+	let riskScore = 100; // Start perfect
+	const anomalies: string[] = [];
+
+	if (failures > 0) {
+		riskScore -= failures * 20; // Deduction per failure
+		anomalies.push(`${failures} compliance checks failed in ProcureCheck`);
+	} else if (!results) {
+		anomalies.push("No results returned from ProcureCheck");
+		riskScore = 50;
+	}
+
+	if (results?.JudgementCheck?.Failed) {
+		anomalies.push("Judgement Check Failed");
+		riskScore -= 30;
+	}
+
+	// Cap score
+	riskScore = Math.max(0, riskScore);
+
+	let recommendedAction = "APPROVE";
+	if (riskScore < 60) recommendedAction = "REJECT";
+	else if (riskScore < 80) recommendedAction = "MANUAL_REVIEW";
 
 	return {
-		riskScore: result.riskScore,
-		anomalies: result.anomalies || [],
-		recommendedAction: result.recommendedAction || "MANUAL_REVIEW",
+		riskScore,
+		anomalies,
+		recommendedAction,
+		procureCheckId: vendorId,
+		procureCheckData: results || undefined,
 	};
 }

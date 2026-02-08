@@ -1,0 +1,65 @@
+{
+  "cookies": [
+    {
+      "name": "__e2e_test_mode",
+      "value": "true",
+      "domain": "localhost",
+      "path": "/",
+      "expires": -1,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "__e2e_user_id",
+      "value": "user_test_001",
+      "domain": "localhost",
+      "path": "/",
+      "expires": -1,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "__e2e_user_email",
+      "value": "test@stratcol.co.za",
+      "domain": "localhost",
+      "path": "/",
+      "expires": -1,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "__cf_bm",
+      "value": "GCNcu1GkXPt46Vxwhkz0FSPY_9xo3HXxwdM_XkZHCZU-1770418902-1.0.1.1-trea_3L8IHl.3cJjBT7gUfmgnMe_lkZ4yyRtsAXwy.NYSP6xXiVZrWybvtMvBUZi6ELXxUfN.M4Jvb.zWI.lEWzDu7UjEQU6rNMCNjoceRg",
+      "domain": ".enabled-doe-20.clerk.accounts.dev",
+      "path": "/",
+      "expires": 1770420702.936643,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "_cfuvid",
+      "value": "FOg3SWxK5e0Ri.F1H1DkWQw3MQ26SfoGcAPcXEAFS1w-1770418902933-0.0.1.1-604800000",
+      "domain": ".enabled-doe-20.clerk.accounts.dev",
+      "path": "/",
+      "expires": -1,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "__clerk_redirect_count",
+      "value": "3",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1770418905.299142,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    }
+  ],
+  "origins": []
+}

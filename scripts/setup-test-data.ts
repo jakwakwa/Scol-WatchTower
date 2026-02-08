@@ -21,8 +21,6 @@ const client = createClient({ url, authToken });
 const db = drizzle(client, { schema });
 
 async function setupTestData() {
-	console.log("🔧 Setting up test data...\n");
-
 	try {
 		// Create a test applicant
 		const [testApplicant] = await db
@@ -43,11 +41,6 @@ async function setupTestData() {
 
 		if (!testApplicant) throw new Error("Failed to create test applicant");
 
-		console.log("✅ Created test applicant:");
-		console.log(`   ID: ${testApplicant.id}`);
-		console.log(`   Company: ${testApplicant.companyName}`);
-		console.log();
-
 		// Create a test workflow
 		const [testWorkflow] = await db
 			.insert(schema.workflows)
@@ -55,23 +48,12 @@ async function setupTestData() {
 				{
 					applicantId: testApplicant.id,
 					stage: 2,
-					status: "in_progress",
+					status: "processing",
 				},
 			])
 			.returning();
 
 		if (!testWorkflow) throw new Error("Failed to create test workflow");
-
-		console.log("✅ Created test workflow:");
-		console.log(`   ID: ${testWorkflow.id}`);
-		console.log(`   Applicant ID: ${testWorkflow.applicantId}`);
-		console.log(`   Stage: ${testWorkflow.stage}`);
-		console.log();
-
-		console.log("🎉 Test data setup complete!");
-		console.log(
-			`\n💡 Use workflowId: ${testWorkflow.id} in your test payload\n`,
-		);
 
 		return { applicant: testApplicant, workflow: testWorkflow };
 	} catch (error) {

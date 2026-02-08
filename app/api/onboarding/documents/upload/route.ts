@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDatabaseClient } from "@/app/utils";
-import { documentUploads, workflows } from "@/db/schema";
+import { documentUploads, workflows, applicants } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import crypto from "crypto";
+import { inngest } from "@/inngest/client";
 
 /**
  * POST /api/onboarding/documents/upload
@@ -16,10 +17,7 @@ import crypto from "crypto";
 export async function POST(request: NextRequest) {
 	const db = getDatabaseClient();
 	if (!db) {
-		return NextResponse.json(
-			{ error: "Database not available" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Database not available" }, { status: 500 });
 	}
 
 	try {
@@ -37,10 +35,9 @@ export async function POST(request: NextRequest) {
 		if (!file || !workflowId || !category || !documentType) {
 			return NextResponse.json(
 				{
-					error:
-						"Missing required fields: file, workflowId, category, documentType",
+					error: "Missing required fields: file, workflowId, category, documentType",
 				},
-				{ status: 400 },
+				{ status: 400 }
 			);
 		}
 
@@ -54,10 +51,7 @@ export async function POST(request: NextRequest) {
 			.limit(1);
 
 		if (workflow.length === 0) {
-			return NextResponse.json(
-				{ error: "Workflow not found" },
-				{ status: 404 },
-			);
+			return NextResponse.json({ error: "Workflow not found" }, { status: 404 });
 		}
 
 		// Validate file size (max 10MB)
@@ -65,7 +59,7 @@ export async function POST(request: NextRequest) {
 		if (file.size > maxSize) {
 			return NextResponse.json(
 				{ error: "File size exceeds 10MB limit" },
-				{ status: 400 },
+				{ status: 400 }
 			);
 		}
 
@@ -82,7 +76,7 @@ export async function POST(request: NextRequest) {
 		if (!allowedTypes.includes(file.type)) {
 			return NextResponse.json(
 				{ error: "File type not allowed. Accepted: PDF, JPG, PNG, DOC, DOCX" },
-				{ status: 400 },
+				{ status: 400 }
 			);
 		}
 
@@ -121,8 +115,80 @@ export async function POST(request: NextRequest) {
 		if (!document) {
 			return NextResponse.json(
 				{ error: "Failed to create document record" },
-				{ status: 500 },
+				{ status: 500 }
 			);
+		}
+
+		// Send document uploaded event for aggregation
+		await inngest.send({
+			name: "document/uploaded",
+			data: {
+				workflowId: workflowIdNum,
+				applicantId: workflow[0].applicantId,
+				documentId: document.id,
+				documentType: documentType,
+				category: category,
+				uploadedAt: new Date().toISOString(),
+			},
+		});
+
+		// Check if this is a mandate document and trigger mandate submission check
+		const mandateDocTypes = [
+			"BANK_CONFIRMATION",
+			"MANDATE_FORM",
+			"DEBIT_ORDER_MANDATE",
+			"PROOF_OF_REGISTRATION",
+		];
+
+		if (mandateDocTypes.includes(documentType.toUpperCase())) {
+			// Fetch all mandate documents for this workflow
+			const allMandateDocs = await db
+				.select()
+				.from(documentUploads)
+				.where(eq(documentUploads.workflowId, workflowIdNum));
+
+			const uploadedMandateTypes = allMandateDocs
+				.filter(d => mandateDocTypes.includes(d.documentType?.toUpperCase() || ""))
+				.map(d => d.documentType?.toUpperCase() || "");
+
+			// Get applicant mandate type to determine required docs
+			const applicantResult = await db
+				.select()
+				.from(applicants)
+				.where(eq(applicants.id, workflow[0].applicantId));
+
+			const applicant = applicantResult[0];
+			const mandateType = applicant?.mandateType || "EFT";
+
+			// Determine required documents based on mandate type
+			const requiredDocs: Record<string, string[]> = {
+				EFT: ["BANK_CONFIRMATION", "MANDATE_FORM"],
+				DEBIT_ORDER: ["DEBIT_ORDER_MANDATE", "BANK_CONFIRMATION"],
+				CASH: ["PROOF_OF_REGISTRATION"],
+				MIXED: ["BANK_CONFIRMATION", "MANDATE_FORM", "DEBIT_ORDER_MANDATE"],
+			};
+
+			const required = requiredDocs[mandateType] || ["MANDATE_FORM"];
+			const allReceived = required.every(doc => uploadedMandateTypes.includes(doc));
+
+			// Send mandate document submitted event
+			await inngest.send({
+				name: "document/mandate.submitted",
+				data: {
+					workflowId: workflowIdNum,
+					applicantId: workflow[0].applicantId,
+					mandateType: mandateType as "EFT" | "DEBIT_ORDER" | "CASH" | "MIXED",
+					documents: allMandateDocs
+						.filter(d => mandateDocTypes.includes(d.documentType?.toUpperCase() || ""))
+						.map(d => ({
+							documentId: d.id,
+							documentType: d.documentType || "",
+							fileName: d.fileName || "",
+							uploadedAt: d.uploadedAt?.toISOString() || new Date().toISOString(),
+						})),
+					allRequiredDocsReceived: allReceived,
+				},
+			});
 		}
 
 		return NextResponse.json({
@@ -138,10 +204,7 @@ export async function POST(request: NextRequest) {
 		});
 	} catch (error) {
 		console.error("Failed to upload document:", error);
-		return NextResponse.json(
-			{ error: "Failed to upload document" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Failed to upload document" }, { status: 500 });
 	}
 }
 
@@ -152,20 +215,14 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
 	const db = getDatabaseClient();
 	if (!db) {
-		return NextResponse.json(
-			{ error: "Database not available" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Database not available" }, { status: 500 });
 	}
 
 	const { searchParams } = new URL(request.url);
 	const workflowId = searchParams.get("workflowId");
 
 	if (!workflowId) {
-		return NextResponse.json(
-			{ error: "workflowId is required" },
-			{ status: 400 },
-		);
+		return NextResponse.json({ error: "workflowId is required" }, { status: 400 });
 	}
 
 	try {
@@ -177,9 +234,6 @@ export async function GET(request: NextRequest) {
 		return NextResponse.json({ documents });
 	} catch (error) {
 		console.error("Failed to fetch documents:", error);
-		return NextResponse.json(
-			{ error: "Failed to fetch documents" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Failed to fetch documents" }, { status: 500 });
 	}
 }

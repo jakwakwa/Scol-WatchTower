@@ -2,15 +2,19 @@ import { Resend } from "resend";
 import { render } from "@react-email/render";
 import InternalAlert from "@/components/emails/InternalAlert";
 import ApplicantFormLinks, { type FormLink } from "@/components/emails/ApplicantFormLinks";
-import * as React from "react";
 
 const resendApiKey = process.env.RESEND_API_KEY;
 // Use the configured alert recipients or fall back to a default/empty
 const alertRecipients = process.env.ALERT_EMAIL_RECIPIENTS?.split(",") || [];
 const fromEmail = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
 
+
 // Initialize Resend client if API key is present
+if (!resendApiKey) {
+    console.warn("[EmailService] RESEND_API_KEY is missing from environment.");
+}
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
+
 
 type EmailResult = { success: true; messageId: string } | { success: false; error: string };
 
@@ -27,9 +31,8 @@ export async function sendInternalAlertEmail(params: {
     actionUrl?: string;
 }): Promise<EmailResult> {
     if (!resend || alertRecipients.length === 0) {
-        console.warn("[EmailService] Resend not configured or no alert recipients. skipping email.");
-        console.log("[EmailService] Mock Alert:", params);
-        return { success: true, messageId: "mock-alert" };
+        console.warn("[EmailService] Resend not configured or no alert recipients. Email not sent.");
+        return { success: false, error: "Resend not configured or no recipients" };
     }
 
     try {
@@ -73,10 +76,10 @@ export async function sendApplicantFormLinksEmail(params: {
     links: FormLink[];
 }): Promise<EmailResult> {
     if (!resend) {
-        console.warn("[EmailService] Resend not configured. Skipping applicant email.");
-        console.log("[EmailService] Mock Applicant Email:", params);
-        return { success: true, messageId: "mock-applicant" };
+        console.warn("[EmailService] Resend not configured. Link email not sent.");
+        return { success: false, error: "Resend not configured" };
     }
+
 
     try {
         const emailHtml = await render(

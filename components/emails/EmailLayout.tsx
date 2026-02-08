@@ -31,13 +31,12 @@ export const EmailLayout = ({ preview, children }: EmailLayoutProps) => {
 							},
 						},
 					},
-				}}
-			>
+				}}>
 				<Body className="bg-white my-auto mx-auto font-sans">
 					<Container className="border border-solid border-[#eaeaea] rounded my-[40px] mx-auto p-[20px] max-w-[465px]">
 						<Section className="mt-[32px]">
 							<Img
-								src="https://stratcol-onboard-ai.vercel.app/static/stratcol-logo.png"
+								src={`${process.env.NEXT_PUBLIC_APP_URL || 'https://stratcol-onboard-ai.vercel.app'}/assets/logo-dark.svg`}
 								width="150"
 								height="50"
 								alt="StratCol"

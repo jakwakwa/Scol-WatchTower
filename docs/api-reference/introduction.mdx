@@ -1,0 +1,42 @@
+---
+title: 'Introduction'
+description: 'Helper API reference for the Control Tower'
+---
+
+## Overview
+
+The Control Tower API provides programmatic access to the onboarding workflow, allowing you to manage applicants, quotes, documents, and risk assessments.
+
+## Base URL
+
+All API endpoints are relative to the base URL:
+
+```bash
+/api
+```
+
+## Authentication
+
+Currently, most internal API routes rely on session-based authentication via Clerk or internal headers for service-to-service communication.
+
+## Response Format
+
+Responses are generally returned in JSON format.
+
+```json
+{
+  "success": true,
+  "data": { ... }
+}
+```
+
+## Error Handling
+
+Errors are returned with an appropriate HTTP status code and a JSON object containing the error details.
+
+```json
+{
+  "success": false,
+  "error": "Error message description"
+}
+```

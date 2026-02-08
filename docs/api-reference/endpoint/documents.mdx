@@ -1,0 +1,64 @@
+---
+title: 'Documents'
+description: 'Manage applicant documents'
+---
+
+## List Documents
+
+<Segment>
+  <SegmentTitle>GET /api/documents</SegmentTitle>
+  <SegmentDescription>List documents associated with an applicant.</SegmentDescription>
+</Segment>
+
+## Upload Document
+
+<Segment>
+  <SegmentTitle>POST /api/documents/upload</SegmentTitle>
+  <SegmentDescription>Upload a new file (bank statement, ID, etc.).</SegmentDescription>
+</Segment>
+
+### Request Body (FormData)
+
+<ParamField body="file" type="file" required>
+  The document file to upload (PDF, JPG, PNG). Max 5MB.
+</ParamField>
+
+<ParamField body="applicantId" type="integer" required>
+  ID of the applicant owner.
+</ParamField>
+
+<ParamField body="type" type="string" required>
+  Document type (e.g., "bank_statement", "id_document", "company_registration").
+</ParamField>
+
+<ParamField body="category" type="string" required>
+  Document category (e.g., "financial", "identity", "legal").
+</ParamField>
+
+### Response
+
+```json
+{
+  "document": {
+    "id": 202,
+    "fileName": "statement.pdf",
+    "storageUrl": "https://storage.example.com/...",
+    "status": "uploaded",
+    "uploadedAt": "2023-11-21T10:15:00Z"
+  }
+}
+```
+
+## List Documents
+
+<Segment>
+  <SegmentTitle>GET /api/documents?applicantId={id}</SegmentTitle>
+  <SegmentDescription>List documents associated with an applicant.</SegmentDescription>
+</Segment>
+
+## Download Document
+
+<Segment>
+  <SegmentTitle>GET /api/documents/{id}/download</SegmentTitle>
+  <SegmentDescription>Get a signed URL to download a document.</SegmentDescription>
+</Segment>

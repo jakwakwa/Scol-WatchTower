@@ -13,13 +13,14 @@ interface FormRendererProps {
 	sections: FormSectionDefinition[];
 	schema: ZodTypeAny;
 	defaultValues?: Record<string, unknown>;
+	testData?: Record<string, unknown>;
 	submitLabel?: string;
 	onSubmit: (values: FieldValues) => Promise<void>;
 	disabled?: boolean;
 }
 
 const isRepeatable = (
-	field: FieldDefinition,
+	field: FieldDefinition
 ): field is Extract<FieldDefinition, { type: "repeatable" }> =>
 	field.type === "repeatable";
 
@@ -27,6 +28,7 @@ export default function FormRenderer({
 	sections,
 	schema,
 	defaultValues,
+	testData,
 	submitLabel = "Submit",
 	onSubmit,
 	disabled,
@@ -39,45 +41,59 @@ export default function FormRenderer({
 
 	const sectionLayouts = useMemo(
 		() =>
-			sections.map((section) => ({
+			sections.map(section => ({
 				...section,
 				columns: section.columns ?? 2,
 			})),
-		[sections],
+		[sections]
 	);
 
-	const handleSubmit = form.handleSubmit(async (values) => {
+	const handleSubmit = form.handleSubmit(async values => {
 		setSubmitError(null);
 		try {
 			await onSubmit(values);
 		} catch (error) {
-			const message =
-				error instanceof Error ? error.message : "Failed to submit form";
+			const message = error instanceof Error ? error.message : "Failed to submit form";
 			setSubmitError(message);
 		}
 	});
 
+	const showTestButton = process.env.NEXT_PUBLIC_TEST_FORMS === "true" && testData;
+
 	return (
 		<FormProvider {...form}>
 			<form onSubmit={handleSubmit} className="space-y-10">
-				{sectionLayouts.map((section) => (
+				{showTestButton && (
+					<div className="mb-6 p-4 border border-dashed border-yellow-500/50 bg-yellow-50/50 rounded-lg flex items-center justify-between">
+						<div className="space-y-1">
+							<p className="text-sm font-medium text-yellow-800">Testing Mode Active</p>
+							<p className="text-xs text-yellow-700">
+								Click to autofill the form with test data.
+							</p>
+						</div>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							onClick={() => form.reset(testData)}
+							className="bg-white border-yellow-200 hover:bg-yellow-50 hover:text-yellow-900 text-yellow-800">
+							Autofill Form
+						</Button>
+					</div>
+				)}
+				{sectionLayouts.map(section => (
 					<section key={section.title} className="space-y-6">
 						<div className="space-y-1">
-							<h2 className="text-lg font-semibold text-foreground">
-								{section.title}
-							</h2>
+							<h2 className="text-lg font-semibold text-foreground">{section.title}</h2>
 							{section.description ? (
-								<p className="text-sm text-muted-foreground">
-									{section.description}
-								</p>
+								<p className="text-sm text-muted-foreground">{section.description}</p>
 							) : null}
 						</div>
 						<div
 							className={`grid grid-cols-1 gap-6 ${
 								section.columns === 2 ? "md:grid-cols-2" : ""
-							}`}
-						>
-							{section.fields.map((field) => {
+							}`}>
+							{section.fields.map(field => {
 								if (isRepeatable(field)) {
 									return (
 										<div key={field.name} className="md:col-span-2">
@@ -89,8 +105,7 @@ export default function FormRenderer({
 								return (
 									<div
 										key={field.name}
-										className={field.colSpan === 2 ? "md:col-span-2" : ""}
-									>
+										className={field.colSpan === 2 ? "md:col-span-2" : ""}>
 										<FormField field={field} />
 									</div>
 								);
@@ -99,15 +114,10 @@ export default function FormRenderer({
 					</section>
 				))}
 
-				{submitError ? (
-					<p className="text-sm text-destructive">{submitError}</p>
-				) : null}
+				{submitError ? <p className="text-sm text-destructive">{submitError}</p> : null}
 
 				<div className="flex items-center justify-end gap-3">
-					<Button
-						type="submit"
-						disabled={disabled || form.formState.isSubmitting}
-					>
+					<Button type="submit" disabled={disabled || form.formState.isSubmitting}>
 						{form.formState.isSubmitting ? "Submitting..." : submitLabel}
 					</Button>
 				</div>

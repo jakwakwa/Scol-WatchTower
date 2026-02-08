@@ -30,8 +30,7 @@ export const Features = () => {
 			id: "webhooks",
 			icon: <Zap className="w-6 h-6 text-chart-2" />,
 			title: "Instant API Webhooks",
-			description:
-				"Connected to external apps instantly with built-in webhook handlers.",
+			description: "Connected to external apps instantly with built-in webhook handlers.",
 		},
 		{
 			id: "edge",
@@ -44,8 +43,7 @@ export const Features = () => {
 			id: "modern-stack",
 			icon: <Layers className="w-6 h-6 text-chart-4" />,
 			title: "Modern Stack",
-			description:
-				"Next.js 15, Tailwind 4, Drizzle, and more. A stack built for 2026.",
+			description: "Next.js 15, Tailwind 4, Drizzle, and more. A stack built for 2026.",
 		},
 	];
 
@@ -58,8 +56,7 @@ export const Features = () => {
 						whileInView={{ opacity: 1, y: 0 }}
 						viewport={{ once: true }}
 						transition={{ duration: 0.5 }}
-						className="text-3xl md:text-5xl font-bold mb-4 text-white"
-					>
+						className="text-3xl md:text-5xl font-bold mb-4 text-white">
 						Built for the <span className="text-accent">Future</span>
 					</motion.h2>
 					<motion.p
@@ -67,8 +64,7 @@ export const Features = () => {
 						whileInView={{ opacity: 1, y: 0 }}
 						viewport={{ once: true }}
 						transition={{ duration: 0.5, delay: 0.1 }}
-						className="text-muted-foreground text-lg max-w-2xl mx-auto"
-					>
+						className="text-muted-foreground text-lg max-w-2xl mx-auto">
 						Everything you need to build next-generation AI onboarding flows,
 						pre-configured and ready to ship.
 					</motion.p>
@@ -83,14 +79,11 @@ export const Features = () => {
 							viewport={{ once: true }}
 							transition={{ duration: 0.5, delay: index * 0.1 }}
 							whileHover={{ y: -5 }}
-							className="p-6 rounded-2xl bg-secondary/5 border border-secondary/10 hover:border-primary/50 transition-colors hover:bg-secondary/10"
-						>
+							className="p-6 rounded-2xl bg-secondary/5 border border-secondary/10 hover:border-primary/50 transition-colors hover:bg-secondary/10">
 							<div className="w-12 h-12 rounded-lg bg-background/50 flex items-center justify-center mb-4 border border-secondary/5">
 								{feature.icon}
 							</div>
-							<h3 className="text-xl font-bold mb-2 text-white">
-								{feature.title}
-							</h3>
+							<h3 className="text-xl font-bold mb-2 text-white">{feature.title}</h3>
 							<p className="text-muted-foreground leading-relaxed">
 								{feature.description}
 							</p>

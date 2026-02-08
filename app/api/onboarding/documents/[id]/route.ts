@@ -9,16 +9,13 @@ import { eq } from "drizzle-orm";
  */
 export async function GET(
 	request: NextRequest,
-	{ params }: { params: Promise<{ id: string }> },
+	{ params }: { params: Promise<{ id: string }> }
 ) {
 	const { id } = await params;
 
 	const db = getDatabaseClient();
 	if (!db) {
-		return NextResponse.json(
-			{ error: "Database not available" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Database not available" }, { status: 500 });
 	}
 
 	try {
@@ -29,19 +26,13 @@ export async function GET(
 			.limit(1);
 
 		if (document.length === 0) {
-			return NextResponse.json(
-				{ error: "Document not found" },
-				{ status: 404 },
-			);
+			return NextResponse.json({ error: "Document not found" }, { status: 404 });
 		}
 
 		return NextResponse.json({ document: document[0] });
 	} catch (error) {
 		console.error("Failed to fetch document:", error);
-		return NextResponse.json(
-			{ error: "Failed to fetch document" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Failed to fetch document" }, { status: 500 });
 	}
 }
 
@@ -51,27 +42,23 @@ export async function GET(
  */
 export async function PUT(
 	request: NextRequest,
-	{ params }: { params: Promise<{ id: string }> },
+	{ params }: { params: Promise<{ id: string }> }
 ) {
 	const { id } = await params;
 
 	const db = getDatabaseClient();
 	if (!db) {
-		return NextResponse.json(
-			{ error: "Database not available" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Database not available" }, { status: 500 });
 	}
 
 	try {
 		const body = await request.json();
-		const { verificationStatus, verificationNotes, verifiedBy, expiresAt } =
-			body;
+		const { verificationStatus, verificationNotes, verifiedBy, expiresAt } = body;
 
 		if (!verificationStatus) {
 			return NextResponse.json(
 				{ error: "verificationStatus is required" },
-				{ status: 400 },
+				{ status: 400 }
 			);
 		}
 
@@ -81,7 +68,7 @@ export async function PUT(
 				{
 					error: `Invalid status. Must be one of: ${validStatuses.join(", ")}`,
 				},
-				{ status: 400 },
+				{ status: 400 }
 			);
 		}
 
@@ -99,10 +86,7 @@ export async function PUT(
 			.returning();
 
 		if (!updated) {
-			return NextResponse.json(
-				{ error: "Document not found" },
-				{ status: 404 },
-			);
+			return NextResponse.json({ error: "Document not found" }, { status: 404 });
 		}
 
 		return NextResponse.json({
@@ -111,10 +95,7 @@ export async function PUT(
 		});
 	} catch (error) {
 		console.error("Failed to update document:", error);
-		return NextResponse.json(
-			{ error: "Failed to update document" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Failed to update document" }, { status: 500 });
 	}
 }
 
@@ -124,16 +105,13 @@ export async function PUT(
  */
 export async function DELETE(
 	request: NextRequest,
-	{ params }: { params: Promise<{ id: string }> },
+	{ params }: { params: Promise<{ id: string }> }
 ) {
 	const { id } = await params;
 
 	const db = getDatabaseClient();
 	if (!db) {
-		return NextResponse.json(
-			{ error: "Database not available" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Database not available" }, { status: 500 });
 	}
 
 	try {
@@ -145,19 +123,14 @@ export async function DELETE(
 			.limit(1);
 
 		if (document.length === 0) {
-			return NextResponse.json(
-				{ error: "Document not found" },
-				{ status: 404 },
-			);
+			return NextResponse.json({ error: "Document not found" }, { status: 404 });
 		}
 
 		// In production, delete from S3/R2 here
 		// await deleteFromStorage(document[0].storageKey);
 
 		// Delete from database
-		await db
-			.delete(documentUploads)
-			.where(eq(documentUploads.id, parseInt(id)));
+		await db.delete(documentUploads).where(eq(documentUploads.id, parseInt(id)));
 
 		return NextResponse.json({
 			success: true,
@@ -165,9 +138,6 @@ export async function DELETE(
 		});
 	} catch (error) {
 		console.error("Failed to delete document:", error);
-		return NextResponse.json(
-			{ error: "Failed to delete document" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Failed to delete document" }, { status: 500 });
 	}
 }

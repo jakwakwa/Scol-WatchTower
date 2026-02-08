@@ -71,9 +71,7 @@ export function ActivityFeed({ events, maxItems = 10 }: ActivityFeedProps) {
 		return (
 			<div className="rounded-xl bg-secondary/2 p-8 text-center">
 				<RiTimeLine className="mx-auto h-8 w-8 text-muted-foreground/50" />
-				<p className="mt-2 text-[9px] text-muted-foreground">
-					No recent activity
-				</p>
+				<p className="mt-2 text-[9px] text-muted-foreground">No recent activity</p>
 			</div>
 		);
 	}
@@ -89,17 +87,15 @@ export function ActivityFeed({ events, maxItems = 10 }: ActivityFeedProps) {
 						key={event.id}
 						className={cn(
 							"group flex items-start gap-2 rounded-xl p-2 transition-colors",
-							"hover:bg-secondary/2",
-						)}
-					>
+							"hover:bg-secondary/2"
+						)}>
 						{/* Timeline connector */}
 						<div className="relative flex flex-col items-center">
 							<div
 								className={cn(
 									"flex h-6 w-6 items-center justify-center rounded-md",
-									config.bgColor,
-								)}
-							>
+									config.bgColor
+								)}>
 								<Icon className={cn("h-4 w-4", config.color)} />
 							</div>
 							{index < displayEvents.length - 1 && (
@@ -155,7 +151,7 @@ export function CompactTimeline({ events }: CompactTimelineProps) {
 			{/* Vertical line */}
 			<div className="absolute left-2.5 top-2 bottom-2 w-px bg-secondary/10" />
 
-			{events.map((event) => {
+			{events.map(event => {
 				const config = eventConfig[event.eventType];
 				const Icon = config.icon;
 
@@ -165,9 +161,8 @@ export function CompactTimeline({ events }: CompactTimelineProps) {
 						<div
 							className={cn(
 								"absolute -left-6 top-1 flex h-5 w-5 items-center justify-center rounded-full",
-								config.bgColor,
-							)}
-						>
+								config.bgColor
+							)}>
 							<Icon className={cn("h-3 w-3", config.color)} />
 						</div>
 

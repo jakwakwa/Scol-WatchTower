@@ -2,15 +2,7 @@ import { z } from "zod";
 
 export const facilityApplicationSchema = z.object({
 	serviceTypes: z
-		.array(
-			z.enum([
-				"EFT",
-				"DebiCheck",
-				"3rd Party Payments",
-				"Pay@",
-				"Card Payments",
-			]),
-		)
+		.array(z.enum(["EFT", "DebiCheck", "3rd Party Payments", "Pay@", "Card Payments"]))
 		.min(1, "Select at least one service type"),
 	additionalServices: z
 		.array(
@@ -20,7 +12,7 @@ export const facilityApplicationSchema = z.object({
 				"Account Verification",
 				"ID Verification",
 				"Bulk SMS",
-			]),
+			])
 		)
 		.optional()
 		.default([]),
@@ -75,7 +67,7 @@ export const stratcolContractSchema = z.object({
 				address: z.string().min(2),
 				position: z.string().min(2),
 				shareholdingPercent: z.coerce.number().min(0).max(100).optional(),
-			}),
+			})
 		)
 		.min(1, "Add at least one beneficial owner"),
 	creditBankAccount: z.object({
@@ -127,15 +119,7 @@ export const absa6995Schema = z.object({
 		companyRegistrationNumber: z.string().min(2),
 		applicationTypes: z
 			.array(
-				z.enum([
-					"EFT",
-					"DebiCheck",
-					"AbsaPay",
-					"Payments",
-					"New TPPP",
-					"PayShap",
-					"RM",
-				]),
+				z.enum(["EFT", "DebiCheck", "AbsaPay", "Payments", "New TPPP", "PayShap", "RM"])
 			)
 			.min(1, "Select at least one application type"),
 		directors: z
@@ -143,7 +127,7 @@ export const absa6995Schema = z.object({
 				z.object({
 					fullName: z.string().min(2),
 					idNumber: z.string().min(6),
-				}),
+				})
 			)
 			.min(1, "Provide at least one director"),
 		physicalAddress: z.object({
@@ -171,14 +155,7 @@ export const absa6995Schema = z.object({
 			sourceOfIncome: z.string().optional(),
 		}),
 		salesDistribution: z
-			.array(
-				z.enum([
-					"Direct Sales",
-					"Call Centre",
-					"Network Marketing",
-					"Face-to-Face",
-				]),
-			)
+			.array(z.enum(["Direct Sales", "Call Centre", "Network Marketing", "Face-to-Face"]))
 			.optional()
 			.default([]),
 		collectionHistory: z.object({
@@ -203,7 +180,7 @@ export const absa6995Schema = z.object({
 				name: z.string().min(2),
 				accountNumber: z.string().min(2),
 				reference: z.string().min(1),
-			}),
+			})
 		)
 		.length(5, "Provide five reference entries"),
 	ratiosAndMetrics: z.object({
@@ -234,7 +211,7 @@ export const absa6995Schema = z.object({
 			z.object({
 				fullName: z.string().min(2),
 				idNumber: z.string().min(6),
-			}),
+			})
 		)
 		.optional(),
 	documentChecklist: z.object({
@@ -268,3 +245,52 @@ export const absa6995Schema = z.object({
 });
 
 export type Absa6995Form = z.infer<typeof absa6995Schema>;
+
+// ============================================
+// Accountant Letter Form
+// ============================================
+
+export const accountantLetterSchema = z.object({
+	businessName: z.string().min(2, "Business name is required"),
+	physicalAddress: z.string().min(5, "Physical address is required"),
+	accountantName: z.string().min(2, "Accountant name is required"),
+	practiceNumber: z.string().min(2, "Practice number is required"),
+	confirmLegitimate: z.literal(true, {
+		message:
+			"You must confirm the business is legitimate and you are not aware of any investigation",
+	}),
+	signatureName: z.string().min(2, "Signature is required"),
+	signatureDate: z.string().min(2, "Signature date is required"),
+});
+
+export type AccountantLetterForm = z.infer<typeof accountantLetterSchema>;
+
+// ============================================
+// Call Centre Application Form
+// ============================================
+
+export const callCentreApplicationSchema = z.object({
+	// Service Agreement
+	serviceAgreementAccepted: z.literal(true, {
+		message: "You must accept the service agreement",
+	}),
+	serviceAgreementSignature: z.string().min(2, "Signature is required"),
+
+	// Product Description
+	productDescription: z.string().min(10, "Product description is required"),
+
+	// Supplier Contact Information
+	supplierName: z.string().min(2, "Supplier name is required"),
+	supplierPhone: z.string().min(5, "Supplier phone is required"),
+	supplierEmail: z.string().email("Valid email is required"),
+	supplierAddress: z.string().min(5, "Supplier address is required"),
+
+	// Call Script
+	callScript: z.string().min(10, "Call script is required"),
+
+	// Final Signature
+	signatureName: z.string().min(2, "Signature is required"),
+	signatureDate: z.string().min(2, "Signature date is required"),
+});
+
+export type CallCentreApplicationForm = z.infer<typeof callCentreApplicationSchema>;

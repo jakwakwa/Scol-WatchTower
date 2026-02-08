@@ -5,8 +5,7 @@ export default function NewApplicantPage() {
 	return (
 		<DashboardLayout
 			title="New Applicant"
-			description="Create a new applicant to begin the onboarding process"
-		>
+			description="Create a new applicant to begin the onboarding process">
 			<div className="max-w-3xl">
 				<ApplicantForm />
 			</div>

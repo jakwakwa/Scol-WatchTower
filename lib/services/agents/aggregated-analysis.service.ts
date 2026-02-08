@@ -1,0 +1,551 @@
+/**
+ * Aggregated Analysis Service - Control Tower
+ *
+ * This service orchestrates all AI agents (Validation, Risk, Sanctions)
+ * and produces a unified analysis result for the workflow.
+ *
+ * The aggregated result is used by:
+ * 1. Risk Manager for final review
+ * 2. Workflow orchestrator for auto-approval decisions
+ * 3. Audit trail for compliance
+ */
+
+import { z } from "zod";
+import {
+	validateDocumentsBatch,
+	type BatchValidationResult,
+} from "./validation.agent";
+import {
+	analyzeFinancialRisk,
+	canAutoApprove as canAutoApproveRisk,
+	requiresManualReview as requiresManualRiskReview,
+	type RiskAnalysisResult,
+} from "./risk.agent";
+import {
+	performSanctionsCheck,
+	canAutoApprove as canAutoApproveSanctions,
+	isBlocked as isSanctionsBlocked,
+	type SanctionsCheckResult,
+} from "./sanctions.agent";
+import { getDatabaseClient } from "@/app/utils";
+import { riskAssessments, workflowEvents } from "@/db/schema";
+import { eq } from "drizzle-orm";
+
+// ============================================
+// Types & Schemas
+// ============================================
+
+export interface AggregatedAnalysisInput {
+	workflowId: number;
+	applicantId: number;
+	applicantData: {
+		companyName: string;
+		contactName?: string;
+		registrationNumber?: string;
+		industry?: string;
+		countryCode?: string;
+		address?: string;
+		employeeCount?: number;
+	};
+	documents?: Array<{
+		id: string;
+		type: string;
+		content: string;
+		contentType: "text" | "base64";
+	}>;
+	bankStatementText?: string;
+	directors?: Array<{
+		name: string;
+		idNumber?: string;
+		nationality?: string;
+	}>;
+	requestedAmount?: number;
+}
+
+export interface AggregatedAnalysisResult {
+	// Individual Agent Results
+	validation?: BatchValidationResult;
+	risk?: RiskAnalysisResult;
+	sanctions?: SanctionsCheckResult;
+
+	// Reporter Agent consolidated agent outputs (for UI rendering)
+	agents: {
+		validation: Record<string, unknown>;
+		risk: Record<string, unknown>;
+		sanctions: Record<string, unknown>;
+	};
+
+	// Aggregated Scores
+	scores: {
+		validationScore: number;
+		riskScore: number;
+		sanctionsScore: number;
+		aggregatedScore: number;
+	};
+
+	// Overall Assessment
+	overall: {
+		canAutoApprove: boolean;
+		requiresManualReview: boolean;
+		isBlocked: boolean;
+		recommendation:
+			| "AUTO_APPROVE"
+			| "PROCEED_WITH_CONDITIONS"
+			| "MANUAL_REVIEW"
+			| "BLOCK";
+		reasoning: string;
+		conditions?: string[];
+		flags: string[];
+	};
+
+	// SOP External Check Stubs (feature-flagged)
+	externalChecks: {
+		xdsCreditCheck: { status: "mock" | "live"; result?: Record<string, unknown> };
+		lexisNexisProcure: { status: "mock" | "live"; result?: Record<string, unknown> };
+		bizPortalRegistration: { status: "mock" | "live"; result?: Record<string, unknown> };
+		efs24IdAvsr: { status: "mock" | "live"; result?: Record<string, unknown> };
+		sarsVatSearch: { status: "mock" | "live"; result?: Record<string, unknown> };
+		industryRegulator: { status: "mock" | "live"; result?: Record<string, unknown> };
+	};
+
+	// Metadata
+	metadata: {
+		analysisId: string;
+		analyzedAt: string;
+		processingTimeMs: number;
+		agentsRun: ("validation" | "risk" | "sanctions")[];
+	};
+}
+
+// ============================================
+// Aggregated Analysis Implementation
+// ============================================
+
+/**
+ * Perform aggregated analysis using all AI agents
+ */
+export async function performAggregatedAnalysis(
+	input: AggregatedAnalysisInput
+): Promise<AggregatedAnalysisResult> {
+	const startTime = Date.now();
+	const analysisId = `AGG-${input.workflowId}-${Date.now()}`;
+
+	console.log(
+		`[AggregatedAnalysis] Starting analysis ${analysisId} for workflow ${input.workflowId}`
+	);
+
+	const agentsRun: ("validation" | "risk" | "sanctions")[] = [];
+	const flags: string[] = [];
+
+	// Run all agents in parallel
+	const [validationResult, riskResult, sanctionsResult] = await Promise.all([
+		// Validation Agent
+		input.documents && input.documents.length > 0
+			? validateDocumentsBatch({
+					documents: input.documents,
+					applicantData: {
+						companyName: input.applicantData.companyName,
+						contactName: input.applicantData.contactName,
+						registrationNumber: input.applicantData.registrationNumber,
+						address: input.applicantData.address,
+					},
+					workflowId: input.workflowId,
+				}).then(r => {
+					agentsRun.push("validation");
+					return r;
+				})
+			: Promise.resolve(undefined),
+
+		// Risk Agent
+		analyzeFinancialRisk({
+			applicantId: input.applicantId,
+			workflowId: input.workflowId,
+			bankStatementText: input.bankStatementText,
+			requestedAmount: input.requestedAmount,
+			applicantData: {
+				companyName: input.applicantData.companyName,
+				industry: input.applicantData.industry,
+				employeeCount: input.applicantData.employeeCount,
+			},
+		}).then(r => {
+			agentsRun.push("risk");
+			return r;
+		}),
+
+		// Sanctions Agent
+		performSanctionsCheck({
+			applicantId: input.applicantId,
+			workflowId: input.workflowId,
+			entityName: input.applicantData.companyName,
+			entityType: "COMPANY",
+			countryCode: input.applicantData.countryCode || "ZA",
+			registrationNumber: input.applicantData.registrationNumber,
+			directors: input.directors,
+		}).then(r => {
+			agentsRun.push("sanctions");
+			return r;
+		}),
+	]);
+
+	// Calculate scores
+	const validationScore = validationResult
+		? calculateValidationScore(validationResult)
+		: 100;
+	const riskScore = riskResult.overall.score;
+	const sanctionsScore = calculateSanctionsScore(sanctionsResult);
+
+	// Weighted aggregated score
+	const aggregatedScore = Math.round(
+		validationScore * 0.25 + riskScore * 0.45 + sanctionsScore * 0.3
+	);
+
+	// Determine overall status
+	const isSanctionsBlock = isSanctionsBlocked(sanctionsResult);
+	const canAutoApprove =
+		!isSanctionsBlock &&
+		canAutoApproveSanctions(sanctionsResult) &&
+		canAutoApproveRisk(riskResult) &&
+		(!validationResult ||
+			validationResult.summary.overallRecommendation === "PROCEED");
+
+	const requiresManualReview =
+		!canAutoApprove &&
+		!isSanctionsBlock &&
+		(requiresManualRiskReview(riskResult) ||
+			sanctionsResult.overall.reviewRequired ||
+			(validationResult &&
+				validationResult.summary.overallRecommendation === "REVIEW_REQUIRED"));
+
+	// Collect flags
+	if (riskResult.stability.hasBounced) {
+		flags.push("Bounced transactions detected");
+	}
+	if (riskResult.stability.gamblingIndicators.length > 0) {
+		flags.push("Gambling-related transactions detected");
+	}
+	if (sanctionsResult.pepScreening.isPEP) {
+		flags.push("PEP identified - Enhanced Due Diligence required");
+	}
+	if (sanctionsResult.adverseMedia.alertsFound > 0) {
+		flags.push(`${sanctionsResult.adverseMedia.alertsFound} adverse media alert(s)`);
+	}
+	if (validationResult && validationResult.summary.failed > 0) {
+		flags.push(`${validationResult.summary.failed} document(s) failed validation`);
+	}
+
+	// Determine recommendation
+	let recommendation: AggregatedAnalysisResult["overall"]["recommendation"];
+	if (isSanctionsBlock) {
+		recommendation = "BLOCK";
+	} else if (canAutoApprove) {
+		recommendation = "AUTO_APPROVE";
+	} else if (requiresManualReview) {
+		recommendation = "MANUAL_REVIEW";
+	} else {
+		recommendation = "PROCEED_WITH_CONDITIONS";
+	}
+
+	// Generate reasoning
+	const reasoning = generateAggregatedReasoning(
+		recommendation,
+		riskResult,
+		sanctionsResult,
+		validationResult,
+		aggregatedScore
+	);
+
+	// Run SOP-required external check stubs (all mocked in Phase 1)
+	const externalChecks = runExternalCheckStubs(input);
+
+	// Build result
+	const result: AggregatedAnalysisResult = {
+		validation: validationResult,
+		risk: riskResult,
+		sanctions: sanctionsResult,
+		agents: {
+			validation: validationResult
+				? {
+						totalDocuments: validationResult.summary.totalDocuments,
+						passed: validationResult.summary.passed,
+						failed: validationResult.summary.failed,
+						recommendation: validationResult.summary.overallRecommendation,
+					}
+				: { status: "skipped", reason: "No documents provided" },
+			risk: {
+				riskCategory: riskResult.creditRisk.riskCategory,
+				score: riskResult.overall.score,
+				recommendation: riskResult.overall.recommendation,
+				hasBounced: riskResult.stability.hasBounced,
+				gamblingIndicators: riskResult.stability.gamblingIndicators.length,
+			},
+			sanctions: {
+				riskLevel: sanctionsResult.overall.riskLevel,
+				isPEP: sanctionsResult.pepScreening.isPEP,
+				requiresEDD: sanctionsResult.overall.requiresEDD,
+				adverseMediaAlerts: sanctionsResult.adverseMedia.alertsFound,
+			},
+		},
+		scores: {
+			validationScore,
+			riskScore,
+			sanctionsScore,
+			aggregatedScore,
+		},
+		overall: {
+			canAutoApprove,
+			requiresManualReview,
+			isBlocked: isSanctionsBlock,
+			recommendation,
+			reasoning,
+			conditions:
+				riskResult.overall.recommendation === "CONDITIONAL_APPROVE"
+					? riskResult.overall.conditions
+					: undefined,
+			flags,
+		},
+		externalChecks,
+		metadata: {
+			analysisId,
+			analyzedAt: new Date().toISOString(),
+			processingTimeMs: Date.now() - startTime,
+			agentsRun,
+		},
+	};
+
+	// Store result in database
+	await storeAnalysisResult(input.workflowId, input.applicantId, result);
+
+	console.log(
+		`[AggregatedAnalysis] Completed ${analysisId} in ${result.metadata.processingTimeMs}ms - ` +
+			`Score: ${aggregatedScore}, Recommendation: ${recommendation}`
+	);
+
+	return result;
+}
+
+/**
+ * Calculate validation score from batch results
+ */
+function calculateValidationScore(result: BatchValidationResult): number {
+	if (result.summary.totalDocuments === 0) return 100;
+
+	const passRate =
+		(result.summary.passed / result.summary.totalDocuments) * 100;
+
+	// Penalize for review required or failed
+	const penalty =
+		result.summary.requiresReview * 5 + result.summary.failed * 15;
+
+	return Math.max(0, Math.round(passRate - penalty));
+}
+
+/**
+ * Calculate sanctions score from result
+ */
+function calculateSanctionsScore(result: SanctionsCheckResult): number {
+	if (result.overall.riskLevel === "BLOCKED") return 0;
+	if (result.overall.riskLevel === "HIGH") return 30;
+	if (result.overall.riskLevel === "MEDIUM") return 60;
+	if (result.overall.riskLevel === "LOW") return 80;
+	return 100; // CLEAR
+}
+
+/**
+ * Generate aggregated reasoning text
+ */
+function generateAggregatedReasoning(
+	recommendation: AggregatedAnalysisResult["overall"]["recommendation"],
+	risk: RiskAnalysisResult,
+	sanctions: SanctionsCheckResult,
+	validation: BatchValidationResult | undefined,
+	aggregatedScore: number
+): string {
+	const parts: string[] = [];
+
+	parts.push(`Aggregated analysis completed with overall score of ${aggregatedScore}/100.`);
+
+	switch (recommendation) {
+		case "AUTO_APPROVE":
+			parts.push(
+				"All checks passed with satisfactory results. Automatic approval recommended."
+			);
+			break;
+		case "PROCEED_WITH_CONDITIONS":
+			parts.push(
+				"Checks passed with some conditions. May proceed with monitoring."
+			);
+			if (risk.overall.conditions) {
+				parts.push(`Conditions: ${risk.overall.conditions.join("; ")}`);
+			}
+			break;
+		case "MANUAL_REVIEW":
+			parts.push(
+				"One or more checks require human review before proceeding."
+			);
+			break;
+		case "BLOCK":
+			parts.push(
+				"CRITICAL: Sanctions screening identified blocking issues. Application cannot proceed."
+			);
+			break;
+	}
+
+	// Risk summary
+	parts.push(
+		`Risk assessment: ${risk.creditRisk.riskCategory} (${risk.overall.recommendation})`
+	);
+
+	// Sanctions summary
+	parts.push(
+		`Sanctions check: ${sanctions.overall.riskLevel}${sanctions.overall.requiresEDD ? " - EDD required" : ""}`
+	);
+
+	// Validation summary
+	if (validation) {
+		parts.push(
+			`Document validation: ${validation.summary.passed}/${validation.summary.totalDocuments} passed`
+		);
+	}
+
+	return parts.join(" ");
+}
+
+/**
+ * Store analysis result in database
+ */
+async function storeAnalysisResult(
+	workflowId: number,
+	applicantId: number,
+	result: AggregatedAnalysisResult
+): Promise<void> {
+	const db = getDatabaseClient();
+	if (!db) {
+		console.warn("[AggregatedAnalysis] Could not store result - no database connection");
+		return;
+	}
+
+	try {
+		// Update or create risk assessment
+		const existing = await db
+			.select()
+			.from(riskAssessments)
+			.where(eq(riskAssessments.applicantId, applicantId));
+
+		const aiAnalysisJson = JSON.stringify({
+			analysisId: result.metadata.analysisId,
+			scores: result.scores,
+			recommendation: result.overall.recommendation,
+			reasoning: result.overall.reasoning,
+			flags: result.overall.flags,
+			agents: result.agents,
+			riskDetails: result.risk?.creditRisk,
+			sanctionsLevel: result.sanctions?.overall.riskLevel,
+			validationSummary: result.validation?.summary,
+			externalChecks: result.externalChecks,
+		});
+
+		if (existing.length > 0) {
+			await db
+				.update(riskAssessments)
+				.set({
+					aiAnalysis: aiAnalysisJson,
+					overallRisk:
+						result.overall.recommendation === "AUTO_APPROVE"
+							? "green"
+							: result.overall.recommendation === "BLOCK"
+								? "red"
+								: "amber",
+				})
+				.where(eq(riskAssessments.applicantId, applicantId));
+		} else {
+			await db.insert(riskAssessments).values({
+				applicantId,
+				aiAnalysis: aiAnalysisJson,
+				overallRisk:
+					result.overall.recommendation === "AUTO_APPROVE"
+						? "green"
+						: result.overall.recommendation === "BLOCK"
+							? "red"
+							: "amber",
+			});
+		}
+
+		// Log workflow event
+		await db.insert(workflowEvents).values({
+			workflowId,
+			eventType: "ai_analysis_completed",
+			payload: JSON.stringify({
+				analysisId: result.metadata.analysisId,
+				aggregatedScore: result.scores.aggregatedScore,
+				recommendation: result.overall.recommendation,
+				processingTimeMs: result.metadata.processingTimeMs,
+			}),
+		});
+	} catch (error) {
+		console.error("[AggregatedAnalysis] Error storing result:", error);
+	}
+}
+
+// ============================================
+// SOP External Check Stubs (Feature-Flagged)
+// ============================================
+
+/**
+ * Runs feature-flagged external check stubs per SOP requirements.
+ * All mocked in Phase 1 — each returns a mock/pass result.
+ * Switch to "live" by setting env flags (e.g., ENABLE_XDS_LIVE=true).
+ */
+function runExternalCheckStubs(
+	input: AggregatedAnalysisInput
+): AggregatedAnalysisResult["externalChecks"] {
+	const mockResult = (name: string) => ({
+		status: "mock" as const,
+		result: {
+			checked: true,
+			passed: true,
+			mockReason: `${name} check is mocked in Phase 1`,
+			checkedAt: new Date().toISOString(),
+		},
+	});
+
+	return {
+		xdsCreditCheck: mockResult("XDS Credit Check"),
+		lexisNexisProcure: mockResult("LexisNexis Procure Upload"),
+		bizPortalRegistration: mockResult("BizPortal Company Registration"),
+		efs24IdAvsr: mockResult("EFS24 ID/AVSR Verification"),
+		sarsVatSearch: mockResult("SARS VAT Search"),
+		industryRegulator: mockResult("Industry Regulator Confirmation"),
+	};
+}
+
+// ============================================
+// Quick Check Functions
+// ============================================
+
+/**
+ * Perform a quick pre-screening check (minimal analysis)
+ */
+export async function performQuickCheck(
+	applicantId: number,
+	workflowId: number,
+	companyName: string,
+	countryCode: string = "ZA"
+): Promise<{
+	passed: boolean;
+	riskLevel: string;
+	recommendation: string;
+}> {
+	const sanctionsResult = await performSanctionsCheck({
+		applicantId,
+		workflowId,
+		entityName: companyName,
+		entityType: "COMPANY",
+		countryCode,
+	});
+
+	return {
+		passed: !isSanctionsBlocked(sanctionsResult),
+		riskLevel: sanctionsResult.overall.riskLevel,
+		recommendation: sanctionsResult.overall.recommendation,
+	};
+}

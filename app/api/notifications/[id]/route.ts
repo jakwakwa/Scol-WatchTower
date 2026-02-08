@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function PATCH(
 	request: NextRequest,
-	{ params }: { params: Promise<{ id: string }> },
+	{ params }: { params: Promise<{ id: string }> }
 ) {
 	const { id } = await params;
 	const notificationId = parseInt(id);
@@ -16,10 +16,7 @@ export async function PATCH(
 
 	const db = getDatabaseClient();
 	if (!db) {
-		return NextResponse.json(
-			{ error: "Database not available" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Database not available" }, { status: 500 });
 	}
 
 	try {
@@ -31,16 +28,13 @@ export async function PATCH(
 		return NextResponse.json({ success: true });
 	} catch (error) {
 		console.error("Failed to mark notification read:", error);
-		return NextResponse.json(
-			{ error: "Failed to update notification" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Failed to update notification" }, { status: 500 });
 	}
 }
 
 export async function DELETE(
 	request: NextRequest,
-	{ params }: { params: Promise<{ id: string }> },
+	{ params }: { params: Promise<{ id: string }> }
 ) {
 	const { id } = await params;
 	const notificationId = parseInt(id);
@@ -51,10 +45,7 @@ export async function DELETE(
 
 	const db = getDatabaseClient();
 	if (!db) {
-		return NextResponse.json(
-			{ error: "Database not available" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Database not available" }, { status: 500 });
 	}
 
 	try {
@@ -63,9 +54,6 @@ export async function DELETE(
 		return NextResponse.json({ success: true });
 	} catch (error) {
 		console.error("Failed to delete notification:", error);
-		return NextResponse.json(
-			{ error: "Failed to delete notification" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Failed to delete notification" }, { status: 500 });
 	}
 }

@@ -34,17 +34,14 @@ const agentCallbackSchema = z.object({
  */
 export async function POST(
 	request: NextRequest,
-	{ params }: { params: Promise<{ id: string }> },
+	{ params }: { params: Promise<{ id: string }> }
 ) {
 	try {
 		const { id } = await params;
 		const workflowId = parseInt(id);
 
 		if (isNaN(workflowId)) {
-			return NextResponse.json(
-				{ error: "Invalid workflow ID" },
-				{ status: 400 },
-			);
+			return NextResponse.json({ error: "Invalid workflow ID" }, { status: 400 });
 		}
 
 		const body = await request.json();
@@ -65,9 +62,7 @@ export async function POST(
 				});
 			}
 
-			console.log(
-				`[API] Sent Inngest event for Workflow ${workflowId}: ${signalName}`,
-			);
+			console.log(`[API] Sent Inngest event for Workflow ${workflowId}: ${signalName}`);
 			return NextResponse.json({ success: true, signal: signalName });
 		}
 
@@ -105,14 +100,14 @@ export async function POST(
 					agentError: agentValidation.error.flatten(),
 				},
 			},
-			{ status: 400 },
+			{ status: 400 }
 		);
 	} catch (error) {
 		console.error("Error signaling workflow:", error);
 		const message = error instanceof Error ? error.message : "Unexpected error";
 		return NextResponse.json(
 			{ error: "Failed to signal workflow", details: message },
-			{ status: 500 },
+			{ status: 500 }
 		);
 	}
 }

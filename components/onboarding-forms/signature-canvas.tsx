@@ -116,7 +116,7 @@ export function SignatureCanvas({
 				y: (e.clientY - rect.top) * scaleY,
 			};
 		},
-		[],
+		[]
 	);
 
 	// Start drawing
@@ -128,7 +128,7 @@ export function SignatureCanvas({
 			setIsDrawing(true);
 			setLastPosition(getPosition(e));
 		},
-		[disabled, getPosition],
+		[disabled, getPosition]
 	);
 
 	// Draw
@@ -155,7 +155,7 @@ export function SignatureCanvas({
 			setLastPosition(currentPosition);
 			setHasSignature(true);
 		},
-		[isDrawing, disabled, lastPosition, getPosition, strokeColour, strokeWidth],
+		[isDrawing, disabled, lastPosition, getPosition, strokeColour, strokeWidth]
 	);
 
 	// Stop drawing
@@ -217,9 +217,8 @@ export function SignatureCanvas({
 					"relative rounded-lg border-2 border-dashed transition-colors",
 					error ? "border-destructive" : "border-border",
 					disabled ? "opacity-50 cursor-not-allowed" : "cursor-crosshair",
-					!hasSignature && "bg-muted/30",
-				)}
-			>
+					!hasSignature && "bg-muted/30"
+				)}>
 				<canvas
 					ref={canvasRef}
 					className="rounded-lg w-full"
@@ -256,8 +255,7 @@ export function SignatureCanvas({
 					size="sm"
 					onClick={handleClear}
 					disabled={disabled || !hasSignature}
-					className="gap-1.5"
-				>
+					className="gap-1.5">
 					<RiEraserLine className="h-4 w-4" />
 					Clear
 				</Button>
@@ -268,8 +266,7 @@ export function SignatureCanvas({
 					size="sm"
 					onClick={handleSave}
 					disabled={disabled || !hasSignature}
-					className="gap-1.5"
-				>
+					className="gap-1.5">
 					<RiCheckLine className="h-4 w-4" />
 					Confirm Signature
 				</Button>
@@ -312,16 +309,10 @@ export function SignatureDisplay({
 }: SignatureDisplayProps) {
 	return (
 		<div className={cn("space-y-2", className)}>
-			{label && (
-				<Label className="text-sm font-medium text-foreground">{label}</Label>
-			)}
+			{label && <Label className="text-sm font-medium text-foreground">{label}</Label>}
 
 			<div className="rounded-lg border border-border bg-muted/30 p-4">
-				<img
-					src={dataUrl}
-					alt="Signature"
-					className="max-w-full h-auto rounded"
-				/>
+				<img src={dataUrl} alt="Signature" className="max-w-full h-auto rounded" />
 
 				{(name || date) && (
 					<div className="mt-2 pt-2 border-t border-border flex items-center justify-between text-xs text-muted-foreground">

@@ -2,10 +2,7 @@
 
 import { Sidebar } from "./sidebar";
 import { cn } from "@/lib/utils";
-import {
-	NotificationsPanel,
-	type WorkflowNotification,
-} from "./notifications-panel";
+import { NotificationsPanel, type WorkflowNotification } from "./notifications-panel";
 import { UserButton } from "@clerk/nextjs";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -16,26 +13,18 @@ interface DashboardShellProps {
 	notifications?: WorkflowNotification[];
 }
 
-export function DashboardShell({
-	children,
-	notifications = [],
-}: DashboardShellProps) {
+export function DashboardShell({ children, notifications = [] }: DashboardShellProps) {
 	const router = useRouter();
 	const [isCollapsed, setIsCollapsed] = useState(false);
 
 	const { title, description, actions } = useDashboardStore();
 
 	return (
-		<div className="min-h-screen bg-linear-to-br from-secondary/20 via-card/70 to-background ">
+		<div className="min-h-screen bg-linear-to-br from-background via-background/50 to-background/10 ">
 			<Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
 
 			{/* Main content */}
-			<main
-				className={cn(
-					`pl-64 transition-all duration-300`,
-					isCollapsed && "pl-20",
-				)}
-			>
+			<main className={cn(`pl-64 transition-all duration-300`, isCollapsed && "pl-20")}>
 				{/* Header */}
 				<header className="sticky top-0 z-30 border-b border-sidebar-border bg-transparent backdrop-blur-lg">
 					<div className="flex h-20 items-center justify-between px-8">
@@ -46,9 +35,7 @@ export function DashboardShell({
 								</h1>
 							)}
 							{description && (
-								<p className="text-sm text-muted-foreground mt-1">
-									{description}
-								</p>
+								<p className="text-sm text-muted-foreground mt-1">{description}</p>
 							)}
 						</div>
 
@@ -68,6 +55,16 @@ export function DashboardShell({
 								}}
 								onAction={async (notification, action) => {
 									try {
+										if (action === "view") {
+											const isQuote = notification.message
+												.toLowerCase()
+												.includes("quote");
+											const route = isQuote
+												? `/dashboard/applicants/${notification.applicantId}?tab=reviews`
+												: `/dashboard/applicants/${notification.applicantId}`;
+											router.push(route);
+										}
+
 										if (action === "retry" || action === "cancel") {
 											// Call resolve-error API for workflow actions
 											await fetch(
@@ -76,7 +73,7 @@ export function DashboardShell({
 													method: "POST",
 													body: JSON.stringify({ action }),
 													headers: { "Content-Type": "application/json" },
-												},
+												}
 											);
 										}
 
@@ -90,7 +87,25 @@ export function DashboardShell({
 										console.error("Action failed", e);
 									}
 								}}
-								onDelete={async (notification) => {
+								onNotificationClick={async notification => {
+									try {
+										const isQuote = notification.message.toLowerCase().includes("quote");
+										const route = isQuote
+											? `/dashboard/applicants/${notification.applicantId}?tab=reviews`
+											: `/dashboard/applicants/${notification.applicantId}`;
+										router.push(route);
+
+										// Mark notification as read
+										await fetch(`/api/notifications/${notification.id}`, {
+											method: "PATCH",
+										});
+
+										router.refresh();
+									} catch (e) {
+										console.error("Click handler failed", e);
+									}
+								}}
+								onDelete={async notification => {
 									try {
 										await fetch(`/api/notifications/${notification.id}`, {
 											method: "DELETE",

@@ -1,188 +1,250 @@
-import { relations } from 'drizzle-orm';
-import { text, integer, sqliteTable } from 'drizzle-orm/sqlite-core';
+import { relations } from "drizzle-orm";
+import { text, integer, sqliteTable } from "drizzle-orm/sqlite-core";
 
 // ============================================
 // Core Onboarding Tables
 // ============================================
 
 /**
- * Applicants table - Central entity
- * Renamed specific fields to match user preference: mandateVolume, itcScore, etc.
+ * Business Type enumeration for conditional document logic
+ * Maps to document requirements in document-requirements.service.ts
  */
-export const applicants = sqliteTable('applicants', {
-    id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
-    // Basic Info
-    companyName: text('company_name').notNull(),
-    tradingName: text('trading_name'),
-    registrationNumber: text('registration_number'),
-    contactName: text('contact_name').notNull(),
-    email: text('email').notNull(), // contact_email
-    phone: text('phone'), // contact_phone
-    industry: text('industry'),
+export const BUSINESS_TYPES = [
+	"NPO",
+	"PROPRIETOR",
+	"COMPANY",
+	"TRUST",
+	"BODY_CORPORATE",
+	"PARTNERSHIP",
+	"CLOSE_CORPORATION",
+] as const;
 
-    // Mandate Info
-    mandateType: text('mandate_type'), // debit_order, eft_collection, etc.
-    mandateVolume: integer('mandate_volume'), // Renamed from estimatedVolume (was text), now integer cents or rand value? User used integer.
+export type BusinessType = (typeof BUSINESS_TYPES)[number];
 
-    // Status & Risk
-    status: text('status').notNull().default('new'), // aka 'stage' in user schema
-    riskLevel: text('risk_level'), // green, amber, red
-    itcScore: integer('itc_score'),
-    itcStatus: text('itc_status'),
+/**
+ * Applicants table - Central entity for onboarding
+ */
+export const applicants = sqliteTable("applicants", {
+	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
 
-    // Employee Info (Our legacy field, keeping for now)
-    employeeCount: integer('employee_count'),
+	// Company Info
+	companyName: text("company_name").notNull(),
+	tradingName: text("trading_name"),
+	registrationNumber: text("registration_number"),
 
-    // System
-    accountExecutive: text('account_executive'),
-    notes: text('notes'),
-    createdAt: integer('created_at', { mode: 'timestamp' })
-        .notNull()
-        .$defaultFn(() => new Date()),
-    updatedAt: integer('updated_at', { mode: 'timestamp' })
-        .notNull()
-        .$defaultFn(() => new Date()),
+	// Contact Info
+	contactName: text("contact_name").notNull(),
+	email: text("email").notNull(),
+	phone: text("phone"),
+
+	// Business Classification (PRD: Conditional Document Logic)
+	businessType: text("business_type"), // NPO, PROPRIETOR, COMPANY, TRUST, etc.
+	entityType: text("entity_type"), // company, close_corporation, proprietor, partnership, npo, trust, body_corporate, other
+	productType: text("product_type"), // standard, premium_collections, call_centre
+	industry: text("industry"),
+	employeeCount: integer("employee_count"),
+
+	// Mandate Info
+	mandateType: text("mandate_type"), // EFT, DEBIT_ORDER, CASH, MIXED
+	mandateVolume: integer("mandate_volume"), // In cents
+
+	// Status & Risk
+	status: text("status").notNull().default("new"),
+	riskLevel: text("risk_level"), // green, amber, red
+	itcScore: integer("itc_score"),
+	itcStatus: text("itc_status"),
+
+	// System
+	accountExecutive: text("account_executive"),
+	notes: text("notes"),
+	createdAt: integer("created_at", { mode: "timestamp" })
+		.notNull()
+		.$defaultFn(() => new Date()),
+	updatedAt: integer("updated_at", { mode: "timestamp" })
+		.notNull()
+		.$defaultFn(() => new Date()),
 });
 
 /**
  * Documents table - Dedicated document tracking
  */
-export const documents = sqliteTable('documents', {
-    id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
-    applicantId: integer('applicant_id')
-        .notNull()
-        .references(() => applicants.id), // Link to Applicant
-    type: text('type').notNull(), // bank_statement, id_document, etc.
-    status: text('status').notNull().default('pending'), // pending, uploaded, verified, rejected
-    category: text('category'), // standard_application, fica_entity, etc.
-    source: text('source'), // client, agent, internal, system
-    fileName: text('file_name'),
-    storageUrl: text('storage_url'),
-    uploadedBy: text('uploaded_by'),
-    uploadedAt: integer('uploaded_at', { mode: 'timestamp' }),
-    verifiedAt: integer('verified_at', { mode: 'timestamp' }),
-    processedAt: integer('processed_at', { mode: 'timestamp' }),
-    processingStatus: text('processing_status'), // pending, processed, failed
-    processingResult: text('processing_result'), // JSON string
-    notes: text('notes'),
+export const documents = sqliteTable("documents", {
+	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+	applicantId: integer("applicant_id")
+		.notNull()
+		.references(() => applicants.id), // Link to Applicant
+	type: text("type").notNull(), // bank_statement, id_document, etc.
+	status: text("status").notNull().default("pending"), // pending, uploaded, verified, rejected
+	category: text("category"), // standard_application, fica_entity, etc.
+	source: text("source"), // client, agent, internal, system
+	fileName: text("file_name"),
+	storageUrl: text("storage_url"),
+	uploadedBy: text("uploaded_by"),
+	uploadedAt: integer("uploaded_at", { mode: "timestamp" }),
+	verifiedAt: integer("verified_at", { mode: "timestamp" }),
+	processedAt: integer("processed_at", { mode: "timestamp" }),
+	processingStatus: text("processing_status"), // pending, processed, failed
+	processingResult: text("processing_result"), // JSON string
+	notes: text("notes"),
 });
 
 /**
  * Risk Assessments table - Application risk Profiles
  */
-export const riskAssessments = sqliteTable('risk_assessments', {
-    id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
-    applicantId: integer('applicant_id')
-        .notNull()
-        .references(() => applicants.id),
-    overallRisk: text('overall_risk'), // green, amber, red
+export const riskAssessments = sqliteTable("risk_assessments", {
+	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+	applicantId: integer("applicant_id")
+		.notNull()
+		.references(() => applicants.id),
+	overallRisk: text("overall_risk"), // green, amber, red
 
-    // Specific risk factors from user schema
-    cashFlowConsistency: text('cash_flow_consistency'),
-    dishonouredPayments: integer('dishonoured_payments'),
-    averageDailyBalance: integer('average_daily_balance'),
-    accountMatchVerified: text('account_match_verified'), // yes/no or status
-    letterheadVerified: text('letterhead_verified'),
+	// Specific risk factors from user schema
+	cashFlowConsistency: text("cash_flow_consistency"),
+	dishonouredPayments: integer("dishonoured_payments"),
+	averageDailyBalance: integer("average_daily_balance"),
+	accountMatchVerified: text("account_match_verified"), // yes/no or status
+	letterheadVerified: text("letterhead_verified"),
 
-    aiAnalysis: text('ai_analysis'), // JSON string, equivalent to jsonb
-    reviewedBy: text('reviewed_by'),
-    reviewedAt: integer('reviewed_at', { mode: 'timestamp' }),
-    notes: text('notes'),
-    createdAt: integer('created_at', { mode: 'timestamp' }).default(new Date()),
+	aiAnalysis: text("ai_analysis"), // JSON string, equivalent to jsonb
+	reviewedBy: text("reviewed_by"),
+	reviewedAt: integer("reviewed_at", { mode: "timestamp" }),
+	notes: text("notes"),
+	createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
 });
 
 /**
  * Activity Logs - General audits
  */
-export const activityLogs = sqliteTable('activity_logs', {
-    id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
-    applicantId: integer('applicant_id')
-        .notNull()
-        .references(() => applicants.id),
-    action: text('action').notNull(),
-    description: text('description').notNull(),
-    performedBy: text('performed_by'),
-    createdAt: integer('created_at', { mode: 'timestamp' }).default(new Date()),
+export const activityLogs = sqliteTable("activity_logs", {
+	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+	applicantId: integer("applicant_id")
+		.notNull()
+		.references(() => applicants.id),
+	action: text("action").notNull(),
+	description: text("description").notNull(),
+	performedBy: text("performed_by"),
+	createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
 });
 
 // ============================================
 // Workflow Engine Tables (Keeping these for Inngest compatibility)
 // ============================================
 
-export const workflows = sqliteTable('workflows', {
-    id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
-    applicantId: integer('applicant_id')
-        .notNull()
-        .references(() => applicants.id),
-    stage: integer('stage', { mode: 'number' }).default(1),
-    status: text('status').default('pending'),
-    startedAt: integer('started_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-    metadata: text('metadata'),
+/**
+ * Workflow status enumeration
+ * Includes 'terminated' status for kill switch functionality
+ */
+export const WORKFLOW_STATUSES = [
+	"pending",
+	"processing",
+	"awaiting_human",
+	"paused",
+	"completed",
+	"failed",
+	"timeout",
+	"terminated",
+] as const;
+
+export type WorkflowStatus = (typeof WORKFLOW_STATUSES)[number];
+
+/**
+ * Workflows table - Tracks onboarding workflow state
+ * PRD: Kill switch sets status to 'terminated'
+ */
+export const workflows = sqliteTable("workflows", {
+	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+	applicantId: integer("applicant_id")
+		.notNull()
+		.references(() => applicants.id),
+	stage: integer("stage", { mode: "number" }).default(1),
+	status: text("status").default("pending"),
+	startedAt: integer("started_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+	completedAt: integer("completed_at", { mode: "timestamp" }),
+
+	// Kill Switch tracking (PRD Critical)
+	terminatedAt: integer("terminated_at", { mode: "timestamp" }),
+	terminatedBy: text("terminated_by"),
+	terminationReason: text("termination_reason"),
+
+	// Parallel processing state
+	procurementCleared: integer("procurement_cleared", { mode: "boolean" }),
+	documentsComplete: integer("documents_complete", { mode: "boolean" }),
+	aiAnalysisComplete: integer("ai_analysis_complete", { mode: "boolean" }),
+
+	// Mandate retry tracking (SOP: 7-day timeout, max 8 retries)
+	mandateRetryCount: integer("mandate_retry_count").default(0),
+	mandateLastSentAt: integer("mandate_last_sent_at", { mode: "timestamp" }),
+
+	// Two-factor approval tracking (Stage 6)
+	riskManagerApproval: text("risk_manager_approval"), // JSON: { approvedBy, timestamp, decision }
+	accountManagerApproval: text("account_manager_approval"), // JSON: { approvedBy, timestamp, decision }
+
+	metadata: text("metadata"),
 });
 
-export const notifications = sqliteTable('notifications', {
-    id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
-    workflowId: integer('workflow_id').references(() => workflows.id),
-    applicantId: integer('applicant_id').references(() => applicants.id),
-    type: text('type').notNull(),
-    message: text('message').notNull(),
-    read: integer('read', { mode: 'boolean' }).default(false),
-    createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-    actionable: integer('actionable', { mode: 'boolean' }).default(false),
+export const notifications = sqliteTable("notifications", {
+	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+	workflowId: integer("workflow_id").references(() => workflows.id),
+	applicantId: integer("applicant_id").references(() => applicants.id),
+	type: text("type").notNull(),
+	message: text("message").notNull(),
+	read: integer("read", { mode: "boolean" }).default(false),
+	createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+	actionable: integer("actionable", { mode: "boolean" }).default(false),
 });
 
-export const workflowEvents = sqliteTable('workflow_events', {
-    id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
-    workflowId: integer('workflow_id').references(() => workflows.id),
-    eventType: text('event_type').notNull(),
-    payload: text('payload'),
-    timestamp: integer('timestamp', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-    actorType: text('actor_type').default('platform'),
-    actorId: text('actor_id'),
+export const workflowEvents = sqliteTable("workflow_events", {
+	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+	workflowId: integer("workflow_id").references(() => workflows.id),
+	eventType: text("event_type").notNull(),
+	payload: text("payload"),
+	timestamp: integer("timestamp", { mode: "timestamp" }).$defaultFn(() => new Date()),
+	actorType: text("actor_type").default("platform"),
+	actorId: text("actor_id"),
 });
 
 /**
  * Applicant Magic Link Forms - Magic link tracking
  */
-export const applicantMagiclinkForms = sqliteTable('applicant_magiclink_forms', {
-    id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
-    applicantId: integer('applicant_id')
-        .notNull()
-        .references(() => applicants.id),
-    workflowId: integer('workflow_id').references(() => workflows.id),
-    formType: text('form_type').notNull(), // FACILITY_APPLICATION, SIGNED_QUOTATION, etc.
-    status: text('status').notNull().default('pending'), // pending, sent, viewed, submitted, expired, revoked
-    tokenHash: text('token_hash').notNull().unique(),
-    token: text('token'),
-    tokenPrefix: text('token_prefix'),
-    sentAt: integer('sent_at', { mode: 'timestamp' }),
-    viewedAt: integer('viewed_at', { mode: 'timestamp' }),
-    expiresAt: integer('expires_at', { mode: 'timestamp' }),
-    submittedAt: integer('submitted_at', { mode: 'timestamp' }),
-    createdAt: integer('created_at', { mode: 'timestamp' })
-        .notNull()
-        .$defaultFn(() => new Date()),
+export const applicantMagiclinkForms = sqliteTable("applicant_magiclink_forms", {
+	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+	applicantId: integer("applicant_id")
+		.notNull()
+		.references(() => applicants.id),
+	workflowId: integer("workflow_id").references(() => workflows.id),
+	formType: text("form_type").notNull(), // FACILITY_APPLICATION, SIGNED_QUOTATION, etc.
+	status: text("status").notNull().default("pending"), // pending, sent, viewed, submitted, expired, revoked
+	tokenHash: text("token_hash").notNull().unique(),
+	token: text("token"),
+	tokenPrefix: text("token_prefix"),
+	sentAt: integer("sent_at", { mode: "timestamp" }),
+	viewedAt: integer("viewed_at", { mode: "timestamp" }),
+	expiresAt: integer("expires_at", { mode: "timestamp" }),
+	submittedAt: integer("submitted_at", { mode: "timestamp" }),
+	createdAt: integer("created_at", { mode: "timestamp" })
+		.notNull()
+		.$defaultFn(() => new Date()),
 });
 
 /**
  * Applicant Submissions - Stored form payloads
  */
-export const applicantSubmissions = sqliteTable('applicant_submissions', {
-    id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
-    applicantMagiclinkFormId: integer('applicant_magiclink_form_id')
-        .notNull()
-        .references(() => applicantMagiclinkForms.id),
-    applicantId: integer('applicant_id')
-        .notNull()
-        .references(() => applicants.id),
-    workflowId: integer('workflow_id').references(() => workflows.id),
-    formType: text('form_type').notNull(),
-    data: text('data').notNull(), // JSON string
-    submittedBy: text('submitted_by'),
-    version: integer('version').default(1),
-    submittedAt: integer('submitted_at', { mode: 'timestamp' })
-        .notNull()
-        .$defaultFn(() => new Date()),
+export const applicantSubmissions = sqliteTable("applicant_submissions", {
+	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+	applicantMagiclinkFormId: integer("applicant_magiclink_form_id")
+		.notNull()
+		.references(() => applicantMagiclinkForms.id),
+	applicantId: integer("applicant_id")
+		.notNull()
+		.references(() => applicants.id),
+	workflowId: integer("workflow_id").references(() => workflows.id),
+	formType: text("form_type").notNull(),
+	data: text("data").notNull(), // JSON string
+	submittedBy: text("submitted_by"),
+	version: integer("version").default(1),
+	submittedAt: integer("submitted_at", { mode: "timestamp" })
+		.notNull()
+		.$defaultFn(() => new Date()),
 });
 
 // ============================================
@@ -190,101 +252,107 @@ export const applicantSubmissions = sqliteTable('applicant_submissions', {
 // ============================================
 
 export const applicantsRelations = relations(applicants, ({ many, one }) => ({
-    workflows: many(workflows),
-    documents: many(documents),
+	workflows: many(workflows),
+	documents: many(documents),
 	applicantMagiclinkForms: many(applicantMagiclinkForms),
 	applicantSubmissions: many(applicantSubmissions),
-    riskAssessment: one(riskAssessments, {
-        fields: [applicants.id],
-        references: [riskAssessments.applicantId], // One-to-one roughly
-    }),
-    activityLogs: many(activityLogs),
+	riskAssessment: one(riskAssessments, {
+		fields: [applicants.id],
+		references: [riskAssessments.applicantId], // One-to-one roughly
+	}),
+	activityLogs: many(activityLogs),
 }));
 
 /**
  * Agent Registry - Track available external agents
  */
-export const agents = sqliteTable('agents', {
-    id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
-    agentId: text('agent_id').notNull().unique(), // e.g., "xt_risk_agent_v2"
-    name: text('name').notNull(),
-    description: text('description'),
-    webhookUrl: text('webhook_url'),
-    taskType: text('task_type', {
-        enum: ['document_generation', 'electronic_signature', 'risk_verification', 'data_sync', 'notification'],
-    }).notNull(),
-    status: text('status', { enum: ['active', 'inactive', 'error'] })
-        .notNull()
-        .default('active'),
-    lastCallbackAt: integer('last_callback_at', { mode: 'timestamp' }),
-    callbackCount: integer('callback_count').notNull().default(0),
-    errorCount: integer('error_count').notNull().default(0),
-    createdAt: integer('created_at', { mode: 'timestamp' })
-        .notNull()
-        .$defaultFn(() => new Date()),
+export const agents = sqliteTable("agents", {
+	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+	agentId: text("agent_id").notNull().unique(), // e.g., "xt_risk_agent_v2"
+	name: text("name").notNull(),
+	description: text("description"),
+	webhookUrl: text("webhook_url"),
+	taskType: text("task_type", {
+		enum: [
+			"document_generation",
+			"electronic_signature",
+			"risk_verification",
+			"data_sync",
+			"notification",
+		],
+	}).notNull(),
+	status: text("status", { enum: ["active", "inactive", "error"] })
+		.notNull()
+		.default("active"),
+	lastCallbackAt: integer("last_callback_at", { mode: "timestamp" }),
+	callbackCount: integer("callback_count").notNull().default(0),
+	errorCount: integer("error_count").notNull().default(0),
+	createdAt: integer("created_at", { mode: "timestamp" })
+		.notNull()
+		.$defaultFn(() => new Date()),
 });
 
 /**
  * external Callbacks - Agent callback records
  */
-export const agentCallbacks = sqliteTable('xt_callbacks', {
-    id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
-    workflowId: integer('workflow_id')
-        .notNull()
-        .references(() => workflows.id),
-    eventId: text('event_id').notNull(), // From incoming webhook
-    agentId: text('agent_id').notNull(), // e.g., "xt_risk_agent_v2"
-    status: text('status', {
-        enum: ['received', 'validated', 'processed', 'rejected', 'error'],
-    })
-        .notNull()
-        .default('received'),
-    decision: text('decision', {
-        enum: ['approved', 'rejected', 'pending_info'],
-    }),
-    outcome: text('outcome'), // Full decision JSON
-    rawPayload: text('raw_payload').notNull(), // Complete incoming JSON
-    validationErrors: text('validation_errors'), // Any Zod errors
-    humanActor: text('human_actor'), // Email of human who made decision
-    processedAt: integer('processed_at', { mode: 'timestamp' }),
-    receivedAt: integer('received_at', { mode: 'timestamp' })
-        .notNull()
-        .$defaultFn(() => new Date()),
+export const agentCallbacks = sqliteTable("xt_callbacks", {
+	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+	workflowId: integer("workflow_id")
+		.notNull()
+		.references(() => workflows.id),
+	eventId: text("event_id").notNull(), // From incoming webhook
+	agentId: text("agent_id").notNull(), // e.g., "xt_risk_agent_v2"
+	status: text("status", {
+		enum: ["received", "validated", "processed", "rejected", "error"],
+	})
+		.notNull()
+		.default("received"),
+	decision: text("decision", {
+		enum: ["approved", "rejected", "pending_info"],
+	}),
+	outcome: text("outcome"), // Full decision JSON
+	rawPayload: text("raw_payload").notNull(), // Complete incoming JSON
+	validationErrors: text("validation_errors"), // Any Zod errors
+	humanActor: text("human_actor"), // Email of human who made decision
+	processedAt: integer("processed_at", { mode: "timestamp" }),
+	receivedAt: integer("received_at", { mode: "timestamp" })
+		.notNull()
+		.$defaultFn(() => new Date()),
 });
 
 /**
  * Quotes table - Generated fee structures
  */
-export const quotes = sqliteTable('quotes', {
-    id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
-    applicantId: integer('applicant_id').references(() => applicants.id),
-    workflowId: integer('workflow_id')
-        .notNull()
-        .references(() => workflows.id),
-    amount: integer('amount').notNull(), // Cents
-    baseFeePercent: integer('base_fee_percent').notNull(), // Basis points (e.g. 150 = 1.5%)
-    adjustedFeePercent: integer('adjusted_fee_percent'), // Basis points
-    details: text('details'), // JSON string with AI quote details
-    rationale: text('rationale'), // AI reasoning for the fee
-    status: text('status', {
-        enum: ['draft', 'pending_approval', 'approved', 'rejected'],
-    })
-        .notNull()
-        .default('draft'),
-    generatedBy: text('generated_by').notNull().default('platform'), // 'system' or 'gemini'
-    createdAt: integer('created_at', { mode: 'timestamp' })
-        .notNull()
-        .$defaultFn(() => new Date()),
-    updatedAt: integer('updated_at', { mode: 'timestamp' })
-        .notNull()
-        .$defaultFn(() => new Date()),
+export const quotes = sqliteTable("quotes", {
+	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+	applicantId: integer("applicant_id").references(() => applicants.id),
+	workflowId: integer("workflow_id")
+		.notNull()
+		.references(() => workflows.id),
+	amount: integer("amount").notNull(), // Cents
+	baseFeePercent: integer("base_fee_percent").notNull(), // Basis points (e.g. 150 = 1.5%)
+	adjustedFeePercent: integer("adjusted_fee_percent"), // Basis points
+	details: text("details"), // JSON string with AI quote details
+	rationale: text("rationale"), // AI reasoning for the fee
+	status: text("status", {
+		enum: ["draft", "pending_approval", "pending_signature", "approved", "rejected"],
+	})
+		.notNull()
+		.default("draft"),
+	generatedBy: text("generated_by").notNull().default("platform"), // 'system' or 'gemini'
+	createdAt: integer("created_at", { mode: "timestamp" })
+		.notNull()
+		.$defaultFn(() => new Date()),
+	updatedAt: integer("updated_at", { mode: "timestamp" })
+		.notNull()
+		.$defaultFn(() => new Date()),
 });
 
 export const documentsRelations = relations(documents, ({ one }) => ({
-    applicant: one(applicants, {
-        fields: [documents.applicantId],
-        references: [applicants.id],
-    }),
+	applicant: one(applicants, {
+		fields: [documents.applicantId],
+		references: [applicants.id],
+	}),
 }));
 
 export const workflowsRelations = relations(workflows, ({ one, many }) => ({
@@ -303,16 +371,16 @@ export const workflowsRelations = relations(workflows, ({ one, many }) => ({
 export const applicantMagiclinkFormsRelations = relations(
 	applicantMagiclinkForms,
 	({ one, many }) => ({
-    applicant: one(applicants, {
-        fields: [applicantMagiclinkForms.applicantId],
-        references: [applicants.id],
-    }),
-    workflow: one(workflows, {
-        fields: [applicantMagiclinkForms.workflowId],
-        references: [workflows.id],
-    }),
-	submissions: many(applicantSubmissions),
-}),
+		applicant: one(applicants, {
+			fields: [applicantMagiclinkForms.applicantId],
+			references: [applicants.id],
+		}),
+		workflow: one(workflows, {
+			fields: [applicantMagiclinkForms.workflowId],
+			references: [workflows.id],
+		}),
+		submissions: many(applicantSubmissions),
+	})
 );
 
 export const applicantSubmissionsRelations = relations(
@@ -330,28 +398,28 @@ export const applicantSubmissionsRelations = relations(
 			fields: [applicantSubmissions.applicantMagiclinkFormId],
 			references: [applicantMagiclinkForms.id],
 		}),
-	}),
+	})
 );
 
 export const riskAssessmentsRelations = relations(riskAssessments, ({ one }) => ({
-    applicant: one(applicants, {
-        fields: [riskAssessments.applicantId],
-        references: [applicants.id],
-    }),
+	applicant: one(applicants, {
+		fields: [riskAssessments.applicantId],
+		references: [applicants.id],
+	}),
 }));
 
 export const quotesRelations = relations(quotes, ({ one }) => ({
-    workflow: one(workflows, {
-        fields: [quotes.workflowId],
-        references: [workflows.id],
-    }),
+	workflow: one(workflows, {
+		fields: [quotes.workflowId],
+		references: [workflows.id],
+	}),
 }));
 
 export const agentCallbacksRelations = relations(agentCallbacks, ({ one }) => ({
-    workflow: one(workflows, {
-        fields: [agentCallbacks.workflowId],
-        references: [workflows.id],
-    }),
+	workflow: one(workflows, {
+		fields: [agentCallbacks.workflowId],
+		references: [workflows.id],
+	}),
 }));
 
 // ============================================
@@ -392,7 +460,14 @@ export const internalForms = sqliteTable("internal_forms", {
 		enum: ["stratcol_agreement", "facility_application", "absa_6995", "fica_documents"],
 	}).notNull(),
 	status: text("status", {
-		enum: ["not_started", "in_progress", "submitted", "approved", "rejected", "revision_required"],
+		enum: [
+			"not_started",
+			"in_progress",
+			"submitted",
+			"approved",
+			"rejected",
+			"revision_required",
+		],
 	})
 		.notNull()
 		.default("not_started"),
@@ -499,15 +574,12 @@ export const internalFormsRelations = relations(internalForms, ({ one, many }) =
 	signatures: many(signatures),
 }));
 
-export const internalSubmissionsRelations = relations(
-	internalSubmissions,
-	({ one }) => ({
+export const internalSubmissionsRelations = relations(internalSubmissions, ({ one }) => ({
 	internalForm: one(internalForms, {
 		fields: [internalSubmissions.internalFormId],
 		references: [internalForms.id],
 	}),
-}),
-);
+}));
 
 export const documentUploadsRelations = relations(documentUploads, ({ one }) => ({
 	workflow: one(workflows, {

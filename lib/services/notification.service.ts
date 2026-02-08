@@ -1,10 +1,11 @@
 /**
- * Notification service - internal notification operations
- * (Zapier webhooks removed - using direct Inngest events)
+ * Notification service - internal notification operations + management escalation
+ * SOP-aligned: Implements escalation for kill switch, timeout, and compliance triggers
  */
 import { getDatabaseClient } from "@/app/utils";
-import { applicants } from "@/db/schema";
+import { applicants, notifications, workflowEvents } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { sendInternalAlertEmail } from "./email.service";
 
 export interface DispatchPayload {
 	applicantId: number;
@@ -16,7 +17,6 @@ export interface DispatchPayload {
 
 /**
  * Dispatch to internal platform for agent review
- * (Uses internal notification system instead of external webhooks)
  */
 export async function dispatchToPlatform(
 	payload: DispatchPayload,
@@ -27,7 +27,6 @@ export async function dispatchToPlatform(
 
 	let clientName = "Unknown Client";
 
-	// Fetch client name
 	if (payload.applicantId) {
 		const db = getDatabaseClient();
 		if (db) {
@@ -45,7 +44,6 @@ export async function dispatchToPlatform(
 		}
 	}
 
-	// Log dispatch - no external webhook needed
 	console.log(`[NotificationService] Platform dispatch for: ${clientName}`, {
 		workflowId: payload.workflowId,
 		riskScore: payload.riskScore,
@@ -57,11 +55,19 @@ export interface EscalationPayload {
 	workflowId: number;
 	applicantId: number;
 	reason: string;
+	escalationType?: "kill_switch" | "timeout" | "compliance" | "manual" | "retry_exhausted";
+	severity?: "info" | "warning" | "critical";
 }
 
 /**
- * Escalate workflow to management
- * (Uses internal notification system instead of external webhooks)
+ * Escalate workflow to management — SOP compliance
+ *
+ * Creates an internal notification and sends an email alert.
+ * Triggered on:
+ * - Kill switch activations
+ * - Timeout terminations
+ * - Compliance violations (sanctions block)
+ * - Mandate retry exhaustion
  */
 export async function escalateToManagement(
 	payload: EscalationPayload,
@@ -70,11 +76,48 @@ export async function escalateToManagement(
 		`[NotificationService] ESCALATING Workflow ${payload.workflowId}: ${payload.reason}`,
 	);
 
-	// TODO: Create internal notification for management
-	// For now, just log the escalation
-	console.log(`[NotificationService] Escalation logged:`, {
-		workflowId: payload.workflowId,
-		applicantId: payload.applicantId,
-		reason: payload.reason,
-	});
+	const db = getDatabaseClient();
+	if (!db) {
+		console.error("[NotificationService] Cannot escalate — no database connection");
+		return;
+	}
+
+	const severity = payload.severity || "warning";
+	const escalationType = payload.escalationType || "manual";
+
+	try {
+		// Create internal notification for management
+		await db.insert(notifications).values({
+			workflowId: payload.workflowId,
+			applicantId: payload.applicantId,
+			type: severity === "critical" ? "error" : "warning",
+			message: `ESCALATION [${escalationType.toUpperCase()}]: ${payload.reason}`,
+			actionable: true,
+			read: false,
+		});
+
+		// Log the escalation as a workflow event
+		await db.insert(workflowEvents).values({
+			workflowId: payload.workflowId,
+			eventType: "management_escalation" as string,
+			payload: JSON.stringify({
+				reason: payload.reason,
+				escalationType,
+				severity,
+				escalatedAt: new Date().toISOString(),
+			}),
+			actorType: "platform",
+		});
+
+		// Send email alert to management
+		await sendInternalAlertEmail({
+			title: `ESCALATION: ${escalationType.replace("_", " ").toUpperCase()}`,
+			message: `Workflow ${payload.workflowId} has been escalated to management.\n\nReason: ${payload.reason}\nSeverity: ${severity}\nType: ${escalationType}`,
+			workflowId: payload.workflowId,
+			applicantId: payload.applicantId,
+			type: severity === "critical" ? "warning" : "info",
+		});
+	} catch (error) {
+		console.error("[NotificationService] Escalation failed:", error);
+	}
 }

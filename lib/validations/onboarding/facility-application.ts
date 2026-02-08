@@ -44,7 +44,7 @@ export const facilitySelectionSchema = z.object({
 				ServiceType.THIRD_PARTY_PAYMENTS,
 				ServiceType.PAY_AT,
 				ServiceType.CARD_PAYMENTS,
-			]),
+			])
 		)
 		.min(1, "Please select at least one service type"),
 
@@ -56,7 +56,7 @@ export const facilitySelectionSchema = z.object({
 				AdditionalService.ACCOUNT_VERIFICATION,
 				AdditionalService.ID_VERIFICATION,
 				AdditionalService.BULK_SMS,
-			]),
+			])
 		)
 		.default([]),
 });
@@ -79,11 +79,11 @@ export const statisticsSchema = z.object({
 		.string()
 		.min(1, "Average transactions per month is required")
 		.refine(
-			(val) => {
+			val => {
 				const num = parseInt(val, 10);
 				return !isNaN(num) && num >= 0;
 			},
-			{ message: "Must be a valid number" },
+			{ message: "Must be a valid number" }
 		),
 	averageTransactionValue: currencySchema("Average transaction value"),
 	unpaidTransactionsValue: currencySchema("Unpaid transactions value"),
@@ -106,31 +106,31 @@ export const limitsAppliedForSchema = z.object({
 		.string()
 		.min(1, "Maximum transactions per month is required")
 		.refine(
-			(val) => {
+			val => {
 				const num = parseInt(val, 10);
 				return !isNaN(num) && num > 0;
 			},
-			{ message: "Must be a positive number" },
+			{ message: "Must be a positive number" }
 		),
 	maxRandValue: z
 		.string()
 		.min(1, "Maximum Rand value is required")
 		.refine(
-			(val) => {
+			val => {
 				const num = parseFloat(val.replace(/[R,\s]/g, ""));
 				return !isNaN(num) && num > 0;
 			},
-			{ message: "Must be a valid amount" },
+			{ message: "Must be a valid amount" }
 		),
 	lineLimit: z
 		.string()
 		.min(1, "Line limit (highest single transaction) is required")
 		.refine(
-			(val) => {
+			val => {
 				const num = parseFloat(val.replace(/[R,\s]/g, ""));
 				return !isNaN(num) && num > 0;
 			},
-			{ message: "Must be a valid amount" },
+			{ message: "Must be a valid amount" }
 		),
 });
 
@@ -152,9 +152,7 @@ export const facilityApplicationSchema = z.object({
 	volumeMetrics: volumeMetricsSchema,
 });
 
-export type FacilityApplicationFormData = z.infer<
-	typeof facilityApplicationSchema
->;
+export type FacilityApplicationFormData = z.infer<typeof facilityApplicationSchema>;
 
 // ============================================
 // Step-wise Schemas for Multi-step Form
@@ -170,5 +168,4 @@ export const FACILITY_APPLICATION_STEP_TITLES = [
 	"Volume & Risk Metrics",
 ] as const;
 
-export const FACILITY_APPLICATION_TOTAL_STEPS =
-	FACILITY_APPLICATION_STEP_TITLES.length;
+export const FACILITY_APPLICATION_TOTAL_STEPS = FACILITY_APPLICATION_STEP_TITLES.length;

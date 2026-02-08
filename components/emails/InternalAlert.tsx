@@ -9,7 +9,7 @@ interface InternalAlertProps {
 	applicantId: number;
 	type?: "info" | "warning" | "error" | "success";
 	details?: Record<string, unknown>;
-    actionUrl?: string;
+	actionUrl?: string;
 }
 
 export const InternalAlert = ({
@@ -19,7 +19,7 @@ export const InternalAlert = ({
 	applicantId,
 	type = "info",
 	details,
-    actionUrl,
+	actionUrl,
 }: InternalAlertProps) => {
 	const color =
 		type === "error"
@@ -29,9 +29,11 @@ export const InternalAlert = ({
 				: type === "success"
 					? "#10b981"
 					: "#3b82f6";
-    
-    // Default dashboard URL if not provided
-    const dashboardUrl = actionUrl || `https://stratcol-onboard-ai.vercel.app/dashboard/applicants/${applicantId}`;
+
+	// Default dashboard URL if not provided
+	const dashboardUrl =
+		actionUrl ||
+		`https://stratcol-onboard-ai.vercel.app/dashboard/applicants/${applicantId}`;
 
 	return (
 		<EmailLayout preview={`Internal Alert: ${title}`}>
@@ -40,12 +42,8 @@ export const InternalAlert = ({
 			</Heading>
 			<Section
 				className="rounded-lg p-4 mb-6 text-center"
-				style={{ backgroundColor: `${color}20`, border: `1px solid ${color}` }}
-			>
-				<Text
-					className="font-bold text-[18px] m-0"
-					style={{ color: color }}
-				>
+				style={{ backgroundColor: `${color}20`, border: `1px solid ${color}` }}>
+				<Text className="font-bold text-[18px] m-0" style={{ color: color }}>
 					{title}
 				</Text>
 			</Section>
@@ -72,8 +70,7 @@ export const InternalAlert = ({
 			<Section className="text-center mt-[32px] mb-[32px]">
 				<Button
 					className="bg-[#000000] rounded text-white text-[12px] font-semibold no-underline text-center px-5 py-3"
-					href={dashboardUrl}
-				>
+					href={dashboardUrl}>
 					View in Dashboard
 				</Button>
 			</Section>

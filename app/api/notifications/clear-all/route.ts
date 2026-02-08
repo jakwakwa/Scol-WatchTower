@@ -9,10 +9,7 @@ import { NextResponse } from "next/server";
 export async function DELETE() {
 	const db = getDatabaseClient();
 	if (!db) {
-		return NextResponse.json(
-			{ error: "Database not available" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Database not available" }, { status: 500 });
 	}
 
 	try {
@@ -24,9 +21,6 @@ export async function DELETE() {
 		});
 	} catch (error) {
 		console.error("Failed to clear all notifications:", error);
-		return NextResponse.json(
-			{ error: "Failed to clear notifications" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Failed to clear notifications" }, { status: 500 });
 	}
 }
