@@ -25,7 +25,7 @@ export class DashboardPage {
 
 		// Navigation
 		this.sidebar = page.locator('[data-testid="sidebar"]');
-		this.applicantsLink = page.locator('a[href*="/applicants"]');
+		this.applicantsLink = page.locator('a[href="/dashboard/applicants"]');
 		this.workflowsLink = page.locator('a[href*="/workflows"]');
 		this.riskReviewLink = page.locator('a[href*="/risk-review"]');
 		this.notificationsLink = page.locator('a[href*="/notifications"]');

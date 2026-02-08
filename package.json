@@ -71,6 +71,7 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.3.13",
+		"@clerk/testing": "^1.13.35",
 		"@playwright/test": "^1.58.2",
 		"@types/md5": "^2.3.6",
 		"@types/node": "^25.1.0",

@@ -1,8 +1,15 @@
 import { defineConfig, devices } from "@playwright/test";
+import { config } from "dotenv";
+import { resolve } from "node:path";
+
+// Load test environment variables
+config({ path: resolve(__dirname, ".env.test") });
 
 /**
  * Playwright Configuration for StratCol Control Tower
+ * Configured for Clerk testing with @clerk/testing package
  * @see https://playwright.dev/docs/test-configuration
+ * @see https://clerk.com/docs/guides/development/testing/playwright
  */
 export default defineConfig({
 	testDir: "./e2e/tests",
@@ -39,19 +46,41 @@ export default defineConfig({
 
 	/* Configure projects for major browsers */
 	projects: [
-		/* Setup project for auth state */
+		/* Global setup - initialize Clerk testing and create auth state */
 		{
-			name: "setup",
-			testMatch: /.*\.setup\.ts/,
+			name: "global setup",
+			testMatch: /global\.setup\.ts/,
 		},
+		/* Main tests - tests that handle their own auth */
 		{
-			name: "chromium",
+			name: "app tests",
+			testMatch: /app\.spec\.ts/,
 			use: {
 				...devices["Desktop Chrome"],
-				/* Use stored auth state */
-				storageState: "e2e/.auth/user.json",
 			},
-			dependencies: ["setup"],
+			dependencies: ["global setup"],
+		},
+		/* Authenticated tests - use saved auth state */
+		{
+			name: "authenticated tests",
+			testMatch: /.*\.authenticated\.spec\.ts/,
+			use: {
+				...devices["Desktop Chrome"],
+				// Use prepared Clerk auth state
+				storageState: "playwright/.clerk/user.json",
+			},
+			dependencies: ["global setup"],
+		},
+		/* Dashboard tests - use saved auth state */
+		{
+			name: "dashboard tests",
+			testMatch: /dashboard\/.*\.spec\.ts/,
+			use: {
+				...devices["Desktop Chrome"],
+				// Use prepared Clerk auth state
+				storageState: "playwright/.clerk/user.json",
+			},
+			dependencies: ["global setup"],
 		},
 	],
 

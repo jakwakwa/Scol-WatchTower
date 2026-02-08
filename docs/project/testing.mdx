@@ -1,0 +1,76 @@
+---
+title: "Testing & CI/CD"
+description: "How to run E2E tests and configure CI/CD for StratCol Control Tower"
+---
+
+## E2E Testing with Playwright
+
+This project uses [Playwright](https://playwright.dev/) for End-to-End (E2E) testing. The tests are configured to handle authenticating with Clerk efficiently.
+
+### Prerequisites
+
+1.  **Bun**: This project uses [bun](https://bun.sh/) as the package manager.
+2.  **Clerk Test User**: You need a dedicated test user in your Clerk instance.
+    *   **Email**: `account-manager+clerk_test@example.com`
+    *   **Password**: *Ask the team for the test password*
+3.  **Environment Variables**:
+    *   Copy `.env` to `.env.test`.
+    *   Ensure the following variables are set in `.env.test`:
+        ```bash
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+        CLERK_SECRET_KEY=sk_test_...
+        E2E_CLERK_USER_USERNAME=account-manager+clerk_test@example.com
+        E2E_CLERK_USER_PASSWORD=...
+        ```
+
+### Running Tests
+
+Run all E2E tests:
+
+```bash
+bun run test:e2e
+```
+
+Run specific projects (e.g., only dashboard tests):
+
+```bash
+bun run test:e2e --project="dashboard tests"
+```
+
+Run in UI mode for debugging:
+
+```bash
+bun run test:e2e:ui
+```
+
+### Authentication Logic
+
+*   **Global Setup (`global.setup.ts`)**: Authenticates once using the test user credentials and saves the session state to `playwright/.clerk/user.json`.
+*   **Reuse**: Subsequent tests (like dashboard tests) reuse this authenticated state, avoiding the need to sign in for every test file.
+
+---
+
+## CI/CD with GitHub Actions
+
+The `E2E Tests` workflow runs on every push to `main` and on pull requests.
+
+### GitHub Secrets
+
+To make the tests work in CI, you **must** configure the following secrets in your GitHub Repository settings:
+
+| Secret Name | Description |
+| :--- | :--- |
+| `CLERK_SECRET_KEY` | Your Clerk Secret Key (from Clerk Dashboard > API Keys) |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Your Clerk Publishable Key |
+| `E2E_CLERK_USER_USERNAME` | The email of the Clerk test user |
+| `E2E_CLERK_USER_PASSWORD` | The password of the Clerk test user |
+
+### Workflow Configuration
+
+The workflow is defined in `.github/workflows/e2e-tests.yml`. It:
+
+1.  Checks out the code.
+2.  Installs Bun and dependencies.
+3.  Installs Playwright browsers.
+4.  Resets the test database.
+5.  Runs `bun run test:e2e` with the secrets injected as environment variables.

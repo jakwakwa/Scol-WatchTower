@@ -26,6 +26,12 @@
             ]
           },
           {
+            "group": "Development",
+            "pages": [
+              "user-guides/e2e-testing"
+            ]
+          },
+          {
             "group": "Customization",
             "pages": [
               "essentials/settings",

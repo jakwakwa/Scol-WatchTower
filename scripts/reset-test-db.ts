@@ -13,12 +13,12 @@ const TEST_DB_PATH = resolve(__dirname, "../e2e/test.db");
 const MIGRATIONS_PATH = resolve(__dirname, "../migrations");
 
 async function resetTestDatabase() {
-	console.log("🧹 Resetting test database...");
+	console.info("🧹 Resetting test database...");
 
 	// Remove existing test database
 	if (existsSync(TEST_DB_PATH)) {
 		unlinkSync(TEST_DB_PATH);
-		console.log("   Removed existing test.db");
+		console.info("   Removed existing test.db");
 	}
 
 	// Create fresh database with migrations
@@ -29,14 +29,14 @@ async function resetTestDatabase() {
 	const db = drizzle(client, { schema });
 
 	// Run migrations
-	console.log("   Running migrations...");
+	console.info("   Running migrations...");
 	await migrate(db, { migrationsFolder: MIGRATIONS_PATH });
 
 	// Seed with test data
-	console.log("   Seeding test data...");
+	console.info("   Seeding test data...");
 	await seedTestData(db);
 
-	console.log("✅ Test database ready!");
+	console.info("✅ Test database ready!");
 	client.close();
 }
 
@@ -48,6 +48,7 @@ async function seedTestData(db: ReturnType<typeof drizzle>) {
 			companyName: "Test Company Pty Ltd",
 			tradingName: "TestCo",
 			registrationNumber: "2024/123456/07",
+			contactName: "John Test",
 			email: "test@testco.co.za",
 			phone: "+27821234567",
 			status: "pending",
@@ -61,7 +62,7 @@ async function seedTestData(db: ReturnType<typeof drizzle>) {
 		stage: 1,
 	});
 
-	console.log(
+	console.info(
 		`   Created test applicant: ${applicant.companyName} (ID: ${applicant.id})`
 	);
 }
