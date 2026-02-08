@@ -68,6 +68,13 @@ export interface AggregatedAnalysisResult {
 	risk?: RiskAnalysisResult;
 	sanctions?: SanctionsCheckResult;
 
+	// Reporter Agent consolidated agent outputs (for UI rendering)
+	agents: {
+		validation: Record<string, unknown>;
+		risk: Record<string, unknown>;
+		sanctions: Record<string, unknown>;
+	};
+
 	// Aggregated Scores
 	scores: {
 		validationScore: number;
@@ -89,6 +96,16 @@ export interface AggregatedAnalysisResult {
 		reasoning: string;
 		conditions?: string[];
 		flags: string[];
+	};
+
+	// SOP External Check Stubs (feature-flagged)
+	externalChecks: {
+		xdsCreditCheck: { status: "mock" | "live"; result?: Record<string, unknown> };
+		lexisNexisProcure: { status: "mock" | "live"; result?: Record<string, unknown> };
+		bizPortalRegistration: { status: "mock" | "live"; result?: Record<string, unknown> };
+		efs24IdAvsr: { status: "mock" | "live"; result?: Record<string, unknown> };
+		sarsVatSearch: { status: "mock" | "live"; result?: Record<string, unknown> };
+		industryRegulator: { status: "mock" | "live"; result?: Record<string, unknown> };
 	};
 
 	// Metadata
@@ -237,11 +254,37 @@ export async function performAggregatedAnalysis(
 		aggregatedScore
 	);
 
+	// Run SOP-required external check stubs (all mocked in Phase 1)
+	const externalChecks = runExternalCheckStubs(input);
+
 	// Build result
 	const result: AggregatedAnalysisResult = {
 		validation: validationResult,
 		risk: riskResult,
 		sanctions: sanctionsResult,
+		agents: {
+			validation: validationResult
+				? {
+						totalDocuments: validationResult.summary.totalDocuments,
+						passed: validationResult.summary.passed,
+						failed: validationResult.summary.failed,
+						recommendation: validationResult.summary.overallRecommendation,
+					}
+				: { status: "skipped", reason: "No documents provided" },
+			risk: {
+				riskCategory: riskResult.creditRisk.riskCategory,
+				score: riskResult.overall.score,
+				recommendation: riskResult.overall.recommendation,
+				hasBounced: riskResult.stability.hasBounced,
+				gamblingIndicators: riskResult.stability.gamblingIndicators.length,
+			},
+			sanctions: {
+				riskLevel: sanctionsResult.overall.riskLevel,
+				isPEP: sanctionsResult.pepScreening.isPEP,
+				requiresEDD: sanctionsResult.overall.requiresEDD,
+				adverseMediaAlerts: sanctionsResult.adverseMedia.alertsFound,
+			},
+		},
 		scores: {
 			validationScore,
 			riskScore,
@@ -260,6 +303,7 @@ export async function performAggregatedAnalysis(
 					: undefined,
 			flags,
 		},
+		externalChecks,
 		metadata: {
 			analysisId,
 			analyzedAt: new Date().toISOString(),
@@ -391,10 +435,13 @@ async function storeAnalysisResult(
 			analysisId: result.metadata.analysisId,
 			scores: result.scores,
 			recommendation: result.overall.recommendation,
+			reasoning: result.overall.reasoning,
 			flags: result.overall.flags,
+			agents: result.agents,
 			riskDetails: result.risk?.creditRisk,
 			sanctionsLevel: result.sanctions?.overall.riskLevel,
 			validationSummary: result.validation?.summary,
+			externalChecks: result.externalChecks,
 		});
 
 		if (existing.length > 0) {
@@ -437,6 +484,38 @@ async function storeAnalysisResult(
 	} catch (error) {
 		console.error("[AggregatedAnalysis] Error storing result:", error);
 	}
+}
+
+// ============================================
+// SOP External Check Stubs (Feature-Flagged)
+// ============================================
+
+/**
+ * Runs feature-flagged external check stubs per SOP requirements.
+ * All mocked in Phase 1 — each returns a mock/pass result.
+ * Switch to "live" by setting env flags (e.g., ENABLE_XDS_LIVE=true).
+ */
+function runExternalCheckStubs(
+	input: AggregatedAnalysisInput
+): AggregatedAnalysisResult["externalChecks"] {
+	const mockResult = (name: string) => ({
+		status: "mock" as const,
+		result: {
+			checked: true,
+			passed: true,
+			mockReason: `${name} check is mocked in Phase 1`,
+			checkedAt: new Date().toISOString(),
+		},
+	});
+
+	return {
+		xdsCreditCheck: mockResult("XDS Credit Check"),
+		lexisNexisProcure: mockResult("LexisNexis Procure Upload"),
+		bizPortalRegistration: mockResult("BizPortal Company Registration"),
+		efs24IdAvsr: mockResult("EFS24 ID/AVSR Verification"),
+		sarsVatSearch: mockResult("SARS VAT Search"),
+		industryRegulator: mockResult("Industry Regulator Confirmation"),
+	};
 }
 
 // ============================================

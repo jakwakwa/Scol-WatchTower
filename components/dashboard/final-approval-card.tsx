@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
 	RiCheckLine,
 	RiCheckboxCircleLine,
@@ -8,6 +8,8 @@ import {
 	RiCheckboxBlankCircleLine,
 	RiFileTextLine,
 	RiContractLine,
+	RiShieldCheckLine,
+	RiUserLine,
 } from "@remixicon/react";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,6 +25,12 @@ import { cn } from "@/lib/utils";
 // Types
 // ============================================
 
+interface ApprovalStatus {
+	approvedBy: string;
+	decision: "APPROVED" | "REJECTED";
+	timestamp: string;
+}
+
 interface FinalApprovalProps {
 	workflowId: number;
 	applicantId: number;
@@ -32,6 +40,8 @@ interface FinalApprovalProps {
 	absaFormComplete: boolean;
 	/** Current workflow status */
 	workflowStatus?: string;
+	/** Current user role — determines which approval button to show */
+	userRole?: "risk_manager" | "account_manager";
 	/** Callback when approval is successful */
 	onApprovalComplete?: () => void;
 }
@@ -99,17 +109,14 @@ function ChecklistItemRow({
 }
 
 // ============================================
-// Final Approval Card Component
+// Final Approval Card Component (Two-Factor)
 // ============================================
 
 /**
- * FinalApprovalCard - Displayed in Stage 5 when awaiting human approval
- * 
- * Shows a checklist of required items before final onboarding completion:
- * - Contract Signed
- * - Absa 6995 Form Complete
- * 
- * Calls POST /api/onboarding/approve to trigger the final approval event
+ * FinalApprovalCard — SOP Stage 6 (Two-Factor Approval)
+ *
+ * Shows a checklist of requirements plus two-factor approval buttons.
+ * Both Risk Manager and Account Manager must approve to complete onboarding.
  */
 export function FinalApprovalCard({
 	workflowId,
@@ -117,16 +124,41 @@ export function FinalApprovalCard({
 	contractSigned,
 	absaFormComplete,
 	workflowStatus,
+	userRole = "account_manager",
 	onApprovalComplete,
 }: FinalApprovalProps) {
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [success, setSuccess] = useState(false);
+	const [riskManagerApproval, setRiskManagerApproval] = useState<ApprovalStatus | null>(null);
+	const [accountManagerApproval, setAccountManagerApproval] = useState<ApprovalStatus | null>(null);
 
-	/** All checklist items must be complete to enable approval */
+	// Fetch current approval status
+	useEffect(() => {
+		const fetchApprovalStatus = async () => {
+			try {
+				const response = await fetch(`/api/onboarding/approve?workflowId=${workflowId}`);
+				if (response.ok) {
+					const data = await response.json();
+					setRiskManagerApproval(data.riskManagerApproval || null);
+					setAccountManagerApproval(data.accountManagerApproval || null);
+				}
+			} catch {
+				// Silently fail — approvals will show as pending
+			}
+		};
+		fetchApprovalStatus();
+	}, [workflowId]);
+
 	const canApprove = contractSigned && absaFormComplete;
+	const bothApproved =
+		riskManagerApproval?.decision === "APPROVED" &&
+		accountManagerApproval?.decision === "APPROVED";
 
-	/** Checklist items for display */
+	const hasUserApproved = userRole === "risk_manager"
+		? riskManagerApproval?.decision === "APPROVED"
+		: accountManagerApproval?.decision === "APPROVED";
+
 	const checklistItems: ChecklistItem[] = [
 		{
 			id: "contract",
@@ -142,17 +174,30 @@ export function FinalApprovalCard({
 			checked: absaFormComplete,
 			icon: RiFileTextLine,
 		},
+		{
+			id: "risk_manager",
+			label: "Risk Manager Approval",
+			description: riskManagerApproval?.decision === "APPROVED"
+				? `Approved by ${riskManagerApproval.approvedBy}`
+				: "Awaiting Risk Manager approval",
+			checked: riskManagerApproval?.decision === "APPROVED",
+			icon: RiShieldCheckLine,
+		},
+		{
+			id: "account_manager",
+			label: "Account Manager Approval",
+			description: accountManagerApproval?.decision === "APPROVED"
+				? `Approved by ${accountManagerApproval.approvedBy}`
+				: "Awaiting Account Manager approval",
+			checked: accountManagerApproval?.decision === "APPROVED",
+			icon: RiUserLine,
+		},
 	];
 
-	/** Count of completed items */
 	const completedCount = checklistItems.filter((item) => item.checked).length;
 
-	/**
-	 * Handle final approval submission
-	 * Triggers POST /api/onboarding/approve which sends the final-approval.received event
-	 */
-	const handleApprove = async () => {
-		if (!canApprove) return;
+	const handleApprove = async (decision: "APPROVED" | "REJECTED") => {
+		if (!canApprove && decision === "APPROVED") return;
 
 		setIsSubmitting(true);
 		setError(null);
@@ -164,20 +209,35 @@ export function FinalApprovalCard({
 				body: JSON.stringify({
 					workflowId,
 					applicantId,
-					checklist: {
-						contractSigned,
-						absaFormComplete,
-					},
+					role: userRole,
+					decision,
 				}),
 			});
 
 			if (!response.ok) {
 				const data = await response.json().catch(() => ({}));
-				throw new Error(data.error || "Failed to complete onboarding");
+				throw new Error(data.error || "Failed to submit approval");
 			}
 
-			setSuccess(true);
-			onApprovalComplete?.();
+			const result = await response.json();
+
+			// Update local state
+			const approvalData: ApprovalStatus = {
+				approvedBy: result.approvedBy,
+				decision,
+				timestamp: result.timestamp,
+			};
+
+			if (userRole === "risk_manager") {
+				setRiskManagerApproval(approvalData);
+			} else {
+				setAccountManagerApproval(approvalData);
+			}
+
+			if (result.bothApproved) {
+				setSuccess(true);
+				onApprovalComplete?.();
+			}
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Unexpected error occurred");
 		} finally {
@@ -186,7 +246,7 @@ export function FinalApprovalCard({
 	};
 
 	// Already completed state
-	if (success || workflowStatus === "completed") {
+	if (success || bothApproved || workflowStatus === "completed") {
 		return (
 			<Card className="bg-emerald-500/5 border-emerald-500/20">
 				<CardContent className="pt-6">
@@ -199,7 +259,7 @@ export function FinalApprovalCard({
 								Onboarding Complete
 							</h3>
 							<p className="text-sm text-muted-foreground mt-1">
-								This applicant has been successfully onboarded
+								Both Risk Manager and Account Manager have approved. Onboarding is complete.
 							</p>
 						</div>
 					</div>
@@ -215,10 +275,10 @@ export function FinalApprovalCard({
 					<div>
 						<CardTitle className="text-lg flex items-center gap-2">
 							<RiCheckboxCircleLine className="h-5 w-5 text-primary" />
-							Final Approval
+							Two-Factor Final Approval
 						</CardTitle>
 						<CardDescription>
-							Complete the checklist to finalize onboarding
+							Both Risk Manager and Account Manager must approve to complete onboarding
 						</CardDescription>
 					</div>
 					<div className="text-right">
@@ -238,7 +298,7 @@ export function FinalApprovalCard({
 					<div
 						className={cn(
 							"h-full transition-all duration-500 rounded-full",
-							canApprove ? "bg-emerald-500" : "bg-primary"
+							completedCount === checklistItems.length ? "bg-emerald-500" : "bg-primary"
 						)}
 						style={{
 							width: `${(completedCount / checklistItems.length) * 100}%`,
@@ -264,36 +324,48 @@ export function FinalApprovalCard({
 					</div>
 				)}
 
-				{/* Action Button */}
-				<Button
-					className={cn(
-						"w-full gap-2",
-						canApprove && "bg-emerald-600 hover:bg-emerald-700"
-					)}
-					disabled={!canApprove || isSubmitting}
-					onClick={handleApprove}>
-					{isSubmitting ? (
-						<>
-							<RiLoader4Line className="h-4 w-4 animate-spin" />
-							Processing...
-						</>
-					) : canApprove ? (
-						<>
-							<RiCheckLine className="h-4 w-4" />
-							Complete Onboarding
-						</>
-					) : (
-						<>
-							<RiCheckboxBlankCircleLine className="h-4 w-4" />
-							Complete Checklist to Continue
-						</>
-					)}
-				</Button>
+				{/* Action Buttons */}
+				{hasUserApproved ? (
+					<div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-center">
+						<p className="text-sm text-emerald-400 font-medium">
+							You have approved as {userRole.replace("_", " ")}. Waiting for the other approver.
+						</p>
+					</div>
+				) : (
+					<div className="flex gap-3">
+						<Button
+							className={cn(
+								"flex-1 gap-2",
+								canApprove && "bg-emerald-600 hover:bg-emerald-700"
+							)}
+							disabled={!canApprove || isSubmitting}
+							onClick={() => handleApprove("APPROVED")}>
+							{isSubmitting ? (
+								<>
+									<RiLoader4Line className="h-4 w-4 animate-spin" />
+									Processing...
+								</>
+							) : (
+								<>
+									<RiCheckLine className="h-4 w-4" />
+									Approve as {userRole === "risk_manager" ? "Risk Manager" : "Account Manager"}
+								</>
+							)}
+						</Button>
+						<Button
+							variant="destructive"
+							className="gap-2"
+							disabled={isSubmitting}
+							onClick={() => handleApprove("REJECTED")}>
+							Reject
+						</Button>
+					</div>
+				)}
 
 				{/* Helper Text */}
-				{!canApprove && (
+				{!canApprove && !hasUserApproved && (
 					<p className="text-xs text-muted-foreground text-center">
-						All items must be completed before final approval
+						Contract and ABSA form must be completed before approval
 					</p>
 				)}
 			</CardContent>

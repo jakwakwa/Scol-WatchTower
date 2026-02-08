@@ -1,17 +1,19 @@
 /**
- * StratCol Onboarding Control Tower Workflow
+ * StratCol Onboarding Control Tower Workflow — SOP-Aligned (6-Stage)
  *
- * This is the PRD-aligned implementation of the onboarding workflow with:
+ * Stage 1: Quote & Review       — Account Manager data entry → ITC → AI quote → Manager decision loop
+ * Stage 2: Mandate Collection    — Signed quote → Facility app → Mandate collection (7-day retry, max 8)
+ * Stage 3: Procurement & AI     — Parallel: Procurement risk + AI multi-agent analysis + Reporter Agent
+ * Stage 4: Risk Review           — Risk Manager final review (no auto-approve bypass)
+ * Stage 5: Contract              — Account Manager review/edit AI contract → Send contract + ABSA form
+ * Stage 6: Final Approval        — Two-factor: Risk Manager + Account Manager → Onboarding complete
+ *
+ * Architecture:
  * - Kill Switch functionality for immediate workflow termination
  * - True parallel processing of procurement and documentation streams
  * - Conditional document logic based on business type
- * - AI agent integration (Validation, Risk, Sanctions)
+ * - AI agent integration (Validation, Risk, Sanctions) with Reporter Agent
  * - Human approval checkpoints with proper Inngest signal handling
- *
- * Architecture:
- * - Stream A: Procurement Risk Assessment (can trigger kill switch)
- * - Stream B: Documentation Collection & AI Analysis (runs in parallel)
- * - Synchronization Point: Both streams must complete before final review
  */
 
 import { eq } from "drizzle-orm";
@@ -69,6 +71,8 @@ const OVERLIMIT_THRESHOLD = 500_000_00; // R500,000 in cents
 const WORKFLOW_TIMEOUT = "30d";
 const STAGE_TIMEOUT = "14d";
 const REVIEW_TIMEOUT = "7d";
+const MANDATE_RETRY_TIMEOUT = "7d";
+const MAX_MANDATE_RETRIES = 8;
 
 // ============================================
 // Kill Switch Guard
@@ -88,7 +92,7 @@ async function guardKillSwitch(workflowId: number, stepName: string): Promise<vo
 }
 
 // ============================================
-// Main Control Tower Workflow
+// Main Control Tower Workflow (SOP-aligned 6-stage)
 // ============================================
 
 export const controlTowerWorkflow = inngest.createFunction(
@@ -113,14 +117,180 @@ export const controlTowerWorkflow = inngest.createFunction(
 		);
 
 		// ================================================================
-		// PHASE 1: Facility Application, ITC & Quotation
+		// STAGE 1: Quote & Review
+		// Account Manager data entry → ITC check → AI Quote → Manager decision loop
 		// ================================================================
 
-		await step.run("phase-1-start", () =>
+		await step.run("stage-1-start", () =>
 			updateWorkflowStatus(workflowId, "processing", 1)
 		);
 
-		// Step 1.1: Send Facility Application immediately
+		// Step 1.1: ITC check
+		const initialChecks = await step.run("initial-checks", async () => {
+			await guardKillSwitch(workflowId, "initial-checks");
+
+			const itcResult = await performITCCheck({ applicantId, workflowId });
+
+			const db = getDatabaseClient();
+			if (db) {
+				await db
+					.update(applicants)
+					.set({
+						itcScore: itcResult.creditScore,
+						itcStatus: itcResult.recommendation,
+					})
+					.where(eq(applicants.id, applicantId));
+			}
+
+			await logWorkflowEvent({
+				workflowId,
+				eventType: "itc_check_completed",
+				payload: {
+					creditScore: itcResult.creditScore,
+					recommendation: itcResult.recommendation,
+					passed: itcResult.passed,
+				},
+			});
+
+			return itcResult;
+		});
+
+		// Step 1.2: AI Generate Quotation
+		const quotationResult = await step.run("ai-generate-quote", async () => {
+			await guardKillSwitch(workflowId, "ai-generate-quote");
+
+			const result = await generateQuote(applicantId, workflowId);
+
+			if (!result.success || !result.quote) {
+				await createWorkflowNotification({
+					workflowId,
+					applicantId,
+					type: "error",
+					title: "Quote Generation Failed",
+					message: result.error || "Failed to generate quotation",
+					actionable: true,
+				});
+				return { success: false as const, quote: null as Quote | null, error: result.error, isOverlimit: false };
+			}
+
+			const isOverlimit = result.quote.amount > OVERLIMIT_THRESHOLD;
+
+			await logWorkflowEvent({
+				workflowId,
+				eventType: "quote_generated",
+				payload: {
+					quoteId: result.quote.quoteId,
+					amount: result.quote.amount,
+					isOverlimit,
+				},
+			});
+
+			return { success: true as const, quote: result.quote, isOverlimit, error: null as string | null };
+		});
+
+		if (!quotationResult.success) {
+			return { status: "failed", stage: 1, reason: quotationResult.error || "Quote generation failed" };
+		}
+
+		const { quote, isOverlimit } = quotationResult;
+
+		// Step 1.3: Manager Quote Review (decision loop)
+		await step.run("notify-manager-quote", async () => {
+			const title = isOverlimit
+				? "OVERLIMIT: Quote Requires Special Approval"
+				: "Quote Ready for Approval";
+
+			await createWorkflowNotification({
+				workflowId,
+				applicantId,
+				type: isOverlimit ? "warning" : "awaiting",
+				title,
+				message: `Quote for R${((quote?.amount || 0) / 100).toFixed(2)} ready for review. You can adjust, request updates, or approve.`,
+				actionable: true,
+			});
+
+			await sendInternalAlertEmail({
+				title,
+				message: `Quote generated for review. Amount: R${((quote?.amount || 0) / 100).toFixed(2)}`,
+				workflowId,
+				applicantId,
+				type: isOverlimit ? "warning" : "info",
+				actionUrl: `${getBaseUrl()}/dashboard/applicants/${applicantId}?tab=reviews`,
+			});
+		});
+
+		await step.run("stage-1-awaiting-approval", () =>
+			updateWorkflowStatus(workflowId, "awaiting_human", 1)
+		);
+
+		// Wait for manager approval (they can also request-update or adjust before approving)
+		const quoteApproval = await step.waitForEvent("wait-quote-approval", {
+			event: "quote/approved",
+			timeout: WORKFLOW_TIMEOUT,
+			match: "data.workflowId",
+		});
+
+		if (!quoteApproval) {
+			await step.run("quote-timeout", () =>
+				updateWorkflowStatus(workflowId, "timeout", 1)
+			);
+			return { status: "timeout", stage: 1, reason: "Quote approval timeout" };
+		}
+
+		// ================================================================
+		// STAGE 2: Mandate Collection
+		// Send quote for signing → Wait for signed quote → Send facility app
+		// → Mandate collection with 7-day retry loop (max 8)
+		// ================================================================
+
+		await step.run("stage-2-start", async () => {
+			await guardKillSwitch(workflowId, "stage-2-start");
+			return updateWorkflowStatus(workflowId, "processing", 2);
+		});
+
+		// Step 2.1: Send quote for client signature
+		await step.run("send-quote-to-applicant", async () => {
+			await guardKillSwitch(workflowId, "send-quote-to-applicant");
+
+			const db = getDatabaseClient();
+			if (!db) throw new Error("Database connection failed");
+
+			const [applicant] = await db
+				.select()
+				.from(applicants)
+				.where(eq(applicants.id, applicantId));
+
+			if (!applicant) throw new Error(`Applicant ${applicantId} not found`);
+
+			const { token } = await createFormInstance({
+				applicantId,
+				workflowId,
+				formType: "SIGNED_QUOTATION" as FormType,
+			});
+
+			await sendApplicantFormLinksEmail({
+				email: applicant.email,
+				contactName: applicant.contactName,
+				links: [{ formType: "SIGNED_QUOTATION", url: `${getBaseUrl()}/forms/${token}` }],
+			});
+		});
+
+		await step.run("stage-2-awaiting-signature", () =>
+			updateWorkflowStatus(workflowId, "awaiting_human", 2)
+		);
+
+		// Wait for quote signature
+		const quoteSigned = await step.waitForEvent("wait-quote-signed", {
+			event: "quote/signed",
+			timeout: WORKFLOW_TIMEOUT,
+			match: "data.workflowId",
+		});
+
+		if (!quoteSigned) {
+			return { status: "timeout", stage: 2, reason: "Quote signature timeout" };
+		}
+
+		// Step 2.2: Send Facility Application (after signed quote — SOP requirement)
 		await step.run("send-facility-application", async () => {
 			await guardKillSwitch(workflowId, "send-facility-application");
 
@@ -156,10 +326,6 @@ export const controlTowerWorkflow = inngest.createFunction(
 			});
 		});
 
-		await step.run("phase-1-awaiting-facility", () =>
-			updateWorkflowStatus(workflowId, "awaiting_human", 1)
-		);
-
 		// Wait for facility application submission
 		const facilitySubmission = await step.waitForEvent("wait-facility-app", {
 			event: "form/facility.submitted",
@@ -168,16 +334,15 @@ export const controlTowerWorkflow = inngest.createFunction(
 		});
 
 		if (!facilitySubmission) {
-			return { status: "timeout", phase: 1, reason: "Facility application timeout" };
+			return { status: "timeout", stage: 2, reason: "Facility application timeout" };
 		}
 
-		// Step 1.2: Determine mandate and update applicant record
+		// Step 2.3: Determine mandate type and required documents
 		const mandateInfo = await step.run("determine-mandate", async () => {
 			await guardKillSwitch(workflowId, "determine-mandate");
 
 			const formData = facilitySubmission.data.formData;
 
-			// Resolve business type: prefer DB entityType, fallback to form data
 			const db = getDatabaseClient();
 			let applicantEntityType: string | null = null;
 			let applicantIndustry: string | null = null;
@@ -200,7 +365,6 @@ export const controlTowerWorkflow = inngest.createFunction(
 			context.mandateType = formData.mandateType;
 			context.mandateVolume = formData.mandateVolume;
 
-			// Update applicant record with mandate info
 			if (db) {
 				await db
 					.update(applicants)
@@ -230,134 +394,9 @@ export const controlTowerWorkflow = inngest.createFunction(
 			};
 		});
 
-		// Step 1.3: ITC check and persist to applicant
-		const initialChecks = await step.run("initial-checks", async () => {
-			await guardKillSwitch(workflowId, "initial-checks");
-
-			// Run ITC check
-			const itcResult = await performITCCheck({ applicantId, workflowId });
-
-			// Persist ITC results to applicant record
-			const db = getDatabaseClient();
-			if (db) {
-				await db
-					.update(applicants)
-					.set({
-						itcScore: itcResult.creditScore,
-						itcStatus: itcResult.recommendation,
-					})
-					.where(eq(applicants.id, applicantId));
-			}
-
-			await logWorkflowEvent({
-				workflowId,
-				eventType: "itc_check_completed",
-				payload: {
-					creditScore: itcResult.creditScore,
-					recommendation: itcResult.recommendation,
-					passed: itcResult.passed,
-				},
-			});
-
-			return itcResult;
-		});
-
-		// Step 1.4: AI Generate Quotation (now with mandate and ITC data available)
-		const quotationResult = await step.run("ai-generate-quote", async () => {
-			await guardKillSwitch(workflowId, "ai-generate-quote");
-
-			const result = await generateQuote(applicantId, workflowId);
-
-			if (!result.success || !result.quote) {
-				await createWorkflowNotification({
-					workflowId,
-					applicantId,
-					type: "error",
-					title: "Quote Generation Failed",
-					message: result.error || "Failed to generate quotation",
-					actionable: true,
-				});
-				return { success: false as const, quote: null as Quote | null, error: result.error, isOverlimit: false };
-			}
-
-			// Check overlimit
-			const isOverlimit = result.quote.amount > OVERLIMIT_THRESHOLD;
-
-			await logWorkflowEvent({
-				workflowId,
-				eventType: "quote_generated",
-				payload: {
-					quoteId: result.quote.quoteId,
-					amount: result.quote.amount,
-					isOverlimit,
-				},
-			});
-
-			return { success: true as const, quote: result.quote, isOverlimit, error: null as string | null };
-		});
-
-		if (!quotationResult.success) {
-			return { status: "failed", phase: 1, reason: quotationResult.error || "Quote generation failed" };
-		}
-
-		// Extract values after success check for cleaner code
-		const { quote, isOverlimit } = quotationResult;
-
-		// Step 1.5: Manager Quote Review
-		await step.run("notify-manager-quote", async () => {
-			const title = isOverlimit
-				? "🚨 OVERLIMIT: Quote Requires Special Approval"
-				: "Quote Ready for Approval";
-
-			await createWorkflowNotification({
-				workflowId,
-				applicantId,
-				type: isOverlimit ? "warning" : "awaiting",
-				title,
-				message: `Quote for R${((quote?.amount || 0) / 100).toFixed(2)} ready for review`,
-				actionable: true,
-			});
-
-			await sendInternalAlertEmail({
-				title,
-				message: `Quote generated for review. Amount: R${((quote?.amount || 0) / 100).toFixed(2)}`,
-				workflowId,
-				applicantId,
-				type: isOverlimit ? "warning" : "info",
-				actionUrl: `${getBaseUrl()}/dashboard/applicants/${applicantId}?tab=reviews`,
-			});
-		});
-
-		await step.run("phase-1-awaiting-approval", () =>
-			updateWorkflowStatus(workflowId, "awaiting_human", 1)
-		);
-
-		// Wait for manager approval
-		const quoteApproval = await step.waitForEvent("wait-quote-approval", {
-			event: "quote/approved",
-			timeout: WORKFLOW_TIMEOUT,
-			match: "data.workflowId",
-		});
-
-		if (!quoteApproval) {
-			await step.run("quote-timeout", () =>
-				updateWorkflowStatus(workflowId, "timeout", 1)
-			);
-			return { status: "timeout", phase: 1, reason: "Quote approval timeout" };
-		}
-
-		// ================================================================
-		// PHASE 2: Quote Signing
-		// ================================================================
-
-		await step.run("phase-2-start", async () => {
-			await guardKillSwitch(workflowId, "phase-2-start");
-			return updateWorkflowStatus(workflowId, "processing", 2);
-		});
-
-		// Send quote for signature
-		await step.run("send-quote-to-applicant", async () => {
-			await guardKillSwitch(workflowId, "send-quote-to-applicant");
+		// Step 2.4: Request commercial mandate documents with 7-day retry loop (max 8)
+		await step.run("send-mandate-request", async () => {
+			await guardKillSwitch(workflowId, "send-mandate-request");
 
 			const db = getDatabaseClient();
 			if (!db) throw new Error("Database connection failed");
@@ -369,46 +408,199 @@ export const controlTowerWorkflow = inngest.createFunction(
 
 			if (!applicant) throw new Error(`Applicant ${applicantId} not found`);
 
-			const { token } = await createFormInstance({
+			// Build conditional links based on entityType and businessType
+			const links: Array<{ formType: string; url: string }> = [];
+
+			const uploadToken = await createFormInstance({
 				applicantId,
 				workflowId,
-				formType: "SIGNED_QUOTATION" as FormType,
+				formType: "DOCUMENT_UPLOADS" as FormType,
 			});
+			links.push({
+				formType: "DOCUMENT_UPLOADS",
+				url: `${getBaseUrl()}/uploads/${uploadToken.token}`,
+			});
+
+			if (applicant.productType !== "call_centre") {
+				const accountantToken = await createFormInstance({
+					applicantId,
+					workflowId,
+					formType: "ACCOUNTANT_LETTER" as FormType,
+				});
+				links.push({
+					formType: "ACCOUNTANT_LETTER",
+					url: `${getBaseUrl()}/forms/${accountantToken.token}`,
+				});
+			}
+
+			if (applicant.productType === "call_centre") {
+				const callCentreToken = await createFormInstance({
+					applicantId,
+					workflowId,
+					formType: "CALL_CENTRE_APPLICATION" as FormType,
+				});
+				links.push({
+					formType: "CALL_CENTRE_APPLICATION",
+					url: `${getBaseUrl()}/forms/${callCentreToken.token}`,
+				});
+			}
 
 			await sendApplicantFormLinksEmail({
 				email: applicant.email,
 				contactName: applicant.contactName,
-				links: [{ formType: "SIGNED_QUOTATION", url: `${getBaseUrl()}/forms/${token}` }],
+				links,
+			});
+
+			await createWorkflowNotification({
+				workflowId,
+				applicantId,
+				type: "awaiting",
+				title: "Commercial Mandate Documents Required",
+				message: `Please upload required documents for ${mandateInfo.businessType} application`,
+				actionable: true,
+			});
+
+			// Track retry count
+			await db
+				.update(workflows)
+				.set({
+					mandateRetryCount: 1,
+					mandateLastSentAt: new Date(),
+				})
+				.where(eq(workflows.id, workflowId));
+
+			await inngest.send({
+				name: "document/conditional-request.sent",
+				data: {
+					workflowId,
+					applicantId,
+					businessType: mandateInfo.businessType,
+					documentsRequested: mandateInfo.requiredDocuments.map(d => d.id),
+					sentAt: new Date().toISOString(),
+				},
 			});
 		});
 
-		await step.run("phase-2-awaiting-signature", () =>
+		await step.run("stage-2-awaiting-mandates", () =>
 			updateWorkflowStatus(workflowId, "awaiting_human", 2)
 		);
 
-		// Wait for quote signature - CRITICAL trigger for Phase 3
-		const quoteSigned = await step.waitForEvent("wait-quote-signed", {
-			event: "quote/signed",
-			timeout: WORKFLOW_TIMEOUT,
+		// Mandate collection with 7-day timeout and retry loop (max 8)
+		let mandateDocsReceived = await step.waitForEvent("wait-mandate-docs", {
+			event: "document/mandate.submitted",
+			timeout: MANDATE_RETRY_TIMEOUT,
 			match: "data.workflowId",
 		});
 
-		if (!quoteSigned) {
-			return { status: "timeout", phase: 2, reason: "Quote signature timeout" };
+		// Retry loop for mandate collection
+		let retryCount = 1;
+		while (!mandateDocsReceived && retryCount < MAX_MANDATE_RETRIES) {
+			retryCount++;
+
+			// Send reminder
+			await step.run(`mandate-retry-${retryCount}`, async () => {
+				await guardKillSwitch(workflowId, `mandate-retry-${retryCount}`);
+
+				const db = getDatabaseClient();
+				if (!db) return;
+
+				await db
+					.update(workflows)
+					.set({
+						mandateRetryCount: retryCount,
+						mandateLastSentAt: new Date(),
+					})
+					.where(eq(workflows.id, workflowId));
+
+				const [applicant] = await db
+					.select()
+					.from(applicants)
+					.where(eq(applicants.id, applicantId));
+
+				if (applicant) {
+					await sendInternalAlertEmail({
+						title: `Mandate Reminder ${retryCount}/${MAX_MANDATE_RETRIES}`,
+						message: `Mandate documents still outstanding after ${retryCount} reminders. ${MAX_MANDATE_RETRIES - retryCount} reminders remaining before termination.`,
+						workflowId,
+						applicantId,
+						type: retryCount >= 6 ? "warning" : "info",
+						actionUrl: `${getBaseUrl()}/dashboard/applicants/${applicantId}?tab=documents`,
+					});
+				}
+
+				await logWorkflowEvent({
+					workflowId,
+					eventType: "mandate_retry",
+					payload: { retryCount, maxRetries: MAX_MANDATE_RETRIES },
+				});
+			});
+
+			mandateDocsReceived = await step.waitForEvent(`wait-mandate-docs-retry-${retryCount}`, {
+				event: "document/mandate.submitted",
+				timeout: MANDATE_RETRY_TIMEOUT,
+				match: "data.workflowId",
+			});
 		}
 
+		if (!mandateDocsReceived) {
+			// Max retries exhausted — terminate per SOP
+			await step.run("mandate-exhausted-terminate", async () => {
+				await executeKillSwitch({
+					workflowId,
+					applicantId,
+					reason: "MANUAL_TERMINATION",
+					decidedBy: "system_mandate_timeout",
+					notes: `Mandate collection exhausted after ${MAX_MANDATE_RETRIES} retries`,
+				});
+
+				await inngest.send({
+					name: "mandate/collection.expired",
+					data: {
+						workflowId,
+						applicantId,
+						retryCount: MAX_MANDATE_RETRIES,
+						reason: "max_retries",
+						expiredAt: new Date().toISOString(),
+					},
+				});
+			});
+			return { status: "terminated", stage: 2, reason: `Mandate collection exhausted after ${MAX_MANDATE_RETRIES} retries` };
+		}
+
+		// Emit mandate verified event
+		await step.run("mandate-verified", async () => {
+			context.documentsComplete = true;
+
+			await inngest.send({
+				name: "mandate/verified",
+				data: {
+					workflowId,
+					applicantId,
+					mandateType: (context.mandateType || "MIXED") as "EFT" | "DEBIT_ORDER" | "CASH" | "MIXED",
+					verifiedAt: new Date().toISOString(),
+					retryCount,
+				},
+			});
+
+			await logWorkflowEvent({
+				workflowId,
+				eventType: "mandate_verified",
+				payload: { retryCount, mandateType: context.mandateType },
+			});
+		});
+
 		// ================================================================
-		// PHASE 3: Parallel Processing Streams
-		// Stream A: Procurement Check (can trigger kill switch)
+		// STAGE 3: Procurement & AI (Parallel)
+		// Stream A: Procurement Risk Assessment (can trigger kill switch)
 		// Stream B: Document Collection & AI Analysis
 		// ================================================================
 
-		await step.run("phase-3-start", async () => {
-			await guardKillSwitch(workflowId, "phase-3-start");
+		await step.run("stage-3-start", async () => {
+			await guardKillSwitch(workflowId, "stage-3-start");
 			return updateWorkflowStatus(workflowId, "processing", 3);
 		});
 
-		// Send Inngest event for business type determined (for external consumers)
+		// Emit business type determined event
 		await step.run("emit-business-type-event", async () => {
 			const docRequirements = getDocumentRequirements(mandateInfo.businessType);
 			await inngest.send({
@@ -427,7 +619,6 @@ export const controlTowerWorkflow = inngest.createFunction(
 		// PARALLEL STREAM A: Procurement Risk Assessment
 		// ================================================================
 
-		// Define return type for procurement stream
 		interface ProcurementStreamResult {
 			cleared: boolean;
 			requiresReview: boolean;
@@ -438,14 +629,12 @@ export const controlTowerWorkflow = inngest.createFunction(
 		}
 
 		const procurementStream = step.run("stream-a-procurement", async (): Promise<ProcurementStreamResult> => {
-			// Check kill switch first
 			const terminated = await isWorkflowTerminated(workflowId);
 			if (terminated) {
 				return { cleared: false, reason: "Workflow terminated", killSwitchTriggered: true, requiresReview: false };
 			}
 
 			try {
-				// Run ProcureCheck
 				const procureResult = await runProcureCheck(applicantId);
 
 				await logWorkflowEvent({
@@ -458,43 +647,27 @@ export const controlTowerWorkflow = inngest.createFunction(
 					},
 				});
 
-				// If auto-approve, mark as cleared
-				if (procureResult.recommendedAction === "APPROVE") {
-					return { cleared: true, result: procureResult, requiresReview: false, killSwitchTriggered: false };
-				}
-
-				// If decline, trigger kill switch
-				if (procureResult.recommendedAction === "REJECT") {
-					// Execute kill switch
-					await executeKillSwitch({
-						workflowId,
-						applicantId,
-						reason: "PROCUREMENT_DENIED",
-						decidedBy: "system_auto",
-						notes: `Auto-rejected: Risk score ${procureResult.riskScore}, Anomalies: ${procureResult.anomalies.join(", ")}`,
-					});
-					return { cleared: false, reason: "Auto-rejected by procurement check", killSwitchTriggered: true, requiresReview: false };
-				}
-
-				// Manual review required - notify Risk Manager
+				// Per SOP: procurement review gate is ALWAYS manual (Risk Manager)
+				// regardless of ProcureCheck auto recommendation
 				await createWorkflowNotification({
 					workflowId,
 					applicantId,
 					type: "warning",
 					title: "Procurement Review Required",
-					message: `Risk score: ${procureResult.riskScore}. Anomalies: ${procureResult.anomalies.join(", ")}`,
+					message: `ProcureCheck score: ${procureResult.riskScore}. Action: ${procureResult.recommendedAction}. Anomalies: ${procureResult.anomalies.join(", ") || "None"}`,
 					actionable: true,
 				});
 
 				await sendInternalAlertEmail({
-					title: "🔍 Procurement Review Required",
-					message: `Applicant requires procurement review.\nRisk Score: ${procureResult.riskScore}\nAnomalies: ${procureResult.anomalies.join(", ")}`,
+					title: "Procurement Review Required",
+					message: `Applicant requires Risk Manager procurement review.\nRisk Score: ${procureResult.riskScore}\nRecommended: ${procureResult.recommendedAction}\nAnomalies: ${procureResult.anomalies.join(", ") || "None"}`,
 					workflowId,
 					applicantId,
 					type: "warning",
 					actionUrl: `${getBaseUrl()}/dashboard/risk-review`,
 				});
 
+				// Always require manual review per SOP
 				return { cleared: false, result: procureResult, requiresReview: true, killSwitchTriggered: false };
 			} catch (error) {
 				console.error("[ControlTower] Procurement check error:", error);
@@ -503,103 +676,29 @@ export const controlTowerWorkflow = inngest.createFunction(
 		});
 
 		// ================================================================
-		// PARALLEL STREAM B: Document Collection
+		// PARALLEL STREAM B: FICA Document Collection & AI Analysis
 		// ================================================================
 
-		const documentStream = step.run("stream-b-documents", async () => {
-			// Check kill switch first
+		const documentStream = step.run("stream-b-fica-and-ai", async () => {
 			const terminated = await isWorkflowTerminated(workflowId);
 			if (terminated) {
 				return { requested: false, reason: "Workflow terminated" };
 			}
 
-			const db = getDatabaseClient();
-			if (!db) throw new Error("Database connection failed");
-
-			const [applicant] = await db
-				.select()
-				.from(applicants)
-				.where(eq(applicants.id, applicantId));
-
-			if (!applicant) throw new Error(`Applicant ${applicantId} not found`);
-
-			// Build conditional links based on entityType, productType, and context
-			const links: Array<{ formType: string; url: string }> = [];
-
-			// Always: DOCUMENT_UPLOADS with conditional docs rendered by the page
-			const uploadToken = await createFormInstance({
-				applicantId,
-				workflowId,
-				formType: "DOCUMENT_UPLOADS" as FormType,
-			});
-			links.push({
-				formType: "DOCUMENT_UPLOADS",
-				url: `${getBaseUrl()}/uploads/${uploadToken.token}`,
-			});
-
-			// If business needs accountant letter (all business types except call_centre-only)
-			if (applicant.productType !== "call_centre") {
-				const accountantToken = await createFormInstance({
-					applicantId,
-					workflowId,
-					formType: "ACCOUNTANT_LETTER" as FormType,
-				});
-				links.push({
-					formType: "ACCOUNTANT_LETTER",
-					url: `${getBaseUrl()}/forms/${accountantToken.token}`,
-				});
-			}
-
-			// If call centre product type
-			if (applicant.productType === "call_centre") {
-				const callCentreToken = await createFormInstance({
-					applicantId,
-					workflowId,
-					formType: "CALL_CENTRE_APPLICATION" as FormType,
-				});
-				links.push({
-					formType: "CALL_CENTRE_APPLICATION",
-					url: `${getBaseUrl()}/forms/${callCentreToken.token}`,
-				});
-			}
-
-			// Send all applicable links in a single email
-			await sendApplicantFormLinksEmail({
-				email: applicant.email,
-				contactName: applicant.contactName,
-				links,
-			});
-
 			await createWorkflowNotification({
 				workflowId,
 				applicantId,
 				type: "awaiting",
-				title: "Documents Required",
-				message: `Please upload required documents for ${mandateInfo.businessType} application`,
+				title: "FICA Documents Required",
+				message: "Please upload bank statements and accountant letter for AI verification",
 				actionable: true,
 			});
 
-			// Send Inngest event
-			await inngest.send({
-				name: "document/conditional-request.sent",
-				data: {
-					workflowId,
-					applicantId,
-					businessType: mandateInfo.businessType,
-					documentsRequested: mandateInfo.requiredDocuments.map(d => d.id),
-					sentAt: new Date().toISOString(),
-				},
-			});
-
-			return {
-				requested: true,
-				documentCount: mandateInfo.requiredDocuments.length,
-				linksCount: links.length,
-			};
+			return { requested: true };
 		});
 
 		// Execute both streams in parallel
-		const [procurementResult, documentResult] = await Promise.all([
+		const [procurementResult, _documentResult] = await Promise.all([
 			procurementStream,
 			documentStream,
 		]);
@@ -608,14 +707,14 @@ export const controlTowerWorkflow = inngest.createFunction(
 		if (procurementResult.killSwitchTriggered) {
 			return {
 				status: "terminated",
-				phase: 3,
+				stage: 3,
 				reason: "Procurement check triggered kill switch",
 			};
 		}
 
-		// If procurement requires review, wait for Risk Manager decision
+		// Procurement always requires manual review per SOP
 		if (procurementResult.requiresReview) {
-			await step.run("phase-3-awaiting-procurement-review", () =>
+			await step.run("stage-3-awaiting-procurement-review", () =>
 				updateWorkflowStatus(workflowId, "awaiting_human", 3)
 			);
 
@@ -626,7 +725,6 @@ export const controlTowerWorkflow = inngest.createFunction(
 			});
 
 			if (!procurementDecision) {
-				// Timeout - default to deny for safety
 				await executeKillSwitch({
 					workflowId,
 					applicantId,
@@ -634,55 +732,15 @@ export const controlTowerWorkflow = inngest.createFunction(
 					decidedBy: "system_timeout",
 					notes: "Procurement review timed out after 7 days",
 				});
-				return { status: "terminated", phase: 3, reason: "Procurement review timeout" };
+				return { status: "terminated", stage: 3, reason: "Procurement review timeout" };
 			}
 
-			// Check decision
 			if (procurementDecision.data.decision.outcome === "DENIED") {
-				// Kill switch already triggered by the API endpoint
-				return { status: "terminated", phase: 3, reason: "Procurement denied by Risk Manager" };
+				return { status: "terminated", stage: 3, reason: "Procurement denied by Risk Manager" };
 			}
 
 			context.procurementCleared = true;
-		} else {
-			context.procurementCleared = procurementResult.cleared;
 		}
-
-		// Wait for documents (parallel with procurement review above if applicable)
-		const mandateDocsReceived = await step.waitForEvent("wait-mandate-docs", {
-			event: "document/mandate.submitted",
-			timeout: STAGE_TIMEOUT,
-			match: "data.workflowId",
-		});
-
-		if (!mandateDocsReceived) {
-			return { status: "timeout", phase: 3, reason: "Document upload timeout" };
-		}
-
-		context.documentsComplete = true;
-
-		// ================================================================
-		// PHASE 4: AI Analysis & Risk Review
-		// ================================================================
-
-		await step.run("phase-4-start", async () => {
-			await guardKillSwitch(workflowId, "phase-4-start");
-			return updateWorkflowStatus(workflowId, "processing", 4);
-		});
-
-		// Request FICA documents for AI analysis
-		await step.run("request-fica-docs", async () => {
-			await guardKillSwitch(workflowId, "request-fica-docs");
-
-			await createWorkflowNotification({
-				workflowId,
-				applicantId,
-				type: "awaiting",
-				title: "FICA Documents Required",
-				message: "Please upload bank statements and accountant letter for verification",
-				actionable: true,
-			});
-		});
 
 		// Wait for FICA documents
 		const ficaDocsReceived = await step.waitForEvent("wait-fica-docs", {
@@ -692,10 +750,10 @@ export const controlTowerWorkflow = inngest.createFunction(
 		});
 
 		if (!ficaDocsReceived) {
-			return { status: "timeout", phase: 4, reason: "FICA document upload timeout" };
+			return { status: "timeout", stage: 3, reason: "FICA document upload timeout" };
 		}
 
-		// Run aggregated AI analysis
+		// Run aggregated AI analysis (Validation, Risk, Sanctions agents)
 		const aiAnalysis = await step.run("run-ai-analysis", async () => {
 			await guardKillSwitch(workflowId, "run-ai-analysis");
 
@@ -717,7 +775,7 @@ export const controlTowerWorkflow = inngest.createFunction(
 				requestedAmount: context.mandateVolume,
 			});
 
-			// Send Inngest event
+			// Emit aggregated analysis event
 			await inngest.send({
 				name: "agent/analysis.aggregated",
 				data: {
@@ -729,6 +787,30 @@ export const controlTowerWorkflow = inngest.createFunction(
 					isBlocked: result.overall.isBlocked,
 					recommendation: result.overall.recommendation,
 					flags: result.overall.flags,
+				},
+			});
+
+			// Emit Reporter Agent consolidated report
+			await inngest.send({
+				name: "reporter/analysis.completed",
+				data: {
+					workflowId,
+					applicantId,
+					report: {
+						validationSummary: result.agents.validation || {},
+						riskSummary: result.agents.risk || {},
+						sanctionsSummary: result.agents.sanctions || {},
+						overallRecommendation: result.overall.recommendation === "AUTO_APPROVE"
+							? "APPROVE"
+							: result.overall.recommendation === "BLOCK"
+								? "DECLINE"
+								: result.overall.recommendation === "MANUAL_REVIEW"
+									? "MANUAL_REVIEW"
+									: "CONDITIONAL_APPROVE",
+						aggregatedScore: result.scores.aggregatedScore,
+						flags: result.overall.flags,
+					},
+					completedAt: new Date().toISOString(),
 				},
 			});
 
@@ -746,76 +828,67 @@ export const controlTowerWorkflow = inngest.createFunction(
 				decidedBy: "ai_sanctions_agent",
 				notes: `Blocked by sanctions check: ${aiAnalysis.overall.reasoning}`,
 			});
-			return { status: "terminated", phase: 4, reason: "Blocked by sanctions screening" };
+			return { status: "terminated", stage: 3, reason: "Blocked by sanctions screening" };
 		}
 
-		// Determine if auto-approve or manual review
-		let finalRiskApproval: { approved: boolean; decidedBy: string; reason?: string };
+		// ================================================================
+		// STAGE 4: Risk Review
+		// Risk Manager final analysis review (NO auto-approve bypass per SOP)
+		// ================================================================
 
-		if (aiAnalysis.overall.canAutoApprove) {
-			finalRiskApproval = {
-				approved: true,
-				decidedBy: "ai_auto_approval",
-				reason: `Auto-approved: Aggregated score ${aiAnalysis.scores.aggregatedScore}%`,
-			};
-		} else {
-			// Manual review required
-			await step.run("notify-final-review", async () => {
-				await createWorkflowNotification({
-					workflowId,
-					applicantId,
-					type: "warning",
-					title: "Final Risk Review Required",
-					message: `Aggregated score: ${aiAnalysis.scores.aggregatedScore}%. Flags: ${aiAnalysis.overall.flags.join(", ")}`,
-					actionable: true,
-				});
+		await step.run("stage-4-start", async () => {
+			await guardKillSwitch(workflowId, "stage-4-start");
+			return updateWorkflowStatus(workflowId, "processing", 4);
+		});
 
-				await sendInternalAlertEmail({
-					title: "📋 Final Risk Review Required",
-					message: `Application requires final review.\nAggregated Score: ${aiAnalysis.scores.aggregatedScore}%\nRecommendation: ${aiAnalysis.overall.recommendation}\nFlags: ${aiAnalysis.overall.flags.join(", ")}`,
-					workflowId,
-					applicantId,
-					type: "warning",
-					actionUrl: `${getBaseUrl()}/dashboard/risk-review`,
-				});
+		// Always require Risk Manager review per SOP (no auto-approve)
+		await step.run("notify-final-review", async () => {
+			await createWorkflowNotification({
+				workflowId,
+				applicantId,
+				type: "warning",
+				title: "Risk Manager Review Required",
+				message: `Aggregated AI score: ${aiAnalysis.scores.aggregatedScore}%. Recommendation: ${aiAnalysis.overall.recommendation}. Flags: ${aiAnalysis.overall.flags.join(", ") || "None"}`,
+				actionable: true,
 			});
 
-			await step.run("phase-4-awaiting-review", () =>
-				updateWorkflowStatus(workflowId, "awaiting_human", 4)
-			);
-
-			const riskDecision = await step.waitForEvent("wait-risk-decision", {
-				event: "risk/decision.received",
-				timeout: REVIEW_TIMEOUT,
-				match: "data.workflowId",
+			await sendInternalAlertEmail({
+				title: "Risk Manager Review Required",
+				message: `Application requires Risk Manager final review.\nAggregated Score: ${aiAnalysis.scores.aggregatedScore}%\nRecommendation: ${aiAnalysis.overall.recommendation}\nFlags: ${aiAnalysis.overall.flags.join(", ") || "None"}`,
+				workflowId,
+				applicantId,
+				type: "warning",
+				actionUrl: `${getBaseUrl()}/dashboard/risk-review`,
 			});
+		});
 
-			if (!riskDecision) {
-				return { status: "timeout", phase: 4, reason: "Final risk review timeout" };
-			}
+		await step.run("stage-4-awaiting-review", () =>
+			updateWorkflowStatus(workflowId, "awaiting_human", 4)
+		);
 
-			if (riskDecision.data.decision.outcome === "REJECTED") {
-				await executeKillSwitch({
-					workflowId,
-					applicantId,
-					reason: "MANUAL_TERMINATION",
-					decidedBy: riskDecision.data.decision.decidedBy,
-					notes: riskDecision.data.decision.reason,
-				});
-				return { status: "terminated", phase: 4, reason: "Rejected by Risk Manager" };
-			}
+		const riskDecision = await step.waitForEvent("wait-risk-decision", {
+			event: "risk/decision.received",
+			timeout: REVIEW_TIMEOUT,
+			match: "data.workflowId",
+		});
 
-			finalRiskApproval = {
-				approved: riskDecision.data.decision.outcome === "APPROVED",
+		if (!riskDecision) {
+			return { status: "timeout", stage: 4, reason: "Risk review timeout" };
+		}
+
+		if (riskDecision.data.decision.outcome === "REJECTED") {
+			await executeKillSwitch({
+				workflowId,
+				applicantId,
+				reason: "MANUAL_TERMINATION",
 				decidedBy: riskDecision.data.decision.decidedBy,
-				reason: riskDecision.data.decision.reason,
-			};
+				notes: riskDecision.data.decision.reason,
+			});
+			return { status: "terminated", stage: 4, reason: "Rejected by Risk Manager" };
 		}
 
 		// ================================================================
 		// HIGH-RISK: Financial Statements Confirmation
-		// If applicant is high-risk (red), the risk manager must confirm
-		// that financial statements were sent and received before proceeding.
 		// ================================================================
 
 		const isHighRisk = await step.run("check-high-risk", async () => {
@@ -841,7 +914,7 @@ export const controlTowerWorkflow = inngest.createFunction(
 				});
 
 				await sendInternalAlertEmail({
-					title: "🔴 High-Risk: Financial Statements Required",
+					title: "High-Risk: Financial Statements Required",
 					message:
 						"High-risk applicant requires financial statements confirmation before proceeding to contract phase.",
 					workflowId,
@@ -851,7 +924,7 @@ export const controlTowerWorkflow = inngest.createFunction(
 				});
 			});
 
-			await step.run("phase-4-awaiting-financial-statements", () =>
+			await step.run("stage-4-awaiting-financial-statements", () =>
 				updateWorkflowStatus(workflowId, "awaiting_human", 4)
 			);
 
@@ -867,7 +940,7 @@ export const controlTowerWorkflow = inngest.createFunction(
 			if (!financialStatementsConfirmed) {
 				return {
 					status: "timeout",
-					phase: 4,
+					stage: 4,
 					reason: "Financial statements confirmation timeout (high-risk)",
 				};
 			}
@@ -885,15 +958,52 @@ export const controlTowerWorkflow = inngest.createFunction(
 		}
 
 		// ================================================================
-		// PHASE 5: Contract & Final Execution
+		// STAGE 5: Contract
+		// Account Manager review/edit AI contract → Send contract + ABSA form
 		// ================================================================
 
-		await step.run("phase-5-start", async () => {
-			await guardKillSwitch(workflowId, "phase-5-start");
+		await step.run("stage-5-start", async () => {
+			await guardKillSwitch(workflowId, "stage-5-start");
 			return updateWorkflowStatus(workflowId, "processing", 5);
 		});
 
-		// Send contract and ABSA form
+		// Step 5.1: Notify Account Manager to review/edit contract draft
+		await step.run("notify-contract-review", async () => {
+			await createWorkflowNotification({
+				workflowId,
+				applicantId,
+				type: "awaiting",
+				title: "Contract Draft Ready for Review",
+				message: "Please review and edit the AI-generated contract before sending to client.",
+				actionable: true,
+			});
+
+			await sendInternalAlertEmail({
+				title: "Contract Draft Ready for Review",
+				message: "AI-generated contract is ready for Account Manager review and editing before sending to client.",
+				workflowId,
+				applicantId,
+				type: "info",
+				actionUrl: `${getBaseUrl()}/dashboard/applicants/${applicantId}?tab=overview`,
+			});
+		});
+
+		await step.run("stage-5-awaiting-contract-review", () =>
+			updateWorkflowStatus(workflowId, "awaiting_human", 5)
+		);
+
+		// Wait for Account Manager to review/edit the contract draft
+		const contractReviewed = await step.waitForEvent("wait-contract-reviewed", {
+			event: "contract/draft.reviewed",
+			timeout: REVIEW_TIMEOUT,
+			match: "data.workflowId",
+		});
+
+		if (!contractReviewed) {
+			return { status: "timeout", stage: 5, reason: "Contract review timeout" };
+		}
+
+		// Step 5.2: Send contract and ABSA form to client
 		await step.run("send-final-docs", async () => {
 			await guardKillSwitch(workflowId, "send-final-docs");
 
@@ -932,13 +1042,13 @@ export const controlTowerWorkflow = inngest.createFunction(
 				workflowId,
 				applicantId,
 				type: "awaiting",
-				title: "Final Documents Sent",
+				title: "Contract & ABSA Form Sent",
 				message: "Please sign the contract and complete the ABSA bank form",
 				actionable: false,
 			});
 		});
 
-		await step.run("phase-5-awaiting-docs", () =>
+		await step.run("stage-5-awaiting-docs", () =>
 			updateWorkflowStatus(workflowId, "awaiting_human", 5)
 		);
 
@@ -950,44 +1060,164 @@ export const controlTowerWorkflow = inngest.createFunction(
 		});
 
 		if (!contractSigned) {
-			return { status: "timeout", phase: 5, reason: "Contract signature timeout" };
+			return { status: "timeout", stage: 5, reason: "Contract signature timeout" };
 		}
 
-		// Final approval checkpoint
-		await step.run("notify-final-approval", async () => {
-			await createWorkflowNotification({
-				workflowId,
-				applicantId,
-				type: "awaiting",
-				title: "Ready for Final Approval",
-				message: "All documents received. Click approve to complete onboarding.",
-				actionable: true,
-			});
-		});
-
-		const finalApproval = await step.waitForEvent("wait-final-approval", {
-			event: "onboarding/final-approval.received",
+		// Wait for ABSA 6995 form completion
+		const absaCompleted = await step.waitForEvent("wait-absa-completed", {
+			event: "form/absa-6995.completed",
 			timeout: REVIEW_TIMEOUT,
 			match: "data.workflowId",
 		});
 
-		if (!finalApproval) {
-			return { status: "timeout", phase: 5, reason: "Final approval timeout" };
+		if (!absaCompleted) {
+			return { status: "timeout", stage: 5, reason: "ABSA 6995 form timeout" };
 		}
+
+		// ================================================================
+		// STAGE 6: Final Approval (Two-Factor)
+		// Risk Manager + Account Manager must both approve
+		// ================================================================
+
+		await step.run("stage-6-start", async () => {
+			await guardKillSwitch(workflowId, "stage-6-start");
+			return updateWorkflowStatus(workflowId, "processing", 6);
+		});
+
+		await step.run("notify-two-factor-approval", async () => {
+			await createWorkflowNotification({
+				workflowId,
+				applicantId,
+				type: "awaiting",
+				title: "Two-Factor Final Approval Required",
+				message: "Both Risk Manager and Account Manager must approve to complete onboarding.",
+				actionable: true,
+			});
+
+			await sendInternalAlertEmail({
+				title: "Two-Factor Final Approval Required",
+				message: "Application is ready for final approval. Both Risk Manager and Account Manager must approve.",
+				workflowId,
+				applicantId,
+				type: "info",
+				actionUrl: `${getBaseUrl()}/dashboard/applicants/${applicantId}`,
+			});
+		});
+
+		await step.run("stage-6-awaiting-approvals", () =>
+			updateWorkflowStatus(workflowId, "awaiting_human", 6)
+		);
+
+		// Wait for both approvals (can arrive in any order)
+		const riskManagerApproval = await step.waitForEvent("wait-risk-manager-approval", {
+			event: "approval/risk-manager.received",
+			timeout: REVIEW_TIMEOUT,
+			match: "data.workflowId",
+		});
+
+		if (!riskManagerApproval) {
+			return { status: "timeout", stage: 6, reason: "Risk Manager approval timeout" };
+		}
+
+		if (riskManagerApproval.data.decision === "REJECTED") {
+			await executeKillSwitch({
+				workflowId,
+				applicantId,
+				reason: "MANUAL_TERMINATION",
+				decidedBy: riskManagerApproval.data.approvedBy,
+				notes: riskManagerApproval.data.reason || "Rejected at final approval by Risk Manager",
+			});
+			return { status: "terminated", stage: 6, reason: "Rejected by Risk Manager at final approval" };
+		}
+
+		// Persist Risk Manager approval
+		await step.run("persist-rm-approval", async () => {
+			const db = getDatabaseClient();
+			if (!db) return;
+			await db
+				.update(workflows)
+				.set({
+					riskManagerApproval: JSON.stringify({
+						approvedBy: riskManagerApproval.data.approvedBy,
+						timestamp: riskManagerApproval.data.timestamp,
+						decision: riskManagerApproval.data.decision,
+					}),
+				})
+				.where(eq(workflows.id, workflowId));
+		});
+
+		const accountManagerApproval = await step.waitForEvent("wait-account-manager-approval", {
+			event: "approval/account-manager.received",
+			timeout: REVIEW_TIMEOUT,
+			match: "data.workflowId",
+		});
+
+		if (!accountManagerApproval) {
+			return { status: "timeout", stage: 6, reason: "Account Manager approval timeout" };
+		}
+
+		if (accountManagerApproval.data.decision === "REJECTED") {
+			await executeKillSwitch({
+				workflowId,
+				applicantId,
+				reason: "MANUAL_TERMINATION",
+				decidedBy: accountManagerApproval.data.approvedBy,
+				notes: accountManagerApproval.data.reason || "Rejected at final approval by Account Manager",
+			});
+			return { status: "terminated", stage: 6, reason: "Rejected by Account Manager at final approval" };
+		}
+
+		// Persist Account Manager approval
+		await step.run("persist-am-approval", async () => {
+			const db = getDatabaseClient();
+			if (!db) return;
+			await db
+				.update(workflows)
+				.set({
+					accountManagerApproval: JSON.stringify({
+						approvedBy: accountManagerApproval.data.approvedBy,
+						timestamp: accountManagerApproval.data.timestamp,
+						decision: accountManagerApproval.data.decision,
+					}),
+				})
+				.where(eq(workflows.id, workflowId));
+		});
+
+		// Emit final approval event (two-factor complete)
+		await step.run("emit-final-approval", async () => {
+			await inngest.send({
+				name: "onboarding/final-approval.received",
+				data: {
+					workflowId,
+					applicantId,
+					riskManagerApproval: {
+						approvedBy: riskManagerApproval.data.approvedBy,
+						timestamp: riskManagerApproval.data.timestamp,
+					},
+					accountManagerApproval: {
+						approvedBy: accountManagerApproval.data.approvedBy,
+						timestamp: accountManagerApproval.data.timestamp,
+					},
+					contractSigned: true,
+					absaFormComplete: true,
+					timestamp: new Date().toISOString(),
+				},
+			});
+		});
 
 		// ================================================================
 		// COMPLETION
 		// ================================================================
 
 		await step.run("workflow-complete", async () => {
-			await updateWorkflowStatus(workflowId, "completed", 5);
+			await updateWorkflowStatus(workflowId, "completed", 6);
 
 			await createWorkflowNotification({
 				workflowId,
 				applicantId,
 				type: "success",
 				title: "Onboarding Complete",
-				message: "Client onboarding has been successfully completed.",
+				message: "Client onboarding has been successfully completed with two-factor approval.",
 				actionable: false,
 			});
 
@@ -996,7 +1226,8 @@ export const controlTowerWorkflow = inngest.createFunction(
 				eventType: "workflow_completed",
 				payload: {
 					completedAt: new Date().toISOString(),
-					approvedBy: finalApproval.data.approvedBy,
+					riskManagerApproval: riskManagerApproval.data.approvedBy,
+					accountManagerApproval: accountManagerApproval.data.approvedBy,
 					businessType: context.businessType,
 					aiScore: aiAnalysis.scores.aggregatedScore,
 				},
@@ -1005,12 +1236,13 @@ export const controlTowerWorkflow = inngest.createFunction(
 
 		return {
 			status: "completed",
-			phase: 5,
+			stage: 6,
 			workflowId,
 			applicantId,
 			businessType: context.businessType,
 			aiScore: aiAnalysis.scores.aggregatedScore,
-			approvedBy: finalApproval.data.approvedBy,
+			riskManagerApproval: riskManagerApproval.data.approvedBy,
+			accountManagerApproval: accountManagerApproval.data.approvedBy,
 		};
 	}
 );

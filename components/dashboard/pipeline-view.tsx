@@ -47,52 +47,52 @@ export type PipelineWorkflow = {
  */
 const PIPELINE_STAGES = [
 	{
-		id: "entry_quote",
+		id: "quote_review",
 		stageNumber: 1,
-		title: "Entry & Quote",
+		title: "Quote & Review",
 		color: "bg-blue-500/5 border-blue-500/70",
 		icon: RiMoneyDollarCircleLine,
-		shortTitle: "Entry",
+		shortTitle: "Quote",
 	},
 	{
-		id: "quote_signing",
+		id: "mandate_collection",
 		stageNumber: 2,
-		title: "Quote Signing",
+		title: "Mandate Collection",
 		color: "bg-indigo-500/5 border-indigo-500/70",
 		icon: RiEditLine,
-		shortTitle: "Signing",
+		shortTitle: "Mandates",
 	},
 	{
-		id: "mandate_processing",
+		id: "procurement_ai",
 		stageNumber: 3,
-		title: "Mandate Processing",
+		title: "Procurement & AI",
 		color: "bg-chart-4/5 border-chart-4/70",
 		icon: RiFileTextLine,
-		shortTitle: "Mandate",
+		shortTitle: "Parallel",
 	},
 	{
-		id: "ai_analysis",
+		id: "risk_review",
 		stageNumber: 4,
-		title: "AI Analysis",
+		title: "Risk Review",
 		color: "bg-primary/5 border-primary/70",
 		icon: RiRobot2Line,
-		shortTitle: "Analysis",
+		shortTitle: "Review",
 	},
 	{
-		id: "contract_forms",
+		id: "contract",
 		stageNumber: 5,
-		title: "Contract & Forms",
+		title: "Contract",
 		color: "bg-red-500/5 border-red-500/70",
 		icon: RiContractLine,
 		shortTitle: "Contract",
 	},
 	{
-		id: "completion",
+		id: "final_approval",
 		stageNumber: 6,
-		title: "Completion",
+		title: "Final Approval",
 		color: "bg-emerald-500/5 border-emerald-500/70",
 		icon: RiCheckboxCircleLine,
-		shortTitle: "Complete",
+		shortTitle: "Approval",
 	},
 ];
 
@@ -114,36 +114,38 @@ export function PipelineView({ workflows }: { workflows: PipelineWorkflow[] }) {
 					// Legacy string-based stage matching for backwards compatibility
 					const stageString = String(stageValue).toLowerCase();
 					switch (stage.id) {
-						case "entry_quote":
-							return ["new", "contacted", "qualified", "lead_capture", "entry"].includes(
+						case "quote_review":
+							return ["new", "contacted", "qualified", "lead_capture", "entry", "entry_quote", "quote"].includes(
 								stageString
 							);
-						case "quote_signing":
-							return ["proposal", "quotation", "quote_signing", "signing"].includes(
+						case "mandate_collection":
+							return ["proposal", "quotation", "quote_signing", "signing", "mandate", "mandate_processing", "mandate_collection"].includes(
 								stageString
 							);
-						case "mandate_processing":
+						case "procurement_ai":
 							return [
 								"negotiation",
-								"mandate",
-								"mandate_processing",
 								"verification",
+								"procurement",
+								"ai_analysis",
+								"procurement_ai",
 							].includes(stageString);
-						case "ai_analysis":
-							return ["review", "fica_review", "ai_analysis", "analysis"].includes(
+						case "risk_review":
+							return ["review", "fica_review", "risk_review", "analysis"].includes(
 								stageString
 							);
-						case "contract_forms":
+						case "contract":
 							return ["contract", "contract_forms", "absa_form", "forms"].includes(
 								stageString
 							);
-						case "completion":
+						case "final_approval":
 							return [
 								"won",
 								"activation",
 								"completed",
 								"integration",
 								"completion",
+								"final_approval",
 							].includes(stageString);
 						default:
 							return false;

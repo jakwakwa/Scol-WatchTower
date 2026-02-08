@@ -23,6 +23,7 @@ import {
 } from "@/db/schema";
 import { inngest } from "@/inngest/client";
 import { sendInternalAlertEmail } from "./email.service";
+import { escalateToManagement } from "./notification.service";
 
 // ============================================
 // Types
@@ -154,6 +155,15 @@ export async function executeKillSwitch(
 			applicantId,
 			type: "error",
 			actionUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/workflows/${workflowId}`,
+		});
+
+		// Step 7: Escalate to management (SOP requirement)
+		await escalateToManagement({
+			workflowId,
+			applicantId,
+			reason: `Kill switch activated: ${getReasonMessage(reason)}${notes ? ` — ${notes}` : ""}`,
+			escalationType: reason === "COMPLIANCE_VIOLATION" ? "compliance" : "kill_switch",
+			severity: reason === "COMPLIANCE_VIOLATION" || reason === "FRAUD_DETECTED" ? "critical" : "warning",
 		});
 
 		console.log(

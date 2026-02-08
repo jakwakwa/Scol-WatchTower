@@ -1,88 +1,15 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { getDatabaseClient } from "@/app/utils";
-import { workflows, applicants, workflowEvents } from "@/db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { workflows, applicants, riskAssessments } from "@/db/schema";
+import { eq, and, or, desc } from "drizzle-orm";
 import { auth } from "@clerk/nextjs/server";
 
 /**
- * Generate fallback explanation for existing workflows without stored reasoning
- */
-function generateFallbackExplanation(
-	aiTrustScore: number | undefined,
-	riskFlagsCount: number,
-	itcScore: number | undefined,
-	nameMatchVerified: boolean | undefined
-): string | undefined {
-	if (!aiTrustScore) return undefined;
-
-	const factors: string[] = [];
-
-	// Score-based explanation
-	if (aiTrustScore >= 80) {
-		factors.push(
-			"The AI trust score is high, indicating strong financial health patterns"
-		);
-	} else if (aiTrustScore >= 60) {
-		factors.push(
-			"The AI trust score is moderate, suggesting some areas require attention"
-		);
-	} else {
-		factors.push(
-			"The AI trust score is below threshold, indicating potential risk factors"
-		);
-	}
-
-	// Risk flags
-	if (riskFlagsCount > 0) {
-		factors.push(
-			`${riskFlagsCount} risk flag${riskFlagsCount > 1 ? "s were" : " was"} detected during document analysis`
-		);
-	} else {
-		factors.push("No significant risk flags were detected");
-	}
-
-	// ITC score
-	if (itcScore) {
-		if (itcScore >= 350) {
-			factors.push("The ITC credit score is in the favorable range");
-		} else if (itcScore >= 200) {
-			factors.push("The ITC credit score requires additional verification");
-		} else {
-			factors.push("The ITC credit score is a concern");
-		}
-	}
-
-	// Name verification
-	if (nameMatchVerified === false) {
-		factors.push("Account holder name verification failed");
-	} else if (nameMatchVerified === true) {
-		factors.push("Account holder details match the application");
-	}
-
-	return factors.join(". ") + ".";
-}
-
-/**
- * Generate fallback summary for existing workflows
- */
-function generateFallbackSummary(
-	aiTrustScore: number | undefined,
-	riskFlagsCount: number
-): string | undefined {
-	if (!aiTrustScore) return undefined;
-
-	if (aiTrustScore >= 80 && riskFlagsCount === 0) {
-		return "Bank statement analysis shows healthy financial patterns with no concerning activity.";
-	} else if (aiTrustScore >= 60) {
-		return "Bank statement analysis shows generally acceptable patterns. Manual verification recommended.";
-	} else {
-		return "Bank statement analysis revealed concerning patterns that require careful review.";
-	}
-}
-
-/**
  * GET /api/risk-review
- * Fetches all workflows awaiting risk review (stage 3, status awaiting_human)
+ *
+ * Fetches all workflows awaiting risk review.
+ * SOP-aligned: Stage 3 (procurement review) and Stage 4 (risk manager final review).
+ * Uses the Reporter Agent output stored in risk_assessments.ai_analysis.
  */
 export async function GET(request: NextRequest) {
 	try {
@@ -96,7 +23,7 @@ export async function GET(request: NextRequest) {
 			return NextResponse.json({ error: "Database connection failed" }, { status: 500 });
 		}
 
-		// Fetch workflows awaiting risk review (stage 3, status awaiting_human)
+		// Fetch workflows awaiting human review at Stage 3 or Stage 4
 		const riskReviewWorkflows = await db
 			.select({
 				workflowId: workflows.id,
@@ -108,71 +35,55 @@ export async function GET(request: NextRequest) {
 				companyName: applicants.companyName,
 				contactName: applicants.contactName,
 				itcScore: applicants.itcScore,
+				riskLevel: applicants.riskLevel,
 			})
 			.from(workflows)
 			.leftJoin(applicants, eq(workflows.applicantId, applicants.id))
-			.where(and(eq(workflows.status, "awaiting_human"), eq(workflows.stage, 3)));
+			.where(
+				and(
+					eq(workflows.status, "awaiting_human"),
+					or(eq(workflows.stage, 3), eq(workflows.stage, 4))
+				)
+			);
 
-		// For each workflow, fetch the FICA analysis event to get AI analysis data
+		// For each workflow, fetch the Reporter Agent output from risk_assessments
 		const itemsWithAnalysis = await Promise.all(
 			riskReviewWorkflows.map(async workflow => {
-				// Fetch FICA analysis event from workflow_events
-				const analysisEvents = await db
+				// Fetch risk assessment (contains Reporter Agent / aggregated AI output)
+				const assessments = await db
 					.select()
-					.from(workflowEvents)
-					.where(
-						and(
-							eq(workflowEvents.workflowId, workflow.workflowId),
-							eq(workflowEvents.eventType, "stage_change")
-						)
-					)
-					.orderBy(desc(workflowEvents.timestamp));
+					.from(riskAssessments)
+					.where(eq(riskAssessments.applicantId, workflow.applicantId));
 
-				// Find the FICA verification event
-				let aiTrustScore: number | undefined;
-				let riskFlags: Array<{
-					type: string;
-					severity: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
-					description: string;
-					evidence?: string;
-				}> = [];
-				let summary: string | undefined;
-				let reasoning: string | undefined;
-				let recommendation: string | undefined;
-				let nameMatchVerified: boolean | undefined;
-				let accountMatchVerified: boolean | undefined;
-				let analysisConfidence: number | undefined;
+				const assessment = assessments[0];
+				let aiAnalysis: Record<string, unknown> | null = null;
 
-				for (const event of analysisEvents) {
-					if (event.payload) {
-						try {
-							const payload = JSON.parse(event.payload);
-							if (payload.step === "ai-fica-verification") {
-								aiTrustScore = payload.aiTrustScore;
-								riskFlags = payload.riskFlags || [];
-								summary = payload.summary;
-								reasoning = payload.reasoning;
-								recommendation = payload.recommendation;
-								nameMatchVerified = payload.nameMatchVerified;
-								accountMatchVerified = payload.accountMatchVerified;
-								analysisConfidence = payload.analysisConfidence;
-								break;
-							}
-						} catch {
-							// Ignore parsing errors
-						}
+				if (assessment?.aiAnalysis) {
+					try {
+						aiAnalysis = JSON.parse(assessment.aiAnalysis);
+					} catch {
+						// Ignore parsing errors
 					}
 				}
 
-				// Generate fallback explanation if reasoning not stored (for existing workflows)
-				const generatedReasoning =
-					reasoning ||
-					generateFallbackExplanation(
-						aiTrustScore,
-						riskFlags.length,
-						workflow.itcScore || undefined,
-						nameMatchVerified
-					);
+				// Extract fields from Reporter Agent output
+				const aggregatedScore = (aiAnalysis?.scores as Record<string, number>)?.aggregatedScore;
+				const recommendation = aiAnalysis?.recommendation as string | undefined;
+				const flags = aiAnalysis?.flags as string[] | undefined;
+				const sanctionsLevel = aiAnalysis?.sanctionsLevel as string | undefined;
+				const validationSummary = aiAnalysis?.validationSummary as Record<string, unknown> | undefined;
+				const riskDetails = aiAnalysis?.riskDetails as Record<string, unknown> | undefined;
+
+				// Build risk flags array from the flags field
+				const riskFlags = (flags || []).map((flag: string, idx: number) => ({
+					type: `flag_${idx}`,
+					severity: "MEDIUM" as const,
+					description: flag,
+				}));
+
+				// Map recommendation to stage-appropriate labels
+				const stageLabel = workflow.stage === 3 ? "Procurement & AI" : "Risk Review";
+				const reviewType = workflow.stage === 3 ? "procurement" : "general";
 
 				return {
 					id: workflow.workflowId,
@@ -181,29 +92,33 @@ export async function GET(request: NextRequest) {
 					clientName: workflow.contactName || "Unknown",
 					companyName: workflow.companyName || "Unknown Company",
 					stage: workflow.stage || 3,
-					stageName: "Risk Review",
+					stageName: stageLabel,
+					reviewType,
 					createdAt: workflow.startedAt
 						? new Date(workflow.startedAt).toISOString()
 						: new Date().toISOString(),
-					aiTrustScore,
+					// Reporter Agent / AI Analysis output
+					aiTrustScore: aggregatedScore,
 					riskFlags,
 					itcScore: workflow.itcScore || undefined,
-					recommendation:
-						recommendation ||
-						(aiTrustScore
-							? aiTrustScore >= 80
-								? "APPROVE"
-								: aiTrustScore >= 60
-									? "APPROVE_WITH_CONDITIONS"
-									: "MANUAL_REVIEW"
-							: undefined),
-					summary: summary || generateFallbackSummary(aiTrustScore, riskFlags.length),
-					reasoning: generatedReasoning,
-					nameMatchVerified,
-					accountMatchVerified,
-					analysisConfidence: analysisConfidence || (aiTrustScore ? 75 : undefined),
-					bankStatementVerified: true, // If they're at stage 3, bank statement was received
-					accountantLetterVerified: false,
+					riskLevel: workflow.riskLevel || assessment?.overallRisk || undefined,
+					recommendation: recommendation || undefined,
+					summary: aiAnalysis
+						? `Aggregated AI score: ${aggregatedScore ?? "N/A"}%. Recommendation: ${recommendation || "Pending"}.`
+						: undefined,
+					reasoning: aiAnalysis
+						? `Sanctions: ${sanctionsLevel || "Pending"}. Validation: ${validationSummary ? "Complete" : "Pending"}. Risk: ${riskDetails ? "Complete" : "Pending"}.`
+						: undefined,
+					// Full Reporter Agent payload for detail view
+					reporterAgentOutput: aiAnalysis,
+					// Assessment fields
+					cashFlowConsistency: assessment?.cashFlowConsistency || undefined,
+					dishonouredPayments: assessment?.dishonouredPayments || undefined,
+					averageDailyBalance: assessment?.averageDailyBalance || undefined,
+					accountMatchVerified: assessment?.accountMatchVerified || undefined,
+					letterheadVerified: assessment?.letterheadVerified || undefined,
+					overallRisk: assessment?.overallRisk || undefined,
+					reviewedBy: assessment?.reviewedBy || undefined,
 				};
 			})
 		);
