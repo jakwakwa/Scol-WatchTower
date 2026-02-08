@@ -1,34 +1,27 @@
 import {
-	RiFlowChart,
-	RiUserAddLine,
-	RiTimeLine,
-	RiCheckDoubleLine,
-	RiAddLine,
-	RiFileTextLine,
 	RiCheckboxCircleLine,
+	RiFileTextLine,
 	RiShieldCheckLine,
+	RiTimeLine,
+	RiUserAddLine,
 } from "@remixicon/react";
-import {
-	DashboardLayout,
-	DashboardGrid,
-	DashboardSection,
-	StatsCard,
-	ActivityFeed,
-} from "@/components/dashboard";
-import { PipelineView } from "@/components/dashboard/pipeline-view";
-import { Button } from "@/components/ui/button";
+import { count, desc, eq } from "drizzle-orm";
 import Link from "next/link";
 import { getDatabaseClient } from "@/app/utils";
-import { workflows, applicants, workflowEvents, notifications } from "@/db/schema";
-import { desc, eq, count } from "drizzle-orm";
-import { DynamicWorkflowTable as WorkflowTable } from "@/components/dashboard/dynamic-components";
+import { DashboardGrid, DashboardLayout, StatsCard } from "@/components/dashboard";
+import type { WorkflowNotification } from "@/components/dashboard/notifications-panel";
+import {
+	PipelineView,
+	type PipelineWorkflow,
+} from "@/components/dashboard/pipeline-view";
+import { Button } from "@/components/ui/button";
+import { applicants, notifications, quotes, workflows } from "@/db/schema";
 
 export default async function DashboardPage() {
 	const db = getDatabaseClient();
-	let activeWorkflows: any[] = [];
-	let recentActivity: any[] = [];
+	let activeWorkflows: PipelineWorkflow[] = [];
+
 	let workflowsCount = 0;
-	let applicantsCount = 0;
 
 	if (db) {
 		try {
@@ -37,86 +30,49 @@ export default async function DashboardPage() {
 				.select({
 					id: workflows.id,
 					applicantId: workflows.applicantId,
-					stage: applicants.status, // Use applicant status for pipeline view
+					stage: workflows.stage, // Use workflow stage number for pipeline view
 					status: workflows.status,
 					startedAt: workflows.startedAt,
 					metadata: workflows.metadata,
 					clientName: applicants.companyName,
+					registrationNumber: applicants.registrationNumber,
+					mandateType: applicants.mandateType,
+					riskLevel: applicants.riskLevel,
 				})
 				.from(workflows)
 				.leftJoin(applicants, eq(workflows.applicantId, applicants.id))
 				.orderBy(desc(workflows.startedAt))
-				.limit(10);
+				.limit(20);
 
-			activeWorkflows = result.map((w) => ({
-				...w,
-				// Parse metadata if it exists, otherwise use empty object
-				payload: w.metadata ? JSON.parse(w.metadata) : {},
+			// Fetch quotes to check which workflows have quotes
+			const quoteRows = await db.select({ workflowId: quotes.workflowId }).from(quotes);
+			const workflowsWithQuotes = new Set(quoteRows.map(q => q.workflowId));
+
+			activeWorkflows = result.map(w => ({
+				id: w.id,
+				applicantId: w.applicantId,
+				stage: String(w.stage || 1),
+				status: w.status || "pending",
+				clientName: w.clientName || "Unknown",
+				startedAt: w.startedAt?.toISOString(),
+				hasQuote: workflowsWithQuotes.has(w.id),
+				payload: {
+					registrationNumber: w.registrationNumber || undefined,
+					mandateType: w.mandateType || undefined,
+					riskLevel: w.riskLevel || undefined,
+					...(w.metadata ? JSON.parse(w.metadata) : {}),
+				},
 			}));
-
-			// Fetch Recent Activity
-			const activityResult = await db
-				.select({
-					id: workflowEvents.id,
-					workflowId: workflowEvents.workflowId,
-					eventType: workflowEvents.eventType,
-					timestamp: workflowEvents.timestamp,
-					actorType: workflowEvents.actorType,
-					actorId: workflowEvents.actorId,
-					clientName: applicants.companyName,
-					payload: workflowEvents.payload,
-				})
-				.from(workflowEvents)
-				.innerJoin(workflows, eq(workflowEvents.workflowId, workflows.id))
-				.innerJoin(applicants, eq(workflows.applicantId, applicants.id))
-				.orderBy(desc(workflowEvents.timestamp))
-				.limit(10);
-
-			recentActivity = activityResult.map((event) => {
-				let description = "Event occurred";
-				const payload = event.payload ? JSON.parse(event.payload) : {};
-
-				switch (event.eventType) {
-					case "stage_change":
-						description = `Workflow advanced to ${payload.toStage || "next stage"}`;
-						break;
-					case "agent_dispatch":
-						description = `Agent ${event.actorId || "platform"} dispatched`;
-						break;
-					case "agent_callback":
-						description = `Agent response received`;
-						break;
-					case "human_override":
-						description = `Manual override applied`;
-						break;
-					case "error":
-						description = `Error: ${payload.error || "Workflow error detected"}`;
-						break;
-					case "timeout":
-						description = `Workflow stage timed out`;
-						break;
-				}
-
-				return {
-					...event,
-					description,
-				};
-			});
 
 			const wfCountResult = await db.select({ count: count() }).from(workflows);
 			workflowsCount = wfCountResult[0]?.count || 0;
-
-			const applicantsCountResult = await db
-				.select({ count: count() })
-				.from(applicants);
-			applicantsCount = applicantsCountResult[0]?.count || 0;
 		} catch (error) {
 			console.error("Failed to fetch dashboard data:", error);
 		}
 	}
 
 	// Fetch notifications
-	let workflowNotifications: any[] = [];
+	let workflowNotifications: WorkflowNotification[] = [];
 	if (db) {
 		try {
 			// Change import of notifications at top first!
@@ -127,6 +83,7 @@ export default async function DashboardPage() {
 				.select({
 					id: notifications.id,
 					workflowId: notifications.workflowId,
+					applicantId: notifications.applicantId,
 					type: notifications.type,
 					message: notifications.message,
 					read: notifications.read,
@@ -139,15 +96,16 @@ export default async function DashboardPage() {
 				.orderBy(desc(notifications.createdAt))
 				.limit(20);
 
-			workflowNotifications = notificationsResult.map((n) => ({
+			workflowNotifications = notificationsResult.map(n => ({
 				id: n.id.toString(),
-				workflowId: n.workflowId,
+				workflowId: n.workflowId || 0,
+				applicantId: n.applicantId || 0,
 				clientName: n.clientName || "Unknown",
-				type: n.type as any,
+				type: (n.type as WorkflowNotification["type"]) || "awaiting",
 				message: n.message,
-				timestamp: n.createdAt,
-				read: n.read,
-				actionable: n.actionable,
+				timestamp: n.createdAt || new Date(),
+				read: n.read || false,
+				actionable: n.actionable || false,
 			}));
 		} catch (error) {
 			console.error("Failed to fetch notifications:", error);
@@ -167,8 +125,7 @@ export default async function DashboardPage() {
 					</Button>
 				</Link>
 			}
-			notifications={workflowNotifications}
-		>
+			notifications={workflowNotifications}>
 			{/* Stats Grid - StratCol Style */}
 			<DashboardGrid columns={4} className="mb-8">
 				<StatsCard
@@ -181,9 +138,8 @@ export default async function DashboardPage() {
 				<StatsCard
 					title="In Progress"
 					value={
-						activeWorkflows.filter(
-							(w) => !["won", "lost", "completed"].includes(w.stage),
-						).length
+						activeWorkflows.filter(w => !["won", "lost", "completed"].includes(w.stage))
+							.length
 					}
 					change={{ value: 5, trend: "up" }}
 					icon={RiTimeLine}
@@ -192,9 +148,7 @@ export default async function DashboardPage() {
 				<StatsCard
 					title="Completed"
 					value={
-						activeWorkflows.filter((w) =>
-							["won", "activation"].includes(w.stage),
-						).length
+						activeWorkflows.filter(w => ["won", "activation"].includes(w.stage)).length
 					}
 					change={{ value: 18, trend: "up" }}
 					icon={RiCheckboxCircleLine}

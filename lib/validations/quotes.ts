@@ -2,7 +2,7 @@ import { z } from "zod";
 
 // Helper to handle both camelCase and snake_case inputs (e.g. from agent)
 export const createQuoteSchema = z.preprocess(
-	(val) => {
+	val => {
 		if (typeof val !== "object" || val === null) return val;
 		const v = val as Record<string, unknown>;
 		return {
@@ -25,7 +25,7 @@ export const createQuoteSchema = z.preprocess(
 		details: z.string().optional(),
 		rationale: z.string().optional(),
 		generatedBy: z.enum(["platform", "gemini"]).optional(),
-	}),
+	})
 );
 
 export const quoteGenerationSchema = z.object({
@@ -46,6 +46,6 @@ export const updateQuoteSchema = z.object({
 	rationale: z.string().optional(),
 	details: z.string().optional(),
 	status: z
-		.enum(["draft", "pending_approval", "approved", "rejected"])
+		.enum(["draft", "pending_approval", "pending_signature", "approved", "rejected"])
 		.optional(),
 });

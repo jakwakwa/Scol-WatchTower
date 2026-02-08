@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
 					error: "Validation failed",
 					details: validation.error.flatten().fieldErrors,
 				},
-				{ status: 400 },
+				{ status: 400 }
 			);
 		}
 
@@ -30,9 +30,7 @@ export async function POST(request: NextRequest) {
 
 		// 2. Auth Check
 		const expectedSecret =
-			process.env.GAS_WEBHOOK_SECRET ||
-			process.env.CRON_SECRET ||
-			"temp_dev_secret";
+			process.env.GAS_WEBHOOK_SECRET || process.env.CRON_SECRET || "temp_dev_secret";
 		if (data.secret !== expectedSecret) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
@@ -47,9 +45,7 @@ export async function POST(request: NextRequest) {
 			},
 		});
 
-		console.log(
-			`[API] Contract signed event sent for workflow ${data.workflowId}`,
-		);
+		console.log(`[API] Contract signed event sent for workflow ${data.workflowId}`);
 
 		return NextResponse.json(
 			{
@@ -57,7 +53,7 @@ export async function POST(request: NextRequest) {
 				workflowId: data.workflowId,
 				message: "Contract signed event received",
 			},
-			{ status: 200 },
+			{ status: 200 }
 		);
 	} catch (error) {
 		console.error("Error in contract-signed webhook:", error);

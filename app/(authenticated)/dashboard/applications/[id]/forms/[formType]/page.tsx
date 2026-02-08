@@ -69,7 +69,7 @@ export default function FormPage({
 
 	// Resolve params
 	useEffect(() => {
-		params.then((p) => setResolvedParams(p));
+		params.then(p => setResolvedParams(p));
 	}, [params]);
 
 	// Fetch form data
@@ -79,7 +79,7 @@ export default function FormPage({
 		const fetchFormData = async () => {
 			try {
 				const response = await fetch(
-					`/api/onboarding/forms/${resolvedParams.id}/${resolvedParams.formType}`,
+					`/api/onboarding/forms/${resolvedParams.id}/${resolvedParams.formType}`
 				);
 				if (response.ok) {
 					const data = await response.json();
@@ -118,17 +118,14 @@ export default function FormPage({
 	const handleSubmit = async (data: unknown) => {
 		setIsSubmitting(true);
 		try {
-			const response = await fetch(
-				`/api/onboarding/forms/${workflowId}/${formType}`,
-				{
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({
-						formData: data,
-						isDraft: false,
-					}),
-				},
-			);
+			const response = await fetch(`/api/onboarding/forms/${workflowId}/${formType}`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					formData: data,
+					isDraft: false,
+				}),
+			});
 
 			if (!response.ok) {
 				throw new Error("Failed to submit form");
@@ -151,17 +148,14 @@ export default function FormPage({
 	// Handle save draft
 	const handleSaveDraft = async (data: unknown) => {
 		try {
-			const response = await fetch(
-				`/api/onboarding/forms/${workflowId}/${formType}`,
-				{
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({
-						formData: data,
-						isDraft: true,
-					}),
-				},
-			);
+			const response = await fetch(`/api/onboarding/forms/${workflowId}/${formType}`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					formData: data,
+					isDraft: true,
+				}),
+			});
 
 			if (!response.ok) {
 				throw new Error("Failed to save draft");
@@ -224,8 +218,7 @@ export default function FormPage({
 						</Button>
 					</Link>
 				</div>
-			}
-		>
+			}>
 			<div className="max-w-4xl mx-auto">{renderForm()}</div>
 		</DashboardLayout>
 	);

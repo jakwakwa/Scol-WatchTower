@@ -27,8 +27,7 @@ export const TrustedBy = () => {
 							whileInView={{ opacity: 1 }}
 							viewport={{ once: true }}
 							transition={{ delay: index * 0.1 }}
-							className="text-xl md:text-2xl font-black text-white"
-						>
+							className="text-xl md:text-2xl font-black text-white">
 							{company}
 						</motion.div>
 					))}

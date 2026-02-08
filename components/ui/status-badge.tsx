@@ -2,13 +2,7 @@ import { cn } from "@/lib/utils";
 import React from "react";
 
 // Types
-export type StatusType =
-	| "success"
-	| "warning"
-	| "error"
-	| "info"
-	| "neutral"
-	| "brand";
+export type StatusType = "success" | "warning" | "error" | "info" | "neutral" | "brand";
 
 const statusStyles: Record<StatusType, string> = {
 	// Dark mode compatible pastel/transparent styles
@@ -37,10 +31,9 @@ export function StatusBadge({
 			className={cn(
 				"inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border backdrop-blur-sm",
 				statusStyles[status],
-				className,
+				className
 			)}
-			{...props}
-		>
+			{...props}>
 			{icon && (
 				<span className="h-3.5 w-3.5 flex items-center justify-center -ml-0.5">
 					{icon}
@@ -80,7 +73,7 @@ export function StageBadge({ stage }: { stage: string }) {
 
 	const label = normalized
 		.split(" ")
-		.map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+		.map(w => w.charAt(0).toUpperCase() + w.slice(1))
 		.join(" ");
 
 	return <StatusBadge status={status}>{label}</StatusBadge>;
@@ -96,10 +89,7 @@ export function RiskBadge({ level }: { level: string }) {
 	else if (l === "high") status = "error";
 
 	return (
-		<StatusBadge
-			status={status}
-			className="uppercase tracking-wider text-[10px]"
-		>
+		<StatusBadge status={status} className="uppercase tracking-wider text-[10px]">
 			{level} Risk
 		</StatusBadge>
 	);

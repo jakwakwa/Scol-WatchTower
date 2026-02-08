@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
 					error: "Validation failed",
 					details: validation.error.flatten().fieldErrors,
 				},
-				{ status: 400 },
+				{ status: 400 }
 			);
 		}
 
@@ -36,19 +36,14 @@ export async function POST(request: NextRequest) {
 
 		// 2. Auth Check (Simple Shared Secret)
 		const expectedSecret =
-			process.env.GAS_WEBHOOK_SECRET ||
-			process.env.CRON_SECRET ||
-			"temp_dev_secret";
+			process.env.GAS_WEBHOOK_SECRET || process.env.CRON_SECRET || "temp_dev_secret";
 		if (data.secret !== expectedSecret) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
 
 		const db = await getDatabaseClient();
 		if (!db) {
-			return NextResponse.json(
-				{ error: "Database connection failed" },
-				{ status: 500 },
-			);
+			return NextResponse.json({ error: "Database connection failed" }, { status: 500 });
 		}
 
 		// 3. Create Applicant
@@ -91,8 +86,7 @@ export async function POST(request: NextRequest) {
 			throw new Error("Failed to create workflow record");
 		}
 
-		// 5. Trigger Inngest
-		// We use the existing 'onboarding/started' event which expects { applicantId, workflowId }
+		// 5. Trigger Control Tower workflow
 		await inngest.send({
 			name: "onboarding/lead.created",
 			data: {
@@ -108,7 +102,7 @@ export async function POST(request: NextRequest) {
 				workflowId: newWorkflow.id,
 				message: "Applicant captured and workflow started",
 			},
-			{ status: 201 },
+			{ status: 201 }
 		);
 	} catch (error) {
 		console.error("Error in applicant-capture webhook:", error);

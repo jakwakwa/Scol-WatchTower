@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
 		if (!userId) {
 			return NextResponse.json(
 				{ error: "Unauthorized - Authentication required" },
-				{ status: 401 },
+				{ status: 401 }
 			);
 		}
 
@@ -57,27 +57,21 @@ export async function POST(request: NextRequest) {
 					error: "Validation failed",
 					details: validationResult.error.flatten().fieldErrors,
 				},
-				{ status: 400 },
+				{ status: 400 }
 			);
 		}
 
 		const { workflowId, applicantId, decision } = validationResult.data;
 
-		console.log(
-			`[RiskDecision] Processing decision for workflow ${workflowId}:`,
-			{
-				outcome: decision.outcome,
-				decidedBy: userId,
-			},
-		);
+		console.log(`[RiskDecision] Processing decision for workflow ${workflowId}:`, {
+			outcome: decision.outcome,
+			decidedBy: userId,
+		});
 
 		// Verify workflow exists and is in awaiting_human state
 		const db = getDatabaseClient();
 		if (!db) {
-			return NextResponse.json(
-				{ error: "Database connection failed" },
-				{ status: 500 },
-			);
+			return NextResponse.json({ error: "Database connection failed" }, { status: 500 });
 		}
 
 		const workflowResult = await db
@@ -89,14 +83,14 @@ export async function POST(request: NextRequest) {
 		if (!workflow) {
 			return NextResponse.json(
 				{ error: `Workflow ${workflowId} not found` },
-				{ status: 404 },
+				{ status: 404 }
 			);
 		}
 
 		// Validate workflow is awaiting human decision
 		if (workflow.status !== "awaiting_human" && workflow.status !== "pending") {
 			console.warn(
-				`[RiskDecision] Workflow ${workflowId} is in unexpected state: ${workflow.status}`,
+				`[RiskDecision] Workflow ${workflowId} is in unexpected state: ${workflow.status}`
 			);
 			// Allow anyway - the Inngest event handler will determine if it's valid
 		}
@@ -132,9 +126,7 @@ export async function POST(request: NextRequest) {
 			},
 		});
 
-		console.log(
-			`[RiskDecision] Event sent to Inngest for workflow ${workflowId}`,
-		);
+		console.log(`[RiskDecision] Event sent to Inngest for workflow ${workflowId}`);
 
 		// Return success response
 		return NextResponse.json({
@@ -156,7 +148,7 @@ export async function POST(request: NextRequest) {
 				error: "Internal server error",
 				message: error instanceof Error ? error.message : "Unknown error",
 			},
-			{ status: 500 },
+			{ status: 500 }
 		);
 	}
 }
@@ -174,10 +166,7 @@ export async function GET(request: NextRequest) {
 
 		const db = getDatabaseClient();
 		if (!db) {
-			return NextResponse.json(
-				{ error: "Database connection failed" },
-				{ status: 500 },
-			);
+			return NextResponse.json({ error: "Database connection failed" }, { status: 500 });
 		}
 
 		// Get workflows awaiting risk decision
@@ -188,7 +177,7 @@ export async function GET(request: NextRequest) {
 
 		return NextResponse.json({
 			count: pendingWorkflows.length,
-			workflows: pendingWorkflows.map((w) => ({
+			workflows: pendingWorkflows.map(w => ({
 				workflowId: w.id,
 				applicantId: w.applicantId,
 				stage: w.stage,
@@ -198,9 +187,6 @@ export async function GET(request: NextRequest) {
 	} catch (error) {
 		console.error("[RiskDecision] Error fetching pending decisions:", error);
 
-		return NextResponse.json(
-			{ error: "Internal server error" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 	}
 }

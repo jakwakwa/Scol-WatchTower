@@ -13,12 +13,9 @@ import { FormWizard, FormStep } from "../form-wizard";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import {
-	RiServiceLine,
-	RiLineChartLine,
-	RiCheckboxCircleLine,
-} from "@remixicon/react";
+import { RiServiceLine, RiLineChartLine, RiCheckboxCircleLine } from "@remixicon/react";
 
 import {
 	facilityApplicationSchema,
@@ -72,9 +69,7 @@ function FormField({
 				{label}
 				{required && <span className="text-destructive ml-1">*</span>}
 			</Label>
-			{description && (
-				<p className="text-xs text-muted-foreground">{description}</p>
-			)}
+			{description && <p className="text-xs text-muted-foreground">{description}</p>}
 			{children}
 			{error && <p className="text-sm text-destructive">{error}</p>}
 		</div>
@@ -110,41 +105,33 @@ function CheckboxGroup({
 		if (checked) {
 			onChange([...value, optionValue]);
 		} else {
-			onChange(value.filter((v) => v !== optionValue));
+			onChange(value.filter(v => v !== optionValue));
 		}
 	};
 
 	return (
 		<div className={cn("grid grid-cols-1 md:grid-cols-2 gap-3", className)}>
-			{options.map((option) => (
+			{options.map(option => (
 				<div
 					key={option.value}
 					className={cn(
 						"flex items-start gap-3 p-3 rounded-lg border transition-colors",
 						value.includes(option.value)
 							? "border-primary bg-primary/5"
-							: "border-border hover:border-primary/50",
-					)}
-				>
+							: "border-border hover:border-primary/50"
+					)}>
 					<Checkbox
 						id={option.value}
 						checked={value.includes(option.value)}
-						onCheckedChange={(checked) =>
-							handleChange(option.value, checked as boolean)
-						}
+						onCheckedChange={checked => handleChange(option.value, checked as boolean)}
 						disabled={disabled}
 					/>
 					<div className="flex-1">
-						<Label
-							htmlFor={option.value}
-							className="text-sm font-medium cursor-pointer"
-						>
+						<Label htmlFor={option.value} className="text-sm font-medium cursor-pointer">
 							{option.label}
 						</Label>
 						{option.description && (
-							<p className="text-xs text-muted-foreground mt-0.5">
-								{option.description}
-							</p>
+							<p className="text-xs text-muted-foreground mt-0.5">{option.description}</p>
 						)}
 					</div>
 				</div>
@@ -212,6 +199,46 @@ const ADDITIONAL_SERVICE_OPTIONS: CheckboxOption[] = [
 		description: "Bulk SMS notification service",
 	},
 ];
+
+// ============================================
+// Test Data
+// ============================================
+
+const TEST_DATA: Partial<FacilityApplicationFormData> = {
+	facilitySelection: {
+		serviceTypes: [ServiceType.EFT, ServiceType.DEBICHECK],
+		additionalServices: [AdditionalService.INTEGRATION],
+	},
+	volumeMetrics: {
+		history: {
+			currentProvider: "None",
+			previousProvider: "None",
+			hasOutstandingAmounts: false,
+			amountsOwed: "R 0.00",
+		},
+		statistics: {
+			averageTransactionsPerMonth: "500",
+			averageTransactionValue: "R 250.00",
+			unpaidTransactionsValue: "R 0.00",
+			unpaidTransactionsQuantity: "0",
+			disputedTransactionsValue: "R 0.00",
+			disputedTransactionsQuantity: "0",
+		},
+		predictedGrowth: {
+			month1Volume: "600",
+			month1Value: "R 150000.00",
+			month2Volume: "700",
+			month2Value: "R 175000.00",
+			month3Volume: "800",
+			month3Value: "R 200000.00",
+		},
+		limitsAppliedFor: {
+			maxTransactionsPerMonth: "1000",
+			maxRandValue: "R 500000.00",
+			lineLimit: "R 5000.00",
+		},
+	},
+};
 
 // ============================================
 // Main Form Component
@@ -301,15 +328,30 @@ export function FacilityApplicationForm({
 
 	// Watch values
 	const serviceTypes = watch("facilitySelection.serviceTypes") || [];
-	const additionalServices =
-		watch("facilitySelection.additionalServices") || [];
-	const hasOutstandingAmounts = watch(
-		"volumeMetrics.history.hasOutstandingAmounts",
-	);
+	const additionalServices = watch("facilitySelection.additionalServices") || [];
+	const hasOutstandingAmounts = watch("volumeMetrics.history.hasOutstandingAmounts");
 
 	return (
 		<FormProvider {...methods}>
 			<form onSubmit={handleSubmit(handleFormSubmit)}>
+				{process.env.NEXT_PUBLIC_TEST_FORMS === "true" && (
+					<div className="mb-6 p-4 border border-dashed border-yellow-500/50 bg-yellow-50/50 rounded-lg flex items-center justify-between">
+						<div className="space-y-1">
+							<p className="text-sm font-medium text-yellow-800">Testing Mode Active</p>
+							<p className="text-xs text-yellow-700">
+								Click to autofill the form with test data.
+							</p>
+						</div>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							onClick={() => methods.reset(TEST_DATA as FacilityApplicationFormData)}
+							className="bg-white border-yellow-200 hover:bg-yellow-50 hover:text-yellow-900 text-yellow-800">
+							Autofill Form
+						</Button>
+					</div>
+				)}
 				<FormWizard
 					steps={steps}
 					currentStep={currentStep}
@@ -319,8 +361,7 @@ export function FacilityApplicationForm({
 					title="Facility Application"
 					isSubmitting={isSubmitting}
 					storageKey={`facility-application-${workflowId}`}
-					submitButtonText="Submit Application"
-				>
+					submitButtonText="Submit Application">
 					{({ currentStep }) => (
 						<>
 							{/* Step 1: Facility Selection */}
@@ -328,9 +369,7 @@ export function FacilityApplicationForm({
 								<div className="space-y-6">
 									<div className="flex items-center gap-2 mb-4">
 										<RiServiceLine className="h-5 w-5 text-muted-foreground" />
-										<h3 className="text-lg font-semibold">
-											Facility Selection
-										</h3>
+										<h3 className="text-lg font-semibold">Facility Selection</h3>
 									</div>
 
 									{/* Service Types */}
@@ -338,12 +377,11 @@ export function FacilityApplicationForm({
 										label="Service Types"
 										required
 										error={errors.facilitySelection?.serviceTypes?.message}
-										description="Select the collection services you require"
-									>
+										description="Select the collection services you require">
 										<CheckboxGroup
 											options={SERVICE_TYPE_OPTIONS}
 											value={serviceTypes}
-											onChange={(value) =>
+											onChange={value =>
 												setValue("facilitySelection.serviceTypes", value as any)
 											}
 											disabled={readOnly}
@@ -354,16 +392,12 @@ export function FacilityApplicationForm({
 									<FormField
 										label="Additional Services"
 										description="Select any additional services you require"
-										className="pt-4 border-t border-border"
-									>
+										className="pt-4 border-t border-border">
 										<CheckboxGroup
 											options={ADDITIONAL_SERVICE_OPTIONS}
 											value={additionalServices}
-											onChange={(value) =>
-												setValue(
-													"facilitySelection.additionalServices",
-													value as any,
-												)
+											onChange={value =>
+												setValue("facilitySelection.additionalServices", value as any)
 											}
 											disabled={readOnly}
 										/>
@@ -376,9 +410,7 @@ export function FacilityApplicationForm({
 								<div className="space-y-6">
 									<div className="flex items-center gap-2 mb-4">
 										<RiLineChartLine className="h-5 w-5 text-muted-foreground" />
-										<h3 className="text-lg font-semibold">
-											Volume & Risk Metrics
-										</h3>
+										<h3 className="text-lg font-semibold">Volume & Risk Metrics</h3>
 									</div>
 
 									{/* History */}
@@ -396,9 +428,7 @@ export function FacilityApplicationForm({
 											</FormField>
 											<FormField label="Previous Service Provider">
 												<Input
-													{...register(
-														"volumeMetrics.history.previousProvider",
-													)}
+													{...register("volumeMetrics.history.previousProvider")}
 													placeholder="Previous provider name"
 													disabled={readOnly}
 												/>
@@ -409,18 +439,15 @@ export function FacilityApplicationForm({
 											<Checkbox
 												id="hasOutstanding"
 												checked={hasOutstandingAmounts}
-												onCheckedChange={(checked) =>
+												onCheckedChange={checked =>
 													setValue(
 														"volumeMetrics.history.hasOutstandingAmounts",
-														checked as boolean,
+														checked as boolean
 													)
 												}
 												disabled={readOnly}
 											/>
-											<Label
-												htmlFor="hasOutstanding"
-												className="text-sm cursor-pointer"
-											>
+											<Label htmlFor="hasOutstanding" className="text-sm cursor-pointer">
 												We have outstanding amounts owed to a previous provider
 											</Label>
 										</div>
@@ -446,13 +473,12 @@ export function FacilityApplicationForm({
 												label="Average Transactions per Month"
 												required
 												error={
-													errors.volumeMetrics?.statistics
-														?.averageTransactionsPerMonth?.message
-												}
-											>
+													errors.volumeMetrics?.statistics?.averageTransactionsPerMonth
+														?.message
+												}>
 												<Input
 													{...register(
-														"volumeMetrics.statistics.averageTransactionsPerMonth",
+														"volumeMetrics.statistics.averageTransactionsPerMonth"
 													)}
 													placeholder="e.g., 1000"
 													type="number"
@@ -462,7 +488,7 @@ export function FacilityApplicationForm({
 											<FormField label="Average Transaction Value">
 												<Input
 													{...register(
-														"volumeMetrics.statistics.averageTransactionValue",
+														"volumeMetrics.statistics.averageTransactionValue"
 													)}
 													placeholder="R 0.00"
 													disabled={readOnly}
@@ -471,7 +497,7 @@ export function FacilityApplicationForm({
 											<FormField label="Unpaid Transactions Value">
 												<Input
 													{...register(
-														"volumeMetrics.statistics.unpaidTransactionsValue",
+														"volumeMetrics.statistics.unpaidTransactionsValue"
 													)}
 													placeholder="R 0.00"
 													disabled={readOnly}
@@ -480,7 +506,7 @@ export function FacilityApplicationForm({
 											<FormField label="Unpaid Transactions Quantity">
 												<Input
 													{...register(
-														"volumeMetrics.statistics.unpaidTransactionsQuantity",
+														"volumeMetrics.statistics.unpaidTransactionsQuantity"
 													)}
 													placeholder="e.g., 50"
 													disabled={readOnly}
@@ -489,7 +515,7 @@ export function FacilityApplicationForm({
 											<FormField label="Disputed Transactions Value">
 												<Input
 													{...register(
-														"volumeMetrics.statistics.disputedTransactionsValue",
+														"volumeMetrics.statistics.disputedTransactionsValue"
 													)}
 													placeholder="R 0.00"
 													disabled={readOnly}
@@ -498,7 +524,7 @@ export function FacilityApplicationForm({
 											<FormField label="Disputed Transactions Quantity">
 												<Input
 													{...register(
-														"volumeMetrics.statistics.disputedTransactionsQuantity",
+														"volumeMetrics.statistics.disputedTransactionsQuantity"
 													)}
 													placeholder="e.g., 10"
 													disabled={readOnly}
@@ -517,18 +543,14 @@ export function FacilityApplicationForm({
 												<p className="text-sm font-medium">Month 1</p>
 												<FormField label="Volume">
 													<Input
-														{...register(
-															"volumeMetrics.predictedGrowth.month1Volume",
-														)}
+														{...register("volumeMetrics.predictedGrowth.month1Volume")}
 														placeholder="Transactions"
 														disabled={readOnly}
 													/>
 												</FormField>
 												<FormField label="Value">
 													<Input
-														{...register(
-															"volumeMetrics.predictedGrowth.month1Value",
-														)}
+														{...register("volumeMetrics.predictedGrowth.month1Value")}
 														placeholder="R 0.00"
 														disabled={readOnly}
 													/>
@@ -538,18 +560,14 @@ export function FacilityApplicationForm({
 												<p className="text-sm font-medium">Month 2</p>
 												<FormField label="Volume">
 													<Input
-														{...register(
-															"volumeMetrics.predictedGrowth.month2Volume",
-														)}
+														{...register("volumeMetrics.predictedGrowth.month2Volume")}
 														placeholder="Transactions"
 														disabled={readOnly}
 													/>
 												</FormField>
 												<FormField label="Value">
 													<Input
-														{...register(
-															"volumeMetrics.predictedGrowth.month2Value",
-														)}
+														{...register("volumeMetrics.predictedGrowth.month2Value")}
 														placeholder="R 0.00"
 														disabled={readOnly}
 													/>
@@ -559,18 +577,14 @@ export function FacilityApplicationForm({
 												<p className="text-sm font-medium">Month 3</p>
 												<FormField label="Volume">
 													<Input
-														{...register(
-															"volumeMetrics.predictedGrowth.month3Volume",
-														)}
+														{...register("volumeMetrics.predictedGrowth.month3Volume")}
 														placeholder="Transactions"
 														disabled={readOnly}
 													/>
 												</FormField>
 												<FormField label="Value">
 													<Input
-														{...register(
-															"volumeMetrics.predictedGrowth.month3Value",
-														)}
+														{...register("volumeMetrics.predictedGrowth.month3Value")}
 														placeholder="R 0.00"
 														disabled={readOnly}
 													/>
@@ -589,13 +603,12 @@ export function FacilityApplicationForm({
 												label="Max Transactions per Month"
 												required
 												error={
-													errors.volumeMetrics?.limitsAppliedFor
-														?.maxTransactionsPerMonth?.message
-												}
-											>
+													errors.volumeMetrics?.limitsAppliedFor?.maxTransactionsPerMonth
+														?.message
+												}>
 												<Input
 													{...register(
-														"volumeMetrics.limitsAppliedFor.maxTransactionsPerMonth",
+														"volumeMetrics.limitsAppliedFor.maxTransactionsPerMonth"
 													)}
 													placeholder="e.g., 5000"
 													type="number"
@@ -606,14 +619,10 @@ export function FacilityApplicationForm({
 												label="Max Rand Value"
 												required
 												error={
-													errors.volumeMetrics?.limitsAppliedFor?.maxRandValue
-														?.message
-												}
-											>
+													errors.volumeMetrics?.limitsAppliedFor?.maxRandValue?.message
+												}>
 												<Input
-													{...register(
-														"volumeMetrics.limitsAppliedFor.maxRandValue",
-													)}
+													{...register("volumeMetrics.limitsAppliedFor.maxRandValue")}
 													placeholder="R 0.00"
 													disabled={readOnly}
 												/>
@@ -622,14 +631,10 @@ export function FacilityApplicationForm({
 												label="Line Limit (Highest Single Transaction)"
 												required
 												error={
-													errors.volumeMetrics?.limitsAppliedFor?.lineLimit
-														?.message
-												}
-											>
+													errors.volumeMetrics?.limitsAppliedFor?.lineLimit?.message
+												}>
 												<Input
-													{...register(
-														"volumeMetrics.limitsAppliedFor.lineLimit",
-													)}
+													{...register("volumeMetrics.limitsAppliedFor.lineLimit")}
 													placeholder="R 0.00"
 													disabled={readOnly}
 												/>

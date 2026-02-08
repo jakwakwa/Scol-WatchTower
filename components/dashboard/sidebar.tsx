@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import {
 	RiDashboardLine,
 	RiUserAddLine,
-	RiFlowChart,
+	RiBarChartBoxAiFill,
 	RiRobot2Line,
 	RiMenuFoldLine,
 	RiMenuUnfoldLine,
@@ -18,7 +18,7 @@ import { Button } from "../ui/button";
 const navigation = [
 	{ name: "Overview", href: "/dashboard", icon: RiDashboardLine },
 	{ name: "Applicants", href: "/dashboard/applicants", icon: RiUserAddLine },
-	{ name: "Workflows", href: "/dashboard/workflows", icon: RiFlowChart },
+	{ name: "Workflows", href: "/dashboard/workflows", icon: RiBarChartBoxAiFill },
 	{
 		name: "Risk Review",
 		href: "/dashboard/risk-review",
@@ -38,23 +38,18 @@ export function Sidebar({
 
 	return (
 		<aside
+			data-testid="sidebar"
 			className={cn(
 				"fixed left-0 top-0 z-40 h-screen transition-all duration-300 ease-in-out",
 				"bg-sidebar backdrop-blur-xl border-r border-secondary/5",
-				isCollapsed ? "w-20" : "w-64",
-			)}
-		>
+				isCollapsed ? "w-20" : "w-64"
+			)}>
 			{/* Header */}
 			<div className="flex h-24 items-center justify-between px-6 border-b border-secondary/5">
-				<div
-					className={cn("flex items-center gap-1 ", isCollapsed && "hidden")}
-				>
+				<div className={cn("flex items-center gap-1 ", isCollapsed && "hidden")}>
 					<div className="flex flex-col w-full h-fit items-start px-4 py-2 justify-center rounded-2xl  border-stone-500/20">
-						<div className="text-base font-bold bg-linear-to-r from-primary to-ring/90 bg-clip-text text-transparent">
-							<RiSignalTowerFill className="h-6 w-6 text-sidebar-foreground" />
-							SCol
-						</div>
-						<span className="text-muted-foreground/90 text-xs uppercase leading-[14px]">
+						<img src="/assets/logo-dark.svg" alt="StratCol" className="h-8 w-auto" />
+						<span className="text-secondary text-xs uppercase leading-[14px]">
 							Control Tower
 						</span>
 					</div>
@@ -68,21 +63,20 @@ export function Sidebar({
 					className={cn(
 						"flex h-9 w-9 items-center justify-center rounded-lg transition-colors",
 						"hover:bg-secondary/5 text-muted-foreground hover:text-foreground",
-						isCollapsed && "mx-auto",
+						isCollapsed && "mx-auto"
 					)}
-					aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-				>
+					aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}>
 					{isCollapsed ? (
-						<RiMenuUnfoldLine className="h-5 w-5" />
+						<RiMenuUnfoldLine className="h-5 w-5 text-sidebar-primary" />
 					) : (
-						<RiMenuFoldLine className="h-5 w-5" />
+						<RiMenuFoldLine className="h-5 w-5 text-sidebar-primary" />
 					)}
 				</Button>
 			</div>
 
 			{/* Navigation */}
 			<nav className="flex flex-col gap-[2px] p-4">
-				{navigation.map((item) => {
+				{navigation.map(item => {
 					const isActive =
 						pathname === item.href ||
 						(item.href !== "/dashboard" && pathname.startsWith(item.href));
@@ -96,9 +90,8 @@ export function Sidebar({
 								isActive
 									? "bg-linear-to-r from-primary/10 to-stone-400/5 text-primary"
 									: "text-sidebar-foreground hover:bg-secondary/5 hover:text-foreground",
-								isCollapsed && "justify-center px-0",
-							)}
-						>
+								isCollapsed && "justify-center px-0"
+							)}>
 							{/* Active indicator */}
 							{isActive && (
 								<div className="absolute left-[2px] h-10 w-1 rounded-l-2xl bg-linear-to-b from-stone-400 to-stone-500" />
@@ -107,12 +100,20 @@ export function Sidebar({
 							<item.icon
 								className={cn(
 									"h-5 w-5 shrink-0 transition-transform duration-200",
-									isActive && "text-action",
-									!isActive && "group-hover:scale-110",
+									isActive && "text-sidebar-primary",
+									!isActive && "group-hover:scale-110"
 								)}
 							/>
 
-							{!isCollapsed && <span>{item.name}</span>}
+							{!isCollapsed && (
+								<span
+									className={cn(
+										"text-sidebar-accent focus-visible:text-sidebar-primary font-medium font-sans",
+										isActive && "text-sidebar-primary"
+									)}>
+									{item.name}
+								</span>
+							)}
 
 							{/* Tooltip for collapsed state */}
 							{isCollapsed && (
@@ -130,17 +131,14 @@ export function Sidebar({
 				<div
 					className={cn(
 						"flex items-center gap-3 rounded-xl bg-linear-to-r from-stone-500/10 to-stone-500/5 p-3",
-						isCollapsed && "justify-center p-2",
-					)}
-				>
+						isCollapsed && "justify-center p-2"
+					)}>
 					<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-stone-500/20">
-						<RiFlowChart className="h-4 w-4 text-stone-400" />
+						<RiBarChartBoxAiFill className="h-4 w-4 text-stone-400" />
 					</div>
 					{!isCollapsed && (
 						<div className="flex-1 min-w-0">
-							<p className="text-xs font-medium text-stone-200">
-								Active Workflows
-							</p>
+							<p className="text-xs font-medium text-stone-200">Active Workflows</p>
 							<p className="text-lg font-bold text-foreground">12</p>
 						</div>
 					)}

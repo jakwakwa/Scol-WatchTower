@@ -2,12 +2,15 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { getDatabaseClient } from "@/app/utils";
 import {
-	documents,
 	applicantMagiclinkForms,
-	applicantSubmissions,
 	applicants,
+	applicantSubmissions,
+	documents,
+	quotes,
+	riskAssessments,
+	workflows,
 } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { updateApplicantSchema } from "@/lib/validations";
 
 /**
@@ -16,16 +19,13 @@ import { updateApplicantSchema } from "@/lib/validations";
  */
 export async function PUT(
 	request: NextRequest,
-	{ params }: { params: Promise<{ id: string }> },
+	{ params }: { params: Promise<{ id: string }> }
 ) {
 	try {
 		const db = await getDatabaseClient();
 
 		if (!db) {
-			return NextResponse.json(
-				{ error: "Database connection failed" },
-				{ status: 500 },
-			);
+			return NextResponse.json({ error: "Database connection failed" }, { status: 500 });
 		}
 
 		// Await params in Next.js 15
@@ -46,7 +46,7 @@ export async function PUT(
 					error: "Validation failed",
 					details: validation.error.flatten().fieldErrors,
 				},
-				{ status: 400 },
+				{ status: 400 }
 			);
 		}
 
@@ -63,10 +63,7 @@ export async function PUT(
 			.returning();
 
 		if (updatedApplicantResults.length === 0) {
-			return NextResponse.json(
-				{ error: "Applicant not found" },
-				{ status: 404 },
-			);
+			return NextResponse.json({ error: "Applicant not found" }, { status: 404 });
 		}
 
 		const updatedApplicant = updatedApplicantResults[0];
@@ -85,16 +82,13 @@ export async function PUT(
  */
 export async function GET(
 	_request: NextRequest,
-	{ params }: { params: Promise<{ id: string }> },
+	{ params }: { params: Promise<{ id: string }> }
 ) {
 	try {
 		const db = await getDatabaseClient();
 
 		if (!db) {
-			return NextResponse.json(
-				{ error: "Database connection failed" },
-				{ status: 500 },
-			);
+			return NextResponse.json({ error: "Database connection failed" }, { status: 500 });
 		}
 
 		const resolvedParams = await params;
@@ -114,23 +108,46 @@ export async function GET(
 			return NextResponse.json({ error: "Applicant not found" }, { status: 404 });
 		}
 
-		const [applicantDocuments, submissions, instances] = await Promise.all([
-			db.select().from(documents).where(eq(documents.applicantId, id)),
-			db
+		const [applicantDocuments, submissions, instances, riskAssessmentRows, workflowRows] =
+			await Promise.all([
+				db.select().from(documents).where(eq(documents.applicantId, id)),
+				db
+					.select()
+					.from(applicantSubmissions)
+					.where(eq(applicantSubmissions.applicantId, id)),
+				db
+					.select()
+					.from(applicantMagiclinkForms)
+					.where(eq(applicantMagiclinkForms.applicantId, id)),
+				db.select().from(riskAssessments).where(eq(riskAssessments.applicantId, id)),
+				db
+					.select()
+					.from(workflows)
+					.where(eq(workflows.applicantId, id))
+					.orderBy(desc(workflows.startedAt)),
+			]);
+
+		// Fetch quote for the most recent workflow if exists
+		let quote = null;
+		if (workflowRows.length > 0) {
+			const latestWorkflow = workflowRows[0];
+			const quoteRows = await db
 				.select()
-				.from(applicantSubmissions)
-				.where(eq(applicantSubmissions.applicantId, id)),
-			db
-				.select()
-				.from(applicantMagiclinkForms)
-				.where(eq(applicantMagiclinkForms.applicantId, id)),
-		]);
+				.from(quotes)
+				.where(eq(quotes.workflowId, latestWorkflow.id))
+				.orderBy(desc(quotes.createdAt))
+				.limit(1);
+			quote = quoteRows[0] || null;
+		}
 
 		return NextResponse.json({
 			applicant,
 			documents: applicantDocuments,
 			applicantSubmissions: submissions,
 			applicantMagiclinkForms: instances,
+			riskAssessment: riskAssessmentRows[0] || null,
+			workflow: workflowRows[0] || null,
+			quote,
 		});
 	} catch (error) {
 		console.error("Error fetching applicant:", error);

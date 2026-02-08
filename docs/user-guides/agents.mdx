@@ -5,43 +5,58 @@ description: "Monitor external agent performance and workflow health."
 
 ## What agents do
 
-Agents are external services that handle specialised tasks such as:
+Agents are autonomous AI services or system workers that handle specialised tasks in the onboarding workflow.
 
-- Document generation
-- Electronic signatures
-- Risk verification
-- Data synchronisation
-- Notifications and escalation
+### Active Agents (Powered by **Gemini 3 Flash**)
+
+- **Risk Verification Agent**: Analyzes bank statements and accountant letters to assess FICA compliance and risk.
+- **Quote Generator Agent**: Generates risk-adjusted pricing quotes based on applicant profiles and credit scores.
+
+### Planned Agents
+
+The following agents are currently in development or planned for future releases:
+
+- **Document Generator**: For legal agreements.
+- **E-Signature Handler**: For managing DocuSign workflows.
+- **V24/V27 Sync**: For legacy system data synchronization.
+- **Notification Handler**: For multi-channel alerts.
 
 ## Agent dashboard
 
-The **Agents** page shows a high-level summary of the fleet:
+The **Agents** page serves as a control tower for your AI fleet, providing **real-time insights** directly from the database:
 
-- **Total agents**
-- **Active agents**
-- **Total callbacks**
-- **Errors**
+- **Total agents**: The complete registry of available and planned agents.
+- **Active agents**: Agents currently processing live workflows.
+- **Total callbacks**: The number of successful operations performed by agents (e.g., successful risk assessments).
+- **Errors**: The number of failed operations or exceptions logged by agents.
+
+> **Note**: Statistics are aggregated in real-time. "Callbacks" track successful `agent_callback` or task completion events, while "Errors" track logged workflow exceptions.
 
 ## Agent status cards
 
 Each agent card displays:
 
-- **Agent ID and name**
-- **Task type**
-- **Status**: active, inactive, or error
-- **Last callback time**
-- **Callback and error counts**
+- **Identity**: Agent Name and ID (e.g., `xt_risk_agent_v2`).
+- **AI Model**: The specific AI model powering the agent (e.g., **Gemini 3 Flash**).
+- **Status**:
+    - **Active**: Operational and processing tasks.
+    - **Inactive / Planned**: Not yet deployed or currently disabled.
+    - **Error**: Experiencing critical failures.
+- **Performance**:
+    - **Last callback**: Timestamp of the most recent activity.
+    - **Callbacks**: Total successful runs.
+    - **Errors**: Total failed runs.
 
 ## Interpreting agent status
 
-- **Active**: agent is operational and receiving requests
-- **Inactive**: agent is temporarily offline or disabled
-- **Error**: agent reported repeated failures or a critical issue
+- **Active**: The agent is healthy, configured with a valid provider (e.g., Google Cloud Vertex AI), and successfully processing events.
+- **Inactive**: The agent is a placeholder or has been manually disabled.
+- **Error**: The agent has reported repeated failures. Check the specific error count for severity.
 
 ## When to escalate
 
 Escalate to engineering or operations if:
 
-- An agent stays in **Error** state for multiple hours
-- A workflow remains stuck with the same agent
-- Errors increase sharply without a clear external cause
+- An active agent (like Risk or Quote) shows a sudden spike in **Errors**.
+- The **Last callback** time is significantly older than expected for a high-volume workflow.
+- Critical agents stuck in **Error** state are blocking new applications.

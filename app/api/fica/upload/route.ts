@@ -12,7 +12,7 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { inngest } from "@/inngest/client";
-import { getDatabaseClient } from "@/app/utils";
+import { getDatabaseClient, getBaseUrl } from "@/app/utils";
 import { documents, workflows } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { auth } from "@clerk/nextjs/server";
@@ -33,11 +33,7 @@ const UploadMetadataSchema = z.object({
 });
 
 interface UploadedDocument {
-	type:
-		| "BANK_STATEMENT"
-		| "ACCOUNTANT_LETTER"
-		| "ID_DOCUMENT"
-		| "PROOF_OF_ADDRESS";
+	type: "BANK_STATEMENT" | "ACCOUNTANT_LETTER" | "ID_DOCUMENT" | "PROOF_OF_ADDRESS";
 	filename: string;
 	url: string;
 	uploadedAt: string;
@@ -80,7 +76,7 @@ export async function POST(request: NextRequest) {
 					error: "Validation failed",
 					details: metadataResult.error.flatten().fieldErrors,
 				},
-				{ status: 400 },
+				{ status: 400 }
 			);
 		}
 
@@ -94,16 +90,13 @@ export async function POST(request: NextRequest) {
 		}
 
 		console.log(
-			`[FicaUpload] Processing ${files.length} file(s) for workflow ${metadata.workflowId}`,
+			`[FicaUpload] Processing ${files.length} file(s) for workflow ${metadata.workflowId}`
 		);
 
 		// Verify workflow exists
 		const db = getDatabaseClient();
 		if (!db) {
-			return NextResponse.json(
-				{ error: "Database connection failed" },
-				{ status: 500 },
-			);
+			return NextResponse.json({ error: "Database connection failed" }, { status: 500 });
 		}
 
 		const workflowResult = await db
@@ -114,7 +107,7 @@ export async function POST(request: NextRequest) {
 		if (workflowResult.length === 0) {
 			return NextResponse.json(
 				{ error: `Workflow ${metadata.workflowId} not found` },
-				{ status: 404 },
+				{ status: 404 }
 			);
 		}
 
@@ -124,12 +117,7 @@ export async function POST(request: NextRequest) {
 
 		for (const file of files) {
 			// Validate file type
-			const allowedTypes = [
-				"application/pdf",
-				"image/jpeg",
-				"image/png",
-				"image/webp",
-			];
+			const allowedTypes = ["application/pdf", "image/jpeg", "image/png", "image/webp"];
 
 			if (!allowedTypes.includes(file.type)) {
 				console.warn(`[FicaUpload] Invalid file type: ${file.type}`);
@@ -193,7 +181,7 @@ export async function POST(request: NextRequest) {
 		if (uploadedDocuments.length === 0) {
 			return NextResponse.json(
 				{ error: "No valid files were uploaded" },
-				{ status: 400 },
+				{ status: 400 }
 			);
 		}
 
@@ -208,9 +196,7 @@ export async function POST(request: NextRequest) {
 			},
 		});
 
-		console.log(
-			`[FicaUpload] Event sent to Inngest for workflow ${metadata.workflowId}`,
-		);
+		console.log(`[FicaUpload] Event sent to Inngest for workflow ${metadata.workflowId}`);
 
 		return NextResponse.json({
 			success: true,
@@ -226,7 +212,7 @@ export async function POST(request: NextRequest) {
 				error: "Internal server error",
 				message: error instanceof Error ? error.message : "Unknown error",
 			},
-			{ status: 500 },
+			{ status: 500 }
 		);
 	}
 }
@@ -240,12 +226,12 @@ export async function POST(request: NextRequest) {
  */
 async function mockUploadFile(file: File, workflowId: number): Promise<string> {
 	// Simulate upload delay
-	await new Promise((resolve) => setTimeout(resolve, 100));
+	await new Promise(resolve => setTimeout(resolve, 100));
 
 	// Generate a mock URL
 	const timestamp = Date.now();
 	const safeFilename = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
-	const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+	const baseUrl = getBaseUrl();
 
 	return `${baseUrl}/uploads/workflows/${workflowId}/${timestamp}-${safeFilename}`;
 }
@@ -259,10 +245,7 @@ export async function GET(request: NextRequest) {
 	const workflowId = searchParams.get("workflowId");
 
 	if (!workflowId) {
-		return NextResponse.json(
-			{ error: "workflowId is required" },
-			{ status: 400 },
-		);
+		return NextResponse.json({ error: "workflowId is required" }, { status: 400 });
 	}
 
 	// In production, query the documents table

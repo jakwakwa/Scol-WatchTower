@@ -28,6 +28,7 @@ export default async function DashboardRootLayout({
 				.select({
 					id: notifications.id,
 					workflowId: notifications.workflowId,
+					applicantId: notifications.applicantId,
 					type: notifications.type,
 					message: notifications.message,
 					read: notifications.read,
@@ -41,15 +42,16 @@ export default async function DashboardRootLayout({
 				.orderBy(desc(notifications.createdAt))
 				.limit(20);
 
-			workflowNotifications = notificationsResult.map((n) => ({
+			workflowNotifications = notificationsResult.map(n => ({
 				id: n.id.toString(),
-				workflowId: n.workflowId,
+				workflowId: n.workflowId || 0,
+				applicantId: n.applicantId || 0,
 				clientName: n.clientName || "Unknown",
 				type: n.type as WorkflowNotification["type"],
 				message: n.message,
 				timestamp: n.createdAt,
-				read: n.read,
-				actionable: n.actionable,
+				read: n.read || false,
+				actionable: n.actionable || false,
 			}));
 		} catch (error) {
 			console.error("Failed to fetch notifications:", error);
@@ -57,8 +59,6 @@ export default async function DashboardRootLayout({
 	}
 
 	return (
-		<DashboardShell notifications={workflowNotifications}>
-			{children}
-		</DashboardShell>
+		<DashboardShell notifications={workflowNotifications}>{children}</DashboardShell>
 	);
 }

@@ -8,9 +8,12 @@ import { quotes } from "@/db/schema";
 import { desc, eq } from "drizzle-orm";
 import {
 	absa6995Schema,
+	accountantLetterSchema,
+	callCentreApplicationSchema,
 	facilityApplicationSchema,
 	signedQuotationSchema,
 	stratcolContractSchema,
+	type FacilityApplicationForm,
 } from "@/lib/validations/forms";
 import {
 	getFormInstanceByToken,
@@ -28,6 +31,8 @@ const formSubmissionSchema = z.object({
 		"SIGNED_QUOTATION",
 		"STRATCOL_CONTRACT",
 		"ABSA_6995",
+		"ACCOUNTANT_LETTER",
+		"CALL_CENTRE_APPLICATION",
 	]),
 	data: z.record(z.string(), z.unknown()),
 });
@@ -37,17 +42,14 @@ const formSchemaMap: Record<FormType, z.ZodSchema> = {
 	SIGNED_QUOTATION: signedQuotationSchema,
 	STRATCOL_CONTRACT: stratcolContractSchema,
 	ABSA_6995: absa6995Schema,
+	ACCOUNTANT_LETTER: accountantLetterSchema,
+	CALL_CENTRE_APPLICATION: callCentreApplicationSchema,
 	DOCUMENT_UPLOADS: z.any(),
 };
 
-const extractSubmittedBy = (
-	formType: FormType,
-	data: Record<string, unknown>,
-) => {
+const extractSubmittedBy = (formType: FormType, data: Record<string, unknown>) => {
 	if (formType === "SIGNED_QUOTATION" || formType === "STRATCOL_CONTRACT") {
-		return typeof data.signatureName === "string"
-			? data.signatureName
-			: undefined;
+		return typeof data.signatureName === "string" ? data.signatureName : undefined;
 	}
 
 	if (formType === "ABSA_6995") {
@@ -69,7 +71,7 @@ export async function POST(request: NextRequest) {
 					error: "Invalid submission payload",
 					details: parsed.error.flatten(),
 				},
-				{ status: 400 },
+				{ status: 400 }
 			);
 		}
 
@@ -77,41 +79,23 @@ export async function POST(request: NextRequest) {
 		const formInstance = await getFormInstanceByToken(token);
 
 		if (!formInstance) {
-			return NextResponse.json(
-				{ error: "Form link is invalid" },
-				{ status: 404 },
-			);
+			return NextResponse.json({ error: "Form link is invalid" }, { status: 404 });
 		}
 
 		if (formInstance.formType !== formType) {
-			return NextResponse.json(
-				{ error: "Form type mismatch" },
-				{ status: 400 },
-			);
+			return NextResponse.json({ error: "Form type mismatch" }, { status: 400 });
 		}
 
 		if (formInstance.status === "submitted") {
-			return NextResponse.json(
-				{ error: "Form already submitted" },
-				{ status: 409 },
-			);
+			return NextResponse.json({ error: "Form already submitted" }, { status: 409 });
 		}
 
 		if (formInstance.status === "revoked") {
-			return NextResponse.json(
-				{ error: "Form link has been revoked" },
-				{ status: 410 },
-			);
+			return NextResponse.json({ error: "Form link has been revoked" }, { status: 410 });
 		}
 
-		if (
-			formInstance.expiresAt &&
-			new Date(formInstance.expiresAt) < new Date()
-		) {
-			return NextResponse.json(
-				{ error: "Form link has expired" },
-				{ status: 410 },
-			);
+		if (formInstance.expiresAt && new Date(formInstance.expiresAt) < new Date()) {
+			return NextResponse.json({ error: "Form link has expired" }, { status: 410 });
 		}
 
 		const schema = formSchemaMap[formType];
@@ -120,7 +104,7 @@ export async function POST(request: NextRequest) {
 		if (!validation.success) {
 			return NextResponse.json(
 				{ error: "Validation failed", details: validation.error.flatten() },
-				{ status: 400 },
+				{ status: 400 }
 			);
 		}
 
@@ -133,7 +117,7 @@ export async function POST(request: NextRequest) {
 			if (!quoteDb) {
 				return NextResponse.json(
 					{ error: "Database connection failed" },
-					{ status: 500 },
+					{ status: 500 }
 				);
 			}
 
@@ -147,14 +131,14 @@ export async function POST(request: NextRequest) {
 			if (quoteResults.length === 0) {
 				return NextResponse.json(
 					{ error: "No quote available for this workflow" },
-					{ status: 404 },
+					{ status: 404 }
 				);
 			}
 
 			latestQuoteId = quoteResults[0].id;
 		}
 
-		await recordFormSubmission({
+		const submission = await recordFormSubmission({
 			applicantMagiclinkFormId: formInstance.id,
 			applicantId: formInstance.applicantId,
 			workflowId: formInstance.workflowId,
@@ -162,7 +146,7 @@ export async function POST(request: NextRequest) {
 			data: validation.data as Record<string, unknown>,
 			submittedBy: extractSubmittedBy(
 				formType,
-				validation.data as Record<string, unknown>,
+				validation.data as Record<string, unknown>
 			),
 		});
 
@@ -199,6 +183,44 @@ export async function POST(request: NextRequest) {
 				},
 			});
 
+			if (formType === "FACILITY_APPLICATION") {
+				const facilityData = validation.data as FacilityApplicationForm;
+				const serviceTypes = facilityData.serviceTypes || [];
+
+				let mandateType: "EFT" | "DEBIT_ORDER" | "CASH" | "MIXED" = "EFT";
+				const hasDebicheck = serviceTypes.includes("DebiCheck");
+				// Consider other service types as EFT for now
+				const hasEft = serviceTypes.some(type => type !== "DebiCheck");
+
+				if (hasDebicheck && hasEft) {
+					mandateType = "MIXED";
+				} else if (hasDebicheck) {
+					mandateType = "DEBIT_ORDER";
+				}
+
+				// Assuming maxRandValue is in Rands, convert to cents
+				const mandateVolume = (facilityData.maxRandValue || 0) * 100;
+
+				await inngest.send({
+					name: "form/facility.submitted",
+					data: {
+						workflowId: formInstance.workflowId,
+						applicantId: formInstance.applicantId,
+						submissionId: submission.id,
+						formData: {
+							mandateVolume,
+							mandateType,
+							businessType: "Unknown",
+							annualTurnover:
+								(facilityData.forecastVolume || 0) *
+								(facilityData.forecastAverageValue || 0) *
+								12,
+						},
+						submittedAt: new Date().toISOString(),
+					},
+				});
+			}
+
 			if (formType === "STRATCOL_CONTRACT") {
 				await inngest.send({
 					name: "contract/signed",
@@ -213,9 +235,7 @@ export async function POST(request: NextRequest) {
 				const db = quoteDb ?? (await getDatabaseClient());
 
 				if (!db) {
-					console.error(
-						"[FormSubmit] Database connection failed for quote update",
-					);
+					console.error("[FormSubmit] Database connection failed for quote update");
 				} else {
 					const updateResults = latestQuoteId
 						? await db
@@ -239,6 +259,30 @@ export async function POST(request: NextRequest) {
 						});
 					}
 				}
+			}
+
+			if (formType === "ACCOUNTANT_LETTER") {
+				await inngest.send({
+					name: "form/accountant-letter.submitted",
+					data: {
+						workflowId: formInstance.workflowId,
+						applicantId: formInstance.applicantId,
+						submissionId: submission.id,
+						submittedAt: new Date().toISOString(),
+					},
+				});
+			}
+
+			if (formType === "CALL_CENTRE_APPLICATION") {
+				await inngest.send({
+					name: "form/call-centre.submitted",
+					data: {
+						workflowId: formInstance.workflowId,
+						applicantId: formInstance.applicantId,
+						submissionId: submission.id,
+						submittedAt: new Date().toISOString(),
+					},
+				});
 			}
 		}
 

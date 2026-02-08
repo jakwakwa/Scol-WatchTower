@@ -9,12 +9,22 @@ export interface DocumentRequirement {
 }
 
 export interface DocumentRequirementContext {
-	entityType?: "company" | "trust" | "npo" | "body_corporate";
+	entityType?:
+		| "company"
+		| "close_corporation"
+		| "proprietor"
+		| "partnership"
+		| "trust"
+		| "npo"
+		| "body_corporate"
+		| "other";
+	productType?: "standard" | "premium_collections" | "call_centre";
 	industry?: string;
 	productTypes?: string[];
 	isExistingUser?: boolean;
 	saleOfBusiness?: boolean;
 	needsBankGuarantee?: boolean;
+	isHighRisk?: boolean;
 	riskBased?: boolean;
 }
 
@@ -269,10 +279,29 @@ const hasIndustry = (industry: string | undefined, token: string) => {
 export function getDocumentRequirements(context: DocumentRequirementContext) {
 	const requirements: DocumentRequirement[] = [
 		...standardApplicationRequirements,
-		...standardFicaEntityRequirements,
 		...standardFicaIndividualsRequirements,
-		...standardFicaBusinessRequirements,
 	];
+
+	// Proprietors skip Company Registration and Business Premises proof
+	if (context.entityType === "proprietor") {
+		// Only include non-entity-registration docs from FICA entity
+		requirements.push(
+			...standardFicaEntityRequirements.filter(
+				r => r.type !== "COMPANY_REGISTRATION"
+			)
+		);
+		// Skip business premises proof from FICA business
+		requirements.push(
+			...standardFicaBusinessRequirements.filter(
+				r => r.type !== "BUSINESS_PREMISES_PROOF"
+			)
+		);
+	} else {
+		requirements.push(
+			...standardFicaEntityRequirements,
+			...standardFicaBusinessRequirements,
+		);
+	}
 
 	if (context.needsBankGuarantee) {
 		requirements.push({
@@ -283,8 +312,10 @@ export function getDocumentRequirements(context: DocumentRequirementContext) {
 		});
 	}
 
+	// Product-type specific requirements
 	if (
-		context.productTypes?.some((type) => type.toLowerCase().includes("premium"))
+		context.productType === "premium_collections" ||
+		context.productTypes?.some(type => type.toLowerCase().includes("premium"))
 	) {
 		requirements.push({
 			type: "INTERMEDIARY_AGREEMENT",
@@ -294,43 +325,17 @@ export function getDocumentRequirements(context: DocumentRequirementContext) {
 		});
 	}
 
+	// Call centre: only COLMS upload (the rest moves to standalone CALL_CENTRE_APPLICATION form)
 	if (
-		context.productTypes?.some((type) =>
-			type.toLowerCase().includes("call centre"),
-		)
+		context.productType === "call_centre" ||
+		context.productTypes?.some(type => type.toLowerCase().includes("call centre"))
 	) {
-		requirements.push(
-			{
-				type: "COLMS_APPLICATION",
-				label: "COLMS application",
-				category: "product_specific",
-				required: true,
-			},
-			{
-				type: "SERVICE_AGREEMENT",
-				label: "Service agreement",
-				category: "product_specific",
-				required: true,
-			},
-			{
-				type: "PRODUCT_DESCRIPTION",
-				label: "Product description",
-				category: "product_specific",
-				required: true,
-			},
-			{
-				type: "SUPPLIER_CONTACT_INFO",
-				label: "Supplier contact information",
-				category: "product_specific",
-				required: true,
-			},
-			{
-				type: "CALL_SCRIPT",
-				label: "Call script",
-				category: "product_specific",
-				required: true,
-			},
-		);
+		requirements.push({
+			type: "COLMS_APPLICATION",
+			label: "COLMS application",
+			category: "product_specific",
+			required: true,
+		});
 	}
 
 	if (context.entityType === "npo" || hasIndustry(context.industry, "npo")) {
@@ -352,14 +357,11 @@ export function getDocumentRequirements(context: DocumentRequirementContext) {
 				label: "List of board members",
 				category: "industry_specific",
 				required: true,
-			},
+			}
 		);
 	}
 
-	if (
-		context.entityType === "trust" ||
-		hasIndustry(context.industry, "trust")
-	) {
+	if (context.entityType === "trust" || hasIndustry(context.industry, "trust")) {
 		requirements.push(
 			{
 				type: "TRUST_LETTER_OF_AUTHORITY",
@@ -384,7 +386,7 @@ export function getDocumentRequirements(context: DocumentRequirementContext) {
 				label: "Organogram",
 				category: "industry_specific",
 				required: false,
-			},
+			}
 		);
 	}
 
@@ -404,7 +406,7 @@ export function getDocumentRequirements(context: DocumentRequirementContext) {
 				label: "List of board members",
 				category: "industry_specific",
 				required: true,
-			},
+			}
 		);
 	}
 
@@ -435,10 +437,7 @@ export function getDocumentRequirements(context: DocumentRequirementContext) {
 		});
 	}
 
-	if (
-		hasIndustry(context.industry, "loan") ||
-		hasIndustry(context.industry, "debt")
-	) {
+	if (hasIndustry(context.industry, "loan") || hasIndustry(context.industry, "debt")) {
 		requirements.push({
 			type: "NCR_CERTIFICATE",
 			label: "NCR certificate",
@@ -465,7 +464,7 @@ export function getDocumentRequirements(context: DocumentRequirementContext) {
 		});
 	}
 
-	if (context.riskBased) {
+	if (context.isHighRisk || context.riskBased) {
 		requirements.push(
 			{
 				type: "FINANCIAL_STATEMENTS",
@@ -478,7 +477,7 @@ export function getDocumentRequirements(context: DocumentRequirementContext) {
 				label: "Usage of consent form",
 				category: "risk_based",
 				required: true,
-			},
+			}
 		);
 	}
 

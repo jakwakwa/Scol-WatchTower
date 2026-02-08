@@ -35,9 +35,8 @@ export function StatsCard({
 				"group relative overflow-hidden rounded-2xl border border-sidebar-border bg-card/50 backdrop-blur-sm p-6",
 				"shadow-xl shadow-black/5",
 				"transition-all duration-300 hover:bg-card/70 hover:border-secondary/10 hover:shadow-2xl hover:-translate-y-1",
-				className,
-			)}
-		>
+				className
+			)}>
 			{/* Background gradient effect */}
 			<div className="absolute inset-0 bg-linear-to-br from-secondary/2 to-transparent" />
 
@@ -54,17 +53,14 @@ export function StatsCard({
 									"text-xs font-medium",
 									change.trend === "up" && "text-emerald-600/80",
 									change.trend === "down" && "text-red-400",
-									change.trend === "neutral" && "text-muted-foreground",
-								)}
-							>
+									change.trend === "neutral" && "text-muted-foreground"
+								)}>
 								{change.trend === "up" && "↑"}
 								{change.trend === "down" && "↓"}
 								{change.value > 0 ? "+" : ""}
 								{change.value}%
 							</span>
-							<span className="text-xs text-muted-foreground">
-								vs last week
-							</span>
+							<span className="text-xs text-muted-foreground">vs last week</span>
 						</div>
 					)}
 				</div>
@@ -72,9 +68,8 @@ export function StatsCard({
 				<div
 					className={cn(
 						"flex h-12 w-12 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110",
-						iconColorClasses[iconColor],
-					)}
-				>
+						iconColorClasses[iconColor]
+					)}>
 					<Icon className="h-6 w-6" />
 				</div>
 			</div>
@@ -104,9 +99,8 @@ export function StatsCardCompact({
 			<div
 				className={cn(
 					"flex h-10 w-10 items-center justify-center rounded-lg",
-					iconColorClasses[iconColor],
-				)}
-			>
+					iconColorClasses[iconColor]
+				)}>
 				<Icon className="h-5 w-5" />
 			</div>
 			<div>

@@ -93,12 +93,7 @@ export interface ExperianScoreFactor {
 
 export interface ExperianAdverseListing {
 	/** Type of adverse listing */
-	type:
-		| "Judgment"
-		| "Default"
-		| "Administration"
-		| "Sequestration"
-		| "Deregistration";
+	type: "Judgment" | "Default" | "Administration" | "Sequestration" | "Deregistration";
 	/** Amount in ZAR cents */
 	amount: number;
 	/** Date of listing */
@@ -153,7 +148,7 @@ export function mapExperianScore(experianScore: number): number {
  * Map Experian risk category to our risk category
  */
 export function mapExperianRiskCategory(
-	category: ExperianCreditProfile["riskCategory"],
+	category: ExperianCreditProfile["riskCategory"]
 ): "LOW" | "MEDIUM" | "HIGH" | "VERY_HIGH" {
 	switch (category) {
 		case "Very Low":

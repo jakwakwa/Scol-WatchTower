@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDatabaseClient } from "@/app/utils";
-import {
-	internalForms,
-	internalSubmissions,
-	workflows,
-	FORM_TYPES,
-} from "@/db/schema";
+import { internalForms, internalSubmissions, workflows, FORM_TYPES } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { inngest } from "@/inngest/client";
 
@@ -15,16 +10,13 @@ import { inngest } from "@/inngest/client";
  */
 export async function GET(
 	request: NextRequest,
-	{ params }: { params: Promise<{ workflowId: string; formType: string }> },
+	{ params }: { params: Promise<{ workflowId: string; formType: string }> }
 ) {
 	const { workflowId, formType } = await params;
 
 	const db = getDatabaseClient();
 	if (!db) {
-		return NextResponse.json(
-			{ error: "Database not available" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Database not available" }, { status: 500 });
 	}
 
 	// Validate form type
@@ -40,8 +32,8 @@ export async function GET(
 			.where(
 				and(
 					eq(internalForms.workflowId, parseInt(workflowId)),
-					eq(internalForms.formType, formType as any),
-				),
+					eq(internalForms.formType, formType as any)
+				)
 			)
 			.limit(1);
 
@@ -70,10 +62,7 @@ export async function GET(
 		});
 	} catch (error) {
 		console.error("Failed to fetch form:", error);
-		return NextResponse.json(
-			{ error: "Failed to fetch form data" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Failed to fetch form data" }, { status: 500 });
 	}
 }
 
@@ -83,16 +72,13 @@ export async function GET(
  */
 export async function POST(
 	request: NextRequest,
-	{ params }: { params: Promise<{ workflowId: string; formType: string }> },
+	{ params }: { params: Promise<{ workflowId: string; formType: string }> }
 ) {
 	const { workflowId, formType } = await params;
 
 	const db = getDatabaseClient();
 	if (!db) {
-		return NextResponse.json(
-			{ error: "Database not available" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Database not available" }, { status: 500 });
 	}
 
 	// Validate form type
@@ -105,10 +91,7 @@ export async function POST(
 		const { formData, isDraft = true, userId } = body;
 
 		if (!formData) {
-			return NextResponse.json(
-				{ error: "Form data is required" },
-				{ status: 400 },
-			);
+			return NextResponse.json({ error: "Form data is required" }, { status: 400 });
 		}
 
 		const workflowIdNum = parseInt(workflowId);
@@ -121,10 +104,7 @@ export async function POST(
 			.limit(1);
 
 		if (workflow.length === 0) {
-			return NextResponse.json(
-				{ error: "Workflow not found" },
-				{ status: 404 },
-			);
+			return NextResponse.json({ error: "Workflow not found" }, { status: 404 });
 		}
 
 		// Get or create internal form record
@@ -134,8 +114,8 @@ export async function POST(
 			.where(
 				and(
 					eq(internalForms.workflowId, workflowIdNum),
-					eq(internalForms.formType, formType as any),
-				),
+					eq(internalForms.formType, formType as any)
+				)
 			)
 			.limit(1);
 
@@ -161,7 +141,7 @@ export async function POST(
 			if (!newForm) {
 				return NextResponse.json(
 					{ error: "Failed to create form record" },
-					{ status: 500 },
+					{ status: 500 }
 				);
 			}
 			formId = newForm.id;
@@ -207,7 +187,7 @@ export async function POST(
 		if (!submission) {
 			return NextResponse.json(
 				{ error: "Failed to create submission record" },
-				{ status: 500 },
+				{ status: 500 }
 			);
 		}
 
@@ -221,6 +201,31 @@ export async function POST(
 					submissionId: submission.id,
 				},
 			});
+
+			// For facility_application, also send the specific event for V2 workflow
+			if (formType === "facility_application") {
+				// Extract mandate info from form data
+				const mandateVolume = formData.mandateVolume ?? formData.mandate_volume ?? 0;
+				const mandateType = formData.mandateType ?? formData.mandate_type ?? "EFT";
+				const businessType = formData.businessType ?? formData.business_type ?? "Unknown";
+				const annualTurnover = formData.annualTurnover ?? formData.annual_turnover;
+
+				await inngest.send({
+					name: "form/facility.submitted",
+					data: {
+						workflowId: workflowIdNum,
+						applicantId: workflow[0].applicantId,
+						submissionId: submission.id,
+						formData: {
+							mandateVolume: typeof mandateVolume === "number" ? mandateVolume : parseInt(mandateVolume) || 0,
+							mandateType: mandateType as "EFT" | "DEBIT_ORDER" | "CASH" | "MIXED",
+							businessType: String(businessType),
+							annualTurnover: annualTurnover ? (typeof annualTurnover === "number" ? annualTurnover : parseInt(annualTurnover)) : undefined,
+						},
+						submittedAt: new Date().toISOString(),
+					},
+				});
+			}
 		}
 
 		return NextResponse.json({
@@ -232,10 +237,7 @@ export async function POST(
 		});
 	} catch (error) {
 		console.error("Failed to save form:", error);
-		return NextResponse.json(
-			{ error: "Failed to save form data" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Failed to save form data" }, { status: 500 });
 	}
 }
 
@@ -245,16 +247,13 @@ export async function POST(
  */
 export async function PUT(
 	request: NextRequest,
-	{ params }: { params: Promise<{ workflowId: string; formType: string }> },
+	{ params }: { params: Promise<{ workflowId: string; formType: string }> }
 ) {
 	const { workflowId, formType } = await params;
 
 	const db = getDatabaseClient();
 	if (!db) {
-		return NextResponse.json(
-			{ error: "Database not available" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Database not available" }, { status: 500 });
 	}
 
 	try {
@@ -262,10 +261,7 @@ export async function PUT(
 		const { status, reviewNotes, reviewedBy } = body;
 
 		if (!status) {
-			return NextResponse.json(
-				{ error: "Status is required" },
-				{ status: 400 },
-			);
+			return NextResponse.json({ error: "Status is required" }, { status: 400 });
 		}
 
 		const workflowIdNum = parseInt(workflowId);
@@ -277,8 +273,8 @@ export async function PUT(
 			.where(
 				and(
 					eq(internalForms.workflowId, workflowIdNum),
-					eq(internalForms.formType, formType as any),
-				),
+					eq(internalForms.formType, formType as any)
+				)
 			)
 			.limit(1);
 
@@ -305,9 +301,6 @@ export async function PUT(
 		});
 	} catch (error) {
 		console.error("Failed to update form status:", error);
-		return NextResponse.json(
-			{ error: "Failed to update form status" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Failed to update form status" }, { status: 500 });
 	}
 }

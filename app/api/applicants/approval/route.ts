@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
 					error: "Validation failed",
 					details: validation.error.flatten().fieldErrors,
 				},
-				{ status: 400 },
+				{ status: 400 }
 			);
 		}
 
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
 		} else {
 			// Ambiguous or missing specific fields. Infer from Status.
 			if (workflow?.stage === 2) {
-				if (workflow.status === "in_progress") {
+				if (workflow.status === "processing") {
 					// Likely waiting for Quote (Stage 2 processing)
 					eventName = "onboarding/quote-generated";
 					eventData.quote = {
@@ -129,9 +129,7 @@ export async function POST(request: NextRequest) {
 						comments: "Approved via external callback (Inferred)",
 						timestamp: new Date().toISOString(),
 					};
-					console.log(
-						"[API] Inferred QUALITY GATE event based on workflow status",
-					);
+					console.log("[API] Inferred QUALITY GATE event based on workflow status");
 				}
 			}
 
@@ -152,7 +150,7 @@ export async function POST(request: NextRequest) {
 				} else {
 					return NextResponse.json(
 						{ error: "Ambiguous payload. Provide quoteId or approved:true" },
-						{ status: 400 },
+						{ status: 400 }
 					);
 				}
 			}
@@ -163,14 +161,12 @@ export async function POST(request: NextRequest) {
 				name: eventName as any,
 				data: eventData,
 			});
-			console.log(
-				`[API] Sent Inngest event ${eventName} to workflow ${workflowId}`,
-			);
+			console.log(`[API] Sent Inngest event ${eventName} to workflow ${workflowId}`);
 		}
 
 		return NextResponse.json(
 			{ success: true, event: eventName, workflowId },
-			{ status: 200 },
+			{ status: 200 }
 		);
 	} catch (error) {
 		console.error("Error processing approval callback:", error);

@@ -39,11 +39,11 @@ export const beneficialOwnerSchema = z.object({
 		.string()
 		.min(1, "Shareholding percentage is required")
 		.refine(
-			(val) => {
+			val => {
 				const num = parseFloat(val);
 				return !isNaN(num) && num >= 5 && num <= 100;
 			},
-			{ message: "Shareholding must be between 5% and 100%" },
+			{ message: "Shareholding must be between 5% and 100%" }
 		),
 });
 
@@ -59,9 +59,7 @@ export const authorisedRepresentativeSchema = z.object({
 	position: z.string().min(1, "Position is required"),
 });
 
-export type AuthorisedRepresentative = z.infer<
-	typeof authorisedRepresentativeSchema
->;
+export type AuthorisedRepresentative = z.infer<typeof authorisedRepresentativeSchema>;
 
 // ============================================
 // Section 1: Entity Details Schema
@@ -132,7 +130,7 @@ export const stratcolAgreementSchema = z.object({
 	bankingAndMandates: bankingAndMandatesSchema,
 
 	// Declarations
-	declarationsAccepted: z.boolean().refine((val) => val === true, {
+	declarationsAccepted: z.boolean().refine(val => val === true, {
 		message: "You must accept the declarations to proceed",
 	}),
 
@@ -151,7 +149,7 @@ export const stratcolAgreementSteps = {
 	step2: signatoryAndOwnersSchema,
 	step3: bankingAndMandatesSchema,
 	step4: z.object({
-		declarationsAccepted: z.boolean().refine((val) => val === true, {
+		declarationsAccepted: z.boolean().refine(val => val === true, {
 			message: "You must accept the declarations to proceed",
 		}),
 		signature: signatureSchema,
@@ -165,5 +163,4 @@ export const STRATCOL_AGREEMENT_STEP_TITLES = [
 	"Declarations & Signature",
 ] as const;
 
-export const STRATCOL_AGREEMENT_TOTAL_STEPS =
-	STRATCOL_AGREEMENT_STEP_TITLES.length;
+export const STRATCOL_AGREEMENT_TOTAL_STEPS = STRATCOL_AGREEMENT_STEP_TITLES.length;

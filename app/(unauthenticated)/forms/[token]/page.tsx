@@ -19,8 +19,7 @@ export default async function FormPage({ params }: FormPageProps) {
 		return (
 			<FormShell
 				title="Form link invalid"
-				description="The form link is invalid or no longer available."
-			>
+				description="The form link is invalid or no longer available.">
 				<p className="text-sm text-muted-foreground">
 					Please contact StratCol to request a new form link.
 				</p>
@@ -42,8 +41,7 @@ export default async function FormPage({ params }: FormPageProps) {
 		return (
 			<FormShell
 				title="Wrong link type"
-				description="This link is intended for document uploads."
-			>
+				description="This link is intended for document uploads.">
 				<p className="text-sm text-muted-foreground">
 					Please use the document upload link supplied in your email.
 				</p>
@@ -55,18 +53,14 @@ export default async function FormPage({ params }: FormPageProps) {
 		await markFormInstanceStatus(formInstance.id, "viewed");
 	}
 
-	const formType = formInstance.formType as Exclude<
-		FormType,
-		"DOCUMENT_UPLOADS"
-	>;
+	const formType = formInstance.formType as Exclude<FormType, "DOCUMENT_UPLOADS">;
 	const content = formContent[formType];
 
 	if (!content) {
 		return (
 			<FormShell
 				title="Unsupported form"
-				description="This form type is not yet available."
-			>
+				description="This form type is not yet available.">
 				<p className="text-sm text-muted-foreground">
 					Please contact StratCol for assistance.
 				</p>

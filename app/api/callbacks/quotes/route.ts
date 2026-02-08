@@ -35,14 +35,14 @@ export async function POST(request: NextRequest) {
 		if (!validation.success) {
 			console.error(
 				"[API] Quote Callback Validation Failed:",
-				validation.error.flatten(),
+				validation.error.flatten()
 			);
 			return NextResponse.json(
 				{
 					error: "Validation failed",
 					details: validation.error.flatten().fieldErrors,
 				},
-				{ status: 400 },
+				{ status: 400 }
 			);
 		}
 
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
 		// For now, assuming it is passed back (we will add it to the payload sent TO ).
 		if (!data.workflowId) {
 			console.warn(
-				"[API] Quote Callback missing workflowId - cannot resume workflow easily (unless we lookup by applicantId)",
+				"[API] Quote Callback missing workflowId - cannot resume workflow easily (unless we lookup by applicantId)"
 			);
 			// Potential lookup logic here if strictly needed
 		}
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
 		});
 
 		console.log(
-			`[API] Sent Inngest quote-generated event for applicant ${data.applicantId}`,
+			`[API] Sent Inngest quote-generated event for applicant ${data.applicantId}`
 		);
 
 		return NextResponse.json({ success: true }, { status: 200 });
