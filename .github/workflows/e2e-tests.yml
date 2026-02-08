@@ -32,16 +32,15 @@ jobs:
           DATABASE_URL: file:./e2e/test.db
           E2E_TEST_MODE: true
 
+      # Clerk & test-user credentials come from .env.test (committed).
+      # playwright.config.ts loads it with override: true so the values
+      # always reach @clerk/testing even if an empty CI env var exists.
       - name: Run Playwright tests
         run: bun run test:e2e
         env:
           DATABASE_URL: file:./e2e/test.db
           INNGEST_DEV: true
           NEXT_PUBLIC_APP_URL: http://localhost:3000
-          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
-          E2E_CLERK_USER_USERNAME: ${{ secrets.E2E_CLERK_USER_USERNAME }}
-          E2E_CLERK_USER_PASSWORD: ${{ secrets.E2E_CLERK_USER_PASSWORD }}
 
       - name: Upload test results
         uses: actions/upload-artifact@v4

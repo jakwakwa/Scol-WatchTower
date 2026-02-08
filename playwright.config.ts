@@ -2,8 +2,10 @@ import { defineConfig, devices } from "@playwright/test";
 import { config } from "dotenv";
 import { resolve } from "node:path";
 
-// Load test environment variables
-config({ path: resolve(__dirname, ".env.test") });
+// Load test environment variables.
+// `override: true` ensures .env.test values win over empty/placeholder
+// env vars that CI runners may inject from unconfigured secrets.
+config({ path: resolve(__dirname, ".env.test"), override: true });
 
 /**
  * Playwright Configuration for StratCol Control Tower
@@ -78,6 +80,16 @@ export default defineConfig({
 			use: {
 				...devices["Desktop Chrome"],
 				// Use prepared Clerk auth state
+				storageState: "playwright/.clerk/user.json",
+			},
+			dependencies: ["global setup"],
+		},
+		/* Workflow / SOP tests - use saved auth state */
+		{
+			name: "workflow tests",
+			testMatch: /workflow\/.*\.spec\.ts/,
+			use: {
+				...devices["Desktop Chrome"],
 				storageState: "playwright/.clerk/user.json",
 			},
 			dependencies: ["global setup"],
