@@ -64,14 +64,14 @@ export interface WorkflowRow {
 	reviewType?: "procurement" | "general";
 }
 
-/** V2 Workflow Stage Names */
+/** V2 Workflow Stage Names (SOP-aligned) */
 export const STAGE_NAMES: Record<number, string> = {
-	1: "Entry & Quote",
-	2: "Quote Signing",
-	3: "Mandate Processing",
-	4: "AI Analysis",
-	5: "Contract & Forms",
-	6: "Completion",
+	1: "Quote & Review",
+	2: "Mandate Collection",
+	3: "Procurement & AI",
+	4: "Risk Review",
+	5: "Contract",
+	6: "Final Approval",
 };
 
 // --- Components ---

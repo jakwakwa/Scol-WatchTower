@@ -1,12 +1,11 @@
 /**
- * Final Approval API - Control Tower Endpoint
+ * Two-Factor Final Approval API — SOP Stage 6
  *
- * Allows the Account Manager to finalize an application after
- * all documents and contracts are received. Sends 'onboarding/final-approval.received'
- * event to complete the V2 workflow.
+ * Handles individual approval submissions from Risk Manager and Account Manager.
+ * The workflow only completes when BOTH have approved (tracked on the workflow record).
  *
  * POST /api/onboarding/approve
- * Body: { workflowId, applicantId, contractSigned, absaFormComplete, notes? }
+ * Body: { workflowId, applicantId, role: "risk_manager" | "account_manager", decision, reason? }
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -21,15 +20,13 @@ import { auth } from "@clerk/nextjs/server";
 // Request Schema
 // ============================================
 
-const FinalApprovalSchema = z.object({
+const TwoFactorApprovalSchema = z.object({
 	workflowId: z.number().int().positive("Workflow ID is required"),
 	applicantId: z.number().int().positive("Applicant ID is required"),
-	contractSigned: z.boolean(),
-	absaFormComplete: z.boolean(),
-	notes: z.string().optional(),
+	role: z.enum(["risk_manager", "account_manager"]),
+	decision: z.enum(["APPROVED", "REJECTED"]),
+	reason: z.string().optional(),
 });
-
-type FinalApprovalInput = z.infer<typeof FinalApprovalSchema>;
 
 // ============================================
 // POST Handler
@@ -37,7 +34,6 @@ type FinalApprovalInput = z.infer<typeof FinalApprovalSchema>;
 
 export async function POST(request: NextRequest) {
 	try {
-		// Authenticate the request
 		const { userId } = await auth();
 		if (!userId) {
 			return NextResponse.json(
@@ -46,9 +42,8 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		// Parse and validate request body
 		const body = await request.json();
-		const validationResult = FinalApprovalSchema.safeParse(body);
+		const validationResult = TwoFactorApprovalSchema.safeParse(body);
 
 		if (!validationResult.success) {
 			return NextResponse.json(
@@ -60,29 +55,19 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		const { workflowId, applicantId, contractSigned, absaFormComplete, notes } =
-			validationResult.data;
+		const { workflowId, applicantId, role, decision, reason } = validationResult.data;
 
-		console.log(`[FinalApproval] Processing final approval for workflow ${workflowId}:`, {
+		console.log(`[TwoFactorApproval] ${role} decision for workflow ${workflowId}:`, {
+			decision,
 			approvedBy: userId,
-			contractSigned,
-			absaFormComplete,
 		});
 
-		// Verify prerequisites
-		if (!contractSigned) {
-			return NextResponse.json(
-				{ error: "Contract must be signed before final approval" },
-				{ status: 400 }
-			);
-		}
-
-		// Verify workflow exists and is in correct state
 		const db = getDatabaseClient();
 		if (!db) {
 			return NextResponse.json({ error: "Database connection failed" }, { status: 500 });
 		}
 
+		// Verify workflow exists
 		const workflowResult = await db
 			.select()
 			.from(workflows)
@@ -109,47 +94,67 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		// Log the approval event to the database
+		// Log the approval event
 		await db.insert(workflowEvents).values({
 			workflowId,
-			eventType: "final_approval",
+			eventType: `two_factor_approval_${role}`,
 			payload: JSON.stringify({
-				contractSigned,
-				absaFormComplete,
-				notes,
+				role,
+				decision,
+				reason,
 				fromStage: workflow.stage,
 			}),
 			actorId: userId,
 			actorType: "user",
 		});
 
-		// Send the event to Inngest to complete the workflow
+		// Send the appropriate Inngest event
+		const eventName = role === "risk_manager"
+			? "approval/risk-manager.received" as const
+			: "approval/account-manager.received" as const;
+
 		await inngest.send({
-			name: "onboarding/final-approval.received",
+			name: eventName,
 			data: {
 				workflowId,
 				applicantId,
 				approvedBy: userId,
-				contractSigned,
-				absaFormComplete,
-				notes,
+				decision,
+				reason,
 				timestamp: new Date().toISOString(),
 			},
 		});
 
-		console.log(`[FinalApproval] Event sent to Inngest for workflow ${workflowId}`);
+		console.log(`[TwoFactorApproval] ${role} event sent for workflow ${workflowId}`);
 
-		// Return success response
+		// Check if both approvals are now present
+		const riskApproval = role === "risk_manager"
+			? { approvedBy: userId, decision, timestamp: new Date().toISOString() }
+			: workflow.riskManagerApproval
+				? JSON.parse(workflow.riskManagerApproval)
+				: null;
+
+		const accountApproval = role === "account_manager"
+			? { approvedBy: userId, decision, timestamp: new Date().toISOString() }
+			: workflow.accountManagerApproval
+				? JSON.parse(workflow.accountManagerApproval)
+				: null;
+
+		const bothApproved = riskApproval?.decision === "APPROVED" && accountApproval?.decision === "APPROVED";
+
 		return NextResponse.json({
 			success: true,
-			message: "Final approval recorded - workflow completing",
+			message: `${role.replace("_", " ")} ${decision.toLowerCase()} recorded`,
 			workflowId,
 			applicantId,
 			approvedBy: userId,
+			role,
+			decision,
+			bothApproved,
 			timestamp: new Date().toISOString(),
 		});
 	} catch (error) {
-		console.error("[FinalApproval] Error processing approval:", error);
+		console.error("[TwoFactorApproval] Error processing approval:", error);
 
 		return NextResponse.json(
 			{
@@ -200,9 +205,16 @@ export async function GET(request: NextRequest) {
 			);
 		}
 
-		// Check if workflow is ready for final approval
+		const riskManagerApproval = workflow.riskManagerApproval
+			? JSON.parse(workflow.riskManagerApproval)
+			: null;
+
+		const accountManagerApproval = workflow.accountManagerApproval
+			? JSON.parse(workflow.accountManagerApproval)
+			: null;
+
 		const isReadyForApproval =
-			workflow.status === "awaiting_human" && (workflow.stage === 5 || workflow.stage === 6);
+			workflow.status === "awaiting_human" && workflow.stage === 6;
 
 		return NextResponse.json({
 			workflowId: workflow.id,
@@ -210,10 +222,14 @@ export async function GET(request: NextRequest) {
 			status: workflow.status,
 			stage: workflow.stage,
 			isReadyForApproval,
+			riskManagerApproval,
+			accountManagerApproval,
+			bothApproved:
+				riskManagerApproval?.decision === "APPROVED" &&
+				accountManagerApproval?.decision === "APPROVED",
 		});
 	} catch (error) {
-		console.error("[FinalApproval] Error fetching status:", error);
-
+		console.error("[TwoFactorApproval] Error fetching status:", error);
 		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 	}
 }

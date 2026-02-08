@@ -495,13 +495,20 @@ export type Events = {
 	};
 
 	/**
-	 * Final approval button pressed by Account Manager - ends workflow
+	 * Final approval — emitted only when BOTH Risk Manager + Account Manager have approved (two-factor gate)
 	 */
 	"onboarding/final-approval.received": {
 		data: {
 			workflowId: number;
 			applicantId: number;
-			approvedBy: string; // Account Manager ID
+			riskManagerApproval: {
+				approvedBy: string;
+				timestamp: string;
+			};
+			accountManagerApproval: {
+				approvedBy: string;
+				timestamp: string;
+			};
 			contractSigned: boolean;
 			absaFormComplete: boolean;
 			notes?: string;
@@ -660,6 +667,126 @@ export type Events = {
 			isBlocked: boolean;
 			recommendation: "AUTO_APPROVE" | "PROCEED_WITH_CONDITIONS" | "MANUAL_REVIEW" | "BLOCK";
 			flags: string[];
+		};
+	};
+
+	// ================================================================
+	// SOP Stage Gate Events
+	// ================================================================
+
+	/** Quote needs update — loops back to data entry */
+	"quote/needs-update": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			quoteId: number;
+			requestedBy: string;
+			reason: string;
+			requestedAt: string;
+		};
+	};
+
+	/** Quote adjusted by Account Manager */
+	"quote/adjusted": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			quoteId: number;
+			adjustedBy: string;
+			adjustedAt: string;
+		};
+	};
+
+	/** All commercial mandates verified gate */
+	"mandate/verified": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			mandateType: "EFT" | "DEBIT_ORDER" | "CASH" | "MIXED";
+			verifiedAt: string;
+			retryCount: number;
+		};
+	};
+
+	/** Mandate collection timed out or exhausted retries */
+	"mandate/collection.expired": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			retryCount: number;
+			reason: "timeout" | "max_retries";
+			expiredAt: string;
+		};
+	};
+
+	/** Reporter Agent consolidated report completed */
+	"reporter/analysis.completed": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			report: {
+				validationSummary: Record<string, unknown>;
+				riskSummary: Record<string, unknown>;
+				sanctionsSummary: Record<string, unknown>;
+				overallRecommendation: "APPROVE" | "CONDITIONAL_APPROVE" | "MANUAL_REVIEW" | "DECLINE";
+				aggregatedScore: number;
+				flags: string[];
+			};
+			completedAt: string;
+		};
+	};
+
+	/** Risk Manager two-factor approval (Stage 6) */
+	"approval/risk-manager.received": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			approvedBy: string;
+			decision: "APPROVED" | "REJECTED";
+			reason?: string;
+			timestamp: string;
+		};
+	};
+
+	/** Account Manager two-factor approval (Stage 6) */
+	"approval/account-manager.received": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			approvedBy: string;
+			decision: "APPROVED" | "REJECTED";
+			reason?: string;
+			timestamp: string;
+		};
+	};
+
+	/** Contract draft edited/reviewed by Account Manager (Stage 5) */
+	"contract/draft.reviewed": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			reviewedBy: string;
+			reviewedAt: string;
+			changes?: Record<string, unknown>;
+		};
+	};
+
+	/** ABSA 6995 form completed (Stage 5) */
+	"form/absa-6995.completed": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			completedAt: string;
+		};
+	};
+
+	/** Procurement docs completeness verified */
+	"procurement/docs.complete": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			documentsVerified: string[];
+			completedAt: string;
 		};
 	};
 };

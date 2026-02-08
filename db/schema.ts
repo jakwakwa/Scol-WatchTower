@@ -171,6 +171,14 @@ export const workflows = sqliteTable("workflows", {
 	documentsComplete: integer("documents_complete", { mode: "boolean" }),
 	aiAnalysisComplete: integer("ai_analysis_complete", { mode: "boolean" }),
 
+	// Mandate retry tracking (SOP: 7-day timeout, max 8 retries)
+	mandateRetryCount: integer("mandate_retry_count").default(0),
+	mandateLastSentAt: integer("mandate_last_sent_at", { mode: "timestamp" }),
+
+	// Two-factor approval tracking (Stage 6)
+	riskManagerApproval: text("risk_manager_approval"), // JSON: { approvedBy, timestamp, decision }
+	accountManagerApproval: text("account_manager_approval"), // JSON: { approvedBy, timestamp, decision }
+
 	metadata: text("metadata"),
 });
 
