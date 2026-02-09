@@ -35,7 +35,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# environment files — NEVER commit secrets
 .env
-.env.test
+.env.*
+!.env.example
 
 playwright/.clerk
