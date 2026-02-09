@@ -18,14 +18,25 @@
 
 import { eq } from "drizzle-orm";
 import { NonRetriableError } from "inngest";
-import { getDatabaseClient, getBaseUrl } from "@/app/utils";
-import { applicants, quotes, workflows, workflowEvents } from "@/db/schema";
+import { getBaseUrl, getDatabaseClient } from "@/app/utils";
+import { applicants, workflowEvents, workflows } from "@/db/schema";
+import { performAggregatedAnalysis } from "@/lib/services/agents";
 import {
-	sendInternalAlertEmail,
+	type BusinessType,
+	determineBusinessType,
+	getDocumentRequirements,
+	resolveBusinessType,
+} from "@/lib/services/document-requirements.service";
+import {
 	sendApplicantFormLinksEmail,
+	sendInternalAlertEmail,
 } from "@/lib/services/email.service";
 import { createFormInstance } from "@/lib/services/form.service";
 import { performITCCheck } from "@/lib/services/itc.service";
+import {
+	executeKillSwitch,
+	isWorkflowTerminated,
+} from "@/lib/services/kill-switch.service";
 import {
 	createWorkflowNotification,
 	logWorkflowEvent,
@@ -33,20 +44,8 @@ import {
 import { generateQuote, type Quote } from "@/lib/services/quote.service";
 import { analyzeRisk as runProcureCheck } from "@/lib/services/risk.service";
 import { updateWorkflowStatus } from "@/lib/services/workflow.service";
-import {
-	isWorkflowTerminated,
-	executeKillSwitch,
-	type KillSwitchReason,
-} from "@/lib/services/kill-switch.service";
-import {
-	getDocumentRequirements,
-	determineBusinessType,
-	resolveBusinessType,
-	type BusinessType,
-} from "@/lib/services/document-requirements.service";
-import { performAggregatedAnalysis } from "@/lib/services/agents";
-import { inngest } from "../client";
 import type { FormType } from "@/lib/types";
+import { inngest } from "../client";
 
 // ============================================
 // Type Definitions
@@ -170,7 +169,12 @@ export const controlTowerWorkflow = inngest.createFunction(
 					message: result.error || "Failed to generate quotation",
 					actionable: true,
 				});
-				return { success: false as const, quote: null as Quote | null, error: result.error, isOverlimit: false };
+				return {
+					success: false as const,
+					quote: null as Quote | null,
+					error: result.error,
+					isOverlimit: false,
+				};
 			}
 
 			const isOverlimit = result.quote.amount > OVERLIMIT_THRESHOLD;
@@ -185,11 +189,20 @@ export const controlTowerWorkflow = inngest.createFunction(
 				},
 			});
 
-			return { success: true as const, quote: result.quote, isOverlimit, error: null as string | null };
+			return {
+				success: true as const,
+				quote: result.quote,
+				isOverlimit,
+				error: null as string | null,
+			};
 		});
 
 		if (!quotationResult.success) {
-			return { status: "failed", stage: 1, reason: quotationResult.error || "Quote generation failed" };
+			return {
+				status: "failed",
+				stage: 1,
+				reason: quotationResult.error || "Quote generation failed",
+			};
 		}
 
 		const { quote, isOverlimit } = quotationResult;
@@ -313,7 +326,9 @@ export const controlTowerWorkflow = inngest.createFunction(
 			await sendApplicantFormLinksEmail({
 				email: applicant.email,
 				contactName: applicant.contactName,
-				links: [{ formType: "FACILITY_APPLICATION", url: `${getBaseUrl()}/forms/${token}` }],
+				links: [
+					{ formType: "FACILITY_APPLICATION", url: `${getBaseUrl()}/forms/${token}` },
+				],
 			});
 
 			await createWorkflowNotification({
@@ -359,7 +374,10 @@ export const controlTowerWorkflow = inngest.createFunction(
 				applicantEntityType,
 				determineBusinessType(formData as Record<string, unknown>)
 			);
-			const docRequirements = getDocumentRequirements(businessType, applicantIndustry ?? undefined);
+			const docRequirements = getDocumentRequirements(
+				businessType,
+				applicantIndustry ?? undefined
+			);
 
 			context.businessType = businessType;
 			context.mandateType = formData.mandateType;
@@ -382,7 +400,9 @@ export const controlTowerWorkflow = inngest.createFunction(
 				payload: {
 					businessType,
 					mandateType: formData.mandateType,
-					requiredDocuments: docRequirements.documents.filter(d => d.required).map(d => d.id),
+					requiredDocuments: docRequirements.documents
+						.filter(d => d.required)
+						.map(d => d.id),
 				},
 			});
 
@@ -535,11 +555,14 @@ export const controlTowerWorkflow = inngest.createFunction(
 				});
 			});
 
-			mandateDocsReceived = await step.waitForEvent(`wait-mandate-docs-retry-${retryCount}`, {
-				event: "document/mandate.submitted",
-				timeout: MANDATE_RETRY_TIMEOUT,
-				match: "data.workflowId",
-			});
+			mandateDocsReceived = await step.waitForEvent(
+				`wait-mandate-docs-retry-${retryCount}`,
+				{
+					event: "document/mandate.submitted",
+					timeout: MANDATE_RETRY_TIMEOUT,
+					match: "data.workflowId",
+				}
+			);
 		}
 
 		if (!mandateDocsReceived) {
@@ -564,7 +587,11 @@ export const controlTowerWorkflow = inngest.createFunction(
 					},
 				});
 			});
-			return { status: "terminated", stage: 2, reason: `Mandate collection exhausted after ${MAX_MANDATE_RETRIES} retries` };
+			return {
+				status: "terminated",
+				stage: 2,
+				reason: `Mandate collection exhausted after ${MAX_MANDATE_RETRIES} retries`,
+			};
 		}
 
 		// Emit mandate verified event
@@ -576,7 +603,11 @@ export const controlTowerWorkflow = inngest.createFunction(
 				data: {
 					workflowId,
 					applicantId,
-					mandateType: (context.mandateType || "MIXED") as "EFT" | "DEBIT_ORDER" | "CASH" | "MIXED",
+					mandateType: (context.mandateType || "MIXED") as
+						| "EFT"
+						| "DEBIT_ORDER"
+						| "CASH"
+						| "MIXED",
 					verifiedAt: new Date().toISOString(),
 					retryCount,
 				},
@@ -609,8 +640,12 @@ export const controlTowerWorkflow = inngest.createFunction(
 					workflowId,
 					applicantId,
 					businessType: mandateInfo.businessType,
-					requiredDocuments: docRequirements.documents.filter(d => d.required).map(d => d.id),
-					optionalDocuments: docRequirements.documents.filter(d => !d.required).map(d => d.id),
+					requiredDocuments: docRequirements.documents
+						.filter(d => d.required)
+						.map(d => d.id),
+					optionalDocuments: docRequirements.documents
+						.filter(d => !d.required)
+						.map(d => d.id),
 				},
 			});
 		});
@@ -628,52 +663,70 @@ export const controlTowerWorkflow = inngest.createFunction(
 			result?: Awaited<ReturnType<typeof runProcureCheck>>;
 		}
 
-		const procurementStream = step.run("stream-a-procurement", async (): Promise<ProcurementStreamResult> => {
-			const terminated = await isWorkflowTerminated(workflowId);
-			if (terminated) {
-				return { cleared: false, reason: "Workflow terminated", killSwitchTriggered: true, requiresReview: false };
+		const procurementStream = step.run(
+			"stream-a-procurement",
+			async (): Promise<ProcurementStreamResult> => {
+				const terminated = await isWorkflowTerminated(workflowId);
+				if (terminated) {
+					return {
+						cleared: false,
+						reason: "Workflow terminated",
+						killSwitchTriggered: true,
+						requiresReview: false,
+					};
+				}
+
+				try {
+					const procureResult = await runProcureCheck(applicantId);
+
+					await logWorkflowEvent({
+						workflowId,
+						eventType: "procurement_check_completed",
+						payload: {
+							riskScore: procureResult.riskScore,
+							anomalies: procureResult.anomalies,
+							recommendedAction: procureResult.recommendedAction,
+						},
+					});
+
+					// Per SOP: procurement review gate is ALWAYS manual (Risk Manager)
+					// regardless of ProcureCheck auto recommendation
+					await createWorkflowNotification({
+						workflowId,
+						applicantId,
+						type: "warning",
+						title: "Procurement Review Required",
+						message: `ProcureCheck score: ${procureResult.riskScore}. Action: ${procureResult.recommendedAction}. Anomalies: ${procureResult.anomalies.join(", ") || "None"}`,
+						actionable: true,
+					});
+
+					await sendInternalAlertEmail({
+						title: "Procurement Review Required",
+						message: `Applicant requires Risk Manager procurement review.\nRisk Score: ${procureResult.riskScore}\nRecommended: ${procureResult.recommendedAction}\nAnomalies: ${procureResult.anomalies.join(", ") || "None"}`,
+						workflowId,
+						applicantId,
+						type: "warning",
+						actionUrl: `${getBaseUrl()}/dashboard/risk-review`,
+					});
+
+					// Always require manual review per SOP
+					return {
+						cleared: false,
+						result: procureResult,
+						requiresReview: true,
+						killSwitchTriggered: false,
+					};
+				} catch (error) {
+					console.error("[ControlTower] Procurement check error:", error);
+					return {
+						cleared: false,
+						requiresReview: true,
+						error: String(error),
+						killSwitchTriggered: false,
+					};
+				}
 			}
-
-			try {
-				const procureResult = await runProcureCheck(applicantId);
-
-				await logWorkflowEvent({
-					workflowId,
-					eventType: "procurement_check_completed",
-					payload: {
-						riskScore: procureResult.riskScore,
-						anomalies: procureResult.anomalies,
-						recommendedAction: procureResult.recommendedAction,
-					},
-				});
-
-				// Per SOP: procurement review gate is ALWAYS manual (Risk Manager)
-				// regardless of ProcureCheck auto recommendation
-				await createWorkflowNotification({
-					workflowId,
-					applicantId,
-					type: "warning",
-					title: "Procurement Review Required",
-					message: `ProcureCheck score: ${procureResult.riskScore}. Action: ${procureResult.recommendedAction}. Anomalies: ${procureResult.anomalies.join(", ") || "None"}`,
-					actionable: true,
-				});
-
-				await sendInternalAlertEmail({
-					title: "Procurement Review Required",
-					message: `Applicant requires Risk Manager procurement review.\nRisk Score: ${procureResult.riskScore}\nRecommended: ${procureResult.recommendedAction}\nAnomalies: ${procureResult.anomalies.join(", ") || "None"}`,
-					workflowId,
-					applicantId,
-					type: "warning",
-					actionUrl: `${getBaseUrl()}/dashboard/risk-review`,
-				});
-
-				// Always require manual review per SOP
-				return { cleared: false, result: procureResult, requiresReview: true, killSwitchTriggered: false };
-			} catch (error) {
-				console.error("[ControlTower] Procurement check error:", error);
-				return { cleared: false, requiresReview: true, error: String(error), killSwitchTriggered: false };
-			}
-		});
+		);
 
 		// ================================================================
 		// PARALLEL STREAM B: FICA Document Collection & AI Analysis
@@ -690,7 +743,8 @@ export const controlTowerWorkflow = inngest.createFunction(
 				applicantId,
 				type: "awaiting",
 				title: "FICA Documents Required",
-				message: "Please upload bank statements and accountant letter for AI verification",
+				message:
+					"Please upload bank statements and accountant letter for AI verification",
 				actionable: true,
 			});
 
@@ -736,7 +790,11 @@ export const controlTowerWorkflow = inngest.createFunction(
 			}
 
 			if (procurementDecision.data.decision.outcome === "DENIED") {
-				return { status: "terminated", stage: 3, reason: "Procurement denied by Risk Manager" };
+				return {
+					status: "terminated",
+					stage: 3,
+					reason: "Procurement denied by Risk Manager",
+				};
 			}
 
 			context.procurementCleared = true;
@@ -800,13 +858,14 @@ export const controlTowerWorkflow = inngest.createFunction(
 						validationSummary: result.agents.validation || {},
 						riskSummary: result.agents.risk || {},
 						sanctionsSummary: result.agents.sanctions || {},
-						overallRecommendation: result.overall.recommendation === "AUTO_APPROVE"
-							? "APPROVE"
-							: result.overall.recommendation === "BLOCK"
-								? "DECLINE"
-								: result.overall.recommendation === "MANUAL_REVIEW"
-									? "MANUAL_REVIEW"
-									: "CONDITIONAL_APPROVE",
+						overallRecommendation:
+							result.overall.recommendation === "AUTO_APPROVE"
+								? "APPROVE"
+								: result.overall.recommendation === "BLOCK"
+									? "DECLINE"
+									: result.overall.recommendation === "MANUAL_REVIEW"
+										? "MANUAL_REVIEW"
+										: "CONDITIONAL_APPROVE",
 						aggregatedScore: result.scores.aggregatedScore,
 						flags: result.overall.flags,
 					},
@@ -974,13 +1033,15 @@ export const controlTowerWorkflow = inngest.createFunction(
 				applicantId,
 				type: "awaiting",
 				title: "Contract Draft Ready for Review",
-				message: "Please review and edit the AI-generated contract before sending to client.",
+				message:
+					"Please review and edit the AI-generated contract before sending to client.",
 				actionable: true,
 			});
 
 			await sendInternalAlertEmail({
 				title: "Contract Draft Ready for Review",
-				message: "AI-generated contract is ready for Account Manager review and editing before sending to client.",
+				message:
+					"AI-generated contract is ready for Account Manager review and editing before sending to client.",
 				workflowId,
 				applicantId,
 				type: "info",
@@ -1033,7 +1094,10 @@ export const controlTowerWorkflow = inngest.createFunction(
 				email: applicant.email,
 				contactName: applicant.contactName,
 				links: [
-					{ formType: "STRATCOL_CONTRACT", url: `${getBaseUrl()}/forms/${contractToken.token}` },
+					{
+						formType: "STRATCOL_CONTRACT",
+						url: `${getBaseUrl()}/forms/${contractToken.token}`,
+					},
 					{ formType: "ABSA_6995", url: `${getBaseUrl()}/forms/${absaToken.token}` },
 				],
 			});
@@ -1090,13 +1154,15 @@ export const controlTowerWorkflow = inngest.createFunction(
 				applicantId,
 				type: "awaiting",
 				title: "Two-Factor Final Approval Required",
-				message: "Both Risk Manager and Account Manager must approve to complete onboarding.",
+				message:
+					"Both Risk Manager and Account Manager must approve to complete onboarding.",
 				actionable: true,
 			});
 
 			await sendInternalAlertEmail({
 				title: "Two-Factor Final Approval Required",
-				message: "Application is ready for final approval. Both Risk Manager and Account Manager must approve.",
+				message:
+					"Application is ready for final approval. Both Risk Manager and Account Manager must approve.",
 				workflowId,
 				applicantId,
 				type: "info",
@@ -1125,9 +1191,14 @@ export const controlTowerWorkflow = inngest.createFunction(
 				applicantId,
 				reason: "MANUAL_TERMINATION",
 				decidedBy: riskManagerApproval.data.approvedBy,
-				notes: riskManagerApproval.data.reason || "Rejected at final approval by Risk Manager",
+				notes:
+					riskManagerApproval.data.reason || "Rejected at final approval by Risk Manager",
 			});
-			return { status: "terminated", stage: 6, reason: "Rejected by Risk Manager at final approval" };
+			return {
+				status: "terminated",
+				stage: 6,
+				reason: "Rejected by Risk Manager at final approval",
+			};
 		}
 
 		// Persist Risk Manager approval
@@ -1146,11 +1217,14 @@ export const controlTowerWorkflow = inngest.createFunction(
 				.where(eq(workflows.id, workflowId));
 		});
 
-		const accountManagerApproval = await step.waitForEvent("wait-account-manager-approval", {
-			event: "approval/account-manager.received",
-			timeout: REVIEW_TIMEOUT,
-			match: "data.workflowId",
-		});
+		const accountManagerApproval = await step.waitForEvent(
+			"wait-account-manager-approval",
+			{
+				event: "approval/account-manager.received",
+				timeout: REVIEW_TIMEOUT,
+				match: "data.workflowId",
+			}
+		);
 
 		if (!accountManagerApproval) {
 			return { status: "timeout", stage: 6, reason: "Account Manager approval timeout" };
@@ -1162,9 +1236,15 @@ export const controlTowerWorkflow = inngest.createFunction(
 				applicantId,
 				reason: "MANUAL_TERMINATION",
 				decidedBy: accountManagerApproval.data.approvedBy,
-				notes: accountManagerApproval.data.reason || "Rejected at final approval by Account Manager",
+				notes:
+					accountManagerApproval.data.reason ||
+					"Rejected at final approval by Account Manager",
 			});
-			return { status: "terminated", stage: 6, reason: "Rejected by Account Manager at final approval" };
+			return {
+				status: "terminated",
+				stage: 6,
+				reason: "Rejected by Account Manager at final approval",
+			};
 		}
 
 		// Persist Account Manager approval
@@ -1217,7 +1297,8 @@ export const controlTowerWorkflow = inngest.createFunction(
 				applicantId,
 				type: "success",
 				title: "Onboarding Complete",
-				message: "Client onboarding has been successfully completed with two-factor approval.",
+				message:
+					"Client onboarding has been successfully completed with two-factor approval.",
 				actionable: false,
 			});
 
@@ -1264,9 +1345,7 @@ export const killSwitchHandler = inngest.createFunction(
 	async ({ event, step }) => {
 		const { workflowId, reason, decidedBy, terminatedAt } = event.data;
 
-		console.info(
-			`[KillSwitchHandler] Processing termination for workflow ${workflowId}`
-		);
+		console.info(`[KillSwitchHandler] Processing termination for workflow ${workflowId}`);
 
 		await step.run("log-termination", async () => {
 			const db = getDatabaseClient();
