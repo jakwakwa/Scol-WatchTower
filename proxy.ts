@@ -3,7 +3,20 @@ import { NextResponse } from "next/server";
 
 const isProtectedRoute = createRouteMatcher(["/protected(.*)"]);
 
+/**
+ * Routes that must bypass Clerk entirely.
+ * The Inngest serve endpoint receives server-to-server requests from
+ * the Inngest platform that carry no Clerk auth — running middleware
+ * on it can interfere with request parsing and function invocation.
+ */
+const isInngestRoute = createRouteMatcher(["/api/inngest(.*)"]);
+
 export default clerkMiddleware(async (auth, req) => {
+	// Inngest server-to-server requests — skip Clerk processing entirely
+	if (isInngestRoute(req)) {
+		return NextResponse.next();
+	}
+
 	// E2E Test Mode Bypass - Skip Clerk auth when test cookie is present
 	const isE2ETestMode = req.cookies.get("__e2e_test_mode")?.value === "true";
 	if (isE2ETestMode) {
