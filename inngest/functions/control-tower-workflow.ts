@@ -112,7 +112,7 @@ export const controlTowerWorkflow = inngest.createFunction(
 		const { applicantId, workflowId } = event.data;
 		const context: WorkflowContext = { applicantId, workflowId };
 
-		console.log(
+		console.info(
 			`[ControlTower] Starting workflow ${workflowId} for applicant ${applicantId}`
 		);
 
@@ -126,7 +126,7 @@ export const controlTowerWorkflow = inngest.createFunction(
 		);
 
 		// Step 1.1: ITC check
-		const initialChecks = await step.run("initial-checks", async () => {
+		const _initialChecks = await step.run("initial-checks", async () => {
 			await guardKillSwitch(workflowId, "initial-checks");
 
 			const itcResult = await performITCCheck({ applicantId, workflowId });
@@ -161,7 +161,7 @@ export const controlTowerWorkflow = inngest.createFunction(
 
 			const result = await generateQuote(applicantId, workflowId);
 
-			if (!result.success || !result.quote) {
+			if (!(result.success && result.quote)) {
 				await createWorkflowNotification({
 					workflowId,
 					applicantId,
@@ -1262,9 +1262,9 @@ export const killSwitchHandler = inngest.createFunction(
 	},
 	{ event: "workflow/terminated" },
 	async ({ event, step }) => {
-		const { workflowId, applicantId, reason, decidedBy, terminatedAt } = event.data;
+		const { workflowId, reason, decidedBy, terminatedAt } = event.data;
 
-		console.log(
+		console.info(
 			`[KillSwitchHandler] Processing termination for workflow ${workflowId}`
 		);
 
