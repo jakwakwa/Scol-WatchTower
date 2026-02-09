@@ -469,6 +469,10 @@ export const controlTowerWorkflow = inngest.createFunction(
 				email: applicant.email,
 				contactName: applicant.contactName,
 				links,
+				requiredDocuments: mandateInfo.requiredDocuments.map(d => ({
+					name: d.name,
+					description: d.description,
+				})),
 			});
 
 			await createWorkflowNotification({
@@ -1344,8 +1348,6 @@ export const killSwitchHandler = inngest.createFunction(
 	{ event: "workflow/terminated" },
 	async ({ event, step }) => {
 		const { workflowId, reason, decidedBy, terminatedAt } = event.data;
-
-		console.info(`[KillSwitchHandler] Processing termination for workflow ${workflowId}`);
 
 		await step.run("log-termination", async () => {
 			const db = getDatabaseClient();

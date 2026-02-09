@@ -236,7 +236,7 @@ export default async function WorkflowDetailsPage({
 									</div>
 									<div>
 										<span className="block text-foreground/70">Adjusted Fee</span>
-										<span>{(latestQuote.adjustedFeePercent || 0 / 100).toFixed(2)}%</span>
+										<span>{((latestQuote.adjustedFeePercent ?? 0) / 100).toFixed(2)}%</span>
 									</div>
 									<div>
 										<span className="block text-foreground/70">Terms</span>

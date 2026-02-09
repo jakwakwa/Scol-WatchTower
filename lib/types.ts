@@ -65,6 +65,13 @@ export const DocumentCategorySchema = z.enum([
 	"industry_specific",
 	"risk_based",
 	"other",
+	// Mandate document categories (from document-requirements.service)
+	"IDENTITY",
+	"ADDRESS",
+	"FINANCIAL",
+	"ENTITY",
+	"GOVERNANCE",
+	"REGULATORY",
 ]);
 
 export type DocumentCategory = z.infer<typeof DocumentCategorySchema>;
@@ -90,6 +97,8 @@ export const DocumentTypeSchema = z.enum([
 	"DIRECTOR_ID",
 	"PROOF_OF_RESIDENCE",
 	"BUSINESS_PREMISES_PROOF",
+	"PROPRIETOR_ID",
+	"PROPRIETOR_RESIDENCE",
 	"BANK_STATEMENT_3_MONTH",
 	"ACCOUNTING_OFFICER_LETTER",
 	"THIRD_PARTY_CONFIRMATION_LETTER",

@@ -501,7 +501,8 @@ export function resolveBusinessType(
 }
 
 /**
- * Get document requirements based on business type
+ * Get document requirements based on business type.
+ * For PROPRIETOR we require only: proof of residence, ID, and financial statements — not business address.
  */
 export function getDocumentRequirements(
 	businessType: BusinessType,
@@ -512,8 +513,14 @@ export function getDocumentRequirements(
 		? INDUSTRY_REQUIREMENTS[industry.toUpperCase()] || []
 		: [];
 
+	// Proprietors: exclude Proof of Business Address; only residence, ID, and financials
+	const baseDocs =
+		businessType === "PROPRIETOR"
+			? BASE_REQUIREMENTS.filter(d => d.id !== "PROOF_OF_ADDRESS")
+			: BASE_REQUIREMENTS;
+
 	const allDocuments = [
-		...BASE_REQUIREMENTS,
+		...baseDocs,
 		...typeRequirements,
 		...industryRequirements,
 	];

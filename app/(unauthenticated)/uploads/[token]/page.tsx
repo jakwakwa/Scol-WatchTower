@@ -1,16 +1,22 @@
 import { eq } from "drizzle-orm";
+import { getDatabaseClient } from "@/app/utils";
 import FormShell from "@/components/forms/form-shell";
-import UploadView from "./upload-view";
+import type { DocumentRequirement } from "@/config/document-requirements";
 import {
-	getDocumentRequirements,
 	type DocumentRequirementContext,
+	getDocumentRequirements as getConfigDocumentRequirements,
 } from "@/config/document-requirements";
+import { applicants } from "@/db/schema";
+import type { BusinessType } from "@/lib/services/document-requirements.service";
+import {
+	getDocumentRequirements as getMandateDocumentRequirements,
+	resolveBusinessType,
+} from "@/lib/services/document-requirements.service";
 import {
 	getFormInstanceByToken,
 	markFormInstanceStatus,
 } from "@/lib/services/form.service";
-import { getDatabaseClient } from "@/app/utils";
-import { applicants } from "@/db/schema";
+import UploadView from "./upload-view";
 
 interface UploadPageProps {
 	params: Promise<{ token: string }>;
@@ -46,9 +52,9 @@ export default async function UploadPage({ params }: UploadPageProps) {
 		await markFormInstanceStatus(formInstance.id, "viewed");
 	}
 
-	// Look up applicant to build document requirement context
+	// Look up applicant and determine document requirements
 	const db = getDatabaseClient();
-	let requirements = getDocumentRequirements({});
+	let requirements: DocumentRequirement[] = getConfigDocumentRequirements({});
 
 	if (db) {
 		const [applicant] = await db
@@ -57,13 +63,38 @@ export default async function UploadPage({ params }: UploadPageProps) {
 			.where(eq(applicants.id, formInstance.applicantId));
 
 		if (applicant) {
-			const context: DocumentRequirementContext = {
-				entityType: (applicant.entityType as DocumentRequirementContext["entityType"]) ?? undefined,
-				productType: (applicant.productType as DocumentRequirementContext["productType"]) ?? undefined,
-				industry: applicant.industry ?? undefined,
-				isHighRisk: applicant.riskLevel === "red",
-			};
-			requirements = getDocumentRequirements(context);
+			// When applicant has businessType (set by mandate workflow), use mandate document
+			// requirements so we only show required docs (e.g. for proprietor: residence, ID, financials — not business address)
+			const businessType = applicant.businessType as BusinessType | null | undefined;
+			if (businessType) {
+				const mandateReqs = getMandateDocumentRequirements(
+					resolveBusinessType(applicant.entityType ?? null, businessType),
+					applicant.industry ?? undefined
+				);
+				requirements = mandateReqs.documents
+					.filter(d => d.required)
+					.map(
+						(d): DocumentRequirement => ({
+							type: d.id as DocumentRequirement["type"],
+							label: d.name,
+							category: d.category as DocumentRequirement["category"],
+							required: d.required,
+							description: d.description,
+						})
+					);
+			} else {
+				const context: DocumentRequirementContext = {
+					entityType:
+						(applicant.entityType as DocumentRequirementContext["entityType"]) ??
+						undefined,
+					productType:
+						(applicant.productType as DocumentRequirementContext["productType"]) ??
+						undefined,
+					industry: applicant.industry ?? undefined,
+					isHighRisk: applicant.riskLevel === "red",
+				};
+				requirements = getConfigDocumentRequirements(context);
+			}
 		}
 	}
 

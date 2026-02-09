@@ -1,5 +1,4 @@
-import { Button, Heading, Hr, Link, Section, Text } from "@react-email/components";
-import * as React from "react";
+import { Button, Heading, Hr, Section, Text } from "@react-email/components";
 import { EmailLayout } from "./EmailLayout";
 
 export interface FormLink {
@@ -7,14 +6,21 @@ export interface FormLink {
 	url: string;
 }
 
+export interface RequiredDocumentSummary {
+	name: string;
+	description?: string;
+}
+
 interface ApplicantFormLinksProps {
 	contactName?: string;
 	links: FormLink[];
+	requiredDocuments?: RequiredDocumentSummary[];
 }
 
 export const ApplicantFormLinks = ({
 	contactName = "Valued Client",
 	links = [],
+	requiredDocuments = [],
 }: ApplicantFormLinksProps) => {
 	const previewText = "Action Required: Complete your onboarding forms";
 
@@ -28,6 +34,23 @@ export const ApplicantFormLinks = ({
 				We're excited to have you on board. To complete your application, please fill out
 				the following forms and upload the necessary documents.
 			</Text>
+			{requiredDocuments.length > 0 ? (
+				<Section className="mt-[24px] mb-[16px]">
+					<Text className="text-black text-[14px] font-semibold leading-[24px] mb-2">
+						Please upload the following documents (via the link below):
+					</Text>
+					<ul className="list-disc pl-5 text-black text-[14px] leading-[22px] space-y-1">
+						{requiredDocuments.map((doc, index) => (
+							<li key={index}>
+								<span className="font-medium">{doc.name}</span>
+								{doc.description ? (
+									<span className="text-[#666666]"> — {doc.description}</span>
+								) : null}
+							</li>
+						))}
+					</ul>
+				</Section>
+			) : null}
 			<Section className="text-center mt-[32px] mb-[32px]">
 				{links.map((link, index) => (
 					<div key={index} className="mb-4">
