@@ -9,10 +9,7 @@ import { NextResponse } from "next/server";
 export async function POST() {
 	const db = getDatabaseClient();
 	if (!db) {
-		return NextResponse.json(
-			{ error: "Database not available" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Database not available" }, { status: 500 });
 	}
 
 	try {
@@ -23,7 +20,7 @@ export async function POST() {
 		console.error("Failed to mark all notifications read:", error);
 		return NextResponse.json(
 			{ error: "Failed to update notifications" },
-			{ status: 500 },
+			{ status: 500 }
 		);
 	}
 }

@@ -6,9 +6,7 @@ import { RiCloseLine } from "@remixicon/react";
 
 import { cn } from "@/lib/utils";
 
-function Dialog({
-	...props
-}: React.ComponentProps<typeof DialogPrimitive.Root>) {
+function Dialog({ ...props }: React.ComponentProps<typeof DialogPrimitive.Root>) {
 	return <DialogPrimitive.Root data-slot="dialog" {...props} />;
 }
 
@@ -18,9 +16,7 @@ function DialogTrigger({
 	return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />;
 }
 
-function DialogPortal({
-	...props
-}: React.ComponentProps<typeof DialogPrimitive.Portal>) {
+function DialogPortal({ ...props }: React.ComponentProps<typeof DialogPrimitive.Portal>) {
 	return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />;
 }
 
@@ -33,7 +29,7 @@ function DialogOverlay({
 			data-slot="dialog-overlay"
 			className={cn(
 				"data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 bg-black/80 duration-100 supports-backdrop-filter:backdrop-blur-xs fixed inset-0 z-50",
-				className,
+				className
 			)}
 			{...props}
 		/>
@@ -52,10 +48,9 @@ function DialogContent({
 				data-slot="dialog-content"
 				className={cn(
 					"data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 bg-background ring-foreground/5 fixed top-1/2 left-1/2 z-50 grid w-full max-w-lg -translate-x-1/2 -translate-y-1/2 gap-6 rounded-4xl p-6 ring-1 duration-100 outline-none",
-					className,
+					className
 				)}
-				{...props}
-			>
+				{...props}>
 				{children}
 				<DialogPrimitive.Close className="absolute right-4 top-4 rounded-full opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
 					<RiCloseLine className="size-5" />
@@ -70,10 +65,7 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
 	return (
 		<div
 			data-slot="dialog-header"
-			className={cn(
-				"flex flex-col gap-1.5 text-center sm:text-left",
-				className,
-			)}
+			className={cn("flex flex-col gap-1.5 text-center sm:text-left", className)}
 			{...props}
 		/>
 	);
@@ -83,10 +75,7 @@ function DialogFooter({ className, ...props }: React.ComponentProps<"div">) {
 	return (
 		<div
 			data-slot="dialog-footer"
-			className={cn(
-				"flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
-				className,
-			)}
+			className={cn("flex flex-col-reverse gap-2 sm:flex-row sm:justify-end", className)}
 			{...props}
 		/>
 	);

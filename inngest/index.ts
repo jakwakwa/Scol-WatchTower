@@ -1,10 +1,21 @@
 /**
- * Inngest exports - client and all functions
- * Import this in the API route to serve functions
+ * Inngest exports - Control Tower Workflow
+ * 
+ * This is the PRD-aligned onboarding workflow with:
+ * - Kill switch functionality
+ * - Parallel processing streams
+ * - Conditional document logic
+ * - AI agent integration
  */
 export { inngest } from "./client";
-export { onboardingWorkflow } from "./functions/onboarding";
+export { controlTowerWorkflow, killSwitchHandler } from "./functions/control-tower-workflow";
 
 // Export all functions as array for serve()
-import { onboardingWorkflow } from "./functions/onboarding";
-export const functions = [onboardingWorkflow];
+import { documentAggregator } from "./functions/document-aggregator";
+import { controlTowerWorkflow, killSwitchHandler } from "./functions/control-tower-workflow";
+
+export const functions = [
+	controlTowerWorkflow,
+	killSwitchHandler,
+	documentAggregator,
+];

@@ -11,16 +11,13 @@ import { inngest } from "@/inngest";
  */
 export async function POST(
 	_request: NextRequest,
-	{ params }: { params: Promise<{ id: string }> },
+	{ params }: { params: Promise<{ id: string }> }
 ) {
 	try {
 		const db = await getDatabaseClient();
 
 		if (!db) {
-			return NextResponse.json(
-				{ error: "Database connection failed" },
-				{ status: 500 },
-			);
+			return NextResponse.json({ error: "Database connection failed" }, { status: 500 });
 		}
 
 		const resolvedParams = await params;
@@ -30,10 +27,7 @@ export async function POST(
 			return NextResponse.json({ error: "Invalid quote ID" }, { status: 400 });
 		}
 
-		const quoteResults = await db
-			.select()
-			.from(quotes)
-			.where(eq(quotes.id, id));
+		const quoteResults = await db.select().from(quotes).where(eq(quotes.id, id));
 
 		if (quoteResults.length === 0) {
 			return NextResponse.json({ error: "Quote not found" }, { status: 404 });
@@ -42,7 +36,7 @@ export async function POST(
 		const updatedQuoteResults = await db
 			.update(quotes)
 			.set({
-				status: "pending_approval",
+				status: "pending_signature",
 				updatedAt: new Date(),
 			})
 			.where(eq(quotes.id, id))
@@ -62,7 +56,7 @@ export async function POST(
 		if (!applicantId) {
 			return NextResponse.json(
 				{ error: "Applicant ID missing for quote approval" },
-				{ status: 400 },
+				{ status: 400 }
 			);
 		}
 

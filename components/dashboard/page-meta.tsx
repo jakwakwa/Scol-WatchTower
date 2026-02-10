@@ -10,7 +10,7 @@ interface PageMetaProps {
 }
 
 export function PageMeta({ title, description, actions }: PageMetaProps) {
-	const setMeta = useDashboardStore((state) => state.setMeta);
+	const setMeta = useDashboardStore(state => state.setMeta);
 
 	useEffect(() => {
 		setMeta({

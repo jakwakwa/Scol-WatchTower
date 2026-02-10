@@ -5,16 +5,10 @@
  * Core contract establishing legal relationship and primary entity data
  * Note: Using UK spelling throughout (e.g., organisation, authorisation)
  */
-
-import * as React from "react";
-import { useForm, FormProvider, useFieldArray } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { FormWizard, FormStep } from "../form-wizard";
-import { SignatureCanvas } from "../signature-canvas";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Select,
 	SelectContent,
@@ -23,18 +17,23 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
 	RiAddLine,
+	RiBankLine,
+	RiBuildingLine,
 	RiDeleteBinLine,
 	RiUserLine,
-	RiBuildingLine,
-	RiBankLine,
 } from "@remixicon/react";
+import * as React from "react";
+import { FormProvider, useFieldArray, useForm } from "react-hook-form";
+import { FormStep, FormWizard } from "../form-wizard";
+import { SignatureCanvas } from "../signature-canvas";
 
 import {
-	stratcolAgreementSchema,
-	STRATCOL_AGREEMENT_STEP_TITLES,
 	EntityType,
+	STRATCOL_AGREEMENT_STEP_TITLES,
+	stratcolAgreementSchema,
 	type StratcolAgreementFormData,
 } from "@/lib/validations/onboarding";
 
@@ -67,13 +66,7 @@ interface FormFieldProps {
 	className?: string;
 }
 
-function FormField({
-	label,
-	required,
-	error,
-	children,
-	className,
-}: FormFieldProps) {
+function FormField({ label, required, error, children, className }: FormFieldProps) {
 	return (
 		<div className={cn("space-y-2", className)}>
 			<Label className="text-sm font-medium">
@@ -111,8 +104,7 @@ function EntityDetailsSection() {
 				<FormField
 					label="Registered Name"
 					required
-					error={errors.entityDetails?.registeredName?.message}
-				>
+					error={errors.entityDetails?.registeredName?.message}>
 					<Input
 						{...register("entityDetails.registeredName")}
 						placeholder="Company (Pty) Ltd"
@@ -122,18 +114,13 @@ function EntityDetailsSection() {
 				<FormField
 					label="Trading Name"
 					required
-					error={errors.entityDetails?.tradingName?.message}
-				>
-					<Input
-						{...register("entityDetails.tradingName")}
-						placeholder="Trading As"
-					/>
+					error={errors.entityDetails?.tradingName?.message}>
+					<Input {...register("entityDetails.tradingName")} placeholder="Trading As" />
 				</FormField>
 
 				<FormField
 					label="Proprietor Name"
-					error={errors.entityDetails?.proprietorName?.message}
-				>
+					error={errors.entityDetails?.proprietorName?.message}>
 					<Input
 						{...register("entityDetails.proprietorName")}
 						placeholder="If applicable"
@@ -143,8 +130,7 @@ function EntityDetailsSection() {
 				<FormField
 					label="Registration Number"
 					required
-					error={errors.entityDetails?.registrationNumber?.message}
-				>
+					error={errors.entityDetails?.registrationNumber?.message}>
 					<Input
 						{...register("entityDetails.registrationNumber")}
 						placeholder="2024/123456/07"
@@ -154,14 +140,10 @@ function EntityDetailsSection() {
 				<FormField
 					label="Entity Type"
 					required
-					error={errors.entityDetails?.entityType?.message}
-				>
+					error={errors.entityDetails?.entityType?.message}>
 					<Select
 						value={entityType}
-						onValueChange={(value) =>
-							setValue("entityDetails.entityType", value as any)
-						}
-					>
+						onValueChange={value => setValue("entityDetails.entityType", value as any)}>
 						<SelectTrigger>
 							<SelectValue placeholder="Select entity type" />
 						</SelectTrigger>
@@ -171,9 +153,7 @@ function EntityDetailsSection() {
 							<SelectItem value={EntityType.CLOSE_CORPORATION}>
 								Close Corporation
 							</SelectItem>
-							<SelectItem value={EntityType.PARTNERSHIP}>
-								Partnership
-							</SelectItem>
+							<SelectItem value={EntityType.PARTNERSHIP}>Partnership</SelectItem>
 							<SelectItem value={EntityType.OTHER}>Other</SelectItem>
 						</SelectContent>
 					</Select>
@@ -199,8 +179,7 @@ function EntityDetailsSection() {
 						label="Address"
 						required
 						error={errors.entityDetails?.businessAddress?.address?.message}
-						className="md:col-span-2"
-					>
+						className="md:col-span-2">
 						<Input
 							{...register("entityDetails.businessAddress.address")}
 							placeholder="Street address"
@@ -209,8 +188,7 @@ function EntityDetailsSection() {
 					<FormField
 						label="Suburb"
 						required
-						error={errors.entityDetails?.businessAddress?.suburb?.message}
-					>
+						error={errors.entityDetails?.businessAddress?.suburb?.message}>
 						<Input
 							{...register("entityDetails.businessAddress.suburb")}
 							placeholder="Suburb"
@@ -219,8 +197,7 @@ function EntityDetailsSection() {
 					<FormField
 						label="Town/City"
 						required
-						error={errors.entityDetails?.businessAddress?.townCity?.message}
-					>
+						error={errors.entityDetails?.businessAddress?.townCity?.message}>
 						<Input
 							{...register("entityDetails.businessAddress.townCity")}
 							placeholder="Town/City"
@@ -229,8 +206,7 @@ function EntityDetailsSection() {
 					<FormField
 						label="Postal Code"
 						required
-						error={errors.entityDetails?.businessAddress?.postalCode?.message}
-					>
+						error={errors.entityDetails?.businessAddress?.postalCode?.message}>
 						<Input
 							{...register("entityDetails.businessAddress.postalCode")}
 							placeholder="0000"
@@ -250,8 +226,7 @@ function EntityDetailsSection() {
 						label="Address"
 						required
 						error={errors.entityDetails?.postalAddress?.address?.message}
-						className="md:col-span-2"
-					>
+						className="md:col-span-2">
 						<Input
 							{...register("entityDetails.postalAddress.address")}
 							placeholder="Postal address"
@@ -260,8 +235,7 @@ function EntityDetailsSection() {
 					<FormField
 						label="Suburb"
 						required
-						error={errors.entityDetails?.postalAddress?.suburb?.message}
-					>
+						error={errors.entityDetails?.postalAddress?.suburb?.message}>
 						<Input
 							{...register("entityDetails.postalAddress.suburb")}
 							placeholder="Suburb"
@@ -270,8 +244,7 @@ function EntityDetailsSection() {
 					<FormField
 						label="Town/City"
 						required
-						error={errors.entityDetails?.postalAddress?.townCity?.message}
-					>
+						error={errors.entityDetails?.postalAddress?.townCity?.message}>
 						<Input
 							{...register("entityDetails.postalAddress.townCity")}
 							placeholder="Town/City"
@@ -280,8 +253,7 @@ function EntityDetailsSection() {
 					<FormField
 						label="Postal Code"
 						required
-						error={errors.entityDetails?.postalAddress?.postalCode?.message}
-					>
+						error={errors.entityDetails?.postalAddress?.postalCode?.message}>
 						<Input
 							{...register("entityDetails.postalAddress.postalCode")}
 							placeholder="0000"
@@ -308,6 +280,67 @@ function EntityDetailsSection() {
 		</div>
 	);
 }
+
+// ============================================
+// Test Data
+// ============================================
+
+const TEST_DATA: Partial<StratcolAgreementFormData> = {
+	entityDetails: {
+		registeredName: "Test Entity (Pty) Ltd",
+		tradingName: "Test Entity",
+		registrationNumber: "2024/100200/07",
+		entityType: EntityType.COMPANY,
+		businessAddress: {
+			address: "10 Business Rd",
+			suburb: "Bizville",
+			townCity: "Biz City",
+			postalCode: "1000",
+		},
+		postalAddress: {
+			address: "PO Box 10",
+			suburb: "Postville",
+			townCity: "Post City",
+			postalCode: "2000",
+		},
+		durationAtAddress: "1 year",
+		industryTenure: "5 years",
+	},
+	signatoryAndOwners: {
+		authorisedRepresentative: {
+			name: "John Doe",
+			idNumber: "8001015009087",
+			position: "Director",
+		},
+		beneficialOwners: [
+			{
+				name: "Jane Doe",
+				idNumber: "8501015009087",
+				address: "Sample Address",
+				position: "Shareholder",
+				shareholdingPercentage: "50",
+			},
+		],
+	},
+	bankingAndMandates: {
+		creditBankAccount: {
+			accountName: "Test Account",
+			bankName: "Test Bank",
+			accountType: "Current",
+			branchCode: "123456",
+			accountNumber: "987654321",
+		},
+		debitBankAccount: {
+			accountName: "Test Account",
+			bankName: "Test Bank",
+			accountType: "Current",
+			branchCode: "123456",
+			accountNumber: "987654321",
+		},
+		useSameAccountForDebit: true,
+	},
+	declarationsAccepted: true,
+};
 
 // ============================================
 // Main Form Component
@@ -378,6 +411,24 @@ export function StratcolAgreementForm({
 	return (
 		<FormProvider {...methods}>
 			<form onSubmit={handleSubmit(handleFormSubmit)}>
+				{process.env.NEXT_PUBLIC_TEST_FORMS === "true" && (
+					<div className="mb-6 p-4 border border-dashed border-yellow-500/50 bg-yellow-50/50 rounded-lg flex items-center justify-between">
+						<div className="space-y-1">
+							<p className="text-sm font-medium text-yellow-800">Testing Mode Active</p>
+							<p className="text-xs text-yellow-700">
+								Click to autofill the form with test data.
+							</p>
+						</div>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							onClick={() => methods.reset(TEST_DATA as StratcolAgreementFormData)}
+							className="bg-white border-yellow-200 hover:bg-yellow-50 hover:text-yellow-900 text-yellow-800">
+							Autofill Form
+						</Button>
+					</div>
+				)}
 				<FormWizard
 					steps={steps}
 					currentStep={currentStep}
@@ -387,8 +438,7 @@ export function StratcolAgreementForm({
 					title="StratCol Agreement"
 					isSubmitting={isSubmitting}
 					storageKey={`stratcol-agreement-${workflowId}`}
-					submitButtonText="Submit Agreement"
-				>
+					submitButtonText="Submit Agreement">
 					{({ currentStep, isLastStep }) => (
 						<>
 							{/* Step 1: Entity Details */}
@@ -403,8 +453,7 @@ export function StratcolAgreementForm({
 										<FormField
 											label="Registered Name"
 											required
-											error={errors.entityDetails?.registeredName?.message}
-										>
+											error={errors.entityDetails?.registeredName?.message}>
 											<Input
 												{...register("entityDetails.registeredName")}
 												placeholder="Company (Pty) Ltd"
@@ -415,8 +464,7 @@ export function StratcolAgreementForm({
 										<FormField
 											label="Trading Name"
 											required
-											error={errors.entityDetails?.tradingName?.message}
-										>
+											error={errors.entityDetails?.tradingName?.message}>
 											<Input
 												{...register("entityDetails.tradingName")}
 												placeholder="Trading As"
@@ -427,8 +475,7 @@ export function StratcolAgreementForm({
 										<FormField
 											label="Registration Number"
 											required
-											error={errors.entityDetails?.registrationNumber?.message}
-										>
+											error={errors.entityDetails?.registrationNumber?.message}>
 											<Input
 												{...register("entityDetails.registrationNumber")}
 												placeholder="2024/123456/07"
@@ -439,15 +486,13 @@ export function StratcolAgreementForm({
 										<FormField
 											label="Entity Type"
 											required
-											error={errors.entityDetails?.entityType?.message}
-										>
+											error={errors.entityDetails?.entityType?.message}>
 											<Select
 												value={watch("entityDetails.entityType")}
-												onValueChange={(value) =>
+												onValueChange={value =>
 													setValue("entityDetails.entityType", value as any)
 												}
-												disabled={readOnly}
-											>
+												disabled={readOnly}>
 												<SelectTrigger>
 													<SelectValue placeholder="Select entity type" />
 												</SelectTrigger>
@@ -455,18 +500,14 @@ export function StratcolAgreementForm({
 													<SelectItem value={EntityType.PROPRIETOR}>
 														Proprietor
 													</SelectItem>
-													<SelectItem value={EntityType.COMPANY}>
-														Company
-													</SelectItem>
+													<SelectItem value={EntityType.COMPANY}>Company</SelectItem>
 													<SelectItem value={EntityType.CLOSE_CORPORATION}>
 														Close Corporation
 													</SelectItem>
 													<SelectItem value={EntityType.PARTNERSHIP}>
 														Partnership
 													</SelectItem>
-													<SelectItem value={EntityType.OTHER}>
-														Other
-													</SelectItem>
+													<SelectItem value={EntityType.OTHER}>Other</SelectItem>
 												</SelectContent>
 											</Select>
 										</FormField>
@@ -478,11 +519,7 @@ export function StratcolAgreementForm({
 											Business Address
 										</h4>
 										<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-											<FormField
-												label="Address"
-												required
-												className="md:col-span-2"
-											>
+											<FormField label="Address" required className="md:col-span-2">
 												<Input
 													{...register("entityDetails.businessAddress.address")}
 													placeholder="Street address"
@@ -498,18 +535,14 @@ export function StratcolAgreementForm({
 											</FormField>
 											<FormField label="Town/City" required>
 												<Input
-													{...register(
-														"entityDetails.businessAddress.townCity",
-													)}
+													{...register("entityDetails.businessAddress.townCity")}
 													placeholder="Town/City"
 													disabled={readOnly}
 												/>
 											</FormField>
 											<FormField label="Postal Code" required>
 												<Input
-													{...register(
-														"entityDetails.businessAddress.postalCode",
-													)}
+													{...register("entityDetails.businessAddress.postalCode")}
 													placeholder="0000"
 													maxLength={4}
 													disabled={readOnly}
@@ -539,7 +572,7 @@ export function StratcolAgreementForm({
 											<FormField label="Name" required>
 												<Input
 													{...register(
-														"signatoryAndOwners.authorisedRepresentative.name",
+														"signatoryAndOwners.authorisedRepresentative.name"
 													)}
 													placeholder="Full name"
 													disabled={readOnly}
@@ -548,7 +581,7 @@ export function StratcolAgreementForm({
 											<FormField label="ID Number" required>
 												<Input
 													{...register(
-														"signatoryAndOwners.authorisedRepresentative.idNumber",
+														"signatoryAndOwners.authorisedRepresentative.idNumber"
 													)}
 													placeholder="13-digit ID number"
 													maxLength={13}
@@ -558,7 +591,7 @@ export function StratcolAgreementForm({
 											<FormField label="Position" required>
 												<Input
 													{...register(
-														"signatoryAndOwners.authorisedRepresentative.position",
+														"signatoryAndOwners.authorisedRepresentative.position"
 													)}
 													placeholder="e.g., Director"
 													disabled={readOnly}
@@ -587,8 +620,7 @@ export function StratcolAgreementForm({
 															shareholdingPercentage: "",
 														})
 													}
-													className="gap-1.5"
-												>
+													className="gap-1.5">
 													<RiAddLine className="h-4 w-4" />
 													Add Owner
 												</Button>
@@ -598,20 +630,16 @@ export function StratcolAgreementForm({
 										{beneficialOwners.map((field, index) => (
 											<div
 												key={field.id}
-												className="p-4 rounded-lg border border-border bg-muted/30 space-y-4"
-											>
+												className="p-4 rounded-lg border border-border bg-muted/30 space-y-4">
 												<div className="flex items-center justify-between">
-													<span className="text-sm font-medium">
-														Owner {index + 1}
-													</span>
+													<span className="text-sm font-medium">Owner {index + 1}</span>
 													{!readOnly && beneficialOwners.length > 1 && (
 														<Button
 															type="button"
 															variant="ghost"
 															size="icon"
 															onClick={() => removeBeneficialOwner(index)}
-															className="h-8 w-8 text-destructive"
-														>
+															className="h-8 w-8 text-destructive">
 															<RiDeleteBinLine className="h-4 w-4" />
 														</Button>
 													)}
@@ -620,7 +648,7 @@ export function StratcolAgreementForm({
 													<FormField label="Name" required>
 														<Input
 															{...register(
-																`signatoryAndOwners.beneficialOwners.${index}.name`,
+																`signatoryAndOwners.beneficialOwners.${index}.name`
 															)}
 															placeholder="Full name"
 															disabled={readOnly}
@@ -629,7 +657,7 @@ export function StratcolAgreementForm({
 													<FormField label="ID Number" required>
 														<Input
 															{...register(
-																`signatoryAndOwners.beneficialOwners.${index}.idNumber`,
+																`signatoryAndOwners.beneficialOwners.${index}.idNumber`
 															)}
 															placeholder="13-digit ID"
 															maxLength={13}
@@ -639,7 +667,7 @@ export function StratcolAgreementForm({
 													<FormField label="Position" required>
 														<Input
 															{...register(
-																`signatoryAndOwners.beneficialOwners.${index}.position`,
+																`signatoryAndOwners.beneficialOwners.${index}.position`
 															)}
 															placeholder="e.g., Director"
 															disabled={readOnly}
@@ -648,7 +676,7 @@ export function StratcolAgreementForm({
 													<FormField label="Address" required>
 														<Input
 															{...register(
-																`signatoryAndOwners.beneficialOwners.${index}.address`,
+																`signatoryAndOwners.beneficialOwners.${index}.address`
 															)}
 															placeholder="Residential address"
 															disabled={readOnly}
@@ -657,7 +685,7 @@ export function StratcolAgreementForm({
 													<FormField label="Shareholding %" required>
 														<Input
 															{...register(
-																`signatoryAndOwners.beneficialOwners.${index}.shareholdingPercentage`,
+																`signatoryAndOwners.beneficialOwners.${index}.shareholdingPercentage`
 															)}
 															placeholder="e.g., 25"
 															disabled={readOnly}
@@ -669,8 +697,7 @@ export function StratcolAgreementForm({
 
 										{beneficialOwners.length === 0 && (
 											<p className="text-sm text-muted-foreground text-center py-4">
-												No beneficial owners added. Click "Add Owner" to add
-												one.
+												No beneficial owners added. Click "Add Owner" to add one.
 											</p>
 										)}
 									</div>
@@ -682,9 +709,7 @@ export function StratcolAgreementForm({
 								<div className="space-y-6">
 									<div className="flex items-center gap-2 mb-4">
 										<RiBankLine className="h-5 w-5 text-muted-foreground" />
-										<h3 className="text-lg font-semibold">
-											Banking & Mandates
-										</h3>
+										<h3 className="text-lg font-semibold">Banking & Mandates</h3>
 									</div>
 
 									{/* Credit Bank Account */}
@@ -696,7 +721,7 @@ export function StratcolAgreementForm({
 											<FormField label="Account Name" required>
 												<Input
 													{...register(
-														"bankingAndMandates.creditBankAccount.accountName",
+														"bankingAndMandates.creditBankAccount.accountName"
 													)}
 													placeholder="Account holder name"
 													disabled={readOnly}
@@ -704,18 +729,14 @@ export function StratcolAgreementForm({
 											</FormField>
 											<FormField label="Bank Name" required>
 												<Input
-													{...register(
-														"bankingAndMandates.creditBankAccount.bankName",
-													)}
+													{...register("bankingAndMandates.creditBankAccount.bankName")}
 													placeholder="e.g., ABSA"
 													disabled={readOnly}
 												/>
 											</FormField>
 											<FormField label="Branch Code" required>
 												<Input
-													{...register(
-														"bankingAndMandates.creditBankAccount.branchCode",
-													)}
+													{...register("bankingAndMandates.creditBankAccount.branchCode")}
 													placeholder="6-digit code"
 													maxLength={6}
 													disabled={readOnly}
@@ -724,7 +745,7 @@ export function StratcolAgreementForm({
 											<FormField label="Account Number" required>
 												<Input
 													{...register(
-														"bankingAndMandates.creditBankAccount.accountNumber",
+														"bankingAndMandates.creditBankAccount.accountNumber"
 													)}
 													placeholder="Account number"
 													disabled={readOnly}
@@ -733,7 +754,7 @@ export function StratcolAgreementForm({
 											<FormField label="Account Type" required>
 												<Input
 													{...register(
-														"bankingAndMandates.creditBankAccount.accountType",
+														"bankingAndMandates.creditBankAccount.accountType"
 													)}
 													placeholder="e.g., Current"
 													disabled={readOnly}
@@ -747,20 +768,16 @@ export function StratcolAgreementForm({
 										<Checkbox
 											id="useSameAccount"
 											checked={useSameAccount}
-											onCheckedChange={(checked) =>
+											onCheckedChange={checked =>
 												setValue(
 													"bankingAndMandates.useSameAccountForDebit",
-													checked as boolean,
+													checked as boolean
 												)
 											}
 											disabled={readOnly}
 										/>
-										<Label
-											htmlFor="useSameAccount"
-											className="text-sm cursor-pointer"
-										>
-											Use the same account for debit (fees and unpaid
-											re-collections)
+										<Label htmlFor="useSameAccount" className="text-sm cursor-pointer">
+											Use the same account for debit (fees and unpaid re-collections)
 										</Label>
 									</div>
 
@@ -774,7 +791,7 @@ export function StratcolAgreementForm({
 												<FormField label="Account Name" required>
 													<Input
 														{...register(
-															"bankingAndMandates.debitBankAccount.accountName",
+															"bankingAndMandates.debitBankAccount.accountName"
 														)}
 														placeholder="Account holder name"
 														disabled={readOnly}
@@ -782,9 +799,7 @@ export function StratcolAgreementForm({
 												</FormField>
 												<FormField label="Bank Name" required>
 													<Input
-														{...register(
-															"bankingAndMandates.debitBankAccount.bankName",
-														)}
+														{...register("bankingAndMandates.debitBankAccount.bankName")}
 														placeholder="e.g., ABSA"
 														disabled={readOnly}
 													/>
@@ -792,7 +807,7 @@ export function StratcolAgreementForm({
 												<FormField label="Branch Code" required>
 													<Input
 														{...register(
-															"bankingAndMandates.debitBankAccount.branchCode",
+															"bankingAndMandates.debitBankAccount.branchCode"
 														)}
 														placeholder="6-digit code"
 														maxLength={6}
@@ -802,7 +817,7 @@ export function StratcolAgreementForm({
 												<FormField label="Account Number" required>
 													<Input
 														{...register(
-															"bankingAndMandates.debitBankAccount.accountNumber",
+															"bankingAndMandates.debitBankAccount.accountNumber"
 														)}
 														placeholder="Account number"
 														disabled={readOnly}
@@ -811,7 +826,7 @@ export function StratcolAgreementForm({
 												<FormField label="Account Type" required>
 													<Input
 														{...register(
-															"bankingAndMandates.debitBankAccount.accountType",
+															"bankingAndMandates.debitBankAccount.accountType"
 														)}
 														placeholder="e.g., Current"
 														disabled={readOnly}
@@ -827,9 +842,7 @@ export function StratcolAgreementForm({
 							<FormStep isActive={currentStep === 3}>
 								<div className="space-y-6">
 									<div className="mb-4">
-										<h3 className="text-lg font-semibold">
-											Declarations & Signature
-										</h3>
+										<h3 className="text-lg font-semibold">Declarations & Signature</h3>
 									</div>
 
 									{/* Declarations */}
@@ -839,20 +852,18 @@ export function StratcolAgreementForm({
 											<Checkbox
 												id="declarations"
 												checked={watch("declarationsAccepted")}
-												onCheckedChange={(checked) =>
+												onCheckedChange={checked =>
 													setValue("declarationsAccepted", checked as boolean)
 												}
 												disabled={readOnly}
 											/>
 											<Label
 												htmlFor="declarations"
-												className="text-sm leading-relaxed cursor-pointer"
-											>
-												I confirm that all information provided in this
-												agreement is true, correct, and complete. I understand
-												that any misrepresentation may result in the termination
-												of services and potential legal action. I authorise
-												StratCol to process the personal information provided
+												className="text-sm leading-relaxed cursor-pointer">
+												I confirm that all information provided in this agreement is true,
+												correct, and complete. I understand that any misrepresentation may
+												result in the termination of services and potential legal action.
+												I authorise StratCol to process the personal information provided
 												for the purposes of this agreement.
 											</Label>
 										</div>
@@ -885,9 +896,7 @@ export function StratcolAgreementForm({
 										<SignatureCanvas
 											label="Signature"
 											required
-											onSave={(dataUrl) =>
-												setValue("signature.signature", dataUrl)
-											}
+											onSave={dataUrl => setValue("signature.signature", dataUrl)}
 											initialValue={watch("signature.signature")}
 											error={errors.signature?.signature?.message}
 											disabled={readOnly}

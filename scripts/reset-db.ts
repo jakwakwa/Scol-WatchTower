@@ -18,31 +18,24 @@ async function reset() {
 
 	const db = drizzle(client, { schema });
 
-	console.log("Resetting database records...");
-
 	try {
-		// Delete transactional data first (dependent tables)
-		console.log("Deleting external Callbacks...");
+		await db.delete(schema.signatures);
+		await db.delete(schema.internalSubmissions);
+		await db.delete(schema.documentUploads);
+		await db.delete(schema.internalForms);
 		await db.delete(schema.agentCallbacks);
-
-		console.log("Deleting Workflow Events...");
 		await db.delete(schema.workflowEvents);
-
-		console.log("Deleting Quotes...");
 		await db.delete(schema.quotes);
-
-		console.log("Deleting Workflows...");
+		await db.delete(schema.notifications);
+		await db.delete(schema.applicantSubmissions);
+		await db.delete(schema.applicantMagiclinkForms);
 		await db.delete(schema.workflows);
-
-		console.log("Deleting Applicants...");
+		await db.delete(schema.documents);
+		await db.delete(schema.riskAssessments);
+		await db.delete(schema.activityLogs);
 		await db.delete(schema.applicants);
-
-		// Optional: Delete agents if they are considered "seed data" the user wants gone.
-		// Usually "clean" means empty.
-		console.log("Deleting Agents...");
 		await db.delete(schema.agents);
-
-		console.log("✅ Database reset complete.");
+		await db.delete(schema.todos);
 	} catch (error) {
 		console.error("Error resetting database:", error);
 		process.exit(1);

@@ -24,7 +24,7 @@ export type Events = {
 	// Applicant & Workflow Events
 	// ================================================================
 
-	/** Triggered when a new applicant is created and workflow starts */
+	/** Triggered when a new applicant is created - starts Control Tower workflow */
 	"onboarding/lead.created": {
 		data: {
 			applicantId: number;
@@ -91,6 +91,19 @@ export type Events = {
 		};
 	};
 
+	/** Quote rejected by staff (overlimit or other reason) */
+	"quote/rejected": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			quoteId: number;
+			reason: string;
+			isOverlimit: boolean;
+			rejectedBy: string;
+			rejectedAt: string;
+		};
+	};
+
 	/** Quote signed by client */
 	"quote/signed": {
 		data: {
@@ -98,6 +111,21 @@ export type Events = {
 			applicantId: number;
 			quoteId: number;
 			signedAt: string;
+		};
+	};
+
+	/** Applicant feedback received on quote */
+	"quote/feedback.received": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			quoteId: number;
+			feedback: {
+				accepted: boolean;
+				comments?: string;
+				requestedChanges?: string[];
+			};
+			receivedAt: string;
 		};
 	};
 
@@ -126,6 +154,52 @@ export type Events = {
 			applicantId: number;
 			formType: string;
 			applicantMagiclinkFormId: number;
+			submittedAt: string;
+		};
+	};
+
+	/** Accountant letter form submitted */
+	"form/accountant-letter.submitted": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			submissionId: number;
+			submittedAt: string;
+		};
+	};
+
+	/** Call centre application form submitted */
+	"form/call-centre.submitted": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			submissionId: number;
+			submittedAt: string;
+		};
+	};
+
+	/** Risk manager confirmed financial statements received (high-risk applicants) */
+	"risk/financial-statements.confirmed": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			confirmedBy: string;
+			confirmedAt: string;
+		};
+	};
+
+	/** Facility application form submitted - triggers mandate determination */
+	"form/facility.submitted": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			submissionId: number;
+			formData: {
+				mandateVolume: number;
+				mandateType: "EFT" | "DEBIT_ORDER" | "CASH" | "MIXED";
+				businessType: string;
+				annualTurnover?: number;
+			};
 			submittedAt: string;
 		};
 	};
@@ -188,11 +262,7 @@ export type Events = {
 			workflowId: number;
 			applicantId: number;
 			documents: Array<{
-				type:
-					| "BANK_STATEMENT"
-					| "ACCOUNTANT_LETTER"
-					| "ID_DOCUMENT"
-					| "PROOF_OF_ADDRESS";
+				type: "BANK_STATEMENT" | "ACCOUNTANT_LETTER" | "ID_DOCUMENT" | "PROOF_OF_ADDRESS";
 				filename: string;
 				url: string;
 				uploadedAt: string;
@@ -242,6 +312,57 @@ export type Events = {
 		};
 	};
 
+	/** Procurement check completed by Risk Manager */
+	"risk/procurement.completed": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			procureCheckResult: {
+				riskScore: number;
+				anomalies: string[];
+				recommendedAction: "APPROVE" | "MANUAL_REVIEW" | "DECLINE";
+				rawData?: Record<string, unknown>;
+			};
+			decision: {
+				outcome: "CLEARED" | "DENIED";
+				decidedBy: string;
+				reason?: string;
+				timestamp: string;
+			};
+		};
+	};
+
+	// ================================================================
+	// Mandate & Document Events
+	// ================================================================
+
+	/** Internal event: mandate type determined from facility application */
+	"mandate/determined": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			mandateType: "EFT" | "DEBIT_ORDER" | "CASH" | "MIXED";
+			requiredDocuments: string[];
+			requiresProcurementCheck: boolean;
+		};
+	};
+
+	/** Mandate-specific documents submitted */
+	"document/mandate.submitted": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			mandateType: "EFT" | "DEBIT_ORDER" | "CASH" | "MIXED";
+			documents: Array<{
+				documentId: number;
+				documentType: string;
+				fileName: string;
+				uploadedAt: string;
+			}>;
+			allRequiredDocsReceived: boolean;
+		};
+	};
+
 	// ================================================================
 	// V24 Integration Events
 	// ================================================================
@@ -283,7 +404,6 @@ export type Events = {
 			timestamp: string;
 		};
 	};
-
 
 	// ============================================
 	// Form Submission Events
@@ -371,6 +491,302 @@ export type Events = {
 			validationType: "identity" | "entity" | "risk" | "social";
 			passed: boolean;
 			details: Record<string, unknown>;
+		};
+	};
+
+	/**
+	 * Final approval — emitted only when BOTH Risk Manager + Account Manager have approved (two-factor gate)
+	 */
+	"onboarding/final-approval.received": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			riskManagerApproval: {
+				approvedBy: string;
+				timestamp: string;
+			};
+			accountManagerApproval: {
+				approvedBy: string;
+				timestamp: string;
+			};
+			contractSigned: boolean;
+			absaFormComplete: boolean;
+			notes?: string;
+			timestamp: string;
+		};
+	};
+
+	/**
+	 * AI analysis aggregation completed (bank validation, sanctions, risk)
+	 */
+	"onboarding/ai-analysis.completed": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			analysis: {
+				bankValidation: {
+					verified: boolean;
+					accountHolder?: string;
+					accountNumber?: string;
+					flags: string[];
+				};
+				sanctionsCheck: {
+					passed: boolean;
+					matchesFound: number;
+					details?: string;
+				};
+				riskAnalysis: {
+					overallScore: number;
+					category: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+					flags: string[];
+				};
+			};
+			aggregatedScore: number;
+			recommendation: "APPROVE" | "MANUAL_REVIEW" | "DECLINE";
+			timestamp: string;
+		};
+	};
+
+	// ================================================================
+	// Kill Switch / Workflow Termination Events
+	// ================================================================
+
+	/**
+	 * Kill switch activated - workflow terminated immediately
+	 * This event signals all parallel processes to halt
+	 */
+	"workflow/terminated": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			reason: "PROCUREMENT_DENIED" | "COMPLIANCE_VIOLATION" | "FRAUD_DETECTED" | "MANUAL_TERMINATION";
+			decidedBy: string;
+			terminatedAt: string;
+			notes?: string;
+		};
+	};
+
+	/**
+	 * Workflow termination check - used by parallel processes to verify status
+	 */
+	"workflow/termination-check": {
+		data: {
+			workflowId: number;
+			checkingProcess: string;
+		};
+	};
+
+	// ================================================================
+	// Business Type & Document Events
+	// ================================================================
+
+	/**
+	 * Business type determined from facility application
+	 */
+	"onboarding/business-type.determined": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			businessType: "NPO" | "PROPRIETOR" | "COMPANY" | "TRUST" | "BODY_CORPORATE" | "PARTNERSHIP" | "CLOSE_CORPORATION";
+			requiredDocuments: string[];
+			optionalDocuments: string[];
+		};
+	};
+
+	/**
+	 * Conditional documents requested based on business type
+	 */
+	"document/conditional-request.sent": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			businessType: string;
+			documentsRequested: string[];
+			sentAt: string;
+		};
+	};
+
+	// ================================================================
+	// AI Agent Events
+	// ================================================================
+
+	/**
+	 * Validation agent completed document analysis
+	 */
+	"agent/validation.completed": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			validationScore: number;
+			documentsValidated: number;
+			passed: number;
+			failed: number;
+			recommendation: "PROCEED" | "REVIEW_REQUIRED" | "STOP";
+		};
+	};
+
+	/**
+	 * Risk agent completed financial analysis
+	 */
+	"agent/risk.completed": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			riskScore: number;
+			riskCategory: "LOW" | "MEDIUM" | "HIGH" | "VERY_HIGH";
+			recommendation: "APPROVE" | "CONDITIONAL_APPROVE" | "MANUAL_REVIEW" | "DECLINE";
+			flags: string[];
+		};
+	};
+
+	/**
+	 * Sanctions agent completed compliance screening
+	 */
+	"agent/sanctions.completed": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			riskLevel: "CLEAR" | "LOW" | "MEDIUM" | "HIGH" | "BLOCKED";
+			passed: boolean;
+			isPEP: boolean;
+			requiresEDD: boolean;
+			adverseMediaCount: number;
+		};
+	};
+
+	/**
+	 * Aggregated AI analysis completed (all agents)
+	 */
+	"agent/analysis.aggregated": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			aggregatedScore: number;
+			canAutoApprove: boolean;
+			requiresManualReview: boolean;
+			isBlocked: boolean;
+			recommendation: "AUTO_APPROVE" | "PROCEED_WITH_CONDITIONS" | "MANUAL_REVIEW" | "BLOCK";
+			flags: string[];
+		};
+	};
+
+	// ================================================================
+	// SOP Stage Gate Events
+	// ================================================================
+
+	/** Quote needs update — loops back to data entry */
+	"quote/needs-update": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			quoteId: number;
+			requestedBy: string;
+			reason: string;
+			requestedAt: string;
+		};
+	};
+
+	/** Quote adjusted by Account Manager */
+	"quote/adjusted": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			quoteId: number;
+			adjustedBy: string;
+			adjustedAt: string;
+		};
+	};
+
+	/** All commercial mandates verified gate */
+	"mandate/verified": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			mandateType: "EFT" | "DEBIT_ORDER" | "CASH" | "MIXED";
+			verifiedAt: string;
+			retryCount: number;
+		};
+	};
+
+	/** Mandate collection timed out or exhausted retries */
+	"mandate/collection.expired": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			retryCount: number;
+			reason: "timeout" | "max_retries";
+			expiredAt: string;
+		};
+	};
+
+	/** Reporter Agent consolidated report completed */
+	"reporter/analysis.completed": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			report: {
+				validationSummary: Record<string, unknown>;
+				riskSummary: Record<string, unknown>;
+				sanctionsSummary: Record<string, unknown>;
+				overallRecommendation: "APPROVE" | "CONDITIONAL_APPROVE" | "MANUAL_REVIEW" | "DECLINE";
+				aggregatedScore: number;
+				flags: string[];
+			};
+			completedAt: string;
+		};
+	};
+
+	/** Risk Manager two-factor approval (Stage 6) */
+	"approval/risk-manager.received": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			approvedBy: string;
+			decision: "APPROVED" | "REJECTED";
+			reason?: string;
+			timestamp: string;
+		};
+	};
+
+	/** Account Manager two-factor approval (Stage 6) */
+	"approval/account-manager.received": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			approvedBy: string;
+			decision: "APPROVED" | "REJECTED";
+			reason?: string;
+			timestamp: string;
+		};
+	};
+
+	/** Contract draft edited/reviewed by Account Manager (Stage 5) */
+	"contract/draft.reviewed": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			reviewedBy: string;
+			reviewedAt: string;
+			changes?: Record<string, unknown>;
+		};
+	};
+
+	/** ABSA 6995 form completed (Stage 5) */
+	"form/absa-6995.completed": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			completedAt: string;
+		};
+	};
+
+	/** Procurement docs completeness verified */
+	"procurement/docs.complete": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			documentsVerified: string[];
+			completedAt: string;
 		};
 	};
 };

@@ -20,6 +20,7 @@ export function getDatabaseClient() {
 		return drizzle(client, { schema });
 	} catch (error) {
 		console.error("Failed to create database client:", error);
-		return null;
 	}
 }
+
+export { getBaseUrl } from "@/lib/utils";

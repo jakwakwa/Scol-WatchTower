@@ -37,13 +37,7 @@ function FieldError({ name }: { name: string }) {
 	return <p className="text-xs text-destructive">{message}</p>;
 }
 
-function CheckboxGroup({
-	name,
-	options = [],
-}: {
-	name: string;
-	options: FieldOption[];
-}) {
+function CheckboxGroup({ name, options = [] }: { name: string; options: FieldOption[] }) {
 	const { control } = useFormContext();
 
 	return (
@@ -54,23 +48,20 @@ function CheckboxGroup({
 				const value = Array.isArray(field.value) ? field.value : [];
 				return (
 					<div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-						{options.map((option) => {
+						{options.map(option => {
 							const checked = value.includes(getOptionValue(option));
 							const checkboxId = `${name}-${option.value}`;
 							return (
 								<div
 									key={option.value}
-									className="flex items-center gap-2 text-sm text-foreground"
-								>
+									className="flex items-center gap-2 text-sm text-foreground">
 									<Checkbox
 										id={checkboxId}
 										checked={checked}
-										onCheckedChange={(isChecked) => {
+										onCheckedChange={isChecked => {
 											const nextValue = isChecked
 												? [...value, getOptionValue(option)]
-												: value.filter(
-														(item) => item !== getOptionValue(option),
-													);
+												: value.filter(item => item !== getOptionValue(option));
 											field.onChange(nextValue);
 										}}
 										aria-label={getOptionLabel(option)}
@@ -98,7 +89,7 @@ function SingleCheckbox({ name, label }: { name: string; label: string }) {
 					<Checkbox
 						id={name}
 						checked={!!field.value}
-						onCheckedChange={(checked) => field.onChange(!!checked)}
+						onCheckedChange={checked => field.onChange(!!checked)}
 						aria-label={label}
 					/>
 					<span>{label}</span>
@@ -122,10 +113,9 @@ function SelectField({
 	return (
 		<select
 			{...register(name)}
-			className="flex h-10 w-full rounded-md border border-input-border bg-background px-3 py-2 text-sm"
-		>
+			className="flex h-10 w-full rounded-md border border-input-border bg-background px-3 py-2 text-sm">
 			<option value="">{placeholder || "Select an option"}</option>
-			{options.map((option) => (
+			{options.map(option => (
 				<option key={option.value} value={option.value}>
 					{option.label}
 				</option>
@@ -171,15 +161,12 @@ export function FormField({
 
 	const inputClasses = cn(
 		"border-input-border",
-		field.type === "signature" && "font-medium",
+		field.type === "signature" && "font-medium"
 	);
 
 	return (
 		<div className={fieldWrapperClasses}>
-			<label
-				className="text-sm font-medium text-foreground"
-				htmlFor={field.name}
-			>
+			<label className="text-sm font-medium text-foreground" htmlFor={field.name}>
 				{field.label}
 				{field.required ? " *" : ""}
 			</label>
@@ -229,25 +216,19 @@ export function RepeatableFieldGroup({
 				<div>
 					<p className="text-sm font-medium text-foreground">{field.label}</p>
 					{field.minItems ? (
-						<p className="text-xs text-muted-foreground">
-							Minimum {field.minItems}
-						</p>
+						<p className="text-xs text-muted-foreground">Minimum {field.minItems}</p>
 					) : null}
 				</div>
 				<button
 					type="button"
 					className="text-sm font-medium text-primary"
-					onClick={() => append({})}
-				>
+					onClick={() => append({})}>
 					{field.addLabel || "Add another"}
 				</button>
 			</div>
 			<div className="space-y-4">
 				{fields.map((item, index) => (
-					<div
-						key={item.id}
-						className="rounded-lg border border-border/60 p-4 space-y-4"
-					>
+					<div key={item.id} className="rounded-lg border border-border/60 p-4 space-y-4">
 						<div className="flex items-center justify-between">
 							<p className="text-xs font-semibold uppercase text-muted-foreground">
 								Entry {index + 1}
@@ -256,14 +237,13 @@ export function RepeatableFieldGroup({
 								<button
 									type="button"
 									className="text-xs font-medium text-destructive"
-									onClick={() => remove(index)}
-								>
+									onClick={() => remove(index)}>
 									Remove
 								</button>
 							) : null}
 						</div>
 						<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-							{field.fields.map((subField) => (
+							{field.fields.map(subField => (
 								<FormField
 									key={`${field.name}.${index}.${subField.name}`}
 									field={{

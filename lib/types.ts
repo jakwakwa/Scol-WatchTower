@@ -39,6 +39,8 @@ export const FormTypeSchema = z.enum([
 	"STRATCOL_CONTRACT",
 	"ABSA_6995",
 	"DOCUMENT_UPLOADS",
+	"ACCOUNTANT_LETTER",
+	"CALL_CENTRE_APPLICATION",
 ]);
 
 export type FormType = z.infer<typeof FormTypeSchema>;
@@ -63,16 +65,18 @@ export const DocumentCategorySchema = z.enum([
 	"industry_specific",
 	"risk_based",
 	"other",
+	// Mandate document categories (from document-requirements.service)
+	"IDENTITY",
+	"ADDRESS",
+	"FINANCIAL",
+	"ENTITY",
+	"GOVERNANCE",
+	"REGULATORY",
 ]);
 
 export type DocumentCategory = z.infer<typeof DocumentCategorySchema>;
 
-export const DocumentSourceSchema = z.enum([
-	"client",
-	"agent",
-	"internal",
-	"system",
-]);
+export const DocumentSourceSchema = z.enum(["client", "agent", "internal", "system"]);
 
 export type DocumentSource = z.infer<typeof DocumentSourceSchema>;
 
@@ -93,6 +97,8 @@ export const DocumentTypeSchema = z.enum([
 	"DIRECTOR_ID",
 	"PROOF_OF_RESIDENCE",
 	"BUSINESS_PREMISES_PROOF",
+	"PROPRIETOR_ID",
+	"PROPRIETOR_RESIDENCE",
 	"BANK_STATEMENT_3_MONTH",
 	"ACCOUNTING_OFFICER_LETTER",
 	"THIRD_PARTY_CONFIRMATION_LETTER",
@@ -175,7 +181,7 @@ export const FacilityApplicationSchema = z.object({
 		.string()
 		.regex(
 			/^\d{4}\/\d{6}\/\d{2}$/,
-			"Registration format: YYYY/NNNNNN/07 (e.g., 2020/123456/07)",
+			"Registration format: YYYY/NNNNNN/07 (e.g., 2020/123456/07)"
 		)
 		.optional(),
 	/** VAT Registration Number */
@@ -218,9 +224,7 @@ export const FacilityApplicationSchema = z.object({
 	}),
 
 	// Directors
-	directors: z
-		.array(DirectorInfoSchema)
-		.min(1, "At least one director required"),
+	directors: z.array(DirectorInfoSchema).min(1, "At least one director required"),
 
 	// Mandate Details
 	/** Selected mandate type */
@@ -280,7 +284,7 @@ export const ITCCheckResultSchema = z.object({
 				amount: z.number().optional(),
 				date: z.string().optional(),
 				creditor: z.string().optional(),
-			}),
+			})
 		)
 		.optional(),
 	/** Check timestamp */
@@ -453,9 +457,7 @@ export const AccountantLetterAnalysisSchema = z.object({
 	confidence: z.number().min(0).max(100),
 });
 
-export type AccountantLetterAnalysis = z.infer<
-	typeof AccountantLetterAnalysisSchema
->;
+export type AccountantLetterAnalysis = z.infer<typeof AccountantLetterAnalysisSchema>;
 
 // ============================================
 // V24 Integration Types

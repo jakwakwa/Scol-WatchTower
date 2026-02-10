@@ -1,9 +1,4 @@
-import {
-	RiRobot2Line,
-	RiCheckLine,
-	RiAlertLine,
-	RiTimeLine,
-} from "@remixicon/react";
+import { RiAlertLine, RiCheckLine, RiRobot2Line, RiTimeLine } from "@remixicon/react";
 import { cn } from "@/lib/utils";
 
 interface Agent {
@@ -15,6 +10,9 @@ interface Agent {
 	lastCallbackAt?: Date;
 	callbackCount: number;
 	errorCount: number;
+	aiModel: string;
+	provider: string;
+	description: string;
 }
 
 const statusConfig = {
@@ -51,7 +49,7 @@ export function AgentStatusCard({ agent, onClick }: AgentStatusCardProps) {
 		"shadow-xl shadow-black/5",
 		"transition-all duration-300",
 		onClick &&
-			"cursor-pointer hover:bg-card/70 hover:border-secondary/10 hover:shadow-2xl hover:-translate-y-1",
+			"cursor-pointer hover:bg-card/70 hover:border-secondary/10 hover:shadow-2xl hover:-translate-y-1"
 	);
 
 	const content = (
@@ -62,7 +60,7 @@ export function AgentStatusCard({ agent, onClick }: AgentStatusCardProps) {
 					"absolute top-4 right-4 h-2.5 w-2.5 rounded-full",
 					agent.status === "active" && "bg-emerald-400 animate-pulse",
 					agent.status === "inactive" && "bg-muted-foreground/50",
-					agent.status === "error" && "bg-red-400 animate-pulse",
+					agent.status === "error" && "bg-red-400 animate-pulse"
 				)}
 			/>
 
@@ -71,9 +69,8 @@ export function AgentStatusCard({ agent, onClick }: AgentStatusCardProps) {
 				<div
 					className={cn(
 						"flex h-12 w-12 items-center justify-center rounded-xl",
-						config.bgColor,
-					)}
-				>
+						config.bgColor
+					)}>
 					<RiRobot2Line className={cn("h-6 w-6", config.color)} />
 				</div>
 				<div className="flex-1 min-w-0">
@@ -82,8 +79,22 @@ export function AgentStatusCard({ agent, onClick }: AgentStatusCardProps) {
 				</div>
 			</div>
 
+			{/* Description */}
+			<div className="mt-3">
+				<p className="text-sm text-muted-foreground line-clamp-2 min-h-10">
+					{agent.description}
+				</p>
+			</div>
+
+			{/* AI Model Info */}
+			<div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground bg-secondary/5 p-2 rounded-lg border border-secondary/10">
+				<div className="font-medium text-foreground">{agent.provider}</div>
+				<div className="w-1 h-1 rounded-full bg-border" />
+				<div>{agent.aiModel}</div>
+			</div>
+
 			{/* Task type badge */}
-			<div className="mt-4">
+			<div className="mt-3">
 				<span className="inline-flex items-center rounded-full bg-stone-500/10 px-2.5 py-1 text-xs font-medium text-stone-400">
 					{formatTaskType(agent.taskType)}
 				</span>
@@ -97,12 +108,7 @@ export function AgentStatusCard({ agent, onClick }: AgentStatusCardProps) {
 				</div>
 				<div>
 					<p className="text-xs text-muted-foreground">Errors</p>
-					<p
-						className={cn(
-							"text-lg font-bold",
-							agent.errorCount > 0 && "text-red-400",
-						)}
-					>
+					<p className={cn("text-lg font-bold", agent.errorCount > 0 && "text-red-400")}>
 						{agent.errorCount}
 					</p>
 				</div>
@@ -143,18 +149,17 @@ export function AgentStatusRow({ agent }: AgentStatusRowProps) {
 					"h-2 w-2 rounded-full",
 					agent.status === "active" && "bg-emerald-400",
 					agent.status === "inactive" && "bg-muted-foreground/50",
-					agent.status === "error" && "bg-red-400",
+					agent.status === "error" && "bg-red-400"
 				)}
 			/>
 			<div className="flex-1 min-w-0">
 				<p className="font-medium truncate">{agent.name}</p>
-				<p className="text-xs text-muted-foreground">
-					{formatTaskType(agent.taskType)}
-				</p>
+				<p className="text-xs text-muted-foreground">{formatTaskType(agent.taskType)}</p>
 			</div>
-			<span className={cn("text-xs font-medium", config.color)}>
-				{config.label}
-			</span>
+			<div className="hidden sm:block text-xs text-muted-foreground">
+				{agent.provider} • {agent.aiModel}
+			</div>
+			<span className={cn("text-xs font-medium", config.color)}>{config.label}</span>
 		</div>
 	);
 }
@@ -163,7 +168,7 @@ export function AgentStatusRow({ agent }: AgentStatusRowProps) {
 function formatTaskType(type: string): string {
 	return type
 		.split("_")
-		.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+		.map(word => word.charAt(0).toUpperCase() + word.slice(1))
 		.join(" ");
 }
 

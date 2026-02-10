@@ -1,9 +1,5 @@
 import { getDatabaseClient } from "@/app/utils";
-import {
-	DashboardLayout,
-	GlassCard,
-	DashboardSection,
-} from "@/components/dashboard";
+import { DashboardLayout, GlassCard, DashboardSection } from "@/components/dashboard";
 import { Button } from "@/components/ui/button";
 import { notifications, applicants, workflows } from "@/db/schema";
 import { desc, eq } from "drizzle-orm";
@@ -40,9 +36,7 @@ async function deleteNotification(formData: FormData) {
 	const db = getDatabaseClient();
 	if (!db) return;
 
-	await db
-		.delete(notifications)
-		.where(eq(notifications.id, parseInt(id.toString())));
+	await db.delete(notifications).where(eq(notifications.id, parseInt(id.toString())));
 
 	revalidatePath("/dashboard/notifications");
 }
@@ -97,7 +91,7 @@ export default async function NotificationsPage() {
 		}
 	}
 
-	const unreadCount = allNotifications.filter((n) => !n.read).length;
+	const unreadCount = allNotifications.filter(n => !n.read).length;
 
 	return (
 		<DashboardLayout
@@ -115,15 +109,13 @@ export default async function NotificationsPage() {
 						<Button
 							variant="outline"
 							size="sm"
-							className="gap-2 text-red-400 hover:text-red-300"
-						>
+							className="gap-2 text-red-400 hover:text-red-300">
 							<RiDeleteBinLine className="h-4 w-4" />
 							Clear All
 						</Button>
 					</form>
 				</div>
-			}
-		>
+			}>
 			<DashboardSection title="All Notifications">
 				{allNotifications.length === 0 ? (
 					<GlassCard>
@@ -134,13 +126,12 @@ export default async function NotificationsPage() {
 					</GlassCard>
 				) : (
 					<div className="space-y-3">
-						{allNotifications.map((notification) => (
+						{allNotifications.map(notification => (
 							<GlassCard
 								key={notification.id}
 								className={`flex items-start justify-between gap-4 ${
 									!notification.read ? "border-l-4 border-l-warning" : ""
-								}`}
-							>
+								}`}>
 								<div className="flex items-start gap-4">
 									<div
 										className={`p-2 rounded-lg ${
@@ -151,8 +142,7 @@ export default async function NotificationsPage() {
 													: notification.type === "success"
 														? "bg-green-500/10 text-green-400"
 														: "bg-blue-500/10 text-blue-400"
-										}`}
-									>
+										}`}>
 										{notification.type === "error" ? (
 											<RiAlertLine className="h-5 w-5" />
 										) : notification.type === "warning" ? (
@@ -194,8 +184,7 @@ export default async function NotificationsPage() {
 										<Button
 											variant="ghost"
 											size="sm"
-											className="gap-1 text-red-400 hover:text-red-300 hover:bg-red-500/10"
-										>
+											className="gap-1 text-red-400 hover:text-red-300 hover:bg-red-500/10">
 											<RiDeleteBinLine className="h-4 w-4" />
 										</Button>
 									</form>
