@@ -4,19 +4,12 @@ import { motion } from "framer-motion";
 
 export const TrustedBy = () => {
 	// Placeholder logos or names
-	const companies = [
-		"Acme Corp",
-		"TechFlow",
-		"GlobalData",
-		"Nebula AI",
-		"Innova",
-		"Vertex",
-	];
+	const companies = ["ABSA", "PASSA", "Nedbank", "SARS", "CTIC"];
 
 	return (
 		<section className="py-12 bg-rich-black/50 border-y border-secondary/5">
 			<div className="container px-4 mx-auto text-center">
-				<p className="text-sm font-medium text-muted-foreground mb-8 uppercase tracking-wider">
+				<p className="text-sm font-medium text-white mb-8 uppercase tracking-wider">
 					Trusted by industry leaders
 				</p>
 				<div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
