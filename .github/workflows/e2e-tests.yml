@@ -41,7 +41,8 @@ jobs:
         run: bun run test:e2e
         env:
           DATABASE_URL: file:./e2e/test.db
-          INNGEST_DEV: true
+          INNGEST_DEV: "true"
+          INNGEST_SIGNING_KEY: ${{ secrets.INNGEST_SIGNING_KEY }}
           NEXT_PUBLIC_APP_URL: http://localhost:3000
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
