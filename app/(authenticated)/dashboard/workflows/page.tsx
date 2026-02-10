@@ -42,9 +42,11 @@ export default async function WorkflowsPage() {
 					id: workflows.id,
 					applicantId: workflows.applicantId,
 					stage: workflows.stage,
+					stageName: workflows.stageName,
 					status: workflows.status,
 					startedAt: workflows.startedAt,
 					metadata: workflows.metadata,
+					currentAgent: workflows.currentAgent,
 					clientName: applicants.companyName,
 				})
 				.from(workflows)
