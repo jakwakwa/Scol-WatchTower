@@ -71,9 +71,11 @@ export default async function WorkflowsPage() {
 					id: workflows.id,
 					applicantId: workflows.applicantId,
 					stage: workflows.stage,
+					stageName: workflows.stageName,
 					status: workflows.status,
 					startedAt: workflows.startedAt,
 					metadata: workflows.metadata,
+					currentAgent: workflows.currentAgent,
 					clientName: applicants.companyName,
 				})
 				.from(workflows)
@@ -93,7 +95,7 @@ export default async function WorkflowsPage() {
 				...w,
 				stage: normalizeStage(w.stage),
 				status: normalizeStatus(w.status),
-				stageName: STAGE_NAMES[normalizeStage(w.stage)] || "Unknown",
+				stageName: w.stageName || STAGE_NAMES[normalizeStage(w.stage)] || "Unknown",
 				// Parse metadata if it exists, otherwise use empty object
 				payload: w.metadata ? JSON.parse(w.metadata) : {},
 				hasQuote: quotesByWorkflow.has(w.id),

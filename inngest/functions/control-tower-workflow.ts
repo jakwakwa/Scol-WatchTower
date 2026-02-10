@@ -673,7 +673,133 @@ export const controlTowerWorkflow = inngest.createFunction(
 			};
 		});
 
-		// Step 2.4: AI Generate Quotation (after facility application)
+		// ================================================================
+		// STAGE 2: Facility & Quote
+		// Send facility application → Determine mandate → AI quote → Manager review
+		// → Send quote for signing → Mandate collection with 7-day retry loop (max 8)
+		// ================================================================
+
+		await step.run("stage-2-start", async () => {
+			await guardKillSwitch(workflowId, "stage-2-start");
+			return updateWorkflowStatus(workflowId, "processing", 2);
+		});
+
+		// Step 2.1: Send Facility Application
+		await step.run("send-facility-application", async () => {
+			await guardKillSwitch(workflowId, "send-facility-application");
+
+			const db = getDatabaseClient();
+			if (!db) throw new Error("Database connection failed");
+
+			const [applicant] = await db
+				.select()
+				.from(applicants)
+				.where(eq(applicants.id, applicantId));
+
+			if (!applicant) throw new Error(`Applicant ${applicantId} not found`);
+
+			const { token } = await createFormInstance({
+				applicantId,
+				workflowId,
+				formType: "FACILITY_APPLICATION" as FormType,
+			});
+
+			await sendApplicantFormLinksEmail({
+				email: applicant.email,
+				contactName: applicant.contactName,
+				links: [
+					{ formType: "FACILITY_APPLICATION", url: `${getBaseUrl()}/forms/${token}` },
+				],
+			});
+
+			await createWorkflowNotification({
+				workflowId,
+				applicantId,
+				type: "awaiting",
+				title: "Facility Application Sent",
+				message: "Waiting for applicant to complete facility application form",
+				actionable: false,
+			});
+		});
+
+		await step.run("stage-2-awaiting-facility-application", () =>
+			updateWorkflowStatus(workflowId, "awaiting_human", 2)
+		);
+
+		// Wait for facility application submission
+		const facilitySubmission = await step.waitForEvent("wait-facility-app", {
+			event: "form/facility.submitted",
+			timeout: STAGE_TIMEOUT,
+			match: "data.workflowId",
+		});
+
+		if (!facilitySubmission) {
+			return { status: "timeout", stage: 2, reason: "Facility application timeout" };
+		}
+
+		// Step 2.2: Determine mandate type and required documents
+		const mandateInfo = await step.run("determine-mandate", async () => {
+			await guardKillSwitch(workflowId, "determine-mandate");
+
+			const formData = facilitySubmission.data.formData;
+
+			const db = getDatabaseClient();
+			let applicantEntityType: string | null = null;
+			let applicantIndustry: string | null = null;
+			if (db) {
+				const [applicant] = await db
+					.select()
+					.from(applicants)
+					.where(eq(applicants.id, applicantId));
+				applicantEntityType = applicant?.entityType ?? null;
+				applicantIndustry = applicant?.industry ?? null;
+			}
+
+			const businessType = resolveBusinessType(
+				applicantEntityType,
+				determineBusinessType(formData as Record<string, unknown>)
+			);
+			const docRequirements = getDocumentRequirements(
+				businessType,
+				applicantIndustry ?? undefined
+			);
+
+			context.businessType = businessType;
+			context.mandateType = formData.mandateType;
+			context.mandateVolume = formData.mandateVolume;
+
+			if (db) {
+				await db
+					.update(applicants)
+					.set({
+						mandateType: formData.mandateType,
+						mandateVolume: formData.mandateVolume,
+						businessType: businessType,
+					})
+					.where(eq(applicants.id, applicantId));
+			}
+
+			await logWorkflowEvent({
+				workflowId,
+				eventType: "mandate_determined",
+				payload: {
+					businessType,
+					mandateType: formData.mandateType,
+					requiredDocuments: docRequirements.documents
+						.filter(d => d.required)
+						.map(d => d.id),
+				},
+			});
+
+			return {
+				businessType,
+				mandateType: formData.mandateType,
+				mandateVolume: formData.mandateVolume,
+				requiredDocuments: docRequirements.documents.filter(d => d.required),
+			};
+		});
+
+		// Step 2.3: AI Generate Quotation (after facility application)
 		const quotationResult = await step.run("ai-generate-quote", async () => {
 			await guardKillSwitch(workflowId, "ai-generate-quote");
 
@@ -726,7 +852,7 @@ export const controlTowerWorkflow = inngest.createFunction(
 
 		const { quote, isOverlimit } = quotationResult;
 
-		// Step 2.5: Manager Quote Review (decision loop)
+		// Step 2.4: Manager Quote Review (decision loop)
 		await step.run("notify-manager-quote", async () => {
 			const title = isOverlimit
 				? "OVERLIMIT: Quote Requires Special Approval"
@@ -769,7 +895,7 @@ export const controlTowerWorkflow = inngest.createFunction(
 			return { status: "timeout", stage: 2, reason: "Quote approval timeout" };
 		}
 
-		// Step 2.6: Send quote for client decision
+		// Step 2.5: Send quote for client signature
 		await step.run("send-quote-to-applicant", async () => {
 			await guardKillSwitch(workflowId, "send-quote-to-applicant");
 
@@ -837,7 +963,7 @@ export const controlTowerWorkflow = inngest.createFunction(
 			return { status: "terminated", stage: 2, reason: "Applicant declined quotation" };
 		}
 
-		// Step 2.7: Request commercial mandate documents with 7-day retry loop (max 8)
+		// Step 2.6: Request commercial mandate documents with 7-day retry loop (max 8)
 		await step.run("send-mandate-request", async () => {
 			await guardKillSwitch(workflowId, "send-mandate-request");
 
