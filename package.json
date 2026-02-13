@@ -27,7 +27,7 @@
 		"@hookform/resolvers": "^5.2.2",
 		"@libsql/client": "^0.17.0",
 		"@next/env": "^16.1.6",
-		"@react-email/components": "^1.0.6",
+		"@react-email/components": "^1.0.7",
 		"@react-email/render": "^2.0.4",
 		"@remixicon/react": "^4.9.0",
 		"@tailwindcss/postcss": "^4.1.18",
