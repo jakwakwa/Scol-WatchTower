@@ -437,7 +437,7 @@ function generateAggregatedReasoning(
 /**
  * Store analysis result in database
  */
-async function _storeAnalysisResult(
+async function storeAnalysisResult(
 	workflowId: number,
 	applicantId: number,
 	result: AggregatedAnalysisResult,

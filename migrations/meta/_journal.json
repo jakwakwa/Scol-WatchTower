@@ -64,6 +64,20 @@
       "when": 1771155120210,
       "tag": "0008_little_emma_frost",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1771168032766,
+      "tag": "0009_happy_virginia_dare",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1771168081267,
+      "tag": "0010_curvy_lady_mastermind",
+      "breakpoints": true
     }
   ]
 }
