@@ -124,8 +124,7 @@ export async function scrapeWithSchema<T extends z.ZodType>(
 		};
 	} catch (error) {
 		const latencyMs = Date.now() - start;
-		const message =
-			error instanceof Error ? error.message : "Unknown Firecrawl error";
+		const message = error instanceof Error ? error.message : "Unknown Firecrawl error";
 
 		const isBlocked =
 			message.includes("403") ||

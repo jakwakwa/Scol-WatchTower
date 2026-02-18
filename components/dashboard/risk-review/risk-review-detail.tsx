@@ -22,6 +22,7 @@ import {
 import * as React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DataSourceBadge } from "@/components/ui/data-source-badge";
 import {
 	Dialog,
 	DialogContent,
@@ -503,6 +504,8 @@ export function RiskReviewDetail({
 										</span>
 									)}
 								</Badge>
+								{/* Data source badge (mock vs live) */}
+								<DataSourceBadge dataSource={item.dataSource} />
 							</SheetDescription>
 						</div>
 						<div

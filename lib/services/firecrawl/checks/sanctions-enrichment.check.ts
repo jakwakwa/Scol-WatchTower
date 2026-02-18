@@ -100,8 +100,7 @@ export async function runSanctionsEnrichmentCheck(
 			scrapeResult.runtimeState === "error" ||
 			scrapeResult.runtimeState === "blocked"
 		) {
-			worstState =
-				scrapeResult.runtimeState === "blocked" ? "blocked" : "error";
+			worstState = scrapeResult.runtimeState === "blocked" ? "blocked" : "error";
 			deepLinks.push(DEEP_LINK_TEMPLATES[provider]());
 			continue;
 		}
