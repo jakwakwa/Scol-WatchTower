@@ -559,7 +559,11 @@ export type Events = {
 		data: {
 			workflowId: number;
 			applicantId: number;
-			reason: "PROCUREMENT_DENIED" | "COMPLIANCE_VIOLATION" | "FRAUD_DETECTED" | "MANUAL_TERMINATION";
+			reason:
+				| "PROCUREMENT_DENIED"
+				| "COMPLIANCE_VIOLATION"
+				| "FRAUD_DETECTED"
+				| "MANUAL_TERMINATION";
 			decidedBy: string;
 			terminatedAt: string;
 			notes?: string;
@@ -587,7 +591,14 @@ export type Events = {
 		data: {
 			workflowId: number;
 			applicantId: number;
-			businessType: "NPO" | "PROPRIETOR" | "COMPANY" | "TRUST" | "BODY_CORPORATE" | "PARTNERSHIP" | "CLOSE_CORPORATION";
+			businessType:
+				| "NPO"
+				| "PROPRIETOR"
+				| "COMPANY"
+				| "TRUST"
+				| "BODY_CORPORATE"
+				| "PARTNERSHIP"
+				| "CLOSE_CORPORATION";
 			requiredDocuments: string[];
 			optionalDocuments: string[];
 		};
@@ -665,7 +676,11 @@ export type Events = {
 			canAutoApprove: boolean;
 			requiresManualReview: boolean;
 			isBlocked: boolean;
-			recommendation: "AUTO_APPROVE" | "PROCEED_WITH_CONDITIONS" | "MANUAL_REVIEW" | "BLOCK";
+			recommendation:
+				| "AUTO_APPROVE"
+				| "PROCEED_WITH_CONDITIONS"
+				| "MANUAL_REVIEW"
+				| "BLOCK";
 			flags: string[];
 		};
 	};
@@ -728,7 +743,11 @@ export type Events = {
 				validationSummary: Record<string, unknown>;
 				riskSummary: Record<string, unknown>;
 				sanctionsSummary: Record<string, unknown>;
-				overallRecommendation: "APPROVE" | "CONDITIONAL_APPROVE" | "MANUAL_REVIEW" | "DECLINE";
+				overallRecommendation:
+					| "APPROVE"
+					| "CONDITIONAL_APPROVE"
+					| "MANUAL_REVIEW"
+					| "DECLINE";
 				aggregatedScore: number;
 				flags: string[];
 			};
@@ -787,6 +806,25 @@ export type Events = {
 			applicantId: number;
 			documentsVerified: string[];
 			completedAt: string;
+		};
+	};
+
+	// ================================================================
+	// AI Feedback & Retraining Events
+	// ================================================================
+
+	/** Human decision diverged from AI recommendation — signal for retraining */
+	"ai/feedback.divergence_detected": {
+		data: {
+			workflowId: number;
+			applicantId: number;
+			feedbackLogId: number;
+			divergenceType: "false_positive" | "false_negative" | "severity_mismatch";
+			divergenceWeight: number;
+			overrideCategory: string;
+			overrideSubcategory?: string;
+			aiOutcome: string;
+			humanOutcome: string;
 		};
 	};
 };
