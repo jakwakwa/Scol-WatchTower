@@ -10,26 +10,23 @@
  * 3. Audit trail for compliance
  */
 
-import {
-	validateDocumentsBatch,
-	type BatchValidationResult,
-} from "./validation.agent";
+import { eq } from "drizzle-orm";
+import { getDatabaseClient } from "@/app/utils";
+import { riskAssessments, workflowEvents } from "@/db/schema";
+import { analyzeRisk as runProcureCheck } from "@/lib/services/risk.service";
 import {
 	analyzeFinancialRisk,
 	canAutoApprove as canAutoApproveRisk,
-	requiresManualReview as requiresManualRiskReview,
 	type RiskAnalysisResult,
+	requiresManualReview as requiresManualRiskReview,
 } from "./risk.agent";
 import {
-	performSanctionsCheck,
 	canAutoApprove as canAutoApproveSanctions,
 	isBlocked as isSanctionsBlocked,
+	performSanctionsCheck,
 	type SanctionsCheckResult,
 } from "./sanctions.agent";
-import { analyzeRisk as runProcureCheck } from "@/lib/services/risk.service";
-import { getDatabaseClient } from "@/app/utils";
-import { riskAssessments, workflowEvents } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { type BatchValidationResult, validateDocumentsBatch } from "./validation.agent";
 
 // ============================================
 // Types & Schemas
@@ -130,10 +127,6 @@ export async function performAggregatedAnalysis(
 	const startTime = Date.now();
 	const analysisId = `AGG-${input.workflowId}-${Date.now()}`;
 
-	console.log(
-		`[AggregatedAnalysis] Starting analysis ${analysisId} for workflow ${input.workflowId}`
-	);
-
 	const agentsRun: ("validation" | "risk" | "sanctions")[] = [];
 	const flags: string[] = [];
 
@@ -205,12 +198,10 @@ export async function performAggregatedAnalysis(
 		!isSanctionsBlock &&
 		canAutoApproveSanctions(sanctionsResult) &&
 		canAutoApproveRisk(riskResult) &&
-		(!validationResult ||
-			validationResult.summary.overallRecommendation === "PROCEED");
+		(!validationResult || validationResult.summary.overallRecommendation === "PROCEED");
 
 	const requiresManualReview =
-		!canAutoApprove &&
-		!isSanctionsBlock &&
+		!(canAutoApprove || isSanctionsBlock) &&
 		(requiresManualRiskReview(riskResult) ||
 			sanctionsResult.overall.reviewRequired ||
 			(validationResult &&
@@ -315,11 +306,6 @@ export async function performAggregatedAnalysis(
 	// Store result in database
 	await storeAnalysisResult(input.workflowId, input.applicantId, result);
 
-	console.log(
-		`[AggregatedAnalysis] Completed ${analysisId} in ${result.metadata.processingTimeMs}ms - ` +
-			`Score: ${aggregatedScore}, Recommendation: ${recommendation}`
-	);
-
 	return result;
 }
 
@@ -329,12 +315,10 @@ export async function performAggregatedAnalysis(
 function calculateValidationScore(result: BatchValidationResult): number {
 	if (result.summary.totalDocuments === 0) return 100;
 
-	const passRate =
-		(result.summary.passed / result.summary.totalDocuments) * 100;
+	const passRate = (result.summary.passed / result.summary.totalDocuments) * 100;
 
 	// Penalize for review required or failed
-	const penalty =
-		result.summary.requiresReview * 5 + result.summary.failed * 15;
+	const penalty = result.summary.requiresReview * 5 + result.summary.failed * 15;
 
 	return Math.max(0, Math.round(passRate - penalty));
 }
@@ -362,7 +346,9 @@ function generateAggregatedReasoning(
 ): string {
 	const parts: string[] = [];
 
-	parts.push(`Aggregated analysis completed with overall score of ${aggregatedScore}/100.`);
+	parts.push(
+		`Aggregated analysis completed with overall score of ${aggregatedScore}/100.`
+	);
 
 	switch (recommendation) {
 		case "AUTO_APPROVE":
@@ -371,17 +357,13 @@ function generateAggregatedReasoning(
 			);
 			break;
 		case "PROCEED_WITH_CONDITIONS":
-			parts.push(
-				"Checks passed with some conditions. May proceed with monitoring."
-			);
+			parts.push("Checks passed with some conditions. May proceed with monitoring.");
 			if (risk.overall.conditions) {
 				parts.push(`Conditions: ${risk.overall.conditions.join("; ")}`);
 			}
 			break;
 		case "MANUAL_REVIEW":
-			parts.push(
-				"One or more checks require human review before proceeding."
-			);
+			parts.push("One or more checks require human review before proceeding.");
 			break;
 		case "BLOCK":
 			parts.push(
@@ -525,7 +507,10 @@ async function runExternalCheckStubs(
 				},
 			};
 		} catch (err) {
-			console.error("[AggregatedAnalysis] ProcureCheck failed, using mock fallback:", err);
+			console.error(
+				"[AggregatedAnalysis] ProcureCheck failed, using mock fallback:",
+				err
+			);
 		}
 	}
 
