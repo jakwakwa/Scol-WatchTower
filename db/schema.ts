@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { text, integer, sqliteTable } from "drizzle-orm/sqlite-core";
+import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 // ============================================
 // Core Onboarding Tables
@@ -53,6 +53,14 @@ export const applicants = sqliteTable("applicants", {
 	riskLevel: text("risk_level"), // green, amber, red
 	itcScore: integer("itc_score"),
 	itcStatus: text("itc_status"),
+
+	// SOP v3.1.0: Tiered Escalation & Sanctions
+	escalationTier: integer("escalation_tier").default(1), // 1=Normal, 2=Manager Alert, 3=Salvage
+	salvageDeadline: integer("salvage_deadline", { mode: "timestamp" }),
+	isSalvaged: integer("is_salvaged", { mode: "boolean" }).default(false),
+	sanctionStatus: text("sanction_status", {
+		enum: ["clear", "flagged", "confirmed_hit"],
+	}).default("clear"),
 
 	// System
 	accountExecutive: text("account_executive"),
@@ -602,3 +610,51 @@ export const signaturesRelations = relations(signatures, ({ one }) => ({
 		references: [internalForms.id],
 	}),
 }));
+
+// ============================================
+// SOP v3.1.0: New Tables
+// ============================================
+
+/**
+ * Sanction Clearance Table - Track manual clearance of sanction hits
+ */
+export const sanctionClearance = sqliteTable("sanction_clearance", {
+	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+	applicantId: integer("applicant_id")
+		.notNull()
+		.references(() => applicants.id),
+	workflowId: integer("workflow_id")
+		.notNull()
+		.references(() => workflows.id),
+	sanctionListId: text("sanction_list_id"), // External ID (e.g. OFAC-123)
+	clearedBy: text("cleared_by").notNull(), // User ID
+	clearanceReason: text("clearance_reason").notNull(), // Mandatory justification
+	isFalsePositive: integer("is_false_positive", { mode: "boolean" }).notNull(),
+	createdAt: integer("created_at", { mode: "timestamp" })
+		.notNull()
+		.$defaultFn(() => new Date()),
+});
+
+/**
+ * AI Analysis Logs - Detailed AI outputs
+ */
+export const aiAnalysisLogs = sqliteTable("ai_analysis_logs", {
+	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+	applicantId: integer("applicant_id")
+		.notNull()
+		.references(() => applicants.id),
+	workflowId: integer("workflow_id")
+		.notNull()
+		.references(() => workflows.id),
+	agentName: text("agent_name").notNull(), // 'risk', 'sanctions', 'reporter'
+	promptVersionId: text("prompt_version_id"), // Git hash or SemVer
+	confidenceScore: integer("confidence_score"), // 0-100
+	humanOverrideReason: text("human_override_reason", {
+		enum: ["CONTEXT", "HALLUCINATION", "DATA_ERROR"],
+	}),
+	narrative: text("narrative"), // The structured output or summary
+	rawOutput: text("raw_output"), // Full JSON output
+	createdAt: integer("created_at", { mode: "timestamp" })
+		.notNull()
+		.$defaultFn(() => new Date()),
+});
