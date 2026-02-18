@@ -186,6 +186,15 @@ export const workflows = sqliteTable("workflows", {
 	// Two-factor approval tracking (Stage 6)
 	riskManagerApproval: text("risk_manager_approval"), // JSON: { approvedBy, timestamp, decision }
 	accountManagerApproval: text("account_manager_approval"), // JSON: { approvedBy, timestamp, decision }
+	// Stage 2 sales/pre-risk + applicant decision tracking
+	salesEvaluationStatus: text("sales_evaluation_status"), // pending, approved, issues_found
+	salesIssuesSummary: text("sales_issues_summary"),
+	issueFlaggedBy: text("issue_flagged_by"), // account_manager, ai, system
+	preRiskRequired: integer("pre_risk_required", { mode: "boolean" }),
+	preRiskOutcome: text("pre_risk_outcome"), // approved, rejected, skipped
+	preRiskEvaluatedAt: integer("pre_risk_evaluated_at", { mode: "timestamp" }),
+	applicantDecisionOutcome: text("applicant_decision_outcome"), // approved, declined
+	applicantDeclineReason: text("applicant_decline_reason"),
 
 	metadata: text("metadata"),
 });
@@ -274,6 +283,10 @@ export const applicantMagiclinkForms = sqliteTable("applicant_magiclink_forms", 
 	viewedAt: integer("viewed_at", { mode: "timestamp" }),
 	expiresAt: integer("expires_at", { mode: "timestamp" }),
 	submittedAt: integer("submitted_at", { mode: "timestamp" }),
+	decisionStatus: text("decision_status"), // pending, responded
+	decisionOutcome: text("decision_outcome"), // approved, declined
+	decisionReason: text("decision_reason"),
+	decisionAt: integer("decision_at", { mode: "timestamp" }),
 	createdAt: integer("created_at", { mode: "timestamp" })
 		.notNull()
 		.$defaultFn(() => new Date()),
