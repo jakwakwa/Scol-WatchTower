@@ -14,6 +14,7 @@ import { eq } from "drizzle-orm";
 import { getDatabaseClient } from "@/app/utils";
 import { aiAnalysisLogs, riskAssessments, workflowEvents } from "@/db/schema";
 import { generateReporterAnalysis, type ReporterOutput } from "./reporter.agent";
+import { analyzeRisk as runProcureCheck } from "@/lib/services/risk.service";
 import {
 	analyzeFinancialRisk,
 	canAutoApprove as canAutoApproveRisk,
@@ -27,10 +28,6 @@ import {
 	type SanctionsCheckResult,
 } from "./sanctions.agent";
 import { type BatchValidationResult, validateDocumentsBatch } from "./validation.agent";
-import { analyzeRisk as runProcureCheck } from "@/lib/services/risk.service";
-import { getDatabaseClient } from "@/app/utils";
-import { riskAssessments, workflowEvents } from "@/db/schema";
-import { eq } from "drizzle-orm";
 
 // ============================================
 // Types & Schemas
@@ -351,7 +348,6 @@ export async function performAggregatedAnalysis(
 		result,
 		reporterResult.promptVersionId
 	);
-
 	return result;
 }
 
@@ -568,7 +564,10 @@ async function runExternalCheckStubs(
 				},
 			};
 		} catch (err) {
-			console.error("[AggregatedAnalysis] ProcureCheck failed, using mock fallback:", err);
+			console.error(
+				"[AggregatedAnalysis] ProcureCheck failed, using mock fallback:",
+				err
+			);
 		}
 	}
 
