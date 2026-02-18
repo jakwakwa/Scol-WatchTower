@@ -13,6 +13,12 @@
 import { eq } from "drizzle-orm";
 import { getDatabaseClient } from "@/app/utils";
 import { aiAnalysisLogs, riskAssessments, workflowEvents } from "@/db/schema";
+import {
+	isFirecrawlConfigured,
+	runIndustryRegulatorCheck,
+	runSanctionsEnrichmentCheck,
+	runSocialReputationCheck,
+} from "@/lib/services/firecrawl";
 import { analyzeRisk as runProcureCheck } from "@/lib/services/risk.service";
 import { generateReporterAnalysis, type ReporterOutput } from "./reporter.agent";
 import {
@@ -105,6 +111,11 @@ export interface AggregatedAnalysisResult {
 		efs24IdAvsr: { status: "mock" | "live"; result?: Record<string, unknown> };
 		sarsVatSearch: { status: "mock" | "live"; result?: Record<string, unknown> };
 		industryRegulator: { status: "mock" | "live"; result?: Record<string, unknown> };
+		sanctionsEvidenceEnrichment?: {
+			status: "mock" | "live";
+			result?: Record<string, unknown>;
+		};
+		socialReputation?: { status: "mock" | "live"; result?: Record<string, unknown> };
 	};
 
 	// Metadata
@@ -547,14 +558,14 @@ async function storeAnalysisResult(
 
 /**
  * Runs feature-flagged external checks per SOP requirements.
- * Alignment: Firecrawl-backed industry regulator, sanctions evidence enrichment,
- * social reputation, and medium-confidence regulator checks follow the contract
- * spec in docs/agent-contracts/firecrawl-check-contracts.md. Output shape is
- * compatible with externalChecks.*.result (status: mock|live, result: checked,
- * passed, evidence, failureDetail, runtimeState, etc.). See
- * lib/services/agents/contracts/firecrawl-check.contracts.ts for Zod schemas.
- * ProcureCheck is live when ENABLE_PROCURECHECK_LIVE=true; rest remain mocked.
- * Switch others to "live" by setting env flags (e.g., ENABLE_XDS_LIVE=true).
+ *
+ * Feature flags (env):
+ *   ENABLE_PROCURECHECK_LIVE        – BizPortal via ProcureCheck
+ *   ENABLE_FIRECRAWL_INDUSTRY_REG   – Industry regulator via Firecrawl
+ *   ENABLE_FIRECRAWL_SANCTIONS_ENRICH – Sanctions evidence enrichment via Firecrawl
+ *   ENABLE_FIRECRAWL_SOCIAL_REP     – Social reputation (HelloPeter) via Firecrawl
+ *
+ * All flags default to false; mock fallback is returned on failure.
  */
 async function runExternalCheckStubs(
 	input: AggregatedAnalysisInput
@@ -569,6 +580,7 @@ async function runExternalCheckStubs(
 		},
 	});
 
+	// --- BizPortal / ProcureCheck ---
 	let bizPortalResult: AggregatedAnalysisResult["externalChecks"]["bizPortalRegistration"] =
 		mockResult("BizPortal Company Registration");
 
@@ -593,13 +605,115 @@ async function runExternalCheckStubs(
 		}
 	}
 
+	// --- Industry Regulator (Firecrawl) ---
+	let industryRegulatorResult: AggregatedAnalysisResult["externalChecks"]["industryRegulator"] =
+		mockResult("Industry Regulator Confirmation");
+
+	if (process.env.ENABLE_FIRECRAWL_INDUSTRY_REG === "true" && isFirecrawlConfigured()) {
+		try {
+			const fcResult = await runIndustryRegulatorCheck({
+				applicantId: input.applicantId,
+				workflowId: input.workflowId,
+				applicantData: {
+					companyName: input.applicantData.companyName,
+					contactName: input.applicantData.contactName,
+					registrationNumber: input.applicantData.registrationNumber,
+					industry: input.applicantData.industry,
+					countryCode: input.applicantData.countryCode,
+					address: input.applicantData.address,
+				},
+				industry: input.applicantData.industry,
+			});
+			industryRegulatorResult = {
+				status: fcResult.status,
+				result: fcResult.result as unknown as Record<string, unknown>,
+			};
+		} catch (err) {
+			console.error(
+				"[AggregatedAnalysis] Firecrawl industry regulator failed, using mock fallback:",
+				err
+			);
+		}
+	}
+
+	// --- Sanctions Evidence Enrichment (Firecrawl) ---
+	let sanctionsEnrichmentResult:
+		| AggregatedAnalysisResult["externalChecks"]["sanctionsEvidenceEnrichment"]
+		| undefined;
+
+	if (
+		process.env.ENABLE_FIRECRAWL_SANCTIONS_ENRICH === "true" &&
+		isFirecrawlConfigured()
+	) {
+		try {
+			const fcResult = await runSanctionsEnrichmentCheck({
+				applicantId: input.applicantId,
+				workflowId: input.workflowId,
+				applicantData: {
+					companyName: input.applicantData.companyName,
+					contactName: input.applicantData.contactName,
+					registrationNumber: input.applicantData.registrationNumber,
+					industry: input.applicantData.industry,
+					countryCode: input.applicantData.countryCode,
+					address: input.applicantData.address,
+				},
+				entityName: input.applicantData.companyName,
+				entityType: "COMPANY",
+				countryCode: input.applicantData.countryCode ?? "ZA",
+				registrationNumber: input.applicantData.registrationNumber,
+			});
+			sanctionsEnrichmentResult = {
+				status: fcResult.status,
+				result: fcResult.result as unknown as Record<string, unknown>,
+			};
+		} catch (err) {
+			console.error(
+				"[AggregatedAnalysis] Firecrawl sanctions enrichment failed, skipping:",
+				err
+			);
+		}
+	}
+
+	// --- Social Reputation / HelloPeter (Firecrawl) ---
+	let socialReputationResult:
+		| AggregatedAnalysisResult["externalChecks"]["socialReputation"]
+		| undefined;
+
+	if (process.env.ENABLE_FIRECRAWL_SOCIAL_REP === "true" && isFirecrawlConfigured()) {
+		try {
+			const fcResult = await runSocialReputationCheck({
+				applicantId: input.applicantId,
+				workflowId: input.workflowId,
+				applicantData: {
+					companyName: input.applicantData.companyName,
+					contactName: input.applicantData.contactName,
+					registrationNumber: input.applicantData.registrationNumber,
+					industry: input.applicantData.industry,
+					countryCode: input.applicantData.countryCode,
+					address: input.applicantData.address,
+				},
+			});
+			socialReputationResult = {
+				status: fcResult.status,
+				result: fcResult.result as unknown as Record<string, unknown>,
+			};
+		} catch (err) {
+			console.error(
+				"[AggregatedAnalysis] Firecrawl social reputation failed, skipping:",
+				err
+			);
+		}
+	}
+
 	return {
 		xdsCreditCheck: mockResult("XDS Credit Check"),
 		lexisNexisProcure: mockResult("LexisNexis Procure Upload"),
 		bizPortalRegistration: bizPortalResult,
 		efs24IdAvsr: mockResult("EFS24 ID/AVSR Verification"),
 		sarsVatSearch: mockResult("SARS VAT Search"),
-		industryRegulator: mockResult("Industry Regulator Confirmation"),
+		industryRegulator: industryRegulatorResult,
+		sanctionsEvidenceEnrichment: sanctionsEnrichmentResult,
+		socialReputation: socialReputationResult,
 	};
 }
 
