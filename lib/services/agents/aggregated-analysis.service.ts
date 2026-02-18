@@ -13,8 +13,8 @@
 import { eq } from "drizzle-orm";
 import { getDatabaseClient } from "@/app/utils";
 import { aiAnalysisLogs, riskAssessments, workflowEvents } from "@/db/schema";
-import { generateReporterAnalysis, type ReporterOutput } from "./reporter.agent";
 import { analyzeRisk as runProcureCheck } from "@/lib/services/risk.service";
+import { generateReporterAnalysis, type ReporterOutput } from "./reporter.agent";
 import {
 	analyzeFinancialRisk,
 	canAutoApprove as canAutoApproveRisk,
@@ -297,6 +297,7 @@ export async function performAggregatedAnalysis(
 						passed: validationResult.summary.passed,
 						failed: validationResult.summary.failed,
 						recommendation: validationResult.summary.overallRecommendation,
+						dataSource: validationResult.results[0]?.dataSource || "skipped",
 					}
 				: { status: "skipped", reason: "No documents provided" },
 			risk: {
@@ -305,12 +306,14 @@ export async function performAggregatedAnalysis(
 				recommendation: riskResult.overall.recommendation,
 				hasBounced: riskResult.stability.hasBounced,
 				gamblingIndicators: riskResult.stability.gamblingIndicators.length,
+				dataSource: riskResult.dataSource,
 			},
 			sanctions: {
 				riskLevel: sanctionsResult.overall.riskLevel,
 				isPEP: sanctionsResult.pepScreening.isPEP,
 				requiresEDD: sanctionsResult.overall.requiresEDD,
 				adverseMediaAlerts: sanctionsResult.adverseMedia.alertsFound,
+				dataSource: sanctionsResult.metadata?.dataSource || "unknown",
 			},
 			reporter: reporterResult,
 		},
@@ -456,6 +459,17 @@ async function storeAnalysisResult(
 			.from(riskAssessments)
 			.where(eq(riskAssessments.applicantId, applicantId));
 
+		// Build per-agent dataSource map for the UI
+		const dataSources = {
+			risk: result.risk?.dataSource || "unknown",
+			sanctions: result.sanctions?.metadata?.dataSource || "unknown",
+			validation: result.validation?.results[0]?.validation?.dataSource || "skipped",
+			reporter: result.agents.reporter?.dataSource || "unknown",
+		};
+		const hasAnyMock = Object.values(dataSources).some(
+			s => s.toLowerCase().includes("mock") || s === "unknown"
+		);
+
 		const aiAnalysisJson = JSON.stringify({
 			analysisId: result.metadata.analysisId,
 			scores: result.scores,
@@ -467,6 +481,8 @@ async function storeAnalysisResult(
 			sanctionsLevel: result.sanctions?.overall.riskLevel,
 			validationSummary: result.validation?.summary,
 			externalChecks: result.externalChecks,
+			dataSources,
+			dataSource: hasAnyMock ? "Mock Data (partial or full)" : "Live",
 		});
 
 		if (existing.length > 0) {
@@ -531,6 +547,12 @@ async function storeAnalysisResult(
 
 /**
  * Runs feature-flagged external checks per SOP requirements.
+ * Alignment: Firecrawl-backed industry regulator, sanctions evidence enrichment,
+ * social reputation, and medium-confidence regulator checks follow the contract
+ * spec in docs/agent-contracts/firecrawl-check-contracts.md. Output shape is
+ * compatible with externalChecks.*.result (status: mock|live, result: checked,
+ * passed, evidence, failureDetail, runtimeState, etc.). See
+ * lib/services/agents/contracts/firecrawl-check.contracts.ts for Zod schemas.
  * ProcureCheck is live when ENABLE_PROCURECHECK_LIVE=true; rest remain mocked.
  * Switch others to "live" by setting env flags (e.g., ENABLE_XDS_LIVE=true).
  */
