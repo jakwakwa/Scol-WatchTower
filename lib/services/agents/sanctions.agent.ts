@@ -59,17 +59,9 @@ interface YenteMatchResponse {
 	responses: Record<string, YenteQueryResponse>;
 }
 
-const UN_SANCTIONS_DATASETS = [
-	"un_sc_sanctions",
-	"un_sc_consolidated",
-];
+const UN_SANCTIONS_DATASETS = ["un_sc_sanctions", "un_sc_consolidated"];
 
-const PEP_DATASETS_PREFIXES = [
-	"pep",
-	"za_fic",
-	"everypolitician",
-	"wd_peps",
-];
+const PEP_DATASETS_PREFIXES = ["pep", "za_fic", "everypolitician", "wd_peps"];
 
 const HIGH_RISK_COUNTRIES = ["KP", "IR", "SY", "CU", "RU"];
 
@@ -111,7 +103,9 @@ export const SanctionsCheckResultSchema = z.object({
 		isPEP: z.boolean().describe("Whether person is a PEP"),
 		pepDetails: z
 			.object({
-				category: z.enum(["DOMESTIC", "FOREIGN", "INTERNATIONAL_ORG", "FAMILY_CLOSE_ASSOCIATE"]).optional(),
+				category: z
+					.enum(["DOMESTIC", "FOREIGN", "INTERNATIONAL_ORG", "FAMILY_CLOSE_ASSOCIATE"])
+					.optional(),
 				position: z.string().optional(),
 				country: z.string().optional(),
 				riskLevel: z.enum(["LOW", "MEDIUM", "HIGH"]).optional(),
@@ -182,7 +176,13 @@ export const SanctionsCheckResultSchema = z.object({
 		passed: z.boolean().describe("Whether screening passed (no blockers)"),
 		requiresEDD: z.boolean().describe("Whether Enhanced Due Diligence is required"),
 		recommendation: z
-			.enum(["PROCEED", "PROCEED_WITH_MONITORING", "EDD_REQUIRED", "BLOCK", "MANUAL_REVIEW"])
+			.enum([
+				"PROCEED",
+				"PROCEED_WITH_MONITORING",
+				"EDD_REQUIRED",
+				"BLOCK",
+				"MANUAL_REVIEW",
+			])
 			.describe("Recommended action"),
 		reasoning: z.string().describe("Detailed reasoning"),
 		reviewRequired: z.boolean().describe("Whether human review is required"),
@@ -224,16 +224,9 @@ export interface SanctionsCheckInput {
 export async function performSanctionsCheck(
 	input: SanctionsCheckInput
 ): Promise<SanctionsCheckResult> {
-	console.log(
-		`[SanctionsAgent] Checking ${input.entityName} for workflow ${input.workflowId}`
-	);
-
 	if (isYenteConfigured()) {
 		try {
 			const result = await performYenteSanctionsCheck(input);
-			console.log(
-				`[SanctionsAgent] yente check complete - Risk level: ${result.overall.riskLevel}, Passed: ${result.overall.passed}`
-			);
 			return result;
 		} catch (err) {
 			console.error("[SanctionsAgent] yente API failed, falling back to mock:", err);
@@ -241,10 +234,6 @@ export async function performSanctionsCheck(
 	}
 
 	const mockResult = generateMockSanctionsResult(input);
-
-	console.log(
-		`[SanctionsAgent] Mock check complete - Risk level: ${mockResult.overall.riskLevel}, Passed: ${mockResult.overall.passed}`
-	);
 
 	return mockResult;
 }
@@ -256,17 +245,20 @@ export async function performSanctionsCheck(
 /**
  * Build yente match queries for the entity and its directors.
  */
-function buildYenteQueries(input: SanctionsCheckInput): Record<string, Record<string, unknown>> {
+function buildYenteQueries(
+	input: SanctionsCheckInput
+): Record<string, Record<string, unknown>> {
 	const queries: Record<string, Record<string, unknown>> = {};
 
-	const entitySchema =
-		input.entityType === "INDIVIDUAL" ? "Person" : "Company";
+	const entitySchema = input.entityType === "INDIVIDUAL" ? "Person" : "Company";
 
 	const entityProps: Record<string, string[]> = {
 		name: [input.entityName],
 	};
 	if (input.countryCode) {
-		entityProps[entitySchema === "Person" ? "nationality" : "jurisdiction"] = [input.countryCode];
+		entityProps[entitySchema === "Person" ? "nationality" : "jurisdiction"] = [
+			input.countryCode,
+		];
 	}
 	if (input.registrationNumber && entitySchema === "Company") {
 		entityProps.registrationNumber = [input.registrationNumber];
@@ -367,21 +359,16 @@ function mapYenteResponseToResult(
 	}
 
 	// UN Sanctions
-	const unMatches = allMatches.filter(m =>
-		m.datasets.some(isUnSanctionsDataset)
-	);
+	const unMatches = allMatches.filter(m => m.datasets.some(isUnSanctionsDataset));
 	const unSanctionsMatchFound = unMatches.length > 0;
 
 	// PEP Screening
-	const pepMatches = allMatches.filter(m =>
-		m.datasets.some(isPepDataset)
-	);
+	const pepMatches = allMatches.filter(m => m.datasets.some(isPepDataset));
 	const isPEP = pepMatches.length > 0;
 
 	// Watchlist (all non-UN, non-PEP matches)
-	const watchListMatches = allMatches.filter(m =>
-		!m.datasets.some(isUnSanctionsDataset) &&
-		!m.datasets.some(isPepDataset)
+	const watchListMatches = allMatches.filter(
+		m => !(m.datasets.some(isUnSanctionsDataset) || m.datasets.some(isPepDataset))
 	);
 
 	const isHighRiskCountry = HIGH_RISK_COUNTRIES.includes(input.countryCode);
@@ -390,7 +377,12 @@ function mapYenteResponseToResult(
 	let riskLevel: "CLEAR" | "LOW" | "MEDIUM" | "HIGH" | "BLOCKED";
 	let passed = true;
 	let requiresEDD = false;
-	let recommendation: "PROCEED" | "PROCEED_WITH_MONITORING" | "EDD_REQUIRED" | "BLOCK" | "MANUAL_REVIEW";
+	let recommendation:
+		| "PROCEED"
+		| "PROCEED_WITH_MONITORING"
+		| "EDD_REQUIRED"
+		| "BLOCK"
+		| "MANUAL_REVIEW";
 
 	if (unSanctionsMatchFound) {
 		riskLevel = "BLOCKED";
@@ -432,14 +424,16 @@ function mapYenteResponseToResult(
 		pepScreening: {
 			checked: true,
 			isPEP,
-			pepDetails: isPEP && pepMatches[0]
-				? {
-						category: "DOMESTIC" as const,
-						position: pepMatches[0].properties.position?.[0] || pepMatches[0].caption,
-						country: pepMatches[0].properties.country?.[0] || input.countryCode,
-						riskLevel: pepMatches[0].score >= 0.9 ? "HIGH" as const : "MEDIUM" as const,
-					}
-				: undefined,
+			pepDetails:
+				isPEP && pepMatches[0]
+					? {
+							category: "DOMESTIC" as const,
+							position: pepMatches[0].properties.position?.[0] || pepMatches[0].caption,
+							country: pepMatches[0].properties.country?.[0] || input.countryCode,
+							riskLevel:
+								pepMatches[0].score >= 0.9 ? ("HIGH" as const) : ("MEDIUM" as const),
+						}
+					: undefined,
 			familyAssociates: [],
 		},
 
@@ -480,9 +474,7 @@ function mapYenteResponseToResult(
 		metadata: {
 			checkId,
 			checkedAt: now.toISOString(),
-			expiresAt: new Date(
-				now.getTime() + 30 * 24 * 60 * 60 * 1000
-			).toISOString(),
+			expiresAt: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString(),
 			dataSource: `OpenSanctions yente (${YENTE_CONFIG.dataset})`,
 		},
 	};
@@ -491,9 +483,7 @@ function mapYenteResponseToResult(
 /**
  * Generate mock sanctions check results
  */
-function generateMockSanctionsResult(
-	input: SanctionsCheckInput
-): SanctionsCheckResult {
+function generateMockSanctionsResult(input: SanctionsCheckInput): SanctionsCheckResult {
 	const seed = simpleHash(input.entityName + input.applicantId);
 	const now = new Date();
 	const checkId = `SCK-${input.workflowId}-${Date.now()}`;
@@ -514,7 +504,12 @@ function generateMockSanctionsResult(
 	let riskLevel: "CLEAR" | "LOW" | "MEDIUM" | "HIGH" | "BLOCKED";
 	let passed = true;
 	let requiresEDD = false;
-	let recommendation: "PROCEED" | "PROCEED_WITH_MONITORING" | "EDD_REQUIRED" | "BLOCK" | "MANUAL_REVIEW";
+	let recommendation:
+		| "PROCEED"
+		| "PROCEED_WITH_MONITORING"
+		| "EDD_REQUIRED"
+		| "BLOCK"
+		| "MANUAL_REVIEW";
 
 	if (unSanctionsMatch) {
 		riskLevel = "BLOCKED";
@@ -570,15 +565,16 @@ function generateMockSanctionsResult(
 						riskLevel: "MEDIUM" as const,
 					}
 				: undefined,
-			familyAssociates: isPEP && seed % 2 === 0
-				? [
-						{
-							name: "Associate Name",
-							relationship: "Business Partner",
-							isPEP: true,
-						},
-					]
-				: [],
+			familyAssociates:
+				isPEP && seed % 2 === 0
+					? [
+							{
+								name: "Associate Name",
+								relationship: "Business Partner",
+								isPEP: true,
+							},
+						]
+					: [],
 		},
 
 		adverseMedia: {
@@ -589,9 +585,9 @@ function generateMockSanctionsResult(
 						{
 							source: "Financial Times",
 							headline: `${input.entityName} mentioned in regulatory investigation`,
-							date: new Date(
-								now.getTime() - (seed % 365) * 24 * 60 * 60 * 1000
-							).toISOString().split("T")[0],
+							date: new Date(now.getTime() - (seed % 365) * 24 * 60 * 60 * 1000)
+								.toISOString()
+								.split("T")[0],
 							severity: "LOW" as const,
 							category: "REGULATORY_VIOLATION" as const,
 							url: "https://example.com/news/article",
@@ -641,9 +637,7 @@ function generateMockSanctionsResult(
 		metadata: {
 			checkId,
 			checkedAt: now.toISOString(),
-			expiresAt: new Date(
-				now.getTime() + 30 * 24 * 60 * 60 * 1000
-			).toISOString(), // 30 days
+			expiresAt: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
 			dataSource: "Mock Sanctions Database v1.0",
 		},
 	};
@@ -750,10 +744,6 @@ export interface BatchSanctionsResult {
 export async function performBatchSanctionsCheck(
 	input: BatchSanctionsInput
 ): Promise<BatchSanctionsResult> {
-	console.log(
-		`[SanctionsAgent] Batch screening ${input.entities.length} entities for workflow ${input.workflowId}`
-	);
-
 	const results = await Promise.all(
 		input.entities.map(async (entity, index) => ({
 			entityName: entity.name,
@@ -802,8 +792,5 @@ export function canAutoApprove(result: SanctionsCheckResult): boolean {
  * Check if sanctions result blocks proceeding
  */
 export function isBlocked(result: SanctionsCheckResult): boolean {
-	return (
-		result.overall.riskLevel === "BLOCKED" ||
-		result.unSanctions.matchFound
-	);
+	return result.overall.riskLevel === "BLOCKED" || result.unSanctions.matchFound;
 }
