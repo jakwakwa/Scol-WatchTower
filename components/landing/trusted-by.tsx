@@ -7,7 +7,7 @@ export const TrustedBy = () => {
 	const companies = ["ABSA", "PASSA", "Nedbank", "SARS", "CTIC"];
 
 	return (
-		<section className="py-12 bg-rich-black/50 border-y border-secondary/5">
+		<section className="py-12 bg-muted/50 border-y border-border/5">
 			<div className="container px-4 mx-auto text-center">
 				<p className="text-sm font-medium text-white mb-8 uppercase tracking-wider">
 					Trusted by industry leaders
@@ -20,7 +20,7 @@ export const TrustedBy = () => {
 							whileInView={{ opacity: 1 }}
 							viewport={{ once: true }}
 							transition={{ delay: index * 0.1 }}
-							className="text-xl md:text-2xl font-black text-white">
+							className="text-xl md:text-2xl font-black text-foreground">
 							{company}
 						</motion.div>
 					))}
