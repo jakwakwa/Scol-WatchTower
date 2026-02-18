@@ -27,6 +27,10 @@ import {
 	type SanctionsCheckResult,
 } from "./sanctions.agent";
 import { type BatchValidationResult, validateDocumentsBatch } from "./validation.agent";
+import { analyzeRisk as runProcureCheck } from "@/lib/services/risk.service";
+import { getDatabaseClient } from "@/app/utils";
+import { riskAssessments, workflowEvents } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 // ============================================
 // Types & Schemas
@@ -281,8 +285,8 @@ export async function performAggregatedAnalysis(
 		},
 	});
 
-	// Run SOP-required external check stubs (all mocked in Phase 1)
-	const externalChecks = runExternalCheckStubs(input);
+	// Run SOP-required external checks (ProcureCheck live when enabled, rest mocked)
+	const externalChecks = await runExternalCheckStubs(input);
 
 	// Build result
 	const result: AggregatedAnalysisResult = {
@@ -530,13 +534,13 @@ async function storeAnalysisResult(
 // ============================================
 
 /**
- * Runs feature-flagged external check stubs per SOP requirements.
- * All mocked in Phase 1 — each returns a mock/pass result.
- * Switch to "live" by setting env flags (e.g., ENABLE_XDS_LIVE=true).
+ * Runs feature-flagged external checks per SOP requirements.
+ * ProcureCheck is live when ENABLE_PROCURECHECK_LIVE=true; rest remain mocked.
+ * Switch others to "live" by setting env flags (e.g., ENABLE_XDS_LIVE=true).
  */
-function runExternalCheckStubs(
-	_input: AggregatedAnalysisInput
-): AggregatedAnalysisResult["externalChecks"] {
+async function runExternalCheckStubs(
+	input: AggregatedAnalysisInput
+): Promise<AggregatedAnalysisResult["externalChecks"]> {
 	const mockResult = (name: string) => ({
 		status: "mock" as const,
 		result: {
@@ -547,10 +551,31 @@ function runExternalCheckStubs(
 		},
 	});
 
+	let bizPortalResult: AggregatedAnalysisResult["externalChecks"]["bizPortalRegistration"] =
+		mockResult("BizPortal Company Registration");
+
+	if (process.env.ENABLE_PROCURECHECK_LIVE === "true") {
+		try {
+			const pcResult = await runProcureCheck(input.applicantId);
+			bizPortalResult = {
+				status: "live" as const,
+				result: {
+					riskScore: pcResult.riskScore,
+					anomalies: pcResult.anomalies,
+					recommendedAction: pcResult.recommendedAction,
+					procureCheckId: pcResult.procureCheckId,
+					checkedAt: new Date().toISOString(),
+				},
+			};
+		} catch (err) {
+			console.error("[AggregatedAnalysis] ProcureCheck failed, using mock fallback:", err);
+		}
+	}
+
 	return {
 		xdsCreditCheck: mockResult("XDS Credit Check"),
 		lexisNexisProcure: mockResult("LexisNexis Procure Upload"),
-		bizPortalRegistration: mockResult("BizPortal Company Registration"),
+		bizPortalRegistration: bizPortalResult,
 		efs24IdAvsr: mockResult("EFS24 ID/AVSR Verification"),
 		sarsVatSearch: mockResult("SARS VAT Search"),
 		industryRegulator: mockResult("Industry Regulator Confirmation"),
