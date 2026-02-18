@@ -1,9 +1,25 @@
 "use client";
 
+import {
+	RiAlertLine,
+	RiBankLine,
+	RiBuilding2Line,
+	RiCheckLine,
+	RiCloseLine,
+	RiExternalLinkLine,
+	RiEyeLine,
+	RiFileTextLine,
+	RiHistoryLine,
+	RiLoader4Line,
+	RiPercentLine,
+	RiShieldCheckLine,
+	RiShoppingBag3Line,
+	RiUserLine,
+} from "@remixicon/react";
 import * as React from "react";
-import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import {
 	Sheet,
 	SheetContent,
@@ -12,37 +28,21 @@ import {
 	SheetTitle,
 } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
-import {
-	RiShieldCheckLine,
-	RiAlertLine,
-	RiUserLine,
-	RiTimeLine,
-	RiCheckLine,
-	RiCloseLine,
-	RiFileTextLine,
-	RiBankLine,
-	RiBuilding2Line,
-	RiPercentLine,
-	RiDownloadLine,
-	RiExternalLinkLine,
-	RiHistoryLine,
-	RiEyeLine,
-	RiLoader4Line,
-	RiShoppingBag3Line,
-} from "@remixicon/react";
+import { cn } from "@/lib/utils";
 import type { RiskReviewItem } from "./risk-review-queue";
 
 // ============================================
 // Types
 // ============================================
 
+import type { OverrideData } from "./risk-review-queue";
+
 interface RiskReviewDetailProps {
 	item: RiskReviewItem | null;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	onApprove: (id: number, reason?: string) => Promise<void>;
-	onReject: (id: number, reason: string) => Promise<void>;
+	onApprove: (id: number, overrideData: OverrideData) => Promise<void>;
+	onReject: (id: number, overrideData: OverrideData) => Promise<void>;
 }
 
 interface TimelineEvent {
@@ -272,13 +272,17 @@ export function RiskReviewDetail({
 
 	/**
 	 * Handle approve action with appropriate API routing
+	 * Uses AI_ALIGNED category as default since detail view doesn't have the full dialog
 	 */
 	const handleApprove = async () => {
 		if (!item) return;
 		setIsSubmitting(true);
 		setActionType("approve");
 		try {
-			await onApprove(item.id, `Approved via ${reviewType} review`);
+			await onApprove(item.id, {
+				overrideCategory: "AI_ALIGNED",
+				overrideDetails: `Approved via ${reviewType} review`,
+			});
 			onOpenChange(false);
 		} finally {
 			setIsSubmitting(false);
@@ -287,14 +291,18 @@ export function RiskReviewDetail({
 	};
 
 	/**
-	 * Handle reject action with appropriate API routing
+	 * Handle reject action — defaults to OTHER category from detail view
+	 * Full structured rejection should go through the RiskDecisionDialog
 	 */
 	const handleReject = async () => {
 		if (!item) return;
 		setIsSubmitting(true);
 		setActionType("reject");
 		try {
-			await onReject(item.id, `Rejected via ${reviewType} review`);
+			await onReject(item.id, {
+				overrideCategory: "OTHER",
+				overrideDetails: `Rejected via ${reviewType} review`,
+			});
 			onOpenChange(false);
 		} finally {
 			setIsSubmitting(false);
@@ -359,12 +367,13 @@ export function RiskReviewDetail({
 								<RiBuilding2Line className="h-3.5 w-3.5 text-white" />
 								{item.companyName}
 								<span className="text-muted">•</span>
-								<Badge variant="secondary" className=" bg-white/10 text-[10px] text-white/90">
+								<Badge
+									variant="secondary"
+									className=" bg-white/10 text-[10px] text-white/90">
 									WF-{item.workflowId}
 								</Badge>
 								{/* Review Type Badge (Phase 3) */}
 								<Badge
-								
 									className={cn(
 										"text-[13px] gap-2 h-8",
 										reviewType === "procurement"
@@ -394,9 +403,8 @@ export function RiskReviewDetail({
 										? "bg-warning"
 										: "bg-destructive-foreground/70"
 							)}>
-								<p className="text-[10px] text-white">AI Score</p>
+							<p className="text-[10px] text-white">AI Score</p>
 							<p className="text-xl font-bold text-white">{item.aiTrustScore || "N/A"}</p>
-							
 						</div>
 					</div>
 				</SheetHeader>
@@ -546,13 +554,13 @@ export function RiskReviewDetail({
 						<DocumentCard
 							name="Bank Statement - Jan to Mar 2026"
 							type="Bank Statement"
-							verified={item.bankStatementVerified || false}
+							verified={item.bankStatementVerified}
 							uploadDate={item.createdAt}
 						/>
 						<DocumentCard
 							name="Accountant Letter"
 							type="Verification Letter"
-							verified={item.accountantLetterVerified || false}
+							verified={item.accountantLetterVerified}
 							uploadDate={item.createdAt}
 						/>
 						<DocumentCard
