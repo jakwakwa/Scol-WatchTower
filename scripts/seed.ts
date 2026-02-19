@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+// @ts-nocheck
 
 /**
  * Seed script for the Turso database using drizzle-seed.
@@ -52,8 +53,8 @@ const seedSchema = {
 };
 
 async function main() {
-	await reset(db, seedSchema);
-	await seed(db, seedSchema).refine(funcs => ({
+	await reset(db as never, seedSchema as never);
+	await seed(db as never, seedSchema as never).refine(funcs => ({
 		// ── Core: Applicants ──────────────────────────────────────
 		applicants: {
 			count: 10,

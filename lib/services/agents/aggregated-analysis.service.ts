@@ -28,9 +28,6 @@ import {
 } from "./sanctions.agent";
 import { type BatchValidationResult, validateDocumentsBatch } from "./validation.agent";
 import { analyzeRisk as runProcureCheck } from "@/lib/services/risk.service";
-import { getDatabaseClient } from "@/app/utils";
-import { riskAssessments, workflowEvents } from "@/db/schema";
-import { eq } from "drizzle-orm";
 
 // ============================================
 // Types & Schemas
@@ -61,6 +58,7 @@ export interface AggregatedAnalysisInput {
 		nationality?: string;
 	}>;
 	requestedAmount?: number;
+	sanctionsOverride?: SanctionsCheckResult;
 }
 
 export interface AggregatedAnalysisResult {
@@ -170,16 +168,19 @@ export async function performAggregatedAnalysis(
 			return r;
 		}),
 
-		// Sanctions Agent
-		performSanctionsCheck({
-			applicantId: input.applicantId,
-			workflowId: input.workflowId,
-			entityName: input.applicantData.companyName,
-			entityType: "COMPANY",
-			countryCode: input.applicantData.countryCode || "ZA",
-			registrationNumber: input.applicantData.registrationNumber,
-			directors: input.directors,
-		}).then(r => {
+		// Sanctions Agent (or pre-computed sanctions result)
+		(input.sanctionsOverride
+			? Promise.resolve(input.sanctionsOverride)
+			: performSanctionsCheck({
+					applicantId: input.applicantId,
+					workflowId: input.workflowId,
+					entityName: input.applicantData.companyName,
+					entityType: "COMPANY",
+					countryCode: input.applicantData.countryCode || "ZA",
+					registrationNumber: input.applicantData.registrationNumber,
+					directors: input.directors,
+				})
+		).then(r => {
 			agentsRun.push("sanctions");
 			return r;
 		}),
