@@ -7,7 +7,7 @@ import {
 	RiEditLine,
 	RiFileTextLine,
 	RiFlowChart,
-	RiMoreLine,
+	RiMenu3Line,
 	RiRobot2Line,
 	RiUserLine,
 } from "@remixicon/react";
@@ -233,13 +233,12 @@ function PipelineCard({ workflow }: { workflow: PipelineWorkflow }) {
 	const canViewQuote = stageNumber >= 2 && workflow.hasQuote;
 
 	return (
-		<div className="bg-card backdrop-blur-xs p-4 rounded-xl border border-white/10 shadow-[0px_10px_10px_rgba(0,0,0,0.05)] hover:shadow-md transition-all group relative hover:border-primary/20">
+		<div className="bg-card backdrop-blur-xs p-4 rounded-xl border border-white/10 shadow-[0px_10px_10px_rgba(0,0,0,0.05)] transition-all group relative">
 			{/* Header: Company Name & Risk if applicable */}
 			<div className="flex justify-between items-start mb-2">
 				<h4 className="font-medium line-clamp-1 text-ellipsis  whitespace-nowrap uppercase   text-[11px] text-card-foreground leading-tight pr-6">
 					{workflow.clientName || "Unknown Company"}
 				</h4>
-				{workflow.payload?.riskLevel && <RiskBadge level={workflow.payload.riskLevel} />}
 			</div>
 			<div className="flex gap-1">
 				<p className="text-[10px] text-card-foreground/50 font-mono mb-4">
@@ -249,6 +248,7 @@ function PipelineCard({ workflow }: { workflow: PipelineWorkflow }) {
 					{`| ID: ${workflow.applicantId ? workflow.applicantId : " #"}`}
 				</p>
 			</div>
+
 			{/* Subtitle: Registration Number */}
 
 			{/* Footer: Details & Time */}
@@ -264,14 +264,15 @@ function PipelineCard({ workflow }: { workflow: PipelineWorkflow }) {
 						{formatRelativeTime(workflow.startedAt)}
 					</span>
 				</div>
+				{workflow.payload?.riskLevel && <RiskBadge level={workflow.payload.riskLevel} />}
 			</div>
 
 			{/* Action Menu (Hidden until Hover) */}
-			<div className="absolute top-3 right-2 opacity-0 group-hover:opacity-100 backdrop-blur-sm transition-opacity">
+			<div className="absolute top-3 right-3 opacity-100 group-hover:opacity-20 hover:overflow-hidden p-0 hover:rounded-full p-0 transition-opacity focus-visible:outline-0">
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
-						<Button variant="ghost" size="icon" className="h-6 w-6">
-							<RiMoreLine className="h-4 w-4" />
+						<Button variant="ghost" size="icon" className="h-5 w-5">
+							<RiMenu3Line className="text-muted font-black h-5 w-5" />
 						</Button>
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="end" className="w-[180px] backdrop-blur-xs">

@@ -80,7 +80,7 @@ const statusConfig = {
 	pending: { label: "Pending", color: "secondary", icon: RiTimeLine },
 	in_progress: {
 		label: "In Progress",
-		color: "default",
+		color: "info",
 		icon: RiTimeLine,
 		pulse: true,
 	},
@@ -118,7 +118,9 @@ export function StatusBadge({ status }: { status: WorkflowRow["status"] }) {
 
 	return (
 		<Badge
-			variant={config.color as "default" | "secondary" | "destructive" | "outline"}
+			variant={
+				config.color as "default" | "secondary" | "destructive" | "outline" | "info"
+			}
 			className={cn("gap-1.5", hasPulse && "animate-pulse")}>
 			<Icon className="h-3 w-3" />
 			{config.label}

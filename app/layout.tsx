@@ -27,7 +27,7 @@ export default function RootLayout({
 		<ClerkProvider>
 			<html lang="en" className={dmSans.variable} suppressHydrationWarning>
 				<body
-					className={`bg-white overscroll-none ${inter.className}`}
+					className={`bg-background/90 overscroll-none ${inter.className}`}
 					suppressHydrationWarning>
 					{children}
 				</body>

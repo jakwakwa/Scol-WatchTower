@@ -2,18 +2,18 @@ import { RiUserAddLine } from "@remixicon/react";
 import { desc } from "drizzle-orm";
 import Link from "next/link";
 import { getDatabaseClient } from "@/app/utils";
-import {
-	ApplicantsTable,
-	type ApplicantRow,
-} from "@/components/dashboard/applicants-table";
 import { DashboardLayout, DashboardSection } from "@/components/dashboard";
+import {
+	type ApplicantRow,
+	ApplicantsTable,
+} from "@/components/dashboard/applicants-table";
 import { Button } from "@/components/ui/button";
 import { applicants, quotes, workflows } from "@/db/schema";
 import { cn } from "@/lib/utils";
 
 const statusConfig = {
 	new: { label: "New", color: "bg-white/10 text-slate-400/80" },
-	in_progress: { label: "In Progress", color: "bg-blue-500/5 text-blue-400" },
+	in_progress: { label: "In Progress", color: "bg-blue-950 text-blue-300" },
 	approved: { label: "Approved", color: "bg-emerald-500/5 text-emerald-400" },
 	rejected: { label: "Rejected", color: "bg-red-500/5 text-red-400" },
 } as const;

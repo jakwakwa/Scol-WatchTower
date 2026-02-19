@@ -21,6 +21,7 @@ const badgeVariants = cva(
 					"bg-warning/50 text-warning-foreground [a]:hover:bg-warning dark:bg-warning",
 				success:
 					"bg-teal-900 text-emerald-200 [a]:hover:bg-teal-500/40 dark:bg-teal-500/40",
+				info: "bg-blue-950 text-blue-300 [a]:hover:bg-blue-900 dark:bg-blue-950 dark:text-blue-300",
 			},
 		},
 		defaultVariants: {

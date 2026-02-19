@@ -90,7 +90,7 @@ const STATUS_CONFIG = {
 	},
 	in_progress: {
 		label: "In Progress",
-		colour: "bg-amber-500/20 text-amber-500",
+		colour: "bg-blue-950 text-blue-300",
 		icon: RiEditLine,
 	},
 	submitted: {

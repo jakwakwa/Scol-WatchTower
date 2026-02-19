@@ -1,35 +1,33 @@
 import {
 	RiArrowLeftLine,
+	RiBuildingLine,
 	RiCheckLine,
-	RiTimeLine,
 	RiErrorWarningLine,
 	RiFileTextLine,
-	RiUserLine,
-	RiBuildingLine,
 	RiMailLine,
 	RiPhoneLine,
 	RiRobot2Line,
+	RiTimeLine,
+	RiUserLine,
 } from "@remixicon/react";
-import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
-
-import { DashboardLayout, DashboardSection, DashboardGrid } from "@/components/dashboard";
-import { Button } from "@/components/ui/button";
+import { desc, eq } from "drizzle-orm";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { getDatabaseClient } from "@/app/utils";
+import { DashboardLayout, DashboardSection } from "@/components/dashboard";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardContent,
+	CardDescription,
 	CardHeader,
 	CardTitle,
-	CardDescription,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-
-import { getDatabaseClient } from "@/app/utils";
-import { workflows, applicants, workflowEvents, quotes } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { applicants, quotes, workflowEvents, workflows } from "@/db/schema";
 import { cn } from "@/lib/utils";
-import { notFound } from "next/navigation";
 
 // --- Types ---
 type WorkflowStatus =
@@ -50,7 +48,7 @@ const statusConfig: Record<WorkflowStatus, { label: string; color: string; icon:
 		},
 		in_progress: {
 			label: "Processing",
-			color: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+			color: "bg-blue-950 text-blue-300 border-blue-900",
 			icon: RiTimeLine,
 		},
 		awaiting_human: {
@@ -236,7 +234,9 @@ export default async function WorkflowDetailsPage({
 									</div>
 									<div>
 										<span className="block text-foreground/70">Adjusted Fee</span>
-										<span>{((latestQuote.adjustedFeePercent ?? 0) / 100).toFixed(2)}%</span>
+										<span>
+											{((latestQuote.adjustedFeePercent ?? 0) / 100).toFixed(2)}%
+										</span>
 									</div>
 									<div>
 										<span className="block text-foreground/70">Terms</span>
