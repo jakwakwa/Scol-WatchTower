@@ -35,7 +35,6 @@ import {
 	type SanctionsCheckResult,
 } from "./sanctions.agent";
 import { type BatchValidationResult, validateDocumentsBatch } from "./validation.agent";
-import { analyzeRisk as runProcureCheck } from "@/lib/services/risk.service";
 
 // ============================================
 // Types & Schemas
