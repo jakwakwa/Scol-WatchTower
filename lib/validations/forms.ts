@@ -44,6 +44,7 @@ export const stratcolContractSchema = z.object({
 		"Partnership",
 		"Other",
 	]),
+	telephone: z.string().optional(),
 	businessAddress: z.object({
 		address: z.string().min(2),
 		postalCode: z.string().min(2),
@@ -54,6 +55,14 @@ export const stratcolContractSchema = z.object({
 	}),
 	durationAtAddress: z.string().optional(),
 	industryTenure: z.string().optional(),
+	companyResolution: z
+		.object({
+			cityTown: z.string().min(1),
+			date: z.string().min(1),
+			resolvedName: z.string().min(2),
+			resolvedIdNumber: z.string().min(6),
+		})
+		.optional(),
 	authorisedRepresentative: z.object({
 		name: z.string().min(2),
 		idNumber: z.string().min(6),
