@@ -13,6 +13,7 @@
 import { eq } from "drizzle-orm";
 import { getDatabaseClient } from "@/app/utils";
 import { aiAnalysisLogs, riskAssessments, workflowEvents } from "@/db/schema";
+import { analyzeRisk as runProcureCheck } from "@/lib/services/risk.service";
 import { generateReporterAnalysis, type ReporterOutput } from "./reporter.agent";
 import {
 	analyzeFinancialRisk,
@@ -27,7 +28,6 @@ import {
 	type SanctionsCheckResult,
 } from "./sanctions.agent";
 import { type BatchValidationResult, validateDocumentsBatch } from "./validation.agent";
-import { analyzeRisk as runProcureCheck } from "@/lib/services/risk.service";
 
 // ============================================
 // Types & Schemas
@@ -569,7 +569,10 @@ async function runExternalCheckStubs(
 				},
 			};
 		} catch (err) {
-			console.error("[AggregatedAnalysis] ProcureCheck failed, using mock fallback:", err);
+			console.error(
+				"[AggregatedAnalysis] ProcureCheck failed, using mock fallback:",
+				err
+			);
 		}
 	}
 
