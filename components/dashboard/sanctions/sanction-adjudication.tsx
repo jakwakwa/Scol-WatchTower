@@ -111,7 +111,7 @@ export function SanctionAdjudication({ items, onRefresh }: SanctionAdjudicationP
 			<Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
 				<SheetContent
 					side="right"
-					className="w-full sm:max-w-2xl lg:max-w-4xl overflow-y-auto bg-background">
+					className="w-full sm:max-w-2xl lg:max-w-4xl overflow-y-auto bg-card">
 					{selectedItem && (
 						<SanctionDetailPanel
 							item={selectedItem}
