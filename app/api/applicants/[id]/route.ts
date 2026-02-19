@@ -12,7 +12,6 @@ import {
 	workflowEvents,
 	workflows,
 } from "@/db/schema";
-import { and, desc, eq } from "drizzle-orm";
 import { updateApplicantSchema } from "@/lib/validations";
 
 /**
