@@ -5,7 +5,8 @@ import { type ReactNode, useMemo, useState } from "react";
 import type { FieldValues, Resolver } from "react-hook-form";
 import { FormProvider, useForm } from "react-hook-form";
 import type { ZodTypeAny } from "zod";
-import { Button } from "@/components/ui/button";
+import ExternalFormSection from "./external/external-form-section";
+import styles from "./external/external-form-theme.module.css";
 import { FormField, RepeatableFieldGroup } from "./form-fields";
 import type { FieldDefinition, FormSectionDefinition } from "./types";
 
@@ -66,40 +67,35 @@ export default function FormRenderer({
 		<FormProvider {...form}>
 			<form onSubmit={handleSubmit} className="space-y-10">
 				{showTestButton && (
-					<div className="mb-6 p-4 border border-dashed border-amber-500/20 bg-amber-500/5 rounded-lg flex items-center justify-between">
+					<div className={styles.testingBanner}>
 						<div className="space-y-1">
-							<p className="text-sm font-medium text-yellow-800">Testing Mode Active</p>
-							<p className="text-xs text-yellow-700">
+							<p className={styles.testingTitle}>Testing Mode Active</p>
+							<p className={styles.testingText}>
 								Click to autofill the form with test data.
 							</p>
 						</div>
-						<Button
+						<button
 							type="button"
-							variant="outline"
-							size="sm"
 							onClick={() => form.reset(testData)}
-							className="bg-gray-950/40 border-gray-900/50 hover:bg-gray-900/50 hover:text-amber-700 text-secondary/80">
+							className={styles.outlineButton}>
 							Autofill Form
-						</Button>
+						</button>
 					</div>
 				)}
 				{sectionLayouts.map(section => (
-					<section key={section.title} className="space-y-6">
-						<div className="space-y-1">
-							<h2 className="text-lg font-semibold text-foreground">{section.title}</h2>
-							{section.description ? (
-								<p className="text-sm text-muted-foreground">{section.description}</p>
-							) : null}
-						</div>
+					<ExternalFormSection
+						key={section.title}
+						title={section.title}
+						note={section.description || undefined}>
 						<div
-							className={`grid grid-cols-1 gap-6 ${
-								section.columns === 2 ? "md:grid-cols-2" : ""
-							}`}>
+							className={
+								section.columns === 2 ? styles.externalGrid : "grid grid-cols-1 gap-6"
+							}>
 							{section.fields.map(field => {
 								if (isRepeatable(field)) {
 									return (
-										<div key={field.name} className="md:col-span-2">
-											<RepeatableFieldGroup field={field} />
+										<div key={field.name} className={styles.externalFieldFull}>
+											<RepeatableFieldGroup field={field} external />
 										</div>
 									);
 								}
@@ -107,24 +103,27 @@ export default function FormRenderer({
 								return (
 									<div
 										key={field.name}
-										className={field.colSpan === 2 ? "md:col-span-2" : ""}>
-										<FormField field={field} />
+										className={field.colSpan === 2 ? styles.externalFieldFull : ""}>
+										<FormField field={field} external />
 									</div>
 								);
 							})}
 						</div>
-					</section>
+					</ExternalFormSection>
 				))}
 
-				{submitError ? <p className="text-sm text-destructive">{submitError}</p> : null}
+				{submitError ? <p className={styles.errorBanner}>{submitError}</p> : null}
 
-				<div className="flex items-center justify-end gap-3">
+				<div className={styles.externalActions}>
 					{renderActions ? (
 						renderActions
 					) : (
-						<Button type="submit" disabled={disabled || form.formState.isSubmitting}>
+						<button
+							type="submit"
+							disabled={disabled || form.formState.isSubmitting}
+							className={styles.primaryButton}>
 							{form.formState.isSubmitting ? "Submitting..." : submitLabel}
-						</Button>
+						</button>
 					)}
 				</div>
 			</form>

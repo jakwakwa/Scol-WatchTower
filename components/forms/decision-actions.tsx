@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import styles from "./external/external-form-theme.module.css";
 
 interface DecisionActionsProps {
 	approveLabel: string;
@@ -29,11 +28,12 @@ export default function DecisionActions({
 	const [error, setError] = useState<string | null>(null);
 
 	return (
-		<div className="space-y-3">
-			<div className="flex flex-wrap items-center gap-2">
-				<Button
+		<div className={styles.externalField}>
+			<div className={styles.externalActions}>
+				<button
 					type={approveButtonType}
 					disabled={disabled || submitting}
+					className={styles.primaryButton}
 					onClick={
 						approveButtonType === "button"
 							? async () => {
@@ -55,64 +55,67 @@ export default function DecisionActions({
 							: undefined
 					}>
 					{approveLabel}
-				</Button>
-				<Button
+				</button>
+				<button
 					type="button"
-					variant="destructive"
 					disabled={disabled || submitting}
+					className={styles.dangerButton}
 					onClick={() => {
 						setShowDeclineInput(true);
 						setError(null);
 					}}>
 					{declineLabel}
-				</Button>
+				</button>
 			</div>
 			{showDeclineInput ? (
-				<div className="space-y-2 rounded-md border border-border p-3">
-					<Textarea
-						placeholder="Optional reason for decline"
-						value={reason}
-						onChange={event => setReason(event.target.value)}
-						rows={3}
-					/>
-					{error ? <p className="text-xs text-destructive">{error}</p> : null}
-					<div className="flex gap-2">
-						<Button
-							type="button"
-							variant="outline"
-							disabled={submitting}
-							onClick={() => {
-								setShowDeclineInput(false);
-								setReason("");
-								setError(null);
-							}}>
-							Cancel
-						</Button>
-						<Button
-							type="button"
-							variant="destructive"
-							disabled={submitting}
-							onClick={async () => {
-								if (requiresDeclineReason && !reason.trim()) {
-									setError("Please provide a reason.");
-									return;
-								}
-								setSubmitting(true);
-								setError(null);
-								try {
-									await onDecline(reason.trim() || undefined);
-								} catch (declineError) {
-									setError(
-										declineError instanceof Error
-											? declineError.message
-											: "Decline request failed"
-									);
-								} finally {
-									setSubmitting(false);
-								}
-							}}>
-							Confirm decline
-						</Button>
+				<div className={styles.externalCard}>
+					<div className={styles.externalSectionBody}>
+						<textarea
+							placeholder="Optional reason for decline"
+							value={reason}
+							onChange={event => setReason(event.target.value)}
+							rows={3}
+							className={styles.externalTextarea}
+						/>
+						{error ? <p className={styles.externalError}>{error}</p> : null}
+						<div className={styles.externalActions}>
+							<button
+								type="button"
+								disabled={submitting}
+								className={styles.outlineButton}
+								onClick={() => {
+									setShowDeclineInput(false);
+									setReason("");
+									setError(null);
+								}}>
+								Cancel
+							</button>
+							<button
+								type="button"
+								disabled={submitting}
+								className={styles.dangerButton}
+								onClick={async () => {
+									if (requiresDeclineReason && !reason.trim()) {
+										setError("Please provide a reason.");
+										return;
+									}
+									setSubmitting(true);
+									setError(null);
+									try {
+										await onDecline(reason.trim() || undefined);
+									} catch (declineError) {
+										setError(
+											declineError instanceof Error
+												? declineError.message
+												: "Decline request failed"
+										);
+									} finally {
+										setSubmitting(false);
+									}
+								}}>
+								Confirm decline
+							</button>
+						</div>
 					</div>
 				</div>
 			) : null}

@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import DecisionActions from "@/components/forms/decision-actions";
+import styles from "@/components/forms/external/external-form-theme.module.css";
 import FormRenderer from "@/components/forms/form-renderer";
 import FormStatusMessage from "@/components/forms/form-status-message";
-import { Button } from "@/components/ui/button";
 import type { FormType } from "@/lib/types";
 import { formContent } from "./content";
 
@@ -132,33 +132,35 @@ export default function FormView({
 	}
 
 	return (
-		<div className="space-y-6">
+		<div className={styles.externalField}>
 			{quoteSummary ? (
-				<div className="rounded-md border border-border p-4 space-y-2">
-					<p className="text-sm font-semibold">Quotation summary</p>
-					<p className="text-sm text-muted-foreground">
-						Amount: R {(quoteSummary.amount / 100).toLocaleString()}
-					</p>
-					<p className="text-sm text-muted-foreground">
-						Base fee: {(quoteSummary.baseFeePercent / 100).toFixed(2)}%
-					</p>
-					<p className="text-sm text-muted-foreground">
-						Adjusted fee:{" "}
-						{quoteSummary.adjustedFeePercent
-							? `${(quoteSummary.adjustedFeePercent / 100).toFixed(2)}%`
-							: "-"}
-					</p>
-					{quoteSummary.rationale ? (
-						<p className="text-sm text-muted-foreground">{quoteSummary.rationale}</p>
-					) : null}
+				<div className={styles.externalCard}>
+					<div className={styles.externalSectionHeader}>Quotation summary</div>
+					<div className={styles.externalSectionBody}>
+						<p className={styles.externalSectionNote}>
+							Amount: R {(quoteSummary.amount / 100).toLocaleString()}
+						</p>
+						<p className={styles.externalSectionNote}>
+							Base fee: {(quoteSummary.baseFeePercent / 100).toFixed(2)}%
+						</p>
+						<p className={styles.externalSectionNote}>
+							Adjusted fee:{" "}
+							{quoteSummary.adjustedFeePercent
+								? `${(quoteSummary.adjustedFeePercent / 100).toFixed(2)}%`
+								: "-"}
+						</p>
+						{quoteSummary.rationale ? (
+							<p className={styles.externalSectionNote}>{quoteSummary.rationale}</p>
+						) : null}
+					</div>
 				</div>
 			) : quoteLoading ? (
-				<p className="text-sm text-muted-foreground">Loading quotation details...</p>
+				<p className={styles.externalSectionNote}>Loading quotation details...</p>
 			) : null}
 
 			{isDecisionEnabled && decisionConfig && isSubmittedOnly ? (
-				<div className="space-y-4">
-					<p className="text-sm text-muted-foreground">
+				<div className={styles.externalField}>
+					<p className={styles.externalSectionNote}>
 						Your form details are already submitted. Please approve or decline this step.
 					</p>
 					<DecisionActions
@@ -195,7 +197,9 @@ export default function FormView({
 								}}
 							/>
 						) : (
-							<Button type="submit">Submit</Button>
+							<button type="submit" className={styles.primaryButton}>
+								Submit
+							</button>
 						)
 					}
 					onSubmit={async values => {
