@@ -41,7 +41,7 @@ export function DashboardShell({ children, notifications = [] }: DashboardShellP
 	}, []);
 
 	return (
-		<div className="min-h-screen bg-linear-to-br from-background via-background/90 to-background ">
+		<div className="min-h-screen dotted-grid-main">
 			<Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
 
 			{/* Main content */}
