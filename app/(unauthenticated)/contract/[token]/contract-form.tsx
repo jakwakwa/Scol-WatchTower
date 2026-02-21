@@ -5,6 +5,8 @@ import { useCallback, useState } from "react";
 import type { FieldValues, Resolver } from "react-hook-form";
 import { useFieldArray, useForm } from "react-hook-form";
 import type { z } from "zod";
+import sharedStyles from "@/components/forms/external/external-form-theme.module.css";
+import ExternalStatusCard from "@/components/forms/external/external-status-card";
 import { stratcolContractSchema } from "@/lib/validations/forms";
 import "./contract-form.css";
 
@@ -133,27 +135,10 @@ export default function ContractForm({
 
 	if (submitted) {
 		return (
-			<div className="contract-success">
-				<div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-					<svg
-						className="h-8 w-8 text-green-600"
-						fill="none"
-						viewBox="0 0 24 24"
-						stroke="currentColor">
-						<path
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							strokeWidth={2}
-							d="M5 13l4 4L19 7"
-						/>
-					</svg>
-				</div>
-				<h2>Contract Submitted Successfully</h2>
-				<p>
-					Thank you. Your StratCol Agreement has been submitted. Our team will be in touch
-					shortly.
-				</p>
-			</div>
+			<ExternalStatusCard
+				title="Contract Submitted Successfully"
+				description="Thank you. Your StratCol Agreement has been submitted. Our team will be in touch shortly."
+			/>
 		);
 	}
 
@@ -236,38 +221,17 @@ export default function ContractForm({
 			</div>
 
 			{showTestButton && (
-				<div
-					style={{
-						marginBottom: "1rem",
-						padding: "0.75rem 1rem",
-						border: "1px dashed #c9a356",
-						borderRadius: "8px",
-						background: "#fdf6e7",
-						display: "flex",
-						alignItems: "center",
-						justifyContent: "space-between",
-					}}>
+				<div className={sharedStyles.testingBanner}>
 					<div>
-						<div style={{ fontSize: "0.8rem", fontWeight: 600, color: "#92780d" }}>
-							Testing Mode
-						</div>
-						<div style={{ fontSize: "0.7rem", color: "#a08a2a" }}>
+						<div className={sharedStyles.testingTitle}>Testing Mode</div>
+						<div className={sharedStyles.testingText}>
 							Click to autofill with test data
 						</div>
 					</div>
 					<button
 						type="button"
 						onClick={() => form.reset(TEST_DATA)}
-						style={{
-							background: "white",
-							border: "1px solid #c9a356",
-							borderRadius: "6px",
-							padding: "0.35rem 0.75rem",
-							fontSize: "0.75rem",
-							fontWeight: 600,
-							color: "#92780d",
-							cursor: "pointer",
-						}}>
+						className={sharedStyles.outlineButton}>
 						Autofill Form
 					</button>
 				</div>
@@ -396,9 +360,7 @@ export default function ContractForm({
 										required
 									/>
 								</div>
-								<p
-									className="contract-section-note"
-									style={{ marginTop: "0.75rem", marginBottom: 0 }}>
+								<p className="contract-section-note mt-3 mb-0">
 									be authorised to represent and to sign this agreement with StratCol
 									Limited.
 								</p>
@@ -416,7 +378,7 @@ export default function ContractForm({
 						<p className="contract-section-note">
 							List all beneficial owners with 5% or more shareholding.
 						</p>
-						<div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+						<div className="flex flex-col gap-4">
 							{ownerFields.map((field, index) => (
 								<div key={field.id} className="contract-owner-card">
 									{ownerFields.length > 1 && (
@@ -461,8 +423,7 @@ export default function ContractForm({
 						</div>
 						<button
 							type="button"
-							className="contract-add-btn"
-							style={{ marginTop: "0.75rem" }}
+							className={`contract-add-btn mt-3`}
 							onClick={() =>
 								appendOwner({ name: "", idNumber: "", address: "", position: "" })
 							}>
@@ -547,9 +508,7 @@ export default function ContractForm({
 								</label>
 							</div>
 							{errors.consentAccepted?.message && (
-								<span
-									className="contract-field-error"
-									style={{ marginTop: "0.25rem", display: "block" }}>
+								<span className="contract-field-error mt-1 block">
 									{errors.consentAccepted.message as string}
 								</span>
 							)}

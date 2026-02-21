@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import ExternalFormShell from "@/components/forms/external/external-form-shell";
+import styles from "@/components/forms/external/external-form-theme.module.css";
 
 /**
  * Kitchen sink page to preview all magic link forms.
@@ -124,283 +126,84 @@ export default function DevFormsPage() {
 	}, []);
 
 	return (
-		<div style={styles.page}>
-			<div style={styles.container}>
-				{/* Header */}
-				<div style={styles.header}>
-					<div style={styles.headerBadge}>DEV ONLY</div>
-					<h1 style={styles.title}>Forms Kitchen Sink</h1>
-					<p style={styles.subtitle}>
-						Generate magic link tokens and preview all form types. Each click creates a
-						fresh token and opens the form in a new tab.
-					</p>
-				</div>
+		<div className="min-h-screen bg-[#f4f1ed]">
+			<ExternalFormShell
+				title="Forms Kitchen Sink"
+				description="Generate magic link tokens and preview all form types. Each click creates a fresh token and opens the form in a new tab.">
+				{error ? <div className={styles.errorBanner}>{error}</div> : null}
 
-				{error && <div style={styles.errorBanner}>{error}</div>}
-
-				{/* Form grid */}
-				<div style={styles.grid}>
-					{FORMS.map(form => (
-						<div key={form.type} style={styles.card}>
-							<div style={{ ...styles.cardAccent, background: form.color }} />
-							<div style={styles.cardBody}>
-								<div style={styles.cardTop}>
-									<h2 style={styles.cardTitle}>{form.title}</h2>
-									<span
-										style={{
-											...styles.badge,
-											background: `${form.color}18`,
-											color: form.color,
-										}}>
-										{form.type}
-									</span>
-								</div>
-								<p style={styles.cardDesc}>{form.description}</p>
-								<div style={styles.cardMeta}>
-									<span>
-										Route: <code style={styles.code}>{form.route}/[token]</code>
-									</span>
-									{form.sections > 0 && <span>{form.sections} sections</span>}
-								</div>
-								<button
-									onClick={() => generateToken(form.type)}
-									disabled={loading === form.type}
-									style={{
-										...styles.generateBtn,
-										background: form.color,
-										opacity: loading === form.type ? 0.6 : 1,
-									}}>
-									{loading === form.type ? "Generating…" : "Generate & Open →"}
-								</button>
-							</div>
-						</div>
-					))}
-				</div>
-
-				{/* Generated links history */}
-				{generatedLinks.length > 0 && (
-					<div style={styles.historySection}>
-						<h3 style={styles.historyTitle}>Generated Links</h3>
-						<div style={styles.historyList}>
-							{generatedLinks.map((link, i) => {
-								const form = FORMS.find(f => f.type === link.type);
-								return (
-									<div key={`${link.token}-${i}`} style={styles.historyItem}>
-										<div
-											style={{
-												...styles.historyDot,
-												background: form?.color || "#6b7280",
-											}}
-										/>
-										<div style={styles.historyInfo}>
-											<span style={styles.historyType}>{form?.title}</span>
-											<a
-												href={link.url}
-												target="_blank"
-												rel="noopener noreferrer"
-												style={styles.historyLink}>
-												{link.url}
-											</a>
-										</div>
-										<code style={styles.historyToken}>{link.token.slice(0, 12)}…</code>
+				<section className={styles.externalCard}>
+					<div className={styles.externalSectionHeader}>DEV ONLY</div>
+					<div className={styles.externalSectionBody}>
+						<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+							{FORMS.map(form => (
+								<div key={form.type} className={styles.ownerCard}>
+									<div className="mb-3 flex items-start justify-between gap-3">
+										<p className="font-semibold">{form.title}</p>
+										<span className={styles.externalSectionNote}>{form.type}</span>
 									</div>
-								);
-							})}
+									<p className={styles.externalSectionNote}>{form.description}</p>
+									<div className="mb-3 flex items-center justify-between gap-3">
+										<code className={styles.externalSectionNote}>
+											{form.route}/[token]
+										</code>
+										{form.sections > 0 ? (
+											<span className={styles.externalSectionNote}>
+												{form.sections} sections
+											</span>
+										) : null}
+									</div>
+									<button
+										onClick={() => generateToken(form.type)}
+										disabled={loading === form.type}
+										className={styles.primaryButton}>
+										{loading === form.type ? "Generating..." : "Generate & Open"}
+									</button>
+								</div>
+							))}
 						</div>
 					</div>
-				)}
+				</section>
 
-				{/* Footer */}
-				<div style={styles.footer}>
+				{generatedLinks.length > 0 ? (
+					<section className={styles.externalCard}>
+						<div className={styles.externalSectionHeader}>Generated Links</div>
+						<div className={styles.externalSectionBody}>
+							<div className={styles.historyList}>
+								{generatedLinks.map((link, i) => {
+									const form = FORMS.find(item => item.type === link.type);
+									return (
+										<div key={`${link.token}-${i}`} className={styles.historyItem}>
+											<div
+												className="h-2 w-2 rounded-full"
+												style={{ background: form?.color || "#6b7280" }}
+											/>
+											<div className="flex-1">
+												<p>{form?.title || link.type}</p>
+												<a
+													href={link.url}
+													target="_blank"
+													rel="noopener noreferrer"
+													className={styles.externalSectionNote}>
+													{link.url}
+												</a>
+											</div>
+											<code className={styles.externalSectionNote}>
+												{link.token.slice(0, 12)}...
+											</code>
+										</div>
+									);
+								})}
+							</div>
+						</div>
+					</section>
+				) : null}
+
+				<p className={styles.externalSectionNote}>
 					This page is only available in development mode. Forms require a valid database
 					connection to generate tokens.
-				</div>
-			</div>
+				</p>
+			</ExternalFormShell>
 		</div>
 	);
 }
-
-/* ── Inline styles ── */
-
-const styles: Record<string, React.CSSProperties> = {
-	page: {
-		minHeight: "100vh",
-		background: "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)",
-		padding: "2rem 1rem",
-	},
-	container: {
-		maxWidth: 1100,
-		margin: "0 auto",
-	},
-	header: {
-		textAlign: "center" as const,
-		marginBottom: "2.5rem",
-	},
-	headerBadge: {
-		display: "inline-block",
-		background: "linear-gradient(90deg, #f59e0b, #ef4444)",
-		color: "white",
-		fontSize: "0.65rem",
-		fontWeight: 800,
-		letterSpacing: "0.15em",
-		padding: "0.2rem 0.75rem",
-		borderRadius: "9999px",
-		marginBottom: "0.75rem",
-	},
-	title: {
-		fontSize: "2rem",
-		fontWeight: 800,
-		color: "white",
-		letterSpacing: "-0.02em",
-		margin: "0.5rem 0",
-	},
-	subtitle: {
-		fontSize: "0.9rem",
-		color: "#94a3b8",
-		maxWidth: 600,
-		margin: "0 auto",
-		lineHeight: 1.6,
-	},
-	errorBanner: {
-		background: "#fef2f2",
-		border: "1px solid #fecaca",
-		borderRadius: 8,
-		padding: "0.75rem 1rem",
-		fontSize: "0.8rem",
-		color: "#dc2626",
-		marginBottom: "1.5rem",
-	},
-	grid: {
-		display: "grid",
-		gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
-		gap: "1.25rem",
-	},
-	card: {
-		background: "#1e293b",
-		borderRadius: 12,
-		overflow: "hidden",
-		border: "1px solid #334155",
-		transition: "border-color 0.15s",
-	},
-	cardAccent: {
-		height: 3,
-	},
-	cardBody: {
-		padding: "1.25rem",
-	},
-	cardTop: {
-		display: "flex",
-		alignItems: "flex-start",
-		justifyContent: "space-between",
-		gap: "0.5rem",
-		marginBottom: "0.5rem",
-	},
-	cardTitle: {
-		fontSize: "1rem",
-		fontWeight: 700,
-		color: "white",
-		margin: 0,
-	},
-	badge: {
-		fontSize: "0.6rem",
-		fontWeight: 700,
-		padding: "0.15rem 0.5rem",
-		borderRadius: 4,
-		whiteSpace: "nowrap" as const,
-		flexShrink: 0,
-	},
-	cardDesc: {
-		fontSize: "0.8rem",
-		color: "#94a3b8",
-		lineHeight: 1.5,
-		margin: "0.5rem 0",
-	},
-	cardMeta: {
-		display: "flex",
-		gap: "1rem",
-		fontSize: "0.7rem",
-		color: "#64748b",
-		marginBottom: "0.75rem",
-	},
-	code: {
-		background: "#0f172a",
-		padding: "0.1rem 0.4rem",
-		borderRadius: 4,
-		fontSize: "0.65rem",
-		fontFamily: "monospace",
-		color: "#94a3b8",
-	},
-	generateBtn: {
-		width: "100%",
-		color: "white",
-		fontWeight: 700,
-		fontSize: "0.8rem",
-		padding: "0.6rem 1rem",
-		borderRadius: 8,
-		border: "none",
-		cursor: "pointer",
-		transition: "opacity 0.15s, transform 0.1s",
-	},
-	historySection: {
-		marginTop: "2.5rem",
-		background: "#1e293b",
-		borderRadius: 12,
-		border: "1px solid #334155",
-		padding: "1.25rem",
-	},
-	historyTitle: {
-		fontSize: "0.9rem",
-		fontWeight: 700,
-		color: "white",
-		margin: "0 0 0.75rem",
-	},
-	historyList: {
-		display: "flex",
-		flexDirection: "column" as const,
-		gap: "0.5rem",
-	},
-	historyItem: {
-		display: "flex",
-		alignItems: "center",
-		gap: "0.75rem",
-		background: "#0f172a",
-		borderRadius: 8,
-		padding: "0.5rem 0.75rem",
-	},
-	historyDot: {
-		width: 8,
-		height: 8,
-		borderRadius: "50%",
-		flexShrink: 0,
-	},
-	historyInfo: {
-		flex: 1,
-		display: "flex",
-		flexDirection: "column" as const,
-		gap: "0.15rem",
-	},
-	historyType: {
-		fontSize: "0.75rem",
-		fontWeight: 600,
-		color: "white",
-	},
-	historyLink: {
-		fontSize: "0.7rem",
-		color: "#60a5fa",
-		textDecoration: "none",
-	},
-	historyToken: {
-		fontSize: "0.6rem",
-		color: "#64748b",
-		background: "#1e293b",
-		padding: "0.15rem 0.4rem",
-		borderRadius: 4,
-		fontFamily: "monospace",
-	},
-	footer: {
-		textAlign: "center" as const,
-		marginTop: "2rem",
-		fontSize: "0.7rem",
-		color: "#475569",
-	},
-};
