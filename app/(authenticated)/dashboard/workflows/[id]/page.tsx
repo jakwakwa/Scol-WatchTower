@@ -250,47 +250,66 @@ export default async function WorkflowDetailsPage({
 					{/* Timeline */}
 					<DashboardSection title="Activity Timeline">
 						<div className="relative pl-8 space-y-8 before:absolute before:left-[11px] before:top-2 before:bottom-0 before:w-px before:bg-border">
-							{events.map(event => (
-								<div key={event.id} className="relative">
-									{/* Dot */}
-									<div
-										className={cn(
-											"absolute -left-[29px] top-1 h-2.5 w-2.5 rounded-full border border-background ring-4 ring-background",
-											event.eventType === "error" ? "bg-red-500" : "bg-emerald-500"
-										)}
-									/>
-
-									<div className="flex flex-col gap-1">
-										<div className="flex items-center justify-between">
-											<span className="text-sm font-medium text-foreground">
-												{formatEventType(event.eventType)}
-											</span>
-											<span className="text-xs text-muted-foreground">
-												{formatDistanceToNow(event.timestamp || new Date())} ago
-											</span>
-										</div>
-
-										{event.payload && (
-											<div className="mt-1.5 p-3 rounded-lg bg-muted/50 border border-border text-xs font-mono text-muted-foreground overflow-hidden">
-												<PayloadItems payload={event.payload} />
-											</div>
-										)}
-
-										<div className="flex items-center gap-2 mt-1">
-											<Badge
-												variant="secondary"
-												className="h-5 px-1.5 text-[10px] bg-muted text-muted-foreground hover:bg-muted/80">
-												{event.actorType || "system"}
-											</Badge>
-											{event.actorId && (
-												<span className="text-[10px] text-muted-foreground font-mono">
-													id: {event.actorId}
-												</span>
+							{events.map(event => {
+								const parsedPayload = parsePayload(event.payload);
+								const isProcurementExecutionFailure =
+									event.eventType === "error" &&
+									parsedPayload?.context === "procurement_check_failed";
+								return (
+									<div key={event.id} className="relative">
+										{/* Dot */}
+										<div
+											className={cn(
+												"absolute -left-[29px] top-1 h-2.5 w-2.5 rounded-full border border-background ring-4 ring-background",
+												event.eventType === "error" ? "bg-red-500" : "bg-emerald-500"
 											)}
+										/>
+
+										<div className="flex flex-col gap-1">
+											<div className="flex items-center justify-between">
+												<span className="text-sm font-medium text-foreground">
+													{isProcurementExecutionFailure
+														? "Procurement Automation Failed"
+														: formatEventType(event.eventType)}
+												</span>
+												<span className="text-xs text-muted-foreground">
+													{formatDistanceToNow(event.timestamp || new Date())} ago
+												</span>
+											</div>
+
+											{isProcurementExecutionFailure && (
+												<div className="mt-1 p-2 rounded-md border border-red-500/20 bg-red-500/10 text-xs text-red-200">
+													Automated procurement checks did not run. Continue with
+													available Stage 3 outputs and complete a full manual procurement
+													check in Risk Review.
+												</div>
+											)}
+
+											{event.payload && (
+												<div className="mt-1.5 p-3 rounded-lg bg-muted/50 border border-border text-xs font-mono text-muted-foreground overflow-hidden">
+													<PayloadItems
+														payload={event.payload}
+														parsedPayload={parsedPayload}
+													/>
+												</div>
+											)}
+
+											<div className="flex items-center gap-2 mt-1">
+												<Badge
+													variant="secondary"
+													className="h-5 px-1.5 text-[10px] bg-muted text-muted-foreground hover:bg-muted/80">
+													{event.actorType || "system"}
+												</Badge>
+												{event.actorId && (
+													<span className="text-[10px] text-muted-foreground font-mono">
+														id: {event.actorId}
+													</span>
+												)}
+											</div>
 										</div>
 									</div>
-								</div>
-							))}
+								);
+							})}
 
 							{/* Start Node */}
 							<div className="relative">
@@ -399,10 +418,25 @@ function formatEventType(type: string) {
 		.join(" ");
 }
 
-function PayloadItems({ payload }: { payload: string | null }) {
+function parsePayload(payload: string | null): Record<string, unknown> | null {
 	if (!payload) return null;
 	try {
-		const data = JSON.parse(payload);
+		return JSON.parse(payload) as Record<string, unknown>;
+	} catch {
+		return null;
+	}
+}
+
+function PayloadItems({
+	payload,
+	parsedPayload,
+}: {
+	payload: string | null;
+	parsedPayload?: Record<string, unknown> | null;
+}) {
+	if (!payload) return null;
+	try {
+		const data = parsedPayload || JSON.parse(payload);
 		// If simple object, show truncated
 		return (
 			<ul className="space-y-1">
