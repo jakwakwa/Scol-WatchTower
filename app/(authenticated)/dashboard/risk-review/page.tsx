@@ -26,6 +26,112 @@ export default function RiskReviewPage() {
 	const [selectedItem, setSelectedItem] = useState<RiskReviewItem | null>(null);
 	const [isDetailOpen, setIsDetailOpen] = useState(false);
 
+	const isProcurementReview = (item: RiskReviewItem): boolean =>
+		item.reviewType === "procurement" || item.stage === 3;
+
+	const normalizeProcurementRecommendation = (
+		recommendation?: string
+	): "APPROVE" | "MANUAL_REVIEW" | "DECLINE" => {
+		const value = recommendation?.toUpperCase();
+		if (value === "APPROVE" || value === "APPROVED" || value === "CLEARED") {
+			return "APPROVE";
+		}
+		if (
+			value === "DECLINE" ||
+			value === "REJECT" ||
+			value === "REJECTED" ||
+			value === "DENIED"
+		) {
+			return "DECLINE";
+		}
+		return "MANUAL_REVIEW";
+	};
+
+	const submitDecision = async (
+		item: RiskReviewItem,
+		action: "approve" | "reject",
+		overrideData: OverrideData
+	) => {
+		if (isProcurementReview(item)) {
+			const procureCheckAnomalies =
+				item.anomalies && item.anomalies.length > 0
+					? item.anomalies
+					: item.procurementCheckFailed
+						? [
+								"Automated ProcureCheck execution failed - manual human procurement check required",
+							]
+						: [];
+
+			const procurementPayload = {
+				workflowId: item.id,
+				applicantId: item.applicantId,
+				procureCheckResult: {
+					riskScore: Math.min(100, Math.max(0, item.procurementScore ?? 50)),
+					anomalies: procureCheckAnomalies,
+					recommendedAction: normalizeProcurementRecommendation(
+						item.procurementRecommendedAction || item.recommendation
+					),
+					rawData: {
+						procurementCheckFailed: item.procurementCheckFailed,
+						procurementFailureReason: item.procurementFailureReason,
+						procurementFailureSource: item.procurementFailureSource,
+						procurementFailureGuidance: item.procurementFailureGuidance,
+						reviewType: item.reviewType || "procurement",
+					},
+				},
+				decision: {
+					outcome: action === "approve" ? "CLEARED" : "DENIED",
+					overrideCategory: overrideData.overrideCategory,
+					overrideSubcategory: overrideData.overrideSubcategory,
+					overrideDetails: overrideData.overrideDetails,
+				},
+			};
+
+			const procurementResponse = await fetch("/api/risk-decision/procurement", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(procurementPayload),
+			});
+
+			if (!procurementResponse.ok) {
+				const errorData = await procurementResponse.json().catch(() => ({}));
+				throw new Error(
+					errorData.message ||
+						errorData.error ||
+						`Failed to ${action === "approve" ? "clear" : "deny"} procurement review`
+				);
+			}
+
+			return;
+		}
+
+		const generalDecisionPayload = {
+			workflowId: item.id,
+			applicantId: item.applicantId,
+			decision: {
+				outcome: action === "approve" ? "APPROVED" : "REJECTED",
+				overrideCategory: overrideData.overrideCategory,
+				overrideSubcategory: overrideData.overrideSubcategory,
+				overrideDetails: overrideData.overrideDetails,
+			},
+		};
+
+		const generalResponse = await fetch("/api/risk-decision", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(generalDecisionPayload),
+		});
+
+		if (!generalResponse.ok) {
+			const errorData = await generalResponse.json().catch(() => ({}));
+			throw new Error(
+				errorData.message ||
+					errorData.error ||
+					`Failed to ${action === "approve" ? "approve" : "reject"}`
+			);
+		}
+	};
+
 	const fetchRiskReviewItems = useCallback(async () => {
 		setIsLoading(true);
 		try {
@@ -62,25 +168,7 @@ export default function RiskReviewPage() {
 		}
 
 		try {
-			const response = await fetch("/api/risk-decision", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					workflowId: id,
-					applicantId: item.applicantId,
-					decision: {
-						outcome: "APPROVED",
-						overrideCategory: overrideData.overrideCategory,
-						overrideSubcategory: overrideData.overrideSubcategory,
-						overrideDetails: overrideData.overrideDetails,
-					},
-				}),
-			});
-
-			if (!response.ok) {
-				const errorData = await response.json().catch(() => ({}));
-				throw new Error(errorData.message || errorData.error || "Failed to approve");
-			}
+			await submitDecision(item, "approve", overrideData);
 
 			// Refresh the list
 			await fetchRiskReviewItems();
@@ -101,25 +189,7 @@ export default function RiskReviewPage() {
 		}
 
 		try {
-			const response = await fetch("/api/risk-decision", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					workflowId: id,
-					applicantId: item.applicantId,
-					decision: {
-						outcome: "REJECTED",
-						overrideCategory: overrideData.overrideCategory,
-						overrideSubcategory: overrideData.overrideSubcategory,
-						overrideDetails: overrideData.overrideDetails,
-					},
-				}),
-			});
-
-			if (!response.ok) {
-				const errorData = await response.json().catch(() => ({}));
-				throw new Error(errorData.message || errorData.error || "Failed to reject");
-			}
+			await submitDecision(item, "reject", overrideData);
 
 			// Refresh the list
 			await fetchRiskReviewItems();
