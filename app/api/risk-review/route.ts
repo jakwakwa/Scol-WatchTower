@@ -1,8 +1,8 @@
 import { auth } from "@clerk/nextjs/server";
-import { and, eq, or } from "drizzle-orm";
+import { and, desc, eq, or } from "drizzle-orm";
 import { type NextRequest, NextResponse } from "next/server";
 import { getDatabaseClient } from "@/app/utils";
-import { applicants, riskAssessments, workflows } from "@/db/schema";
+import { applicants, riskAssessments, workflowEvents, workflows } from "@/db/schema";
 
 /**
  * GET /api/risk-review
@@ -66,6 +66,95 @@ export async function GET(_request: NextRequest) {
 					}
 				}
 
+				// Resolve procurement execution state from workflow events
+				const events = await db
+					.select({
+						eventType: workflowEvents.eventType,
+						payload: workflowEvents.payload,
+						timestamp: workflowEvents.timestamp,
+					})
+					.from(workflowEvents)
+					.where(eq(workflowEvents.workflowId, workflow.workflowId))
+					.orderBy(desc(workflowEvents.timestamp));
+
+				let procurementScore: number | undefined;
+				let procurementRecommendedAction: string | undefined;
+				let procurementCheckFailed = false;
+				let procurementFailureReason: string | undefined;
+				let procurementFailureSource: string | undefined;
+				let procurementFailureGuidance: string | undefined;
+				let failedAreas: string[] = [];
+				let anomalies: string[] = [];
+
+				for (const workflowEvent of events) {
+					let payload: Record<string, unknown> | null = null;
+					if (workflowEvent.payload) {
+						try {
+							payload = JSON.parse(workflowEvent.payload) as Record<string, unknown>;
+						} catch {
+							// Ignore malformed event payloads
+						}
+					}
+
+					if (!payload) continue;
+
+					if (
+						workflowEvent.eventType === "procurement_check_completed" &&
+						procurementScore === undefined
+					) {
+						if (typeof payload.riskScore === "number") {
+							procurementScore = payload.riskScore;
+						}
+						if (Array.isArray(payload.anomalies)) {
+							anomalies = payload.anomalies.filter(
+								(anomaly): anomaly is string => typeof anomaly === "string"
+							);
+						}
+						if (typeof payload.recommendedAction === "string") {
+							procurementRecommendedAction = payload.recommendedAction;
+						}
+					}
+
+					if (
+						!procurementCheckFailed &&
+						workflowEvent.eventType === "error" &&
+						payload.context === "procurement_check_failed"
+					) {
+						procurementCheckFailed = true;
+						procurementFailureReason =
+							typeof payload.error === "string"
+								? payload.error
+								: "Automated ProcureCheck execution failed";
+						procurementFailureSource =
+							typeof payload.source === "string" ? payload.source : "procurecheck";
+						procurementFailureGuidance =
+							typeof payload.guidance === "string"
+								? payload.guidance
+								: "Risk Manager must perform a full manual procurement check.";
+						if (Array.isArray(payload.failedAreas)) {
+							failedAreas = payload.failedAreas.filter(
+								(area): area is string => typeof area === "string"
+							);
+						}
+					}
+
+					if (procurementCheckFailed && procurementScore !== undefined) {
+						break;
+					}
+				}
+
+				if (procurementCheckFailed) {
+					const fallbackAnomalies =
+						failedAreas.length > 0
+							? failedAreas.map(area => `${area} failed to run automatically`)
+							: [
+									"Automated ProcureCheck execution failed - manual human procurement check required",
+								];
+					anomalies = Array.from(new Set([...anomalies, ...fallbackAnomalies]));
+				}
+
+				const hasAnomalies = anomalies.length > 0;
+
 				// Extract fields from Reporter Agent output
 				const aggregatedScore = (aiAnalysis?.scores as Record<string, number>)
 					?.aggregatedScore;
@@ -110,8 +199,10 @@ export async function GET(_request: NextRequest) {
 					riskLevel: workflow.riskLevel || assessment?.overallRisk || undefined,
 					recommendation: recommendation || undefined,
 					summary: aiAnalysis
-						? `Aggregated AI score: ${aggregatedScore ?? "N/A"}%. Recommendation: ${recommendation || "Pending"}.`
-						: undefined,
+						? `Aggregated AI score: ${aggregatedScore ?? "N/A"}%. Recommendation: ${recommendation || "Pending"}.${procurementCheckFailed ? " Automated procurement execution failed; full manual procurement check required." : ""}`
+						: procurementCheckFailed
+							? "Automated procurement execution failed. Full manual procurement check required."
+							: undefined,
 					reasoning: aiAnalysis
 						? `Sanctions: ${sanctionsLevel || "Pending"}. Validation: ${validationSummary ? "Complete" : "Pending"}. Risk: ${riskDetails ? "Complete" : "Pending"}.`
 						: undefined,
@@ -127,6 +218,15 @@ export async function GET(_request: NextRequest) {
 					letterheadVerified: assessment?.letterheadVerified || undefined,
 					overallRisk: assessment?.overallRisk || undefined,
 					reviewedBy: assessment?.reviewedBy || undefined,
+					// Procurement review context (manual fallback support)
+					procurementScore,
+					hasAnomalies,
+					anomalies: hasAnomalies ? anomalies : undefined,
+					procurementRecommendedAction,
+					procurementCheckFailed,
+					procurementFailureReason,
+					procurementFailureSource,
+					procurementFailureGuidance,
 				};
 			})
 		);
