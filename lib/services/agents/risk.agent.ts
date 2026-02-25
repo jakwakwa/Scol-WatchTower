@@ -11,7 +11,13 @@
  * Real implementation will integrate with actual financial data sources.
  */
 
+import { generateObject } from "ai";
 import { z } from "zod";
+import { getThinkingModel } from "@/lib/ai/models";
+
+const AI_CONFIG = {
+	ANALYSIS_TEMPERATURE: 0.2,
+};
 
 // ============================================
 // Types & Schemas
@@ -116,164 +122,124 @@ export interface RiskAnalysisInput {
 export async function analyzeFinancialRisk(
 	input: RiskAnalysisInput
 ): Promise<RiskAnalysisResult> {
-	// Simulate processing delay
-	await new Promise(resolve => setTimeout(resolve, 500));
+	if (!(input.bankStatementText || input.applicantData)) {
+		console.warn("[RiskAgent] No usable data provided for risk analysis");
+		return getFallbackRiskResult(input.applicantId, "No input data provided");
+	}
 
-	// Generate deterministic mock results based on input
-	const mockResult = generateMockRiskAnalysis(input);
+	const prompt = buildRiskPrompt(input);
 
-	return mockResult;
+	try {
+		const { object } = await generateObject({
+			model: getThinkingModel(),
+			schema: RiskAnalysisResultSchema,
+			schemaName: "RiskAnalysis",
+			schemaDescription:
+				"Financial risk analysis based on bank statements and applicant data",
+			prompt,
+			temperature: AI_CONFIG.ANALYSIS_TEMPERATURE,
+		});
+
+		return { ...object, dataSource: "Gemini AI" };
+	} catch (error) {
+		console.error("[RiskAgent] AI analysis failed:", error);
+		return getFallbackRiskResult(
+			input.applicantId,
+			"AI Analysis Failed. Manual human review is required."
+		);
+	}
 }
 
 /**
- * Generate mock risk analysis results
+ * Build the prompt for the Risk Analysis AI
  */
-function generateMockRiskAnalysis(input: RiskAnalysisInput): RiskAnalysisResult {
-	// Use applicantId to generate deterministic results
-	const seed = input.applicantId;
-	const variance = seed % 30;
+function buildRiskPrompt(input: RiskAnalysisInput): string {
+	const dataContext = input.applicantData
+		? `
+COMPANY DATA:
+- Company Name: ${input.applicantData.companyName || "Unknown"}
+- Industry: ${input.applicantData.industry || "Unknown"}
+- Employee Count: ${input.applicantData.employeeCount || "Unknown"}
+- Years in Business: ${input.applicantData.yearsInBusiness || "Unknown"}
+`
+		: "";
 
-	// Determine base risk level based on requested amount
-	const requestedAmount = input.requestedAmount || 500_000_00; // Default R5,000
-	let baseRiskScore = 30; // Start with low risk
+	const requestedAmountContext = input.requestedAmount
+		? `Requested Mandate Volume: R ${(input.requestedAmount / 100).toFixed(2)}`
+		: "Requested Mandate Volume: Unknown";
 
-	// Higher amounts = higher risk
-	if (requestedAmount > 1_000_000_00) baseRiskScore += 15; // > R10,000
-	if (requestedAmount > 5_000_000_00) baseRiskScore += 20; // > R50,000
-	if (requestedAmount > 10_000_000_00) baseRiskScore += 25; // > R100,000
+	const statementContext = input.bankStatementText
+		? `
+BANK STATEMENT DATA (Extracted Text):
+${input.bankStatementText.substring(0, 15000)} // Truncate if too long
+`
+		: "\nNO BANK STATEMENT DATA PROVIDED.\n";
 
-	// Industry adjustments
-	const riskyIndustries = ["gambling", "crypto", "forex", "lending"];
-	if (
-		input.applicantData?.industry &&
-		riskyIndustries.some(i => input.applicantData!.industry!.toLowerCase().includes(i))
-	) {
-		baseRiskScore += 20;
-	}
+	return `
+You are an expert Financial Risk Analyst evaluating a company for a debit order mandate facility.
+Your goal is to assess their financial stability, cash flow consistency, and overall credit risk based on the provided data.
 
-	// Add variance
-	const finalRiskScore = Math.min(100, Math.max(0, baseRiskScore + variance - 15));
+CONTEXT:
+${dataContext}
+${requestedAmountContext}
+${statementContext}
 
-	// Calculate other scores based on risk
-	const stabilityScore = Math.max(0, 100 - finalRiskScore + (seed % 10));
-	const consistencyScore = Math.max(0, 100 - finalRiskScore + (seed % 15));
+TASK:
+Analyze the provided information and generate a comprehensive risk assessment.
+Follow the exact required output schema.
+For all monetary amounts, output in CENTS (e.g., R 1,000.00 = 100000).
+Ensure the rationale clearly justifies your scoring and recommendations.
+If data is sparse, default to conservative scoring and recommend MANUAL_REVIEW.
+`;
+}
 
-	// Determine risk category
-	let riskCategory: "LOW" | "MEDIUM" | "HIGH" | "VERY_HIGH";
-	if (finalRiskScore <= 25) riskCategory = "LOW";
-	else if (finalRiskScore <= 50) riskCategory = "MEDIUM";
-	else if (finalRiskScore <= 75) riskCategory = "HIGH";
-	else riskCategory = "VERY_HIGH";
-
-	// Determine recommendation
-	let recommendation: "APPROVE" | "CONDITIONAL_APPROVE" | "MANUAL_REVIEW" | "DECLINE";
-	if (finalRiskScore <= 30) recommendation = "APPROVE";
-	else if (finalRiskScore <= 50) recommendation = "CONDITIONAL_APPROVE";
-	else if (finalRiskScore <= 70) recommendation = "MANUAL_REVIEW";
-	else recommendation = "DECLINE";
-
-	// Generate mock values
-	const averageBalance = (5_000_00 + (seed % 50) * 1_000_00) * (1 + variance / 100);
-	const hasBounced = finalRiskScore > 50 && seed % 3 === 0;
-
+/**
+ * Generate a graceful fallback result when the AI fails
+ */
+function getFallbackRiskResult(
+	_applicantId: number,
+	reasoning: string
+): RiskAnalysisResult {
 	return {
 		bankAnalysis: {
-			accountType: seed % 2 === 0 ? "CURRENT" : "SAVINGS",
-			bankName: ["ABSA", "FNB", "Standard Bank", "Nedbank", "Capitec"][seed % 5],
-			averageBalance: Math.round(averageBalance),
-			minimumBalance: Math.round(averageBalance * 0.3),
-			maximumBalance: Math.round(averageBalance * 2.5),
-			volatilityScore: Math.min(100, 20 + variance * 2),
+			accountType: "UNKNOWN",
+			bankName: "UNKNOWN",
+			averageBalance: 0,
+			minimumBalance: 0,
+			maximumBalance: 0,
+			volatilityScore: 100,
 		},
-
 		cashFlow: {
-			totalCredits: Math.round(averageBalance * 3),
-			totalDebits: Math.round(averageBalance * 2.8),
-			netCashFlow: Math.round(averageBalance * 0.2),
-			regularIncomeDetected: stabilityScore > 60,
-			incomeFrequency:
-				stabilityScore > 70 ? "MONTHLY" : stabilityScore > 50 ? "BI_WEEKLY" : "IRREGULAR",
-			consistencyScore,
+			totalCredits: 0,
+			totalDebits: 0,
+			netCashFlow: 0,
+			regularIncomeDetected: false,
+			incomeFrequency: "UNKNOWN",
+			consistencyScore: 0,
 		},
-
 		stability: {
-			overallScore: stabilityScore,
-			debtIndicators:
-				finalRiskScore > 40
-					? ["Regular loan repayments detected", "Multiple creditor payments"]
-					: [],
-			gamblingIndicators:
-				finalRiskScore > 70 && seed % 5 === 0
-					? ["Possible gambling-related transactions"]
-					: [],
-			loanRepayments: Math.round(averageBalance * 0.15),
-			hasBounced,
-			bouncedCount: hasBounced ? 1 + (seed % 3) : 0,
-			bouncedAmount: hasBounced ? 500_00 + (seed % 10) * 100_00 : 0,
+			overallScore: 0,
+			debtIndicators: [],
+			gamblingIndicators: [],
+			loanRepayments: 0,
+			hasBounced: false,
+			bouncedCount: 0,
+			bouncedAmount: 0,
 		},
-
 		creditRisk: {
-			riskCategory,
-			riskScore: finalRiskScore,
-			affordabilityRatio: 1.5 - finalRiskScore / 100,
-			redFlags:
-				finalRiskScore > 50
-					? [
-							"High volatility in account balance",
-							...(hasBounced ? ["Bounced transactions detected"] : []),
-						]
-					: [],
-			positiveIndicators:
-				finalRiskScore <= 50
-					? ["Regular income deposits", "Consistent payment history"]
-					: [],
+			riskCategory: "HIGH",
+			riskScore: 100,
+			affordabilityRatio: 0,
+			redFlags: ["System Error: AI Analysis Failed"],
+			positiveIndicators: [],
 		},
-
 		overall: {
-			score: Math.round(100 - finalRiskScore),
-			recommendation,
-			reasoning: generateReasoning(finalRiskScore, recommendation, hasBounced),
-			conditions:
-				recommendation === "CONDITIONAL_APPROVE"
-					? ["Monthly volume limit of R50,000", "Quarterly account review required"]
-					: undefined,
+			score: 0,
+			recommendation: "MANUAL_REVIEW",
+			reasoning,
 		},
-
-		dataSource: "Mock Risk Engine v1.0",
+		dataSource: "AI Error — Manual Escalation",
 	};
-}
-
-/**
- * Generate reasoning text based on analysis
- */
-function generateReasoning(
-	riskScore: number,
-	recommendation: string,
-	hasBounced: boolean
-): string {
-	const parts: string[] = [];
-
-	if (riskScore <= 30) {
-		parts.push("Financial profile demonstrates strong stability and low risk.");
-		parts.push("Cash flow analysis shows consistent income and manageable expenses.");
-	} else if (riskScore <= 50) {
-		parts.push("Financial profile shows moderate stability with some areas of concern.");
-		parts.push("Recommend proceeding with conditions to mitigate identified risks.");
-	} else if (riskScore <= 70) {
-		parts.push("Financial profile raises several concerns that require human review.");
-		parts.push("Cash flow patterns suggest potential affordability challenges.");
-	} else {
-		parts.push("Financial profile indicates high risk factors.");
-		parts.push("Multiple concerns identified including cash flow instability.");
-	}
-
-	if (hasBounced) {
-		parts.push("Note: Bounced transactions were detected in the statement period.");
-	}
-
-	parts.push(`Recommendation: ${recommendation}`);
-
-	return parts.join(" ");
 }
 
 // ============================================
