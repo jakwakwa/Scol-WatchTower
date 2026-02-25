@@ -40,7 +40,7 @@ export const createApplicantSchema = z.object({
 	productType: productTypeEnum.optional(),
 	industry: z.string().optional(),
 	employeeCount: z.number().int().positive().optional(),
-	estimatedVolume: z.string().optional(),
+	estimatedTransactionsPerMonth: z.coerce.number().int().min(0).optional(),
 	notes: z.string().optional(),
 });
 
