@@ -41,6 +41,7 @@ interface ApplicantDetail {
 	industry?: string | null;
 	mandateType?: string | null;
 	mandateVolume?: number | null;
+	estimatedTransactionsPerMonth?: number | null;
 	status: string;
 	riskLevel?: string | null;
 	itcScore?: number | null;
@@ -739,10 +740,9 @@ export default function ApplicantDetailPage() {
 											Estimated Vol
 										</p>
 										<p className="font-medium mt-1">
-											R{" "}
-											{client.mandateVolume
-												? (client.mandateVolume / 100).toLocaleString()
-												: "0"}
+											{client.estimatedTransactionsPerMonth != null
+												? `${client.estimatedTransactionsPerMonth.toLocaleString()} /mo`
+												: "—"}
 										</p>
 									</div>
 								</div>
