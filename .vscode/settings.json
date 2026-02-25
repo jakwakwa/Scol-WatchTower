@@ -71,4 +71,10 @@
 	"terminal.integrated.enableMultiLinePasteWarning": "never",
 	"terminal.integrated.suggest.cdPath": "relative",
 	"terminal.integrated.tabs.defaultColor": "terminal.ansiGreen",
+	"[xml]": {
+		"editor.defaultFormatter": "DotJoshJohnson.xml"
+	},
+	"[jsonc]": {
+		"editor.defaultFormatter": "vscode.json-language-features"
+	},
 }
