@@ -7,6 +7,7 @@
 **In scope:**
 - `industryRegulator` (high-confidence): NCR, CFDC, SAICA, CIBA, FPI, FISA, RMI, PSIRA, SACE, DOE
 - `sanctionsEvidenceEnrichment`: OFAC, UN 1267, FIC TFS
+- `sanctionsPrimarySearch` (when `ENABLE_FIRECRAWL_SANCTIONS_PRIMARY=true`): Firecrawl agent scrapes UN consolidated XML, OFAC, FIC TFS; becomes primary sanctions path; Yente bypassed
 - `socialReputation`: HelloPeter
 - `mediumConfidenceRegulator`: FSCA, HPCSA, SAIPA, LPC
 
@@ -178,7 +179,37 @@ Normalized evidence record for sanctions and regulator checks.
 
 **Provider codes:** `HELLOPETER`
 
-### 2.4 MediumConfidenceRegulatorCheckRequest / Result
+### 2.4 Sanctions Primary Search (Firecrawl Agent)
+
+When `ENABLE_FIRECRAWL_SANCTIONS_PRIMARY=true` and `FIRECRAWL_API_KEY` is set, the Firecrawl agent becomes the **primary** sanctions screening path. Yente and mock fallbacks are bypassed until the Firecrawl path fails.
+
+**Data sources (searched in parallel):**
+
+| Source | URL | Structure |
+|--------|-----|-----------|
+| UN Consolidated | `https://scsanctions.un.org/resources/xml/en/consolidated.xml` | INDIVIDUALS (DATAID, FIRST_NAME, SECOND_NAME, NATIONALITY, INDIVIDUAL_ALIAS, INDIVIDUAL_DOCUMENT), ENTITIES (DATAID, FIRST_NAME, ENTITY_ALIAS) |
+| OFAC SDN | `https://sanctionssearch.ofac.treas.gov/` | Web search; extracts name, firstId, program, score, entityType |
+| FIC TFS | `https://www.fic.gov.za/targeted-financial-sanctions/` | Web search; extracts name, noticeId, noticeNumber, entityType |
+
+**Search terms:** Built from `entityName`, `contactName`, and `directors[].name` (company, main contact, and board directors).
+
+**Result mapping:** Output is mapped to `SanctionsCheckResult`:
+
+- `unSanctions.matchFound` = any UN match (individuals or entities)
+- `watchLists.matches` = OFAC + FIC matches
+- `overall.riskLevel` = `BLOCKED` if UN match; else derived from OFAC/FIC
+- `metadata.dataSource` = `"Firecrawl (UN, OFAC, FIC TFS)"`
+
+**Environment variables:**
+
+```bash
+ENABLE_FIRECRAWL_SANCTIONS_PRIMARY=true   # Enable primary path
+FIRECRAWL_API_KEY=fc-...                  # Required for Firecrawl agent
+```
+
+**Fallback:** On Firecrawl failure, falls back to Yente (if configured) or mock.
+
+### 2.5 MediumConfidenceRegulatorCheckRequest / Result
 
 **Request:** Extends `CheckRequestBase`. `provider` required: `FSCA`, `HPCSA`, `SAIPA`, `LPC`.
 
