@@ -46,7 +46,8 @@ export const applicants = sqliteTable("applicants", {
 
 	// Mandate Info
 	mandateType: text("mandate_type"), // EFT, DEBIT_ORDER, CASH, MIXED
-	mandateVolume: integer("mandate_volume"), // In cents
+	mandateVolume: integer("mandate_volume"), // Max amount in cents (from facility form)
+	estimatedTransactionsPerMonth: integer("estimated_transactions_per_month"), // Transaction count per month (from applicant form)
 
 	// Status & Risk
 	status: text("status").notNull().default("new"),
