@@ -71,9 +71,10 @@ export async function POST(request: NextRequest) {
 					productType: data.productType,
 					industry: data.industry,
 					employeeCount: data.employeeCount,
-					mandateVolume: data.estimatedVolume
-						? parseInt(data.estimatedVolume.replace(/[^0-9]/g, ""))
-						: 0,
+					estimatedTransactionsPerMonth:
+						data.estimatedTransactionsPerMonth != null
+							? Math.round(Number(data.estimatedTransactionsPerMonth))
+							: null,
 					notes: data.notes,
 					status: "new",
 				},
