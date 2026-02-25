@@ -1195,26 +1195,6 @@ export const controlTowerWorkflow = inngest.createFunction(
 						},
 					});
 
-					// Per SOP: procurement review gate is ALWAYS manual (Risk Manager)
-					// regardless of ProcureCheck auto recommendation
-					await createWorkflowNotification({
-						workflowId,
-						applicantId,
-						type: "warning",
-						title: "Procurement Review Required",
-						message: `ProcureCheck score: ${procureResult.riskScore}. Action: ${procureResult.recommendedAction}. Anomalies: ${procureResult.anomalies.join(", ") || "None"}`,
-						actionable: true,
-					});
-
-					await sendInternalAlertEmail({
-						title: "Procurement Review Required",
-						message: `Applicant requires Risk Manager procurement review.\nRisk Score: ${procureResult.riskScore}\nRecommended: ${procureResult.recommendedAction}\nAnomalies: ${procureResult.anomalies.join(", ") || "None"}`,
-						workflowId,
-						applicantId,
-						type: "warning",
-						actionUrl: `${getBaseUrl()}/dashboard/risk-review`,
-					});
-
 					// Always require manual review per SOP
 					return {
 						cleared: false,
@@ -1245,30 +1225,6 @@ export const controlTowerWorkflow = inngest.createFunction(
 							],
 							guidance: manualReviewGuidance,
 						},
-					});
-
-					await createWorkflowNotification({
-						workflowId,
-						applicantId,
-						type: "error",
-						title: "Manual Procurement Check Required",
-						message:
-							"Automated ProcureCheck failed to execute. Continue reviewing available Stage 3 outputs and complete a full manual procurement check.",
-						actionable: true,
-					});
-
-					await sendInternalAlertEmail({
-						title: "Manual Procurement Check Required",
-						message: `Automated ProcureCheck failed for this workflow.\nError: ${errorMessage}\nRequired Action: Complete a full manual procurement check and record a procurement decision in Risk Review.\nNote: Other Stage 3 checks continue and should still be reviewed.`,
-						workflowId,
-						applicantId,
-						type: "error",
-						details: {
-							context: "procurement_check_failed",
-							stage: 3,
-							manualReviewRequired: true,
-						},
-						actionUrl: `${getBaseUrl()}/dashboard/risk-review`,
 					});
 
 					return {
@@ -1329,9 +1285,55 @@ export const controlTowerWorkflow = inngest.createFunction(
 		// Stream B: FICA Documents + Accountant Letter (if required) — both must arrive before AI runs
 		// These streams run independently and can complete in ANY order.
 		if (procurementStreamResult.requiresReview) {
-			await step.run("stage-3-awaiting-procurement-review", () =>
-				updateWorkflowStatus(workflowId, "awaiting_human", 3)
-			);
+			await step.run("stage-3-awaiting-procurement-review", async () => {
+				await updateWorkflowStatus(workflowId, "awaiting_human", 3);
+
+				if (procurementStreamResult.result) {
+					const procureResult = procurementStreamResult.result;
+					await createWorkflowNotification({
+						workflowId,
+						applicantId,
+						type: "warning",
+						title: "Procurement Review Required",
+						message: `ProcureCheck score: ${procureResult.riskScore}. Action: ${procureResult.recommendedAction}. Anomalies: ${procureResult.anomalies.join(", ") || "None"}`,
+						actionable: true,
+					});
+
+					await sendInternalAlertEmail({
+						title: "Procurement Review Required",
+						message: `Applicant requires Risk Manager procurement review.\nRisk Score: ${procureResult.riskScore}\nRecommended: ${procureResult.recommendedAction}\nAnomalies: ${procureResult.anomalies.join(", ") || "None"}`,
+						workflowId,
+						applicantId,
+						type: "warning",
+						actionUrl: `${getBaseUrl()}/dashboard/risk-review`,
+					});
+				} else if (procurementStreamResult.error) {
+					const errorMessage = procurementStreamResult.error;
+					await createWorkflowNotification({
+						workflowId,
+						applicantId,
+						type: "error",
+						title: "Manual Procurement Check Required",
+						message:
+							"Automated ProcureCheck failed to execute. Continue reviewing available Stage 3 outputs and complete a full manual procurement check.",
+						actionable: true,
+					});
+
+					await sendInternalAlertEmail({
+						title: "Manual Procurement Check Required",
+						message: `Automated ProcureCheck failed for this workflow.\nError: ${errorMessage}\nRequired Action: Complete a full manual procurement check and record a procurement decision in Risk Review.\nNote: Other Stage 3 checks continue and should still be reviewed.`,
+						workflowId,
+						applicantId,
+						type: "error",
+						details: {
+							context: "procurement_check_failed",
+							stage: 3,
+							manualReviewRequired: true,
+						},
+						actionUrl: `${getBaseUrl()}/dashboard/risk-review`,
+					});
+				}
+			});
 		} else {
 			context.procurementCleared = true;
 		}
@@ -1390,6 +1392,11 @@ export const controlTowerWorkflow = inngest.createFunction(
 		if (!ficaDocsReceived) {
 			return { status: "timeout", stage: 3, reason: "FICA document upload timeout" };
 		}
+
+		// Update status to processing once the required human intervention is resolved
+		await step.run("resume-processing-after-review", () =>
+			updateWorkflowStatus(workflowId, "processing", 3)
+		);
 
 		// ================================================================
 		// PARALLEL: ITC/Sanctions Check + AI Analysis (Validation Agent)
