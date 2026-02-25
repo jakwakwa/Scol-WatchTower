@@ -1384,7 +1384,6 @@ export const controlTowerWorkflow = inngest.createFunction(
 		const [procurementDecision, ficaDocsReceived, accountantLetterReceived] =
 			await Promise.all([procurePromise, ficaPromise, accountantLetterPromise]);
 
-
 		// Handle Procurement Decision
 		if (procurementStreamResult.requiresReview) {
 			if (!procurementDecision) {
@@ -1542,7 +1541,6 @@ export const controlTowerWorkflow = inngest.createFunction(
 				});
 			}
 
-
 			const result = await performAggregatedAnalysis({
 				workflowId,
 				applicantId,
@@ -1618,7 +1616,6 @@ export const controlTowerWorkflow = inngest.createFunction(
 						completedAt: new Date().toISOString(),
 					},
 				});
-
 
 				return {
 					...aiAnalysisResult,

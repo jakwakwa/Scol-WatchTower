@@ -7,12 +7,19 @@
  * - Adverse media scanning
  * - Regulatory watch list verification
  *
- * Integration: OpenSanctions yente (self-hosted) with mock fallback.
- * When YENTE_API_URL is configured, calls the live /match endpoint.
- * Falls back to deterministic mock results when not configured or on error.
+ * Primary: Firecrawl agent (when ENABLE_FIRECRAWL_SANCTIONS_PRIMARY=true)
+ *   - Scrapes UN consolidated XML, OFAC, FIC TFS lists
+ * Fallback: OpenSanctions yente (when YENTE_API_URL configured)
+ * Fallback: Deterministic mock (when neither configured)
  */
 
 import { z } from "zod";
+
+import {
+	isFirecrawlConfigured,
+	mapCombinedToSanctionsCheckResult,
+	runFirecrawlSanctionsSearch,
+} from "@/lib/services/firecrawl";
 
 // ============================================
 // OpenSanctions yente Configuration
@@ -206,6 +213,7 @@ export interface SanctionsCheckInput {
 	entityName: string;
 	entityType: "INDIVIDUAL" | "COMPANY" | "TRUST" | "OTHER";
 	countryCode: string;
+	contactName?: string;
 	directors?: Array<{
 		name: string;
 		idNumber?: string;
@@ -220,11 +228,32 @@ export interface SanctionsCheckInput {
 
 /**
  * Perform sanctions and compliance checks.
- * Uses OpenSanctions yente when configured, falls back to mock.
+ * Primary: Firecrawl agent (UN, OFAC, FIC TFS) when ENABLE_FIRECRAWL_SANCTIONS_PRIMARY=true
+ * Fallback: OpenSanctions yente when YENTE_API_URL configured
+ * Fallback: Deterministic mock when neither configured
  */
 export async function performSanctionsCheck(
 	input: SanctionsCheckInput
 ): Promise<SanctionsCheckResult> {
+	if (
+		process.env.ENABLE_FIRECRAWL_SANCTIONS_PRIMARY === "true" &&
+		isFirecrawlConfigured()
+	) {
+		try {
+			const combined = await runFirecrawlSanctionsSearch({
+				entityName: input.entityName,
+				contactName: input.contactName,
+				directors: input.directors?.map(d => ({ name: d.name })),
+			});
+			return mapCombinedToSanctionsCheckResult(combined, input);
+		} catch (err) {
+			console.error(
+				"[SanctionsAgent] Firecrawl sanctions search failed, falling back:",
+				err
+			);
+		}
+	}
+
 	if (isYenteConfigured()) {
 		try {
 			const result = await performYenteSanctionsCheck(input);

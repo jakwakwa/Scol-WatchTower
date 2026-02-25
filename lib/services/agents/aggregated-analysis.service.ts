@@ -1,15 +1,3 @@
-/**
- * Aggregated Analysis Service - Control Tower
- *
- * This service orchestrates all AI agents (Validation, Risk, Sanctions)
- * and produces a unified analysis result for the workflow.
- *
- * The aggregated result is used by:
- * 1. Risk Manager for final review
- * 2. Workflow orchestrator for auto-approval decisions
- * 3. Audit trail for compliance
- */
-
 import { eq } from "drizzle-orm";
 import { getDatabaseClient } from "@/app/utils";
 import { aiAnalysisLogs, riskAssessments, workflowEvents } from "@/db/schema";
@@ -19,7 +7,6 @@ import {
 	runSanctionsEnrichmentCheck,
 	runSocialReputationCheck,
 } from "@/lib/services/firecrawl";
-import { analyzeRisk as runProcureCheck } from "@/lib/services/risk.service";
 import { generateReporterAnalysis, type ReporterOutput } from "./reporter.agent";
 import {
 	analyzeFinancialRisk,
@@ -38,7 +25,6 @@ import { type BatchValidationResult, validateDocumentsBatch } from "./validation
 // ============================================
 // Types & Schemas
 // ============================================
-
 export interface AggregatedAnalysisInput {
 	workflowId: number;
 	applicantId: number;
@@ -106,17 +92,20 @@ export interface AggregatedAnalysisResult {
 
 	// SOP External Check Stubs (feature-flagged)
 	externalChecks: {
-		xdsCreditCheck: { status: "mock" | "live"; result?: Record<string, unknown> };
-		lexisNexisProcure: { status: "mock" | "live"; result?: Record<string, unknown> };
-		bizPortalRegistration: { status: "mock" | "live"; result?: Record<string, unknown> };
-		efs24IdAvsr: { status: "mock" | "live"; result?: Record<string, unknown> };
-		sarsVatSearch: { status: "mock" | "live"; result?: Record<string, unknown> };
-		industryRegulator: { status: "mock" | "live"; result?: Record<string, unknown> };
-		sanctionsEvidenceEnrichment?: {
-			status: "mock" | "live";
+		xdsCreditCheck: { status: "offline" | "live"; result?: Record<string, unknown> };
+		lexisNexisProcure: { status: "offline" | "live"; result?: Record<string, unknown> };
+		bizPortalRegistration: {
+			status: "offline" | "live";
 			result?: Record<string, unknown>;
 		};
-		socialReputation?: { status: "mock" | "live"; result?: Record<string, unknown> };
+		efs24IdAvsr: { status: "offline" | "live"; result?: Record<string, unknown> };
+		sarsVatSearch: { status: "offline" | "live"; result?: Record<string, unknown> };
+		industryRegulator: { status: "offline" | "live"; result?: Record<string, unknown> };
+		sanctionsEvidenceEnrichment?: {
+			status: "offline" | "live";
+			result?: Record<string, unknown>;
+		};
+		socialReputation?: { status: "offline" | "live"; result?: Record<string, unknown> };
 	};
 
 	// Metadata
@@ -143,7 +132,6 @@ export async function performAggregatedAnalysis(
 
 	const agentsRun: ("validation" | "risk" | "sanctions")[] = [];
 	const flags: string[] = [];
-
 
 	// Run all agents in parallel
 	const [validationResult, riskResult, sanctionsResult] = await Promise.all([
@@ -189,6 +177,7 @@ export async function performAggregatedAnalysis(
 					entityName: input.applicantData.companyName,
 					entityType: "COMPANY",
 					countryCode: input.applicantData.countryCode || "ZA",
+					contactName: input.applicantData.contactName,
 					registrationNumber: input.applicantData.registrationNumber,
 					directors: input.directors,
 				})
@@ -204,7 +193,6 @@ export async function performAggregatedAnalysis(
 		: 100;
 	const riskScore = riskResult.overall.score;
 	const sanctionsScore = calculateSanctionsScore(sanctionsResult);
-
 
 	// Weighted aggregated score
 	const aggregatedScore = Math.round(
@@ -483,10 +471,6 @@ async function storeAnalysisResult(
 			validation: result.validation?.results[0]?.validation?.dataSource || "skipped",
 			reporter: result.agents.reporter?.dataSource || "unknown",
 		};
-		const hasAnyMock = Object.values(dataSources).some(
-			s => s.toLowerCase().includes("mock") || s === "unknown"
-		);
-
 		const aiAnalysisJson = JSON.stringify({
 			analysisId: result.metadata.analysisId,
 			scores: result.scores,
@@ -499,7 +483,7 @@ async function storeAnalysisResult(
 			validationSummary: result.validation?.summary,
 			externalChecks: result.externalChecks,
 			dataSources,
-			dataSource: hasAnyMock ? "Mock Data (partial or full)" : "Live",
+			dataSource: "Live",
 		});
 
 		if (existing.length > 0) {
@@ -554,7 +538,7 @@ async function storeAnalysisResult(
 			});
 		}
 	} catch (error) {
-		console.error("[AggregatedAnalysis] Error storing result:", error);
+		console.error("[Aggregated Analysis] Error storing result:", error);
 	}
 }
 
@@ -576,45 +560,11 @@ async function storeAnalysisResult(
 async function runExternalCheckStubs(
 	input: AggregatedAnalysisInput
 ): Promise<AggregatedAnalysisResult["externalChecks"]> {
-	const mockResult = (name: string) => ({
-		status: "mock" as const,
-		result: {
-			checked: true,
-			passed: true,
-			mockReason: `${name} check is mocked in Phase 1`,
-			checkedAt: new Date().toISOString(),
-		},
-	});
-
-	// --- BizPortal / ProcureCheck ---
-	let bizPortalResult: AggregatedAnalysisResult["externalChecks"]["bizPortalRegistration"] =
-		mockResult("BizPortal Company Registration");
-
-	if (process.env.ENABLE_PROCURECHECK_LIVE === "true") {
-		try {
-			const pcResult = await runProcureCheck(input.applicantId);
-			bizPortalResult = {
-				status: "live" as const,
-				result: {
-					riskScore: pcResult.riskScore,
-					anomalies: pcResult.anomalies,
-					recommendedAction: pcResult.recommendedAction,
-					procureCheckId: pcResult.procureCheckId,
-					checkedAt: new Date().toISOString(),
-				},
-			};
-		} catch (err) {
-			console.error(
-				"[AggregatedAnalysis] ProcureCheck failed, using mock fallback:",
-				err
-			);
-		}
-	}
-
 	// --- Industry Regulator (Firecrawl) ---
-	let industryRegulatorResult: AggregatedAnalysisResult["externalChecks"]["industryRegulator"] =
-		mockResult("Industry Regulator Confirmation");
-
+	let industryRegulatorResult: {
+		status: "live" | "offline";
+		result: Record<string, unknown> | undefined;
+	};
 	if (process.env.ENABLE_FIRECRAWL_INDUSTRY_REG === "true" && isFirecrawlConfigured()) {
 		try {
 			const fcResult = await runIndustryRegulatorCheck({
@@ -631,8 +581,8 @@ async function runExternalCheckStubs(
 				industry: input.applicantData.industry,
 			});
 			industryRegulatorResult = {
-				status: fcResult.status,
-				result: fcResult.result as unknown as Record<string, unknown>,
+				status: fcResult.status === "live" ? "live" : "offline",
+				result: (fcResult.result as unknown as Record<string, unknown>) || undefined,
 			};
 		} catch (err) {
 			console.error(
@@ -669,21 +619,22 @@ async function runExternalCheckStubs(
 				registrationNumber: input.applicantData.registrationNumber,
 			});
 			sanctionsEnrichmentResult = {
-				status: fcResult.status,
+				status: fcResult?.status ? "live" : "offline",
 				result: fcResult.result as unknown as Record<string, unknown>,
 			};
 		} catch (err) {
 			console.error(
-				"[AggregatedAnalysis] Firecrawl sanctions enrichment failed, skipping:",
+				"[AggregatedAnalysis] Firecrawl sanctions enrichment failed, recommend manual checks:",
 				err
 			);
 		}
 	}
 
-	// --- Social Reputation / HelloPeter (Firecrawl) ---
-	let socialReputationResult:
-		| AggregatedAnalysisResult["externalChecks"]["socialReputation"]
-		| undefined;
+	// --- Public Reputation (Scraper) ---
+	let socialReputationResult: {
+		status: "live" | "offline";
+		result: Record<string, unknown> | undefined;
+	};
 
 	if (process.env.ENABLE_FIRECRAWL_SOCIAL_REP === "true" && isFirecrawlConfigured()) {
 		try {
@@ -700,23 +651,23 @@ async function runExternalCheckStubs(
 				},
 			});
 			socialReputationResult = {
-				status: fcResult.status,
-				result: fcResult.result as unknown as Record<string, unknown>,
+				status: fcResult.status === "live" ? "live" : "offline",
+				result: (fcResult.result as unknown as Record<string, unknown>) || undefined,
 			};
 		} catch (err) {
 			console.error(
-				"[AggregatedAnalysis] Firecrawl social reputation failed, skipping:",
+				"[AggregatedAnalysis] Firecrawl social reputation failed, using mock fallback and recommend manual checks:",
 				err
 			);
 		}
 	}
 
 	return {
-		xdsCreditCheck: mockResult("XDS Credit Check"),
-		lexisNexisProcure: mockResult("LexisNexis Procure Upload"),
-		bizPortalRegistration: bizPortalResult,
-		efs24IdAvsr: mockResult("EFS24 ID/AVSR Verification"),
-		sarsVatSearch: mockResult("SARS VAT Search"),
+		xdsCreditCheck: { status: "offline", result: undefined },
+		lexisNexisProcure: { status: "offline", result: undefined },
+		bizPortalRegistration: { status: "offline", result: undefined },
+		efs24IdAvsr: { status: "offline", result: undefined },
+		sarsVatSearch: { status: "offline", result: undefined },
 		industryRegulator: industryRegulatorResult,
 		sanctionsEvidenceEnrichment: sanctionsEnrichmentResult,
 		socialReputation: socialReputationResult,

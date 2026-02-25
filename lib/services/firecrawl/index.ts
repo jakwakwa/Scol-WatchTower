@@ -14,8 +14,18 @@ export {
 	type SanctionsEnrichmentCheckInput,
 } from "./checks/sanctions-enrichment.check";
 export {
+	type CombinedSanctionsResult,
+	type FirecrawlSanctionsSearchInput,
+	mapCombinedToSanctionsCheckResult,
+	runFirecrawlSanctionsSearch,
+} from "./checks/sanctions-list-search";
+export {
 	runSocialReputationCheck,
 	type SocialReputationCheckInput,
 } from "./checks/social-reputation.check";
-export type { ScrapeOptions, ScrapeResult } from "./firecrawl.client";
-export { isFirecrawlConfigured, scrapeWithSchema } from "./firecrawl.client";
+export type { AgentOptions, ScrapeOptions, ScrapeResult } from "./firecrawl.client";
+export {
+	agentWithSchema,
+	isFirecrawlConfigured,
+	scrapeWithSchema,
+} from "./firecrawl.client";
