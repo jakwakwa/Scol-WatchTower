@@ -2,7 +2,7 @@
 
 import { UserButton } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDashboardStore } from "@/lib/dashboard-store";
 import { cn } from "@/lib/utils";
 import { NotificationsPanel, type WorkflowNotification } from "./notifications-panel";
@@ -48,6 +48,21 @@ export function DashboardShell({ children, notifications = [] }: DashboardShellP
 	useEffect(() => {
 		setIsMounted(true);
 	}, []);
+
+	// Auto-refresh notifications every 30 seconds
+	const refreshIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+	useEffect(() => {
+		refreshIntervalRef.current = setInterval(() => {
+			router.refresh();
+		}, 30_000);
+
+		return () => {
+			if (refreshIntervalRef.current) {
+				clearInterval(refreshIntervalRef.current);
+			}
+		};
+	}, [router]);
 
 	return (
 		<div className="min-h-screen dotted-grid-main">

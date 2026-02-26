@@ -67,6 +67,7 @@ export async function POST(request: NextRequest) {
 					contactName: data.contactName,
 					email: data.email,
 					phone: data.phone,
+					idNumber: data.idNumber || null,
 					entityType: data.entityType,
 					productType: data.productType,
 					industry: data.industry,

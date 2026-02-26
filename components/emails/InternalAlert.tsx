@@ -10,6 +10,7 @@ interface InternalAlertProps {
 	type?: "info" | "warning" | "error" | "success";
 	details?: Record<string, unknown>;
 	actionUrl?: string;
+	approveUrl?: string;
 }
 
 export const InternalAlert = ({
@@ -20,6 +21,7 @@ export const InternalAlert = ({
 	type = "info",
 	details,
 	actionUrl,
+	approveUrl,
 }: InternalAlertProps) => {
 	const color =
 		type === "error"
@@ -57,17 +59,26 @@ export const InternalAlert = ({
 			<Text className="text-black text-[14px] leading-[24px]">{message}</Text>
 
 			{details && Object.keys(details).length > 0 && (
-				<Section className="bg-gray-100 p-4 rounded-md my-4">
-					<Text className="font-bold mb-2">Details:</Text>
+				<Section className="bg-gray-50 p-4 rounded-md my-4" style={{ border: "1px solid #e5e7eb" }}>
+					<Text className="font-bold mb-2 text-[14px]">Details:</Text>
 					{Object.entries(details).map(([key, value]) => (
-						<Text key={key} className="text-[12px] m-0 font-mono">
-							{key}: {String(value)}
+						<Text key={key} className="text-[13px] m-0 leading-[22px]" style={{ color: "#374151" }}>
+							<strong style={{ color: "#111827" }}>{key}:</strong>{" "}
+							{String(value)}
 						</Text>
 					))}
 				</Section>
 			)}
 
 			<Section className="text-center mt-[32px] mb-[32px]">
+				{approveUrl && (
+					<Button
+						className="rounded text-white text-[12px] font-semibold no-underline text-center px-5 py-3 mr-3"
+						style={{ backgroundColor: "#059669" }}
+						href={approveUrl}>
+						Approve Quote
+					</Button>
+				)}
 				<Button
 					className="bg-[#000000] rounded text-white text-[12px] font-semibold no-underline text-center px-5 py-3"
 					href={dashboardUrl}>
