@@ -32,31 +32,35 @@ export function StatsCard({
 	return (
 		<div
 			className={cn(
-				"group relative overflow-hidden rounded-2xl border border-sidebar-border bg-card/50 backdrop-blur-sm p-3",
+				"group relative overflow-hidden rounded-2xl border border-stone-950/80 bg-card/50 backdrop-blur-sm px-8 py-3",
 				"shadow-xl shadow-black/25",
 				"transition-all duration-300 hover:bg-card/70 hover:border-secondary/10 hover:shadow-2xl hover:-translate-y-1",
 				className
 			)}>
 			{/* Background gradient effect */}
 			<div className="absolute inset-0 bg-linear-to-br from-secondary/2 to-transparent" />
-			<div
-				className={cn(
-					"flex h-8 w-8 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110 mb-2",
-					iconColorClasses[iconColor]
-				)}>
-				<Icon className="h-4 w-4" />
-			</div>
+
 			{/* Content */}
-			<div className="relative flex items-start justify-between">
-				<div className="space-y-2">
-					<p className="text-sm font-medium text-muted-foreground">{title}</p>
-					<p className="text-2xl font-bold tracking-tight">{value}</p>
+			<div className="relative flex items-center justify-between">
+				<div
+					className={cn(
+						"flex h-8 w-8 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110 mb-2",
+						iconColorClasses[iconColor]
+					)}>
+					<Icon className="h-6 w-6" />
+				</div>
+				<div className="space-y-2 flex flex-col items-end">
+					{/* <p className="text-xs uppercase font-medium text-muted-foreground">{title}</p> */}
+					<p
+						className={`text-xl font-mono font-bold text-${iconColorClasses[iconColor]}	tracking-tight pr-4`}>
+						{value}
+					</p>
 
 					{change && (
-						<div className="flex items-center gap-1.5">
+						<div className="flex items-center justify-center gap-1.5">
 							<span
 								className={cn(
-									"text-xs font-medium",
+									"text-lg font-mono",
 									change.trend === "up" && "text-emerald-600/80",
 									change.trend === "down" && "text-red-400",
 									change.trend === "neutral" && "text-muted-foreground"
