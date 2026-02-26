@@ -34,6 +34,7 @@ export const applicants = sqliteTable("applicants", {
 
 	// Contact Info
 	contactName: text("contact_name").notNull(),
+	idNumber: text("id_number"),
 	email: text("email").notNull(),
 	phone: text("phone"),
 

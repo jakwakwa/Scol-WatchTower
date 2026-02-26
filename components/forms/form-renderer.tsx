@@ -55,9 +55,17 @@ export default function FormRenderer({
 		setSubmitError(null);
 		try {
 			await onSubmit(values);
+			// Scroll to top so users see success messages
+			if (typeof window !== "undefined") {
+				window.scrollTo({ top: 0, behavior: "smooth" });
+			}
 		} catch (error) {
 			const message = error instanceof Error ? error.message : "Failed to submit form";
 			setSubmitError(message);
+			// Scroll to top so users see error messages
+			if (typeof window !== "undefined") {
+				window.scrollTo({ top: 0, behavior: "smooth" });
+			}
 		}
 	});
 

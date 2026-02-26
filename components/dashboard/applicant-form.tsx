@@ -21,6 +21,7 @@ interface ApplicantFormData {
 	companyName: string;
 	registrationNumber: string;
 	contactName: string;
+	idNumber: string;
 	email: string;
 	phone: string;
 	entityType: string;
@@ -53,6 +54,7 @@ export function ApplicantForm({
 		companyName: initialData?.companyName || "",
 		registrationNumber: initialData?.registrationNumber || "",
 		contactName: initialData?.contactName || "",
+		idNumber: initialData?.idNumber || "",
 		email: initialData?.email || "",
 		phone: initialData?.phone || "",
 		entityType: initialData?.entityType || "",
@@ -76,6 +78,7 @@ export function ApplicantForm({
 			companyName: `${isMockarooTestMode ? "Jacob Kotzee T/a Doodles Digital" : "Test Company Inc"}`,
 			registrationNumber: `${isMockarooTestMode ? "0787173160001" : "2024/123456/07"}`,
 			contactName: `${isMockarooTestMode ? "Jacob Kotzee" : "John Test"}`,
+			idNumber: `${isMockarooTestMode ? "8501015009087" : ""}`,
 			email: `${isMockarooTestMode ? "jkotzee@icloud.com" : "john.test@testcompany.co.za"}`,
 			phone: `${isMockarooTestMode ? "+27 76 341 0291" : "+27 82 123 4567"}`,
 			entityType: "company",
@@ -110,6 +113,9 @@ export function ApplicantForm({
 		} else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
 			newErrors.email = "Invalid email address";
 		}
+		if (formData.idNumber.trim() && !/^\d{13}$/.test(formData.idNumber.trim())) {
+			newErrors.idNumber = "ID number must be exactly 13 digits";
+		}
 
 		setErrors(newErrors);
 		return Object.keys(newErrors).length === 0;
@@ -132,6 +138,7 @@ export function ApplicantForm({
 					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({
 						...formData,
+						idNumber: formData.idNumber.trim() || undefined,
 						employeeCount: formData.employeeCount
 							? parseInt(formData.employeeCount, 10)
 							: undefined,
@@ -344,7 +351,24 @@ export function ApplicantForm({
 							{errors.email && <p className="text-xs text-red-400">{errors.email}</p>}
 						</div>
 
-						<div className="space-y-2 md:col-span-2">
+						<div className="space-y-2">
+							<Label htmlFor="idNumber">SA ID Number</Label>
+							<Input
+								id="idNumber"
+								value={formData.idNumber}
+								onChange={e => updateField("idNumber", e.target.value)}
+								placeholder="13-digit SA ID number"
+								maxLength={13}
+								className={cn(
+									errors.idNumber ? "border-red-500" : "border-input-border"
+								)}
+							/>
+							{errors.idNumber && (
+								<p className="text-xs text-red-400">{errors.idNumber}</p>
+							)}
+						</div>
+
+						<div className="space-y-2">
 							<Label htmlFor="phone">Phone Number</Label>
 							<Input
 								id="phone"

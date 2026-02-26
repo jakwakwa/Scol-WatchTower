@@ -92,7 +92,13 @@ export const columns: ColumnDef<ApplicantRow>[] = [
 				)}
 			</Button>
 		),
-		cell: ({ row }) => <div className="font-medium">{row.original.companyName}</div>,
+		cell: ({ row }) => (
+			<Link
+				href={`/dashboard/applicants/${row.original.id}`}
+				className="font-medium text-foreground hover:text-primary hover:underline">
+				{row.original.companyName}
+			</Link>
+		),
 	},
 	{
 		accessorKey: "contactName",

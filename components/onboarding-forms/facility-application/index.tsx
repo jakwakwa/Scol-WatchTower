@@ -205,6 +205,7 @@ const ADDITIONAL_SERVICE_OPTIONS: CheckboxOption[] = [
 // ============================================
 
 const TEST_DATA: Partial<FacilityApplicationFormData> = {
+	idNumber: "8501015009087",
 	facilitySelection: {
 		serviceTypes: [ServiceType.EFT, ServiceType.DEBICHECK],
 		additionalServices: [AdditionalService.INTEGRATION],
@@ -258,6 +259,7 @@ export function FacilityApplicationForm({
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		resolver: zodResolver(facilityApplicationSchema) as any,
 		defaultValues: initialData ?? {
+			idNumber: "",
 			facilitySelection: {
 				serviceTypes: [],
 				additionalServices: [],
@@ -371,6 +373,20 @@ export function FacilityApplicationForm({
 										<RiServiceLine className="h-5 w-5 text-muted-foreground" />
 										<h3 className="text-lg font-semibold">Facility Selection</h3>
 									</div>
+
+									{/* SA ID Number */}
+									<FormField
+										label="SA ID Number"
+										required
+										error={errors.idNumber?.message}
+										description="Enter your 13-digit South African ID number">
+										<Input
+											{...register("idNumber")}
+											placeholder="e.g., 8501015009087"
+											maxLength={13}
+											disabled={readOnly}
+										/>
+									</FormField>
 
 									{/* Service Types */}
 									<FormField

@@ -21,6 +21,16 @@ import {
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { DashboardLayout, GlassCard } from "@/components/dashboard";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -182,6 +192,10 @@ export default function ApplicantDetailPage() {
 	const [preRiskReason, setPreRiskReason] = useState("");
 	const [preRiskMessage, setPreRiskMessage] = useState<string | null>(null);
 
+	// Confirmation dialog state
+	const [retryDialogOpen, setRetryDialogOpen] = useState(false);
+	const [declineDialogOpen, setDeclineDialogOpen] = useState(false);
+
 	// Initialize edit values when quote loads or edit mode is enabled
 	useEffect(() => {
 		if (quote && isEditingQuote) {
@@ -271,13 +285,7 @@ export default function ApplicantDetailPage() {
 
 	const handleDeclineQuote = async () => {
 		if (!quote) return;
-		if (
-			!window.confirm(
-				"Are you sure you want to decline this quote? This action cannot be undone."
-			)
-		) {
-			return;
-		}
+		setDeclineDialogOpen(false);
 		setQuoteActionLoading("decline");
 		setQuoteMessage(null);
 		try {
@@ -355,28 +363,20 @@ export default function ApplicantDetailPage() {
 
 	const handleRetrySubmission = async () => {
 		if (!workflow?.id) return;
-
-		if (
-			!window.confirm(
-				"Are you sure you want to retry the facility submission event? This should only be done if the workflow is stuck."
-			)
-		) {
-			return;
-		}
+		setRetryDialogOpen(false);
 
 		setActionLoading(true);
 		try {
 			const result = await retryFacilitySubmission(workflow.id);
 			if (result.success) {
-				alert(`Success: ${result.message}`);
-				// Optional: reload the page or re-fetch data
+				setQuoteMessage(`Success: ${result.message}`);
 				window.location.reload();
 			} else {
-				alert(`Error: ${result.error}`);
+				setQuoteMessage(`Error: ${result.error}`);
 			}
 		} catch (e) {
 			console.error(e);
-			alert("Failed to retry submission due to an unexpected error.");
+			setQuoteMessage("Failed to retry submission due to an unexpected error.");
 		} finally {
 			setActionLoading(false);
 		}
@@ -561,18 +561,16 @@ export default function ApplicantDetailPage() {
 	const client = applicant;
 
 	return (
+		<>
 		<DashboardLayout
 			title={client.companyName}
 			description={`Registration: ${client.registrationNumber || "N/A"}`}
 			actions={
 				<div className="flex gap-2">
-					<Button variant="outline" size="sm">
-						Edit Details
-					</Button>
 					<Button
 						size="sm"
 						className="bg-action hover:bg-action/85"
-						onClick={handleRetrySubmission}
+						onClick={() => setRetryDialogOpen(true)}
 						disabled={actionLoading || !workflow}>
 						{actionLoading ? "Retrying..." : "Retry Facility Submission"}
 					</Button>
@@ -1436,7 +1434,7 @@ export default function ApplicantDetailPage() {
 														<Button
 															variant="destructive"
 															size="sm"
-															onClick={handleDeclineQuote}
+															onClick={() => setDeclineDialogOpen(true)}
 															disabled={quoteActionLoading !== null}
 															className="gap-2">
 															{quoteActionLoading === "decline" ? (
@@ -1480,7 +1478,7 @@ export default function ApplicantDetailPage() {
 														</Button>
 														<Button
 															variant="destructive"
-															onClick={handleDeclineQuote}
+															onClick={() => setDeclineDialogOpen(true)}
 															disabled={quoteActionLoading !== null}
 															className="gap-2 bg-linear-to-t from-destructive to-destructive/80 rounded-xl h-12  text-shadow-sm text-shadow-red-950/20 hover:shadow-red-900/60  hover:opacity-80 hover:bg-destructive-foreground border-2 shadow-md shadow-red-900/70  border-destructive p-4 text-white text-sm">
 															{quoteActionLoading === "decline" ? (
@@ -1527,5 +1525,46 @@ export default function ApplicantDetailPage() {
 				</div>
 			</div>
 		</DashboardLayout>
+
+			{/* Retry Facility Submission Confirmation Dialog */}
+			<AlertDialog open={retryDialogOpen} onOpenChange={setRetryDialogOpen}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Retry Facility Submission</AlertDialogTitle>
+						<AlertDialogDescription>
+							Are you sure you want to retry the facility submission event? This
+							should only be done if the workflow is stuck.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>Cancel</AlertDialogCancel>
+						<AlertDialogAction onClick={handleRetrySubmission}>
+							Retry
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+
+			{/* Decline Quote Confirmation Dialog */}
+			<AlertDialog open={declineDialogOpen} onOpenChange={setDeclineDialogOpen}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Decline Quote</AlertDialogTitle>
+						<AlertDialogDescription>
+							Are you sure you want to decline this quote? This action cannot be
+							undone.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>Cancel</AlertDialogCancel>
+						<AlertDialogAction
+							variant="destructive"
+							onClick={handleDeclineQuote}>
+							Decline
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+		</>
 	);
 }

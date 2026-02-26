@@ -4,7 +4,7 @@
  * Note: Using UK spelling throughout (e.g., organisation, authorisation)
  */
 import { z } from "zod";
-import { currencySchema, optionalString } from "./common";
+import { currencySchema, optionalString, saIdNumberSchema } from "./common";
 
 // ============================================
 // Service Type Enums
@@ -148,6 +148,7 @@ export type VolumeMetrics = z.infer<typeof volumeMetricsSchema>;
 // ============================================
 
 export const facilityApplicationSchema = z.object({
+	idNumber: saIdNumberSchema,
 	facilitySelection: facilitySelectionSchema,
 	volumeMetrics: volumeMetricsSchema,
 });
