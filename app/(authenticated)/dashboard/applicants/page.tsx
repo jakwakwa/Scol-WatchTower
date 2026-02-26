@@ -96,7 +96,10 @@ export default async function ApplicantsPage() {
 						<div
 							key={status}
 							className={cn(
-								`rounded-xl  shadow-[0_5px_10px_0_rgba(0,0,0,.15)] bg-${config.color} border border-sidebar-border p-4 text-center`,
+								`rounded-xl  shadow-[0_5px_10px_0_rgba(0,0,0,.15)] bg-${config.color} border rounded-br-2xl  
+								after:rounded-tl-lg before:rounded-tl-lg 
+								after:rounded-tr-lg before:rounded-tr-lg 
+								border-sidebar-border p-4 text-center`,
 								`transition-colors ${config.color}`
 							)}>
 							<p className="text-2xl font-bold">{count}</p>

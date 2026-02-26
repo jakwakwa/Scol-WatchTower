@@ -185,7 +185,7 @@ export function PipelineView({ workflows }: { workflows: PipelineWorkflow[] }) {
 						className={`flex-1 min-w-[180px] max-w-[240px] flex flex-col gap-3`}>
 						<div
 							className={cn(
-								`flex items-center glass-card justify-between p-4 rounded-xl shadow-sm border-t-[1.5px] border-t-${stage.color} min-h-[70px]`,
+								`flex items-center glass-card after:rounded-2xl before:rounded-2xl backdrop-blur-xs justify-between p-4 rounded-xl shadow-sm border-t-[1.5px] border-t-${stage.color} min-h-[70px]`,
 								stage.color
 							)}>
 							<div className="flex items-center gap-2">
@@ -235,7 +235,7 @@ function PipelineCard({ workflow }: { workflow: PipelineWorkflow }) {
 	const canViewQuote = stageNumber >= 2 && workflow.hasQuote;
 
 	return (
-		<div className="glass-card p-7 rounded-xl border border-white/10 shadow-[0px_10px_10px_rgba(0,0,0,0.05)] transition-all group relative select-none">
+		<div className="glass-card after:rounded-2xl before:rounded-2xl backdrop-blur-xs p-7  border border-white/10 shadow-[0px_10px_10px_rgba(0,0,0,0.05)] transition-all group relative select-none">
 			{/* Header: Company Name & Risk if applicable */}
 			<div className="flex justify-between items-start mb-2">
 				<h4 className="font-medium line-clamp-1 text-ellipsis  whitespace-nowrap uppercase   text-[11px] text-card-foreground leading-tight pr-6">
