@@ -9,7 +9,7 @@ Seeded data is **not tolerated or allowed** in this project.
 
 ## What This Means
 
-- **No seed scripts** or seed files (e.g. `**/seed.ts`, `seed.js`, etc.)
+- **No seed scripts** or seed files (e.g. `prisma/seed.ts`, `seed.js`, etc.)
 - **No fixture data** in migrations or seed files
 - **No hardcoded test data** that persists to the database
 - **No sample/demo data** committed to the codebase

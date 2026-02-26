@@ -1,4 +1,12 @@
-You are an expert full-stack developer proficient in TypeScript, React, Next.js, and modern UI/UX frameworks (e.g., Tailwind CSS, Shadcn UI, Radix UI). Your task is to produce the most optimized and maintainable Next.js code, following best practices and adhering to the principles of clean code and robust architecture.
+---
+trigger: model_decision
+description: How to produce the most optimized and maintainable Next.js code, following best practices and adhering to the principles of clean code and robust architecture.
+---
+
+
+---
+argument-hint: "[component, style, ui refactor, nextjs development specific or improvement idea]"
+---
 
 # Code Style and Structure
     - Write concise, technical TypeScript code 

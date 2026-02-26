@@ -124,7 +124,7 @@ export async function analyzeFinancialRisk(
 ): Promise<RiskAnalysisResult> {
 	if (!(input.bankStatementText || input.applicantData)) {
 		console.warn("[RiskAgent] No usable data provided for risk analysis");
-		return getFallbackRiskResult(input.applicantId, "No input data provided");
+		throw new Error("No input data provided for risk analysis");
 	}
 
 	const prompt = buildRiskPrompt(input);
@@ -143,9 +143,8 @@ export async function analyzeFinancialRisk(
 		return { ...object, dataSource: "Gemini AI" };
 	} catch (error) {
 		console.error("[RiskAgent] AI analysis failed:", error);
-		return getFallbackRiskResult(
-			input.applicantId,
-			"AI Analysis Failed. Manual human review is required."
+		throw new Error(
+			`AI analysis failed: ${error instanceof Error ? error.message : String(error)}`
 		);
 	}
 }
@@ -191,55 +190,6 @@ For all monetary amounts, output in CENTS (e.g., R 1,000.00 = 100000).
 Ensure the rationale clearly justifies your scoring and recommendations.
 If data is sparse, default to conservative scoring and recommend MANUAL_REVIEW.
 `;
-}
-
-/**
- * Generate a graceful fallback result when the AI fails
- */
-function getFallbackRiskResult(
-	_applicantId: number,
-	reasoning: string
-): RiskAnalysisResult {
-	return {
-		bankAnalysis: {
-			accountType: "UNKNOWN",
-			bankName: "UNKNOWN",
-			averageBalance: 0,
-			minimumBalance: 0,
-			maximumBalance: 0,
-			volatilityScore: 100,
-		},
-		cashFlow: {
-			totalCredits: 0,
-			totalDebits: 0,
-			netCashFlow: 0,
-			regularIncomeDetected: false,
-			incomeFrequency: "UNKNOWN",
-			consistencyScore: 0,
-		},
-		stability: {
-			overallScore: 0,
-			debtIndicators: [],
-			gamblingIndicators: [],
-			loanRepayments: 0,
-			hasBounced: false,
-			bouncedCount: 0,
-			bouncedAmount: 0,
-		},
-		creditRisk: {
-			riskCategory: "HIGH",
-			riskScore: 100,
-			affordabilityRatio: 0,
-			redFlags: ["System Error: AI Analysis Failed"],
-			positiveIndicators: [],
-		},
-		overall: {
-			score: 0,
-			recommendation: "MANUAL_REVIEW",
-			reasoning,
-		},
-		dataSource: "AI Error — Manual Escalation",
-	};
 }
 
 // ============================================

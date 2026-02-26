@@ -67,28 +67,9 @@ export async function runIndustryRegulatorCheck(
 	const provider = resolveProvider(input.industry, input.provider);
 
 	if (!provider) {
-		return {
-			status: "mock",
-			result: {
-				checked: false,
-				passed: true,
-				checkedAt: now,
-				failureDetail: {
-					code: "error",
-					message:
-						"Could not determine industry regulator provider from industry or override",
-					retryPolicy: "manual",
-				},
-			},
-			runtimeState: "error",
-			metadata: {
-				checkId,
-				checkedAt: now,
-				dataSource: "Mock Fallback (no provider resolved)",
-				provider: "UNKNOWN",
-				confidenceTier: "high_confidence",
-			},
-		};
+		throw new Error(
+			"Could not determine industry regulator provider from industry or override"
+		);
 	}
 
 	const config = INDUSTRY_REGULATOR_PROVIDERS[provider];
@@ -113,25 +94,11 @@ export async function runIndustryRegulatorCheck(
 	).toISOString();
 
 	if (scrapeResult.runtimeState === "error" || scrapeResult.runtimeState === "blocked") {
-		return {
-			status: "mock",
-			result: {
-				checked: true,
-				passed: true,
-				checkedAt: now,
-				failureDetail: scrapeResult.failureDetail,
-			},
-			runtimeState: scrapeResult.runtimeState,
-			metadata: {
-				checkId,
-				checkedAt: now,
-				expiresAt,
-				dataSource: `Mock Fallback (Firecrawl ${scrapeResult.runtimeState})`,
-				provider,
-				confidenceTier: "high_confidence",
-				latencyMs: scrapeResult.latencyMs,
-			},
-		};
+		throw new Error(
+			`Industry regulator scrape failed with state ${scrapeResult.runtimeState}: ${
+				scrapeResult.failureDetail?.message || "Unknown error"
+			}`
+		);
 	}
 
 	const data = scrapeResult.data as Record<string, unknown> | null;

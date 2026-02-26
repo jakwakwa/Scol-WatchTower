@@ -10,17 +10,15 @@
  * - sendWelcomePack: Email with credentials and portal access
  */
 
-import { getDatabaseClient } from "@/app/utils";
-import { applicants, workflows } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { getDatabaseClient } from "@/app/utils";
+import { applicants } from "@/db/schema";
 import {
-	type V24ClientProfile,
-	type V24Response,
-	type TrainingSession,
 	type MandateType,
+	type TrainingSession,
+	type V24Response,
 	V24ResponseSchema,
 } from "@/lib/types";
-import { v4 as uuidv4 } from "uuid";
 
 export interface CreateClientOptions {
 	applicantId: number;
@@ -48,14 +46,9 @@ export interface WelcomePackOptions {
  * Create a client profile in V24 core system
  */
 export async function createV24ClientProfile(
-	options: CreateClientOptions,
+	options: CreateClientOptions
 ): Promise<V24Response> {
-	const { applicantId, workflowId, mandateType, approvedVolume, feePercent } =
-		options;
-
-	console.log(
-		`[V24Service] Creating client profile for Applicant ${applicantId}, Workflow ${workflowId}`,
-	);
+	const { applicantId, mandateType, approvedVolume, feePercent } = options;
 
 	// Fetch applicant data
 	const db = getDatabaseClient();
@@ -119,29 +112,17 @@ export async function createV24ClientProfile(
 				};
 			}
 		} catch (err) {
-			console.warn("[V24Service] External API failed, using mock:", err);
+			console.error("[V24Service] External API failed", err);
+			return {
+				success: false,
+				error: `V24 API failed: ${err instanceof Error ? err.message : String(err)}`,
+			};
 		}
 	}
 
-	// Mock V24 client creation
-	const v24Reference = `V24-${Date.now().toString(36).toUpperCase()}-${applicantId}`;
-	const clientId = uuidv4();
-
-	console.log(`[V24Service] Mock client created:`, {
-		clientId,
-		v24Reference,
-		companyName: applicantData.companyName,
-		mandateType,
-	});
-
-	// Simulate some processing delay
-	await new Promise((resolve) => setTimeout(resolve, 500));
-
 	return {
-		success: true,
-		clientId,
-		v24Reference,
-		message: `Client ${applicantData.companyName} successfully created in V24`,
+		success: false,
+		error: "V24 API URL is not configured",
 	};
 }
 
@@ -149,11 +130,9 @@ export async function createV24ClientProfile(
  * Schedule a training session for a new client
  */
 export async function scheduleTrainingSession(
-	options: ScheduleTrainingOptions,
+	options: ScheduleTrainingOptions
 ): Promise<TrainingSession> {
 	const { email, clientName, preferredDate } = options;
-
-	console.log(`[V24Service] Scheduling training session for ${email}`);
 
 	// Check for external calendar API
 	const calendarApiUrl = process.env.TRAINING_CALENDAR_API_URL;
@@ -176,47 +155,23 @@ export async function scheduleTrainingSession(
 				return result as TrainingSession;
 			}
 		} catch (err) {
-			console.warn(
-				"[V24Service] External calendar API failed, using mock:",
-				err,
+			console.error("[V24Service] External calendar API failed", err);
+			throw new Error(
+				`Calendar API failed: ${err instanceof Error ? err.message : String(err)}`
 			);
 		}
 	}
 
-	// Mock training session
-	// Schedule for next available slot (next business day, 10am)
-	const scheduledDate = preferredDate ?? getNextBusinessDay();
-	scheduledDate.setHours(10, 0, 0, 0);
-
-	const session: TrainingSession = {
-		sessionId: uuidv4(),
-		clientEmail: email,
-		scheduledDate,
-		duration: 60,
-		type: "ONBOARDING",
-		meetingLink: `https://meet.stratcol.co.za/training/${uuidv4().slice(0, 8)}`,
-		status: "SCHEDULED",
-	};
-
-	console.log(`[V24Service] Training session scheduled:`, {
-		sessionId: session.sessionId,
-		date: session.scheduledDate.toISOString(),
-		link: session.meetingLink,
-	});
-
-	return session;
+	throw new Error("TRAINING_CALENDAR_API_URL is not configured");
 }
 
 /**
  * Send welcome pack email to new client
  */
 export async function sendWelcomePack(
-	options: WelcomePackOptions,
+	options: WelcomePackOptions
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
-	const { email, clientName, v24Reference, portalUrl, temporaryPassword } =
-		options;
-
-	console.log(`[V24Service] Sending welcome pack to ${email}`);
+	const { email, clientName, v24Reference, portalUrl, temporaryPassword } = options;
 
 	// Check for Resend API
 	const resendApiKey = process.env.RESEND_API_KEY;
@@ -244,21 +199,15 @@ export async function sendWelcomePack(
 
 			return { success: true, messageId: data?.id };
 		} catch (err) {
-			console.warn("[V24Service] Resend API failed, using mock:", err);
+			console.error("[V24Service] Resend API failed", err);
+			return {
+				success: false,
+				error: `Resend API failed: ${err instanceof Error ? err.message : String(err)}`,
+			};
 		}
 	}
 
-	// Mock email sending
-	console.log(`[V24Service] Mock welcome email sent:`, {
-		to: email,
-		subject: `Welcome to StratCol - ${v24Reference}`,
-		hasPassword: !!temporaryPassword,
-	});
-
-	return {
-		success: true,
-		messageId: `mock-${Date.now()}`,
-	};
+	return { success: false, error: "RESEND_API_KEY is not configured" };
 }
 
 /**
@@ -334,7 +283,7 @@ function generateWelcomeEmailHtml(options: {
 /**
  * Get next business day (skip weekends)
  */
-function getNextBusinessDay(): Date {
+function _getNextBusinessDay(): Date {
 	const date = new Date();
 	date.setDate(date.getDate() + 1);
 

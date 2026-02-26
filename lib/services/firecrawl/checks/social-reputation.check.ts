@@ -45,25 +45,11 @@ export async function runSocialReputationCheck(
 	).toISOString();
 
 	if (scrapeResult.runtimeState === "error" || scrapeResult.runtimeState === "blocked") {
-		return {
-			status: "mock",
-			result: {
-				checked: true,
-				passed: true,
-				checkedAt: now,
-				failureDetail: scrapeResult.failureDetail,
-			},
-			runtimeState: scrapeResult.runtimeState,
-			metadata: {
-				checkId,
-				checkedAt: now,
-				expiresAt,
-				dataSource: `Mock Fallback (Firecrawl ${scrapeResult.runtimeState})`,
-				provider: "HELLOPETER",
-				confidenceTier: "high_confidence",
-				latencyMs: scrapeResult.latencyMs,
-			},
-		};
+		throw new Error(
+			`Social reputation scrape failed with state ${scrapeResult.runtimeState}: ${
+				scrapeResult.failureDetail?.message || "Unknown error"
+			}`
+		);
 	}
 
 	const data = scrapeResult.data as Record<string, unknown> | null;

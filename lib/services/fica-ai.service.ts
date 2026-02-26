@@ -66,12 +66,13 @@ export async function analyzeBankStatement(
 			return await analyzeWithAI(content, contentType, facilityApplication);
 		} catch (err) {
 			console.error("[FicaAI] AI analysis failed:", err);
-			console.warn("[FicaAI] Falling back to mock analysis");
+			throw new Error(
+				`AI analysis failed: ${err instanceof Error ? err.message : String(err)}`
+			);
 		}
 	}
 
-	// Mock analysis for development/testing
-	return generateMockBankStatementAnalysis(facilityApplication);
+	throw new Error("AI is not configured");
 }
 
 /**
@@ -159,11 +160,13 @@ export async function analyzeAccountantLetter(
 			);
 		} catch (err) {
 			console.error("[FicaAI] AI analysis failed:", err);
-			console.warn("[FicaAI] Falling back to mock analysis");
+			throw new Error(
+				`AI analysis failed: ${err instanceof Error ? err.message : String(err)}`
+			);
 		}
 	}
 
-	return generateMockAccountantLetterAnalysis(facilityApplication);
+	throw new Error("AI is not configured");
 }
 
 /**
@@ -203,127 +206,6 @@ ANALYSIS REQUIREMENTS:
 	});
 
 	return object;
-}
-
-// ============================================
-// Mock Implementations
-// ============================================
-
-/**
- * Generate mock bank statement analysis for testing
- */
-function generateMockBankStatementAnalysis(
-	facilityApplication?: Partial<FacilityApplication>
-): FicaDocumentAnalysis {
-	const companyName = facilityApplication?.companyName || "Test Company (Pty) Ltd";
-	const accountNumber =
-		facilityApplication?.bankingDetails?.accountNumber || "1234567890";
-
-	// Simulate different scenarios based on company name
-	const isHighRisk =
-		companyName.toLowerCase().includes("risk") ||
-		companyName.toLowerCase().includes("decline");
-	const isLowRisk =
-		companyName.toLowerCase().includes("approve") ||
-		companyName.toLowerCase().includes("good");
-
-	const riskFlags: FicaDocumentAnalysis["riskFlags"] = [];
-	let aiTrustScore = 75;
-
-	if (isHighRisk) {
-		aiTrustScore = 35;
-		riskFlags.push(
-			{
-				type: "BOUNCED_DEBIT" as const,
-				severity: "HIGH" as const,
-				description: "Multiple bounced debit orders detected",
-				evidence: "3 dishonoured debits in the past 30 days",
-				amount: 4500_00,
-			},
-			{
-				type: "IRREGULAR_DEPOSITS" as const,
-				severity: "MEDIUM" as const,
-				description: "Irregular deposit patterns detected",
-				evidence: "Large cash deposits on random dates",
-			}
-		);
-	} else if (!isLowRisk) {
-		aiTrustScore = 72;
-		riskFlags.push({
-			type: "CASH_INTENSIVE" as const,
-			severity: "LOW" as const,
-			description: "Higher than average cash transactions",
-			evidence: "15% of transactions are cash-based",
-		});
-	} else {
-		aiTrustScore = 92;
-	}
-
-	const analysis: FicaDocumentAnalysis = {
-		accountHolderName: companyName,
-		accountNumber: accountNumber,
-		bankName: "First National Bank",
-		branchCode: "250655",
-		accountType: "Business Current",
-		periodStart: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
-			.toISOString()
-			.slice(0, 10),
-		periodEnd: new Date().toISOString().slice(0, 10),
-		openingBalance: 125000_00,
-		closingBalance: 142500_00,
-		averageDailyBalance: 135000_00,
-		totalCredits: 450000_00,
-		totalDebits: 432500_00,
-		dishonours: isHighRisk ? 3 : 0,
-		incomeRegularity: isHighRisk ? "IRREGULAR" : "REGULAR",
-		primaryIncomeSource: "Business Revenue",
-		cashFlowScore: isHighRisk ? 45 : 85,
-		riskFlags,
-		aiTrustScore,
-		analysisConfidence: 88,
-		nameMatchVerified: true,
-		accountMatchVerified: true,
-		summary: isHighRisk
-			? "The bank statement analysis reveals several critical risk factors that necessitate manual review. Significant issues with payment reliability and irregular deposit patterns were identified."
-			: isLowRisk
-				? "The bank statement demonstrates strong financial health with consistent revenue streams and no adverse indicators. The applicant qualifies for fast-track processing."
-				: "The bank statement shows a stable financial position. While there is a higher-than-average reliance on cash transactions, overall liquidity remains healthy.",
-		recommendation: isHighRisk
-			? "MANUAL_REVIEW"
-			: aiTrustScore >= AI_TRUST_THRESHOLDS.AUTO_APPROVE
-				? "APPROVE"
-				: "APPROVE_WITH_CONDITIONS",
-		reasoning: isHighRisk
-			? "The calculated risk score of 35% is primarily driven by recent dishonoured debit orders (3 in the last 30 days) and a pattern of irregular lump-sum deposits that do not align with the stated business model. These factors suggest potential cash flow instability."
-			: isLowRisk
-				? "The risk score of 92% reflects excellent account conduct. No bounced debits were detected in the analysis period. Income regularity is high, and the average daily balance supports the requested facility."
-				: "The risk score of 72% is influenced by the 'Cash Intensive' flag, as 15% of credits are cash deposits. However, no dishonoured payments were found, and the closing balance has grown by 14% over the period.",
-	};
-
-	return analysis;
-}
-
-/**
- * Generate mock accountant letter analysis
- */
-function generateMockAccountantLetterAnalysis(
-	facilityApplication?: Partial<FacilityApplication>
-): AccountantLetterAnalysis {
-	const companyName = facilityApplication?.companyName || "Test Company (Pty) Ltd";
-
-	return {
-		practitionerName: "Smith & Associates Chartered Accountants",
-		practiceNumber: "CA(SA) 12345",
-		letterDate: new Date().toISOString().slice(0, 10),
-		clientName: companyName,
-		letterheadAuthentic: true,
-		businessStanding: "GOOD",
-		annualTurnover: 5400000_00,
-		yearsInBusiness: 8,
-		concerns: [],
-		verified: true,
-		confidence: 85,
-	};
 }
 
 // ============================================
