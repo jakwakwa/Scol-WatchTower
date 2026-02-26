@@ -97,14 +97,6 @@ export default defineConfig({
 			},
 			dependencies: ["global setup"],
 		},
-		/* Local regression test: procurement fallback flow (no global setup) */
-		{
-			name: "workflow local fallback tests",
-			testMatch: /workflow\/procurement-fallback\.local\.spec\.ts/,
-			use: {
-				...devices["Desktop Chrome"],
-			},
-		},
 	],
 
 	/* Run your local dev server before starting the tests */

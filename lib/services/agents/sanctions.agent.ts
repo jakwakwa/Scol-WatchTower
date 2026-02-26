@@ -230,11 +230,13 @@ export interface SanctionsCheckInput {
  * Perform sanctions and compliance checks.
  * Primary: Firecrawl agent (UN, OFAC, FIC TFS) when ENABLE_FIRECRAWL_SANCTIONS_PRIMARY=true
  * Fallback: OpenSanctions yente when YENTE_API_URL configured
- * Fallback: Deterministic mock when neither configured
+ * Throws error when neither configured or both fail.
  */
 export async function performSanctionsCheck(
 	input: SanctionsCheckInput
 ): Promise<SanctionsCheckResult> {
+	let lastError: Error | unknown;
+
 	if (
 		process.env.ENABLE_FIRECRAWL_SANCTIONS_PRIMARY === "true" &&
 		isFirecrawlConfigured()
@@ -247,10 +249,8 @@ export async function performSanctionsCheck(
 			});
 			return mapCombinedToSanctionsCheckResult(combined, input);
 		} catch (err) {
-			console.error(
-				"[SanctionsAgent] Firecrawl sanctions search failed, falling back:",
-				err
-			);
+			console.error("[SanctionsAgent] Firecrawl sanctions search failed:", err);
+			lastError = err;
 		}
 	}
 
@@ -259,13 +259,18 @@ export async function performSanctionsCheck(
 			const result = await performYenteSanctionsCheck(input);
 			return result;
 		} catch (err) {
-			console.error("[SanctionsAgent] yente API failed, falling back to mock:", err);
+			console.error("[SanctionsAgent] yente API failed:", err);
+			lastError = err;
 		}
 	}
 
-	const mockResult = generateMockSanctionsResult(input);
-
-	return mockResult;
+	if (lastError) {
+		throw new Error(
+			`Sanctions check failed: ${lastError instanceof Error ? lastError.message : String(lastError)}`
+		);
+	} else {
+		throw new Error("No sanctions checking service is configured (Firecrawl or Yente).");
+	}
 }
 
 // ============================================
@@ -512,169 +517,6 @@ function mapYenteResponseToResult(
 }
 
 /**
- * Generate mock sanctions check results
- */
-function generateMockSanctionsResult(input: SanctionsCheckInput): SanctionsCheckResult {
-	const seed = simpleHash(input.entityName + input.applicantId);
-	const now = new Date();
-	const checkId = `SCK-${input.workflowId}-${Date.now()}`;
-
-	// Determine if this is a "clear" result (most common case)
-	// Only ~5% of checks should flag anything
-	const isClear = seed % 20 !== 0;
-
-	const isHighRiskCountry = HIGH_RISK_COUNTRIES.includes(input.countryCode);
-
-	// Generate results based on clear/not clear
-	const unSanctionsMatch = !isClear && seed % 5 === 0;
-	const isPEP = !isClear && seed % 7 === 0;
-	const hasAdverseMedia = !isClear && seed % 4 === 0;
-	const hasWatchListMatch = !isClear && seed % 6 === 0;
-
-	// Calculate overall risk
-	let riskLevel: "CLEAR" | "LOW" | "MEDIUM" | "HIGH" | "BLOCKED";
-	let passed = true;
-	let requiresEDD = false;
-	let recommendation:
-		| "PROCEED"
-		| "PROCEED_WITH_MONITORING"
-		| "EDD_REQUIRED"
-		| "BLOCK"
-		| "MANUAL_REVIEW";
-
-	if (unSanctionsMatch) {
-		riskLevel = "BLOCKED";
-		passed = false;
-		recommendation = "BLOCK";
-	} else if (isHighRiskCountry) {
-		riskLevel = "HIGH";
-		passed = true;
-		requiresEDD = true;
-		recommendation = "EDD_REQUIRED";
-	} else if (isPEP) {
-		riskLevel = "MEDIUM";
-		passed = true;
-		requiresEDD = true;
-		recommendation = "PROCEED_WITH_MONITORING";
-	} else if (hasAdverseMedia || hasWatchListMatch) {
-		riskLevel = "LOW";
-		passed = true;
-		recommendation = "MANUAL_REVIEW";
-	} else {
-		riskLevel = "CLEAR";
-		passed = true;
-		recommendation = "PROCEED";
-	}
-
-	return {
-		unSanctions: {
-			checked: true,
-			matchFound: unSanctionsMatch,
-			matchDetails: unSanctionsMatch
-				? [
-						{
-							listName: "UN Security Council Consolidated List",
-							matchType: "PARTIAL" as const,
-							matchedName: `${input.entityName.split(" ")[0]} Industries`,
-							confidence: 45,
-							sanctionType: "Trade Restrictions",
-							sanctionDate: "2022-03-15",
-						},
-					]
-				: [],
-			lastChecked: now.toISOString(),
-		},
-
-		pepScreening: {
-			checked: true,
-			isPEP,
-			pepDetails: isPEP
-				? {
-						category: "DOMESTIC" as const,
-						position: "Former Deputy Minister",
-						country: "ZA",
-						riskLevel: "MEDIUM" as const,
-					}
-				: undefined,
-			familyAssociates:
-				isPEP && seed % 2 === 0
-					? [
-							{
-								name: "Associate Name",
-								relationship: "Business Partner",
-								isPEP: true,
-							},
-						]
-					: [],
-		},
-
-		adverseMedia: {
-			checked: true,
-			alertsFound: hasAdverseMedia ? 1 : 0,
-			alerts: hasAdverseMedia
-				? [
-						{
-							source: "Financial Times",
-							headline: `${input.entityName} mentioned in regulatory investigation`,
-							date: new Date(now.getTime() - (seed % 365) * 24 * 60 * 60 * 1000)
-								.toISOString()
-								.split("T")[0],
-							severity: "LOW" as const,
-							category: "REGULATORY_VIOLATION" as const,
-							url: "https://example.com/news/article",
-						},
-					]
-				: [],
-		},
-
-		watchLists: {
-			checked: true,
-			listsChecked: [
-				"OFAC SDN List",
-				"EU Consolidated List",
-				"UK Sanctions List",
-				"SARB Watchlist",
-				"FIC Targeted Financial Sanctions",
-			],
-			matchesFound: hasWatchListMatch ? 1 : 0,
-			matches: hasWatchListMatch
-				? [
-						{
-							listName: "SARB Watchlist",
-							matchedEntity: `${input.entityName.split(" ")[0]} Corp`,
-							matchConfidence: 35,
-							reason: "Partial name match - likely false positive",
-						},
-					]
-				: [],
-		},
-
-		overall: {
-			riskLevel,
-			passed,
-			requiresEDD,
-			recommendation,
-			reasoning: generateSanctionsReasoning(
-				riskLevel,
-				unSanctionsMatch,
-				isPEP,
-				hasAdverseMedia,
-				hasWatchListMatch,
-				isHighRiskCountry
-			),
-			reviewRequired: !isClear,
-		},
-
-		metadata: {
-			checkId,
-			checkedAt: now.toISOString(),
-			expiresAt: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
-			dataSource: "Mock Sanctions Database v1.0",
-		},
-	};
-}
-
-/**
  * Generate reasoning text for sanctions check
  */
 function generateSanctionsReasoning(
@@ -726,19 +568,6 @@ function generateSanctionsReasoning(
 	}
 
 	return parts.join(" ");
-}
-
-/**
- * Simple hash function for deterministic mock results
- */
-function simpleHash(str: string): number {
-	let hash = 0;
-	for (let i = 0; i < str.length; i++) {
-		const char = str.charCodeAt(i);
-		hash = (hash << 5) - hash + char;
-		hash &= hash;
-	}
-	return Math.abs(hash);
 }
 
 // ============================================
