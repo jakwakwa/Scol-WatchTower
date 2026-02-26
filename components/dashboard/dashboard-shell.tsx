@@ -49,18 +49,35 @@ export function DashboardShell({ children, notifications = [] }: DashboardShellP
 		setIsMounted(true);
 	}, []);
 
-	// Auto-refresh notifications every 30 seconds
+	// Auto-refresh notifications every 30 seconds (paused when tab is hidden)
 	const refreshIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
 	useEffect(() => {
-		refreshIntervalRef.current = setInterval(() => {
-			router.refresh();
-		}, 30_000);
+		const startPolling = () => {
+			if (refreshIntervalRef.current) clearInterval(refreshIntervalRef.current);
+			refreshIntervalRef.current = setInterval(() => {
+				if (!document.hidden) {
+					router.refresh();
+				}
+			}, 30_000);
+		};
+
+		startPolling();
+
+		const handleVisibility = () => {
+			if (!document.hidden) {
+				router.refresh();
+				startPolling();
+			}
+		};
+
+		document.addEventListener("visibilitychange", handleVisibility);
 
 		return () => {
 			if (refreshIntervalRef.current) {
 				clearInterval(refreshIntervalRef.current);
 			}
+			document.removeEventListener("visibilitychange", handleVisibility);
 		};
 	}, [router]);
 
