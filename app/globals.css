@@ -164,7 +164,7 @@
   --charcoal-900: #0e0e10;
  --background: #191e25; /* charcoal-900 — deepest surface  */
   --foreground: #ddad82; /* warm white — primary text       */
-  --card: #090b0f47; /* charcoal-700 — card surfaces    */
+  --card: #45270f27; /* charcoal-700 — card surfaces    */
   --card-foreground: #ddad82;
   --popover: #05283c99;
   --popover-foreground: #fce0c3;
@@ -300,14 +300,13 @@
 
 
 .card-form {
- 
-  content: '';
-  /* position: absolute; */
+   /* background: hsla(35, 38%, 64%, 0.02) !important; */
+  position: relative;
   inset: -1;
-  z-index: 0;
+  z-index: 2;
   overflow: hidden;
-  border-radius: 25px !important;
-  box-shadow: inset 2px 5px 30px -2px hsla(199, 20%, 16%, 0.072), inset 0.5px 3px 1px -2px rgba(241, 202, 72, 0.162), inset 0 -10px 30px 0px rgba(8, 51, 46, 0.03),  0 10px 7px 2px rgba(19, 18, 20, 0.202) , 2.5px 2px 31px 2px rgba(19, 20, 22, 0.317) !important;
+  border-radius: 15px !important;
+  box-shadow: inset 2px 2px 3px -2px hsla(30, 41%, 59%, 0.263), inset 0.5px 3px 1px -2px hsla(27, 36%, 39%, 0.965), inset 0 -1px 30px 0px rgba(42, 43, 44, 0.109), 0.5px 11px 21px 1px rgba(10, 10, 12, 0.731) !important;
 }
 
 .dotted-grid-container {
@@ -315,20 +314,20 @@
   width: 100%;
    height: 100% !important;
   padding: 15px;
-  position: relative;
-  z-index: 0;
+  position: absolute;
+  z-index: -1;
   background: var(--background) !important;
 }
 
 
 .card-form::before {
   content: '';
-  position: absolute;
-    z-index: -1;
+  /* position: absolute; */
+    /* z-index: -12; */
     inset: 1;
     border-radius: 20px;
-    -webkit-backdrop-filter: blur(1px);
-            backdrop-filter: blur(1px);
+    -webkit-backdrop-filter: blur(4px);
+            backdrop-filter: blur(4px);
     -webkit-filter: url(#container-glass);
             filter: url(#container-glass);
        
@@ -341,27 +340,29 @@
   content: '';
   position: absolute;
     z-index: -1;
-    inset: 1;
+    inset: 0;
     border-radius: 20px;
-    -webkit-backdrop-filter: blur(2px);
-            backdrop-filter: blur(2px);
-    -webkit-filter: url(#container-glass);
-            filter: url(#container-glass);
+    -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+    /* -webkit-filter: url(#container-glass); */
+            /* filter: url(#container-glass); */
        
-    overflow: hidden;
-    isolation: isolate;
+    /* overflow: hidden; */
+    /* isolation: isolate; */
 }
 
 
 .glass-card-container-form {
- 
-  width: 100%;
-   height: 100% !important;
+ position: relative;
+  /* width: 100vw; */
+  min-width: 100%;
+  max-width: 100%;
+   height: auto !important;
   /* padding: 15px; */
   position: relative;
-  border-radius: 35px;
-  z-index: 0;
-  background: var(--background) !important;
+  border-radius: 5px;
+  /* z-index: -1; */
+  /* background: var(--background) !important; */
 }
 
 /*  */
@@ -371,13 +372,13 @@
   height: var(--dotted-grid-dynamic-height, 100vh) !important;
   width: 100%;
   padding: 20px;
-  position: absolute !important;
+  position: relative !important;
   top: 0;
   left: 0;
   right: 0;
-  z-index: 0;
-  background-color: #242a32;
-  background-image: radial-gradient(circle, rgba(189, 147, 20, 0.2) 1px, transparent 1px);
+  z-index: 2;
+  /* background-color: #56381c; */
+  /* background-image: radial-gradient(circle, rgba(37, 152, 152, 0.974) 1px, transparent 1px) !important; */
   background-size: 20px 20px;
   background-repeat: repeat;
   background-position: 0 0; 
@@ -392,7 +393,7 @@
   padding: 15px;
   position: relative;
   z-index: 0;
-  background: #1b1e21 !important;
+  background: #151617 !important;
 }
 label { 
   color: var(--color-stone-400) !important;
@@ -406,10 +407,10 @@ label {
       padding: 0 !important;
       min-height: 100vh;
       background-image: 
-        linear-gradient(to right, rgba(42, 25, 1, 0.331) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(69, 54, 18, 0.107) 1px, transparent 1px),
-        radial-gradient(circle, rgba(177, 146, 53, 0.171) 1px, transparent 1px)  !important;
-      background-size: 30px 30px, 30px 30px, 30px 30px;
+        linear-gradient(to right, rgba(117, 91, 12, 0.086) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(168, 155, 19, 0.099) 1px, transparent 1px),
+        radial-gradient(circle, rgba(184, 142, 17, 0.323) 1px, transparent 1px)  !important;
+      background-size: 34px 34px, 34px 34px, 34px 34px;
       background-position: 0 0, 0 0, 0 0;
     } 
    
@@ -417,12 +418,12 @@ label {
       position: absolute;
       mix-blend-mode: multiply !important;
       inset: 1;
-      z-index: 1;
-      background-color: #242a32 !important;
-      background:  repeating-linear-gradient(45deg, rgba(0, 5, 6, 0.932), rgb(4, 5, 8) 1px, transparent 1px, transparent 5px),
-      repeating-linear-gradient(-45deg, rgba(172, 124, 19, 0.526), rgb(0, 0, 0) 1px, transparent 1px, transparent 12px),
-      repeating-linear-gradient(90deg, rgba(3, 8, 7, 0.921) 0, rgba(5, 4, 6, 0.998) 1px, transparent 1px, transparent 4px);
-     box-shadow: inset 12.5px 32px 21px -2px rgba(15, 12, 3, 0.234),inset 0.5px 2px 10px -2px rgba(2, 4, 5, 0.746), inset 0 -2px 5px 0px hwb(0 0% 100%) !important;
+      z-index: -10;
+      background-color: #151617 !important;
+      background:  repeating-linear-gradient(45deg, rgba(1, 28, 31, 0.05), rgba(0, 0, 0, 0.99) 1px, transparent 1px, transparent 5px),
+      repeating-linear-gradient(-45deg, rgba(8, 84, 111, 0.116), rgb(80, 51, 11) 1px, transparent 1px, transparent 12px),
+      repeating-linear-gradient(90deg, rgba(33, 24, 14, 0.856) 0, rgba(2, 74, 85, 0.31) 1px, transparent 1px, transparent 4px);
+   
     }
 
 
