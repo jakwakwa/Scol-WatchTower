@@ -17,7 +17,7 @@ import {
 	type FacilityApplicationForm,
 	facilityApplicationSchema,
 	signedQuotationSchema,
-	stratcolContractSchema,
+	stratcolAgreementSchema,
 } from "@/lib/validations/forms";
 
 const formSubmissionSchema = z.object({
@@ -35,7 +35,7 @@ const formSubmissionSchema = z.object({
 const formSchemaMap: Record<FormType, z.ZodSchema> = {
 	FACILITY_APPLICATION: facilityApplicationSchema,
 	SIGNED_QUOTATION: signedQuotationSchema,
-	STRATCOL_CONTRACT: stratcolContractSchema,
+	STRATCOL_CONTRACT: stratcolAgreementSchema,
 	ABSA_6995: absa6995Schema,
 	CALL_CENTRE_APPLICATION: callCentreApplicationSchema,
 	DOCUMENT_UPLOADS: z.any(),

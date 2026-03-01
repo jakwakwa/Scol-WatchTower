@@ -17,11 +17,11 @@ import {
 	getFormInstanceByToken,
 	recordFormSubmission,
 } from "@/lib/services/form.service";
-import { stratcolContractSchema } from "@/lib/validations/forms";
+import { stratcolAgreementSchema } from "@/lib/validations/forms";
 
 const SubmissionSchema = z.object({
 	token: z.string().min(1, "Token is required"),
-	data: stratcolContractSchema,
+	data: stratcolAgreementSchema,
 });
 
 export async function POST(request: NextRequest) {

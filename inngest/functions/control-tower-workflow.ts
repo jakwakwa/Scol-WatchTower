@@ -34,7 +34,6 @@ import {
 	type SanctionsCheckResult,
 } from "@/lib/services/agents";
 import {
-	type BusinessType,
 	determineBusinessType,
 	getDocumentRequirements,
 	resolveBusinessType,
@@ -415,8 +414,49 @@ export const controlTowerWorkflow = inngest.createFunction(
 		});
 
 		if (!facilitySubmission) {
+			await step.run("notify-am-facility-timeout", async () => {
+				await guardKillSwitch(workflowId, "notify-am-facility-timeout");
+				await createWorkflowNotification({
+					workflowId,
+					applicantId,
+					type: "warning",
+					title: "Delay: Facility Application",
+					message:
+						"Applicant failed to submit the facility application within the expected timeframe.",
+					actionable: true,
+				});
+				await sendInternalAlertEmail({
+					title: "Delay: Facility Application",
+					message: `Applicant has not submitted the facility application within the ${STAGE_TIMEOUT} timeout window. Please follow up.`,
+					workflowId,
+					applicantId,
+					type: "warning",
+					actionUrl: `${getBaseUrl()}/dashboard/applicants/${applicantId}`,
+				});
+			});
 			return { status: "timeout", stage: 2, reason: "Facility application timeout" };
 		}
+
+		await step.run("notify-am-facility-submitted", async () => {
+			await guardKillSwitch(workflowId, "notify-am-facility-submitted");
+			await createWorkflowNotification({
+				workflowId,
+				applicantId,
+				type: "success",
+				title: "Facility Application Submitted",
+				message: "Applicant has successfully submitted the facility application.",
+				actionable: false,
+			});
+			await sendInternalAlertEmail({
+				title: "Facility Application Submitted",
+				message:
+					"The facility application has been submitted by the applicant and is proceeding to sales evaluation.",
+				workflowId,
+				applicantId,
+				type: "info",
+				actionUrl: `${getBaseUrl()}/dashboard/applicants/${applicantId}`,
+			});
+		});
 
 		// Step 2.2: Sales evaluation + issues/pre-risk path
 		const salesEvaluation = await step.run("sales-evaluation", async () => {
@@ -524,6 +564,25 @@ export const controlTowerWorkflow = inngest.createFunction(
 			});
 
 			if (!preRiskApproval) {
+				await step.run("notify-am-pre-risk-approval-timeout", async () => {
+					await guardKillSwitch(workflowId, "notify-am-pre-risk-approval-timeout");
+					await createWorkflowNotification({
+						workflowId,
+						applicantId,
+						type: "warning",
+						title: "Delay: Pre-risk Approval",
+						message: "Pre-risk approval timed out.",
+						actionable: true,
+					});
+					await sendInternalAlertEmail({
+						title: "Delay: Pre-risk Approval",
+						message: `The pre-risk approval has not been completed within the ${REVIEW_TIMEOUT} timeout window.`,
+						workflowId,
+						applicantId,
+						type: "warning",
+						actionUrl: `${getBaseUrl()}/dashboard/applicants/${applicantId}`,
+					});
+				});
 				return { status: "timeout", stage: 2, reason: "Pre-risk approval timeout" };
 			}
 
@@ -567,6 +626,25 @@ export const controlTowerWorkflow = inngest.createFunction(
 				});
 
 				if (!preRiskEvaluation) {
+					await step.run("notify-am-pre-risk-eval-timeout", async () => {
+						await guardKillSwitch(workflowId, "notify-am-pre-risk-eval-timeout");
+						await createWorkflowNotification({
+							workflowId,
+							applicantId,
+							type: "warning",
+							title: "Delay: Pre-risk Evaluation",
+							message: "Pre-risk evaluation timed out.",
+							actionable: true,
+						});
+						await sendInternalAlertEmail({
+							title: "Delay: Pre-risk Evaluation",
+							message: `The pre-risk evaluation has not been completed within the ${REVIEW_TIMEOUT} timeout window.`,
+							workflowId,
+							applicantId,
+							type: "warning",
+							actionUrl: `${getBaseUrl()}/dashboard/applicants/${applicantId}`,
+						});
+					});
 					return { status: "timeout", stage: 2, reason: "Pre-risk evaluation timeout" };
 				}
 
@@ -791,6 +869,25 @@ export const controlTowerWorkflow = inngest.createFunction(
 		});
 
 		if (!quoteApproval) {
+			await step.run("notify-am-quote-timeout", async () => {
+				await guardKillSwitch(workflowId, "notify-am-quote-timeout");
+				await createWorkflowNotification({
+					workflowId,
+					applicantId,
+					type: "warning",
+					title: "Delay: Quote Approval",
+					message: "The quote is stalled awaiting manager approval.",
+					actionable: true,
+				});
+				await sendInternalAlertEmail({
+					title: "Delay: Quote Approval Stalled",
+					message: `The generated quote has not been approved within the ${WORKFLOW_TIMEOUT} timeout window.`,
+					workflowId,
+					applicantId,
+					type: "warning",
+					actionUrl: `${getBaseUrl()}/dashboard/applicants/${applicantId}?tab=reviews`,
+				});
+			});
 			await step.run("quote-timeout", () =>
 				updateWorkflowStatus(workflowId, "timeout", 2)
 			);
@@ -836,6 +933,25 @@ export const controlTowerWorkflow = inngest.createFunction(
 		});
 
 		if (!quoteResponse) {
+			await step.run("notify-am-quote-response-timeout", async () => {
+				await guardKillSwitch(workflowId, "notify-am-quote-response-timeout");
+				await createWorkflowNotification({
+					workflowId,
+					applicantId,
+					type: "warning",
+					title: "Delay: Quote Signature",
+					message: "Applicant failed to sign the quote within the expected timeframe.",
+					actionable: true,
+				});
+				await sendInternalAlertEmail({
+					title: "Delay: Quote Signature",
+					message: `Applicant has not signed the quote within the ${WORKFLOW_TIMEOUT} timeout window. Please follow up.`,
+					workflowId,
+					applicantId,
+					type: "warning",
+					actionUrl: `${getBaseUrl()}/dashboard/applicants/${applicantId}`,
+				});
+			});
 			return { status: "timeout", stage: 2, reason: "Quote response timeout" };
 		}
 
@@ -1146,6 +1262,26 @@ export const controlTowerWorkflow = inngest.createFunction(
 			return { documentsComplete: true };
 		});
 
+		await step.run("notify-am-mandate-docs-uploaded", async () => {
+			await guardKillSwitch(workflowId, "notify-am-mandate-docs-uploaded");
+			await createWorkflowNotification({
+				workflowId,
+				applicantId,
+				type: "success",
+				title: "Mandate Documents Uploaded",
+				message: "All required mandate documents have been uploaded successfully.",
+				actionable: false,
+			});
+			await sendInternalAlertEmail({
+				title: "Mandate Documents Uploaded",
+				message: "The applicant has completed uploading all required mandate documents.",
+				workflowId,
+				applicantId,
+				type: "info",
+				actionUrl: `${getBaseUrl()}/dashboard/applicants/${applicantId}`,
+			});
+		});
+
 		// ================================================================
 		// STAGE 3: Procurement & AI (Parallel)
 		// Stream A: Procurement Risk Assessment (can trigger kill switch)
@@ -1388,6 +1524,25 @@ export const controlTowerWorkflow = inngest.createFunction(
 		// Handle Procurement Decision
 		if (procurementStreamResult.requiresReview) {
 			if (!procurementDecision) {
+				await step.run("notify-am-procurement-timeout", async () => {
+					await guardKillSwitch(workflowId, "notify-am-procurement-timeout");
+					await createWorkflowNotification({
+						workflowId,
+						applicantId,
+						type: "error",
+						title: "Delay: Procurement Review",
+						message: "Procurement review timed out. Workflow will be terminated.",
+						actionable: false,
+					});
+					await sendInternalAlertEmail({
+						title: "Workflow Terminated: Procurement Timeout",
+						message: `The procurement review timed out after the ${REVIEW_TIMEOUT} period. The workflow has been automatically terminated via kill switch.`,
+						workflowId,
+						applicantId,
+						type: "error",
+						actionUrl: `${getBaseUrl()}/dashboard/applicants/${applicantId}`,
+					});
+				});
 				await executeKillSwitch({
 					workflowId,
 					applicantId,
@@ -1410,7 +1565,49 @@ export const controlTowerWorkflow = inngest.createFunction(
 
 		// Handle FICA Docs
 		if (!ficaDocsReceived) {
+			await step.run("notify-am-fica-timeout", async () => {
+				await guardKillSwitch(workflowId, "notify-am-fica-timeout");
+				await createWorkflowNotification({
+					workflowId,
+					applicantId,
+					type: "warning",
+					title: "Delay: FICA Documents",
+					message:
+						"Applicant failed to upload FICA documents within the expected timeframe.",
+					actionable: true,
+				});
+				await sendInternalAlertEmail({
+					title: "Delay: FICA Documents",
+					message: `Applicant has not uploaded FICA documents within the ${STAGE_TIMEOUT} timeout window. Please follow up.`,
+					workflowId,
+					applicantId,
+					type: "warning",
+					actionUrl: `${getBaseUrl()}/dashboard/applicants/${applicantId}`,
+				});
+			});
 			return { status: "timeout", stage: 3, reason: "FICA document upload timeout" };
+		}
+
+		if (ficaDocsReceived.data.source !== "stage2_documents_already_complete") {
+			await step.run("notify-am-fica-docs-uploaded", async () => {
+				await guardKillSwitch(workflowId, "notify-am-fica-docs-uploaded");
+				await createWorkflowNotification({
+					workflowId,
+					applicantId,
+					type: "success",
+					title: "FICA Documents Uploaded",
+					message: "Applicant has successfully uploaded FICA documents.",
+					actionable: false,
+				});
+				await sendInternalAlertEmail({
+					title: "FICA Documents Uploaded",
+					message: "The applicant has uploaded FICA documents and processing continues.",
+					workflowId,
+					applicantId,
+					type: "info",
+					actionUrl: `${getBaseUrl()}/dashboard/applicants/${applicantId}`,
+				});
+			});
 		}
 
 		// Update status to processing once the required human intervention is resolved
@@ -1749,6 +1946,32 @@ export const controlTowerWorkflow = inngest.createFunction(
 		});
 
 		if (!riskDecision) {
+			await step.run("notify-am-risk-review-timeout", async () => {
+				await guardKillSwitch(workflowId, "notify-am-risk-review-timeout");
+				await createWorkflowNotification({
+					workflowId,
+					applicantId,
+					type: "error",
+					title: "Delay: Risk Review",
+					message: "Risk management review timed out. Workflow will be terminated.",
+					actionable: false,
+				});
+				await sendInternalAlertEmail({
+					title: "Workflow Terminated: Risk Review Timeout",
+					message: `The risk management review timed out after the ${REVIEW_TIMEOUT} period. The workflow has been automatically terminated via kill switch.`,
+					workflowId,
+					applicantId,
+					type: "error",
+					actionUrl: `${getBaseUrl()}/dashboard/applicants/${applicantId}`,
+				});
+			});
+			await executeKillSwitch({
+				workflowId,
+				applicantId,
+				reason: "TIMEOUT_TERMINATION",
+				decidedBy: "system_timeout",
+				notes: "Risk review timed out",
+			});
 			return { status: "timeout", stage: 4, reason: "Risk review timeout" };
 		}
 
@@ -1825,6 +2048,26 @@ export const controlTowerWorkflow = inngest.createFunction(
 			);
 
 			if (!financialStatementsConfirmed) {
+				await step.run("notify-am-financial-statements-timeout", async () => {
+					await guardKillSwitch(workflowId, "notify-am-financial-statements-timeout");
+					await createWorkflowNotification({
+						workflowId,
+						applicantId,
+						type: "warning",
+						title: "Delay: Financial Statements Required",
+						message:
+							"High-risk applicant failed to provide financial statements within the timeframe.",
+						actionable: true,
+					});
+					await sendInternalAlertEmail({
+						title: "Delay: Financial Statements Required",
+						message: `The high-risk applicant has not provided financial statements within the ${STAGE_TIMEOUT} timeout window.`,
+						workflowId,
+						applicantId,
+						type: "warning",
+						actionUrl: `${getBaseUrl()}/dashboard/applicants/${applicantId}?tab=risk`,
+					});
+				});
 				return {
 					status: "timeout",
 					stage: 4,
@@ -1889,6 +2132,26 @@ export const controlTowerWorkflow = inngest.createFunction(
 		});
 
 		if (!contractReviewed) {
+			await step.run("notify-am-contract-review-timeout", async () => {
+				await guardKillSwitch(workflowId, "notify-am-contract-review-timeout");
+				await createWorkflowNotification({
+					workflowId,
+					applicantId,
+					type: "warning",
+					title: "Delay: Contract Review",
+					message:
+						"The AI-generated contract is stalled awaiting Account Manager review.",
+					actionable: true,
+				});
+				await sendInternalAlertEmail({
+					title: "Delay: Contract Review Stalled",
+					message: `The contract draft has not been reviewed within the ${REVIEW_TIMEOUT} timeout window. Please review.`,
+					workflowId,
+					applicantId,
+					type: "warning",
+					actionUrl: `${getBaseUrl()}/dashboard/applicants/${applicantId}?tab=overview`,
+				});
+			});
 			return { status: "timeout", stage: 5, reason: "Contract review timeout" };
 		}
 
@@ -1952,6 +2215,25 @@ export const controlTowerWorkflow = inngest.createFunction(
 		});
 
 		if (!contractDecision) {
+			await step.run("notify-am-contract-decision-timeout", async () => {
+				await guardKillSwitch(workflowId, "notify-am-contract-decision-timeout");
+				await createWorkflowNotification({
+					workflowId,
+					applicantId,
+					type: "warning",
+					title: "Delay: Contract Signature",
+					message: "Applicant failed to sign the contract within the expected timeframe.",
+					actionable: true,
+				});
+				await sendInternalAlertEmail({
+					title: "Delay: Contract Signature",
+					message: `Applicant has not signed the final contract within the ${REVIEW_TIMEOUT} timeout window. Please follow up.`,
+					workflowId,
+					applicantId,
+					type: "warning",
+					actionUrl: `${getBaseUrl()}/dashboard/applicants/${applicantId}`,
+				});
+			});
 			return { status: "timeout", stage: 5, reason: "Contract decision timeout" };
 		}
 
@@ -1996,6 +2278,26 @@ export const controlTowerWorkflow = inngest.createFunction(
 		});
 
 		if (!absaCompleted) {
+			await step.run("notify-am-absa-timeout", async () => {
+				await guardKillSwitch(workflowId, "notify-am-absa-timeout");
+				await createWorkflowNotification({
+					workflowId,
+					applicantId,
+					type: "warning",
+					title: "Delay: ABSA 6995 Form",
+					message:
+						"Applicant failed to complete the ABSA form within the expected timeframe.",
+					actionable: true,
+				});
+				await sendInternalAlertEmail({
+					title: "Delay: ABSA 6995 Form",
+					message: `Applicant has not completed the ABSA 6995 form within the ${REVIEW_TIMEOUT} timeout window. Please follow up.`,
+					workflowId,
+					applicantId,
+					type: "warning",
+					actionUrl: `${getBaseUrl()}/dashboard/applicants/${applicantId}`,
+				});
+			});
 			return { status: "timeout", stage: 5, reason: "ABSA 6995 form timeout" };
 		}
 
@@ -2050,9 +2352,47 @@ export const controlTowerWorkflow = inngest.createFunction(
 		]);
 
 		if (!riskManagerApproval) {
+			await step.run("notify-am-final-risk-timeout", async () => {
+				await guardKillSwitch(workflowId, "notify-am-final-risk-timeout");
+				await createWorkflowNotification({
+					workflowId,
+					applicantId,
+					type: "warning",
+					title: "Delay: Final Risk Approval",
+					message: "Final risk manager approval timed out.",
+					actionable: true,
+				});
+				await sendInternalAlertEmail({
+					title: "Delay: Final Risk Approval",
+					message: `The final risk manager approval has not been completed within the ${REVIEW_TIMEOUT} timeout window.`,
+					workflowId,
+					applicantId,
+					type: "warning",
+					actionUrl: `${getBaseUrl()}/dashboard/applicants/${applicantId}`,
+				});
+			});
 			return { status: "timeout", stage: 6, reason: "Risk Manager approval timeout" };
 		}
 		if (!accountManagerApproval) {
+			await step.run("notify-am-final-account-timeout", async () => {
+				await guardKillSwitch(workflowId, "notify-am-final-account-timeout");
+				await createWorkflowNotification({
+					workflowId,
+					applicantId,
+					type: "warning",
+					title: "Delay: Final Account Manager Approval",
+					message: "Final account manager approval timed out.",
+					actionable: true,
+				});
+				await sendInternalAlertEmail({
+					title: "Delay: Final Account Manager Approval",
+					message: `The final account manager approval has not been completed within the ${REVIEW_TIMEOUT} timeout window.`,
+					workflowId,
+					applicantId,
+					type: "warning",
+					actionUrl: `${getBaseUrl()}/dashboard/applicants/${applicantId}`,
+				});
+			});
 			return { status: "timeout", stage: 6, reason: "Account Manager approval timeout" };
 		}
 

@@ -32,7 +32,7 @@ export const facilityApplicationSchema = z.object({
 
 export type FacilityApplicationForm = z.infer<typeof facilityApplicationSchema>;
 
-export const stratcolContractSchema = z.object({
+export const stratcolAgreementSchema = z.object({
 	registeredName: z.string().min(2),
 	proprietorName: z.string().optional(),
 	tradingName: z.string().min(2),
@@ -100,7 +100,7 @@ export const stratcolContractSchema = z.object({
 	signatureDate: z.string().min(2),
 });
 
-export type StratcolContractForm = z.infer<typeof stratcolContractSchema>;
+export type StratcolAgreementForm = z.infer<typeof stratcolAgreementSchema>;
 
 export const signedQuotationSchema = z.object({
 	quoteReference: z.string().optional(),

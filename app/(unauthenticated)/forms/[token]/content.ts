@@ -6,7 +6,7 @@ import {
 	callCentreApplicationSchema,
 	facilityApplicationSchema,
 	signedQuotationSchema,
-	stratcolContractSchema,
+	stratcolAgreementSchema,
 } from "@/lib/validations/forms";
 
 export const formContent: Record<
@@ -239,7 +239,7 @@ export const formContent: Record<
 	STRATCOL_CONTRACT: {
 		title: "StratCol Contract",
 		description: "Provide entity details and confirm the StratCol agreement.",
-		schema: stratcolContractSchema,
+		schema: stratcolAgreementSchema,
 		submitLabel: "Submit contract details",
 		decision: {
 			enabled: true,

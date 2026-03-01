@@ -7,12 +7,12 @@ import { useFieldArray, useForm } from "react-hook-form";
 import type { z } from "zod";
 import sharedStyles from "@/components/forms/external/external-form-theme.module.css";
 import ExternalStatusCard from "@/components/forms/external/external-status-card";
-import { stratcolContractSchema } from "@/lib/validations/forms";
+import { stratcolAgreementSchema } from "@/lib/validations/forms";
 import "./contract-form.css";
 
-type ContractFormValues = z.infer<typeof stratcolContractSchema>;
+type AgreementFormValues = z.infer<typeof stratcolAgreementSchema>;
 
-interface ContractFormProps {
+interface AgreementFormProps {
 	token: string;
 	applicantId: number;
 	workflowId: number | null;
@@ -26,7 +26,7 @@ const ENTITY_TYPES = [
 	"Other",
 ] as const;
 
-const TEST_DATA: ContractFormValues = {
+const TEST_DATA: AgreementFormValues = {
 	registeredName: "Test Company (Pty) Ltd",
 	proprietorName: "",
 	tradingName: "Test Trading Co",
@@ -82,16 +82,12 @@ const TEST_DATA: ContractFormValues = {
 	signatureDate: new Date().toISOString().split("T")[0],
 };
 
-export default function ContractForm({
-	token,
-	applicantId,
-	workflowId,
-}: ContractFormProps) {
+export default function AgreementForm({ token, applicantId }: AgreementFormProps) {
 	const [submitted, setSubmitted] = useState(false);
 	const [submitError, setSubmitError] = useState<string | null>(null);
 
 	const form = useForm<FieldValues>({
-		resolver: zodResolver(stratcolContractSchema) as unknown as Resolver<FieldValues>,
+		resolver: zodResolver(stratcolAgreementSchema) as unknown as Resolver<FieldValues>,
 		defaultValues: {
 			beneficialOwners: [{}],
 			consentAccepted: false,
@@ -168,18 +164,19 @@ export default function ContractForm({
 		placeholder?: string;
 		className?: string;
 	}) => {
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		// biome-ignore lint/suspicious/noExplicitAny: <"explanation">
 		const fieldError = name.split(".").reduce((err: any, key) => err?.[key], errors);
 		return (
 			<div className={`contract-field ${className || ""}`}>
 				<label>
 					{label}
 					{required && <span className="required-star">*</span>}
+
+					<input type={type} placeholder={placeholder} {...form.register(name)} />
+					{fieldError?.message && (
+						<span className="contract-field-error">{fieldError.message as string}</span>
+					)}
 				</label>
-				<input type={type} placeholder={placeholder} {...form.register(name)} />
-				{fieldError?.message && (
-					<span className="contract-field-error">{fieldError.message as string}</span>
-				)}
 			</div>
 		);
 	};
@@ -208,6 +205,7 @@ export default function ContractForm({
 
 			{/* ── Master ID ── */}
 			<div className="contract-master-id">
+				{/** biome-ignore lint/a11y/noLabelWithoutControl: <"explanation"> */}
 				<label>Master ID:</label>
 				<span>{applicantId}</span>
 			</div>
@@ -258,6 +256,7 @@ export default function ContractForm({
 
 							{/* Entity type radio group */}
 							<div className="contract-field contract-field-full">
+								{/** biome-ignore lint/a11y/noLabelWithoutControl: <"explanation"> */}
 								<label>
 									Indicate type of entity
 									<span className="required-star">*</span>
@@ -325,21 +324,14 @@ export default function ContractForm({
 
 				{/* ══════════════════════════════════════════
 				    Section 3: Company Resolutions
+					To be completed if the USER is a company or other legal entity (not
+									individuals or partnerships).
 				    ══════════════════════════════════════════ */}
 				{isCompanyEntity && (
 					<div className="contract-card">
 						<div className="contract-section-header">3. Company Resolutions</div>
 						<div className="contract-section-body">
 							<div className="contract-resolution-box">
-								<p className="contract-section-note">
-									To be completed if the USER is a company or other legal entity (not
-									individuals or partnerships).
-									<br />
-									<strong>
-										EXTRACT from the MINUTES of a MEETING of Directors / Members /
-										Officials / Owners / Partners held at:
-									</strong>
-								</p>
 								<div className="contract-grid">
 									<Field name="companyResolution.cityTown" label="City/Town" required />
 									<Field
@@ -361,7 +353,7 @@ export default function ContractForm({
 									/>
 								</div>
 								<p className="contract-section-note mt-3 mb-0">
-									be authorised to represent and to sign this agreement with StratCol
+									authorised to represent and to sign this agreement with StratCol
 									Limited.
 								</p>
 							</div>
@@ -371,66 +363,69 @@ export default function ContractForm({
 
 				{/* ══════════════════════════════════════════
 				    Beneficial Owners
+					To be completed if the USER is a company or other legal entity (not individuals or partnerships).
 				    ══════════════════════════════════════════ */}
-				<div className="contract-card">
-					<div className="contract-section-header">Beneficial Owners</div>
-					<div className="contract-section-body">
-						<p className="contract-section-note">
-							List all beneficial owners with 5% or more shareholding.
-						</p>
-						<div className="flex flex-col gap-4">
-							{ownerFields.map((field, index) => (
-								<div key={field.id} className="contract-owner-card">
-									{ownerFields.length > 1 && (
-										<button
-											type="button"
-											className="contract-owner-remove"
-											onClick={() => removeOwner(index)}
-											title="Remove owner">
-											✕
-										</button>
-									)}
-									<div className="contract-grid">
-										<Field
-											name={`beneficialOwners.${index}.name`}
-											label="Full Name"
-											required
-										/>
-										<Field
-											name={`beneficialOwners.${index}.idNumber`}
-											label="ID Number"
-											required
-										/>
-										<Field
-											name={`beneficialOwners.${index}.address`}
-											label="Address"
-											required
-											className="contract-field-full"
-										/>
-										<Field
-											name={`beneficialOwners.${index}.position`}
-											label="Position"
-											required
-										/>
-										<Field
-											name={`beneficialOwners.${index}.shareholdingPercent`}
-											label="Shareholding %"
-											type="number"
-										/>
+				{isCompanyEntity && (
+					<div className="contract-card">
+						<div className="contract-section-header">Beneficial Owners</div>
+						<div className="contract-section-body">
+							<p className="contract-section-note">
+								List all beneficial owners with 5% or more shareholding.
+							</p>
+							<div className="flex flex-col gap-4">
+								{ownerFields.map((field, index) => (
+									<div key={field.id} className="contract-owner-card">
+										{ownerFields.length > 1 && (
+											<button
+												type="button"
+												className="contract-owner-remove"
+												onClick={() => removeOwner(index)}
+												title="Remove owner">
+												✕
+											</button>
+										)}
+										<div className="contract-grid">
+											<Field
+												name={`beneficialOwners.${index}.name`}
+												label="Full Name"
+												required
+											/>
+											<Field
+												name={`beneficialOwners.${index}.idNumber`}
+												label="ID Number"
+												required
+											/>
+											<Field
+												name={`beneficialOwners.${index}.address`}
+												label="Address"
+												required
+												className="contract-field-full"
+											/>
+											<Field
+												name={`beneficialOwners.${index}.position`}
+												label="Position"
+												required
+											/>
+											<Field
+												name={`beneficialOwners.${index}.shareholdingPercent`}
+												label="Shareholding %"
+												type="number"
+											/>
+										</div>
 									</div>
-								</div>
-							))}
+								))}
+							</div>
+							<button
+								type="button"
+								className={`contract-add-btn mt-3`}
+								onClick={() =>
+									appendOwner({ name: "", idNumber: "", address: "", position: "" })
+								}>
+								+ Add beneficial owner
+							</button>
 						</div>
-						<button
-							type="button"
-							className={`contract-add-btn mt-3`}
-							onClick={() =>
-								appendOwner({ name: "", idNumber: "", address: "", position: "" })
-							}>
-							+ Add beneficial owner
-						</button>
 					</div>
-				</div>
+				)}
 
 				{/* ══════════════════════════════════════════
 				    Banking & Mandates

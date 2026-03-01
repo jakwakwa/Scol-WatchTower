@@ -3,7 +3,7 @@ import {
 	getFormInstanceByToken,
 	markFormInstanceStatus,
 } from "@/lib/services/form.service";
-import ContractForm from "./contract-form";
+import AgreementForm from "./agreement-form";
 
 interface ContractPageProps {
 	params: Promise<{ token: string }>;
@@ -54,7 +54,7 @@ export default async function ContractPage({ params }: ContractPageProps) {
 	}
 
 	return (
-		<ContractForm
+		<AgreementForm
 			token={token}
 			applicantId={formInstance.applicantId}
 			workflowId={formInstance.workflowId}
