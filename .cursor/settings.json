@@ -17,6 +17,9 @@
     },
     "compound-engineering": {
       "enabled": true
+    },
+    "linear": {
+      "enabled": true
     }
   }
 }
