@@ -1816,6 +1816,10 @@ export const controlTowerWorkflow = inngest.createFunction(
 				}
 			}
 
+			const bankStatementDoc = aiDocuments.find(doc =>
+				/bank[_\s-]?statement/i.test(doc.type)
+			);
+
 			const result = await performAggregatedAnalysis({
 				workflowId,
 				applicantId,
@@ -1827,6 +1831,7 @@ export const controlTowerWorkflow = inngest.createFunction(
 					countryCode: "ZA",
 				},
 				documents: aiDocuments.length > 0 ? aiDocuments : undefined,
+				bankStatementBase64: bankStatementDoc?.content,
 				requestedAmount: mandateInfo.mandateVolume,
 			});
 

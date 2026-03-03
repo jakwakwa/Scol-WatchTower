@@ -44,6 +44,7 @@ export interface AggregatedAnalysisInput {
 		contentType: "text" | "base64";
 	}>;
 	bankStatementText?: string;
+	bankStatementBase64?: string;
 	directors?: Array<{
 		name: string;
 		idNumber?: string;
@@ -158,6 +159,7 @@ export async function performAggregatedAnalysis(
 			applicantId: input.applicantId,
 			workflowId: input.workflowId,
 			bankStatementText: input.bankStatementText,
+			bankStatementBase64: input.bankStatementBase64,
 			requestedAmount: input.requestedAmount,
 			applicantData: {
 				companyName: input.applicantData.companyName,

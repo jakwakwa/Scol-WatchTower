@@ -12,7 +12,11 @@
  */
 
 import { z } from "zod";
-import { getHighStakesModel, runStructuredInteraction } from "@/lib/ai/models";
+import {
+	getGenAIClient,
+	getHighStakesModel,
+	runStructuredInteraction,
+} from "@/lib/ai/models";
 
 // ============================================
 // Types & Schemas
@@ -94,6 +98,7 @@ export type RiskAnalysisResult = z.infer<typeof RiskAnalysisResultSchema>;
 
 export interface RiskAnalysisInput {
 	bankStatementText?: string;
+	bankStatementBase64?: string;
 	applicantId: number;
 	workflowId: number;
 	requestedAmount?: number; // Requested mandate volume in cents
@@ -117,12 +122,12 @@ export interface RiskAnalysisInput {
 export async function analyzeFinancialRisk(
 	input: RiskAnalysisInput
 ): Promise<RiskAnalysisResult> {
-	if (!(input.bankStatementText || input.applicantData)) {
+	if (!(input.bankStatementText || input.bankStatementBase64 || input.applicantData)) {
 		console.warn("[RiskAgent] No usable data provided for risk analysis");
 		throw new Error("No input data provided for risk analysis");
 	}
 
-	if (!input.bankStatementText?.trim()) {
+	if (!(input.bankStatementText?.trim() || input.bankStatementBase64)) {
 		return {
 			bankAnalysis: {
 				accountType: "UNKNOWN",
@@ -168,9 +173,30 @@ export async function analyzeFinancialRisk(
 			dataSource: "Manual Escalation - Insufficient Evidence",
 		};
 	}
+	const ai = getGenAIClient();
 	const prompt = buildRiskPrompt(input);
 
 	try {
+		if (input.bankStatementBase64) {
+			const response = await ai.models.generateContent({
+				model: getHighStakesModel(),
+				config: {
+					responseMimeType: "application/json",
+					responseJsonSchema: RiskAnalysisResultSchema,
+				},
+				contents: [
+					{ text: prompt },
+					{
+						inlineData: {
+							mimeType: "application/pdf",
+							data: normalizeBase64Pdf(input.bankStatementBase64),
+						},
+					},
+				],
+			});
+			return RiskAnalysisResultSchema.parse(JSON.parse(response.text));
+		}
+
 		const analysis = await runStructuredInteraction({
 			model: getHighStakesModel(),
 			input: prompt,
@@ -203,7 +229,9 @@ COMPANY DATA:
 		? `Requested Mandate Volume: R ${(input.requestedAmount / 100).toFixed(2)}`
 		: "Requested Mandate Volume: Unknown";
 
-	const statementContext = input.bankStatementText
+	const statementContext = input.bankStatementBase64
+		? "\nBANK STATEMENT DATA: [PDF provided as inline document data. Analyze the attached statement.]\n"
+		: input.bankStatementText
 		? `
 BANK STATEMENT DATA (Extracted Text):
 ${input.bankStatementText.substring(0, 15000)} // Truncate if too long
@@ -231,6 +259,10 @@ GROUNDING RULES (CRITICAL):
 - Do NOT infer or invent requested mandate values, addresses, balances, transaction details, or business facts.
 - If a value cannot be proven from the evidence, set it to 0/UNKNOWN and include a red flag explaining missing evidence.
 `;
+}
+
+function normalizeBase64Pdf(raw: string): string {
+	return raw.replace(/^data:application\/pdf;base64,/, "").trim();
 }
 
 // ============================================
