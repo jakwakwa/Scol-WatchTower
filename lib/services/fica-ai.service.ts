@@ -13,9 +13,9 @@
  */
 
 import {
+	getGenAIClient,
 	getThinkingModel,
 	isAIConfigured,
-	runStructuredInteraction,
 } from "@/lib/ai/models";
 import {
 	type AccountantLetterAnalysis,
@@ -130,11 +130,27 @@ ANALYSIS REQUIREMENTS:
 
 Be thorough but concise. Flag any concerning patterns immediately.`;
 
-	return runStructuredInteraction({
+	const ai = getGenAIClient();
+	const response = await ai.models.generateContent({
 		model: getThinkingModel(),
-		input: prompt,
-		schema: FicaDocumentAnalysisSchema,
+		config: {
+			responseMimeType: "application/json",
+			responseJsonSchema: FicaDocumentAnalysisSchema,
+		},
+		contents:
+			contentType === "base64"
+				? [
+						{ text: prompt },
+						{
+							inlineData: {
+								mimeType: "application/pdf",
+								data: normalizeBase64Pdf(content),
+							},
+						},
+					]
+				: prompt,
 	});
+	return FicaDocumentAnalysisSchema.parse(JSON.parse(response.text));
 }
 
 // ============================================
@@ -194,11 +210,31 @@ ANALYSIS REQUIREMENTS:
 8. List any concerns mentioned
 9. Determine verification confidence (0-100)`;
 
-	return runStructuredInteraction({
+	const ai = getGenAIClient();
+	const response = await ai.models.generateContent({
 		model: getThinkingModel(),
-		input: prompt,
-		schema: AccountantLetterAnalysisSchema,
+		config: {
+			responseMimeType: "application/json",
+			responseJsonSchema: AccountantLetterAnalysisSchema,
+		},
+		contents:
+			contentType === "base64"
+				? [
+						{ text: prompt },
+						{
+							inlineData: {
+								mimeType: "application/pdf",
+								data: normalizeBase64Pdf(content),
+							},
+						},
+					]
+				: prompt,
 	});
+	return AccountantLetterAnalysisSchema.parse(JSON.parse(response.text));
+}
+
+function normalizeBase64Pdf(raw: string): string {
+	return raw.replace(/^data:application\/pdf;base64,/, "").trim();
 }
 
 // ============================================

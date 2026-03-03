@@ -13,9 +13,9 @@
 
 import { z } from "zod";
 import {
+	getGenAIClient,
 	getHighStakesModel,
 	isAIConfigured,
-	runStructuredInteraction,
 } from "@/lib/ai/models";
 
 // ============================================
@@ -119,13 +119,29 @@ export async function validateDocument(
 		);
 	}
 	const prompt = buildValidationPrompt(input);
+	const ai = getGenAIClient();
 
 	try {
-		const analysis = await runStructuredInteraction({
+		const response = await ai.models.generateContent({
 			model: getHighStakesModel(),
-			input: prompt,
-			schema: ValidationResultSchema,
+			config: {
+				responseMimeType: "application/json",
+				responseJsonSchema: ValidationResultSchema,
+			},
+			contents:
+				input.contentType === "base64"
+					? [
+							{ text: prompt },
+							{
+								inlineData: {
+									mimeType: "application/pdf",
+									data: normalizeBase64Pdf(input.documentContent),
+								},
+							},
+						]
+					: prompt,
 		});
+		const analysis = ValidationResultSchema.parse(JSON.parse(response.text));
 		return { ...analysis, dataSource: "Gemini AI" };
 	} catch (error) {
 		console.error("[ValidationAgent] AI generation failed:", error);
@@ -157,6 +173,10 @@ export async function validateDocument(
  */
 function buildValidationPrompt(input: ValidationInput): string {
 	const { documentType, documentContent, applicantData } = input;
+	const documentContentForPrompt =
+		input.contentType === "base64"
+			? "[PDF provided as inline document data. Analyze the attached document.]"
+			: documentContent;
 
 	let applicantContext = "";
 	if (applicantData) {
@@ -179,7 +199,7 @@ DOCUMENT TYPE: ${documentType}
 ${applicantContext}
 
 DOCUMENT CONTENT:
-${documentContent}
+${documentContentForPrompt}
 
 VALIDATION REQUIREMENTS:
 1. AUTHENTICITY CHECK:
@@ -221,6 +241,10 @@ GROUNDING RULES (CRITICAL):
 - For unreadable, blurry, or corrupted content, set recommendation to REVIEW or REQUEST_NEW_DOCUMENT.
 
 Be thorough but fair. Not all minor formatting inconsistencies indicate fraud.`;
+}
+
+function normalizeBase64Pdf(raw: string): string {
+	return raw.replace(/^data:application\/pdf;base64,/, "").trim();
 }
 
 // ============================================
