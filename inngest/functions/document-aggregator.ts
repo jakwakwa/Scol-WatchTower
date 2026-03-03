@@ -1,10 +1,10 @@
 import { eq } from "drizzle-orm";
 import { getDatabaseClient } from "@/app/utils";
 import {
-	type BusinessType,
 	getDocumentRequirements,
 	resolveBusinessType,
 } from "@/lib/services/document-requirements.service";
+import { DocumentTypeSchema } from "@/lib/types";
 import { applicants, documents } from "@/db/schema";
 import { inngest } from "../client";
 
@@ -78,15 +78,21 @@ export const documentAggregator = inngest.createFunction(
 		}
 
 		// 3. Emit the bundle event expected by onboarding.ts
-		// Map db documents to the shape expected by onboarding.ts event
-		const payloadDocuments = applicantDocs.map(d => ({
-			type: d.type as any, // Cast to match enum
-			filename: d.fileName || "unknown",
-			url: d.storageUrl || "",
-			uploadedAt: d.uploadedAt
-				? new Date(d.uploadedAt).toISOString()
-				: new Date().toISOString(),
-		}));
+		// Map db documents to the shape expected by onboarding.ts event; validate type with Zod
+		const payloadDocuments = applicantDocs
+			.map(d => {
+				const parsed = DocumentTypeSchema.safeParse(d.type);
+				if (!parsed.success) return null;
+				return {
+					type: parsed.data,
+					filename: d.fileName || "unknown",
+					url: d.storageUrl || "",
+					uploadedAt: d.uploadedAt
+						? new Date(d.uploadedAt).toISOString()
+						: new Date().toISOString(),
+				};
+			})
+			.filter((doc): doc is NonNullable<typeof doc> => doc !== null);
 
 		await step.run("emit-fica-received", async () => {
 			await inngest.send({

@@ -1,3 +1,5 @@
+import type { DocumentType } from "@/lib/types";
+
 // ============================================
 // Form Types for Events
 // ============================================
@@ -295,7 +297,7 @@ export type Events = {
 			workflowId: number;
 			applicantId: number;
 			documents: Array<{
-				type: "BANK_STATEMENT" | "ACCOUNTANT_LETTER" | "ID_DOCUMENT" | "PROOF_OF_ADDRESS";
+				type: DocumentType;
 				filename: string;
 				url: string;
 				uploadedAt: string;
