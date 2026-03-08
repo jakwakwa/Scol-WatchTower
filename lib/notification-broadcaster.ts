@@ -1,0 +1,24 @@
+import { ReadableStreamDefaultController } from 'stream/web';
+
+const controllers = new Set<ReadableStreamDefaultController>();
+
+export function addController(controller: ReadableStreamDefaultController) {
+  controllers.add(controller);
+}
+
+export function removeController(controller: ReadableStreamDefaultController) {
+  controllers.delete(controller);
+}
+
+export async function broadcast(event: { type: string; notificationId?: number }) {
+  const encoder = new TextEncoder();
+  const data = `data: ${JSON.stringify(event)}\n\n`;
+  for (const controller of controllers) {
+    try {
+      controller.enqueue(encoder.encode(data));
+    } catch (e) {
+      // If enqueue fails (e.g., closed), remove the controller
+      controllers.delete(controller);
+    }
+  }
+}

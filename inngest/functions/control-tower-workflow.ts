@@ -2542,7 +2542,7 @@ export const controlTowerWorkflow = inngest.createFunction(
 		const contractDecision = await step.waitForEvent("wait-contract-decision", {
 			event: "form/decision.responded",
 			timeout: REVIEW_TIMEOUT,
-			if: "event.data.workflowId == async.data.workflowId && async.data.formType == 'AGREEMENT_CONTRACT'",
+			if: "event.data.workflowId == async.workflowId && event.data.formType == 'AGREEMENT_CONTRACT'",
 		});
 
 		if (!contractDecision) {
