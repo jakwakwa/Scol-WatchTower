@@ -68,7 +68,8 @@ export const documentAggregator = inngest.createFunction(
 
 		// 4. Filter documents to only those with complete required metadata and build payload
 		// in a single pass to avoid parsing the document type twice.
-		// uploadedAt is a Date (Drizzle timestamp mode) — no re-wrapping needed.
+		// Note: step.run() serializes results through JSON, so Date values from Drizzle
+		// become ISO strings. d.uploadedAt is already a string here — use it directly.
 		type ValidPayloadDoc = {
 			type: DocumentType;
 			filename: string;
@@ -86,7 +87,7 @@ export const documentAggregator = inngest.createFunction(
 				type: parsed.data,
 				filename: d.fileName,
 				url: d.storageUrl,
-				uploadedAt: d.uploadedAt.toISOString(),
+				uploadedAt: d.uploadedAt,
 			});
 			return acc;
 		}, []);
