@@ -103,10 +103,9 @@ export const documentAggregator = inngest.createFunction(
 
 		// 7. Build payload documents (no fallbacks; guaranteed valid)
 		const payloadDocuments = validDocs.map(d => {
-			const parsed = DocumentTypeSchema.safeParse(d.type);
-			// parsed is guaranteed to succeed due to filter
+			const parsedType = DocumentTypeSchema.parse(d.type);
 			return {
-				type: parsed.data,
+				type: parsedType,
 				filename: d.fileName,
 				url: d.storageUrl,
 				uploadedAt: new Date(d.uploadedAt).toISOString(),
