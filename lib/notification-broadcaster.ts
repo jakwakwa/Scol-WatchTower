@@ -11,11 +11,12 @@ export function removeController(
 	controllers.delete(controller);
 }
 
-export async function broadcast(event: { type: string; notificationId?: number }) {
+export function broadcast(event: { type: string; notificationId?: number }) {
 	const data = `data: ${JSON.stringify(event)}\n\n`;
+	const encoded = encoder.encode(data);
 	for (const controller of controllers) {
 		try {
-			controller.enqueue(encoder.encode(data));
+			controller.enqueue(encoded);
 		} catch (_e) {
 			// If enqueue fails (e.g., closed), remove the controller
 			controllers.delete(controller);
