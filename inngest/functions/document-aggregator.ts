@@ -92,11 +92,13 @@ export const documentAggregator = inngest.createFunction(
 			return acc;
 		}, []);
 
-		// 5. Determine uploaded document types from valid documents only
-		const uploadedTypes = payloadDocuments.map(d => d.type);
+		// 5. Determine uploaded document types from valid documents only.
+		// Use a Set<string> so that the string[] requirements can be compared
+		// against DocumentType values without a TypeScript type mismatch on .includes().
+		const uploadedTypeSet = new Set<string>(payloadDocuments.map(d => d.type));
 
 		// 6. Check for any missing required documents
-		const missing = requirements.filter(req => !uploadedTypes.includes(req));
+		const missing = requirements.filter(req => !uploadedTypeSet.has(req));
 
 		if (missing.length > 0) {
 			return {
