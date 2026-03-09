@@ -68,24 +68,23 @@ export const documentAggregator = inngest.createFunction(
 
 		// 4. Filter documents to only those with complete required metadata
 		// (valid type, non-empty fileName, non-empty storageUrl, and uploadedAt)
-		const validDocs = applicantDocs.filter(
-			(
-				d
-			): d is {
-				type: string;
-				fileName: string;
-				storageUrl: string;
-				uploadedAt: string;
-				// other fields exist but we only care about these
-			} => {
-				const parsed = DocumentTypeSchema.safeParse(d.type);
-				if (!parsed.success) return false;
-				if (!d.fileName || d.fileName.trim() === "") return false;
-				if (!d.storageUrl || d.storageUrl.trim() === "") return false;
-				if (!d.uploadedAt) return false;
-				return true;
-			}
-		);
+		const validDocs = applicantDocs.flatMap(d => {
+			const parsedType = DocumentTypeSchema.safeParse(d.type);
+			if (!parsedType.success) return [];
+			if (!d.fileName || d.fileName.trim() === "") return [];
+			if (!d.storageUrl || d.storageUrl.trim() === "") return [];
+			if (!d.uploadedAt) return [];
+
+			return [
+				{
+					type: d.type,
+					parsedType: parsedType.data,
+					fileName: d.fileName,
+					storageUrl: d.storageUrl,
+					uploadedAt: d.uploadedAt,
+				},
+			];
+		});
 
 		// 5. Determine uploaded document types from valid documents only
 		const uploadedTypes = validDocs.map(d => d.type);
@@ -102,15 +101,12 @@ export const documentAggregator = inngest.createFunction(
 		}
 
 		// 7. Build payload documents (no fallbacks; guaranteed valid)
-		const payloadDocuments = validDocs.map(d => {
-			const parsedType = DocumentTypeSchema.parse(d.type);
-			return {
-				type: parsedType,
-				filename: d.fileName,
-				url: d.storageUrl,
-				uploadedAt: new Date(d.uploadedAt).toISOString(),
-			};
-		});
+		const payloadDocuments = validDocs.map(d => ({
+			type: d.parsedType,
+			filename: d.fileName,
+			url: d.storageUrl,
+			uploadedAt: new Date(d.uploadedAt).toISOString(),
+		}));
 
 		await step.run("emit-fica-received", async () => {
 			await inngest.send({
