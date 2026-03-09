@@ -162,9 +162,9 @@
   --charcoal-700: #1c1c1e;
   --charcoal-800: #151517;
   --charcoal-900: #0e0e10;
- --background: #0f1b1c; /* charcoal-900 — deepest surface  */
+ --background: #1b2c2d; /* charcoal-900 — deepest surface  */
   --foreground: #ddad82; /* warm white — primary text       */
-  --card: #76462027; /* charcoal-700 — card surfaces    */
+  --card: #1c130b15; /* charcoal-700 — card surfaces    */
   --card-foreground: #ddad82;
   --popover: #05283c99;
   --popover-foreground: #fce0c3;
@@ -303,13 +303,14 @@
 .card-form {
    background: transparent !important;
   position: relative;
-  inset: -1;
+  inset: 0;
   z-index: 2;
   padding-bottom: 19px !important;
   margin-bottom: 20px !important;
-  /* overflow: hidden; */
-  border-radius: 20px !important;
-  box-shadow: inset 0.1px 1.4px 0px -1px hsla(30, 94%, 68%, 0.862), inset 0px -10px 10px 0px hsla(44, 54%, 62%, 0.075), inset 0 -1px 30px 0px rgba(15, 17, 19, 0.725), 0.5px 11px 21px 1px rgba(1, 1, 2, 0.731) !important;
+  overflow: hidden;
+  border: 1px solid #000  !important;
+  border-radius: 24px !important;
+  box-shadow: inset 0px 0.5px 1px 0px hsla(39, 20%, 55%, 0.862), inset 0px -20px 37px 0px hsla(43, 11%, 25%, 0.08), inset 0 -1px 30px 0px oklab(18.747% -0.01896 -0.00532 / 0.092), 0.5px 11px 11px 1px rgba(8, 8, 12, 0.231) !important;
 }
 
 .dotted-grid-container {
@@ -325,15 +326,13 @@
 
 .card-form::before {
   content: '';
-  /* position: absolute; */
-    /* z-index: -12; */
-    inset: 1;
-    border-radius: 20px;
-    -webkit-backdrop-filter: blur(1px) !important;
-            backdrop-filter: blur(1px) !important;
-    /* -webkit-filter: url(#container-glass); */
-            /* filter: url(#container-glass); */
-       
+  position: absolute;
+    z-index: -1;
+    inset: 3;
+    background-color: oklch(15.434% 0.00002 271.152 / 0.002);
+    border-radius: 24px;
+    -webkit-backdrop-filter: blur(3px) !important;
+            backdrop-filter: blur(3px) !important; 
     overflow: hidden;
     isolation: isolate;
 }
@@ -341,12 +340,12 @@
 
 .card-form::after {
   content: '';
-  position: absolute;
+  /* position: absolute; */
     z-index: -1;
     inset: 0;
-    border-radius: 20px;
-    -webkit-backdrop-filter: blur(3px);
-            backdrop-filter: blur(3px);
+    border-radius: 24px;
+    /* -webkit-backdrop-filter: blur(2px);
+            backdrop-filter: blur(2px); */
     /* -webkit-filter: url(#container-glass); */
             /* filter: url(#container-glass); */
        
@@ -365,7 +364,7 @@
   position: relative;
   border-radius: 5px;
   /* z-index: -1; */
-  /* background: var(--background) !important; */
+  background: var(--background) !important;
 }
 
 /*  */
@@ -396,7 +395,7 @@
   padding: 15px;
   position: relative;
   z-index: 0;
-  background: #090a0b !important;
+  background: #0d0f10 !important;
 }
 label { 
   color: var(--color-stone-400) !important;
