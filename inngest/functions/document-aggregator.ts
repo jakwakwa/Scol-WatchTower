@@ -67,28 +67,21 @@ export const documentAggregator = inngest.createFunction(
 		const requirements = docReqs.documents.filter(req => req.required).map(req => req.id);
 
 		// 4. Filter documents to only those with complete required metadata
-		// (valid type, non-empty fileName, non-empty storageUrl, and uploadedAt)
-		const validDocs = applicantDocs.filter(
-			(
-				d
-			): d is {
-				type: string;
-				fileName: string;
-				storageUrl: string;
-				uploadedAt: string;
-				// other fields exist but we only care about these
-			} => {
+		// (valid type, non-empty fileName, non-empty storageUrl, and uploadedAt).
+		// Preserve the parsed enum value to avoid re-parsing in the payload step.
+		const validDocs = applicantDocs
+			.map(d => {
 				const parsed = DocumentTypeSchema.safeParse(d.type);
-				if (!parsed.success) return false;
-				if (!d.fileName || d.fileName.trim() === "") return false;
-				if (!d.storageUrl || d.storageUrl.trim() === "") return false;
-				if (!d.uploadedAt) return false;
-				return true;
-			}
-		);
+				if (!parsed.success) return null;
+				if (!d.fileName || d.fileName.trim() === "") return null;
+				if (!d.storageUrl || d.storageUrl.trim() === "") return null;
+				if (!d.uploadedAt) return null;
+				return { ...d, parsedType: parsed.data };
+			})
+			.filter((d): d is NonNullable<typeof d> => d !== null);
 
 		// 5. Determine uploaded document types from valid documents only
-		const uploadedTypes = validDocs.map(d => d.type);
+		const uploadedTypes = validDocs.map(d => d.parsedType);
 
 		// 6. Check for any missing required documents
 		const missing = requirements.filter(req => !uploadedTypes.includes(req));
@@ -102,15 +95,12 @@ export const documentAggregator = inngest.createFunction(
 		}
 
 		// 7. Build payload documents (no fallbacks; guaranteed valid)
-		const payloadDocuments = validDocs.map(d => {
-			const parsedType = DocumentTypeSchema.parse(d.type);
-			return {
-				type: parsedType,
-				filename: d.fileName,
-				url: d.storageUrl,
-				uploadedAt: new Date(d.uploadedAt).toISOString(),
-			};
-		});
+		const payloadDocuments = validDocs.map(d => ({
+			type: d.parsedType,
+			filename: d.fileName,
+			url: d.storageUrl,
+			uploadedAt: new Date(d.uploadedAt).toISOString(),
+		}));
 
 		await step.run("emit-fica-received", async () => {
 			await inngest.send({
