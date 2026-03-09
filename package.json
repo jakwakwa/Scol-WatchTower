@@ -6,7 +6,6 @@
 		"dev": "next dev --turbo",
 		"build": "next build",
 		"start": "next start",
-		"lint": "biome lint",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate",
 		"db:studio": "drizzle-kit studio",
@@ -15,7 +14,9 @@
 		"test:e2e:headed": "playwright test --headed",
 		"test:e2e:debug": "playwright test --debug",
 		"test:db:reset": "bun run scripts/reset-test-db.ts",
-		"dev:all": "./setup-dev.sh"
+		"dev:all": "./setup-dev.sh",
+		"lint": "biome lint .",
+		"lint:fix": "biome lint --write ."
 	},
 	"dependencies": {
 		"@base-ui/react": "^1.2.0",

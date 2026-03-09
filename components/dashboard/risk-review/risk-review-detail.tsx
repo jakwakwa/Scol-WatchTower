@@ -72,12 +72,10 @@ export interface RiskReviewData {
 		defaultDetails: string;
 		tradeReferences: number | string;
 		recentEnquiries: number | string;
-		recentEnquiries: number | string;
 	};
 	sanctionsData: {
 		sanctionsMatch: string;
 		pepHits: number | string;
-		adverseMedia: number | string;
 		adverseMedia: number | string;
 		alerts: Array<{ date: string; source: string; title: string; severity: string }>;
 	};
@@ -90,7 +88,6 @@ export interface RiskReviewData {
 			status: string;
 		};
 		lastVerified: string;
-		lastVerified: string;
 		banking: {
 			bankName: string;
 			accountNumber: string;
@@ -100,7 +97,6 @@ export interface RiskReviewData {
 	};
 }
 
-// AI Service helpers have been extracted to Server Actions
 // AI Service helpers have been extracted to Server Actions
 
 // --- Screen UI Components ---
@@ -521,19 +517,14 @@ function RiskReviewDetail({ data }: { data: RiskReviewData }) {
     `;
 
 		try {
-			const _result = await generateRiskBriefing(dataContext);
-
-		try {
 			const result = await generateRiskBriefing(dataContext);
 			setAiSummary(result);
 		} catch (error) {
 			const err = error as Error;
 			setSummaryError(err.message || "Failed to generate AI insights. Please try again.");
-		} catch (error) {
-			const err = error as Error;
-			setSummaryError(err.message || "Failed to generate AI insights. Please try again.");
-		} finally 
+		} finally {
 			setIsGeneratingSummary(false);
+		}
 	};
 
 	const _handleAnalyzeMedia = async (
@@ -542,8 +533,6 @@ function RiskReviewDetail({ data }: { data: RiskReviewData }) {
 	) => {
 		setAnalyzingMediaId(alertIdx);
 
-		try {
-			const _result = await analyzeMediaRisk(alert.title, alert.source, alert.severity);
 		try {
 			const result = await analyzeMediaRisk(alert.title, alert.source, alert.severity);
 			setMediaAnalyses(prev => ({ ...prev, [alertIdx]: result }));
