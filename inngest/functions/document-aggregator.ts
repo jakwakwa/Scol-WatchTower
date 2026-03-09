@@ -82,17 +82,28 @@ export const documentAggregator = inngest.createFunction(
 
 		// 3. Emit the bundle event expected by onboarding.ts
 		// Map db documents to the shape expected by onboarding.ts event; validate type with Zod
-		const payloadDocuments = applicantDocs
-			.map(d => {
-				const parsed = DocumentTypeSchema.safeParse(d.type);
+		const validDocs = applicantDocs
+			.map(doc => ({
+				...doc,
+				uploadedAt: doc.uploadedAt ?? new Date(),
+			}))
+			.filter(
+				(
+					doc
+				): doc is (typeof applicantDocs)[number] & {
+					uploadedAt: Date;
+				} => doc.uploadedAt instanceof Date
+			);
+
+		const payloadDocuments = validDocs
+			.map(doc => {
+				const parsed = DocumentTypeSchema.safeParse(doc.type);
 				if (!parsed.success) return null;
 				return {
 					type: parsed.data,
-					filename: d.fileName || "unknown",
-					url: d.storageUrl || "",
-					uploadedAt: d.uploadedAt
-						? new Date(d.uploadedAt).toISOString()
-						: new Date().toISOString(),
+					filename: doc.fileName || "unknown",
+					url: doc.storageUrl || "",
+					uploadedAt: doc.uploadedAt.toISOString(),
 				};
 			})
 			.filter((doc): doc is NonNullable<typeof doc> => doc !== null);
