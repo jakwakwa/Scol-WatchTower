@@ -18,4 +18,4 @@ Use the canonical rule files instead of duplicating guidance:
 - No seeded data or fixture inserts.
 
 ## Environment
-- Create `.env.local` from provided env vars: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `DATABASE_URL`, `TURSO_*`, etc. (see `.env.example`).
+- Use `.env.example` as a baseline to create `.env.local` (for `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `TURSO_*`, etc.), and ensure you also add `DATABASE_URL` and any other required secrets.
