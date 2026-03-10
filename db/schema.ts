@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 // ============================================
 // Core Onboarding Tables
@@ -405,7 +405,7 @@ export const workflowTerminationScreening = sqliteTable("workflow_termination_sc
 		.notNull()
 		.references(() => workflowTerminationDenyList.id, { onDelete: "cascade" }),
 	valueType: text("value_type", {
-		enum: ["id_number", "board_member_id", "cellphone", "bank_account", "board_member_name"],
+		enum: SCREENING_VALUE_TYPES,
 	}).notNull(),
 	value: text("value").notNull(), // Normalized value for exact match and FTS indexing
 	createdAt: integer("created_at", { mode: "timestamp" })

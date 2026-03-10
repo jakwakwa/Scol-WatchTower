@@ -5,6 +5,7 @@ import ApplicantFormLinks, {
 	type RequiredDocumentSummary,
 } from "@/components/emails/ApplicantFormLinks";
 import InternalAlert from "@/components/emails/InternalAlert";
+import type { ScreeningValueType } from "@/db/schema";
 
 const resendApiKey = process.env.RESEND_API_KEY;
 // Use the configured alert recipients or fall back to a default/empty
@@ -140,7 +141,7 @@ export async function sendReApplicantDeniedEmail(params: {
 	workflowId: number;
 	applicantId: number;
 	companyName: string;
-	matchedOn: "id_number" | "board_member_id" | "cellphone" | "bank_account" | "board_member_name";
+	matchedOn: ScreeningValueType;
 	matchedValue: string;
 }): Promise<EmailResult> {
 	if (!resend) {

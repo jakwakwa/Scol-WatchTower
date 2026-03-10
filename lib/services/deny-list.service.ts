@@ -22,6 +22,7 @@ import {
 	workflowTerminationDenyList,
 	workflowTerminationScreening,
 } from "@/db/schema";
+import type { ScreeningValueType } from "@/db/schema";
 import type { KillSwitchReason } from "./kill-switch.service";
 
 // ============================================
@@ -39,12 +40,7 @@ export interface DenyListIdentifiers {
 	boardMemberNames: string[];
 }
 
-export type ReApplicantMatchOn =
-	| "id_number"
-	| "board_member_id"
-	| "cellphone"
-	| "bank_account"
-	| "board_member_name";
+export type ReApplicantMatchOn = ScreeningValueType;
 
 export interface ReApplicantMatch {
 	matchedDenyListId: number;

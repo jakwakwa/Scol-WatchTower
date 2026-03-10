@@ -71,6 +71,13 @@
       "when": 1773134034989,
       "tag": "0009_rainy_mandarin",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1773160111994,
+      "tag": "0010_old_blue_blade",
+      "breakpoints": true
     }
   ]
 }
