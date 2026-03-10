@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 // ============================================
 // Core Onboarding Tables
@@ -108,7 +108,14 @@ export const riskAssessments = sqliteTable("risk_assessments", {
 	applicantId: integer("applicant_id")
 		.notNull()
 		.references(() => applicants.id),
+	overallScore: integer("overall_score"),
+	overallStatus: text("overall_status"), // REVIEW REQUIRED, COMPLIANT, etc.
 	overallRisk: text("overall_risk"), // green, amber, red
+
+	procurementData: text("procurement_data"), // JSON
+	itcData: text("itc_data"), // JSON
+	sanctionsData: text("sanctions_data"), // JSON
+	ficaData: text("fica_data"), // JSON
 
 	// Specific risk factors from user schema
 	cashFlowConsistency: text("cash_flow_consistency"),
@@ -392,19 +399,29 @@ export const SCREENING_VALUE_TYPES = [
 
 export type ScreeningValueType = (typeof SCREENING_VALUE_TYPES)[number];
 
-export const workflowTerminationScreening = sqliteTable("workflow_termination_screening", {
-	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
-	denyListId: integer("deny_list_id")
-		.notNull()
-		.references(() => workflowTerminationDenyList.id, { onDelete: "cascade" }),
-	valueType: text("value_type", {
-		enum: ["id_number", "board_member_id", "cellphone", "bank_account", "board_member_name"],
-	}).notNull(),
-	value: text("value").notNull(), // Normalized value for exact match and FTS indexing
-	createdAt: integer("created_at", { mode: "timestamp" })
-		.notNull()
-		.$defaultFn(() => new Date()),
-});
+export const workflowTerminationScreening = sqliteTable(
+	"workflow_termination_screening",
+	{
+		id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+		denyListId: integer("deny_list_id")
+			.notNull()
+			.references(() => workflowTerminationDenyList.id, { onDelete: "cascade" }),
+		valueType: text("value_type", {
+			enum: SCREENING_VALUE_TYPES,
+		}).notNull(),
+		value: text("value").notNull(), // Normalized value for exact match and FTS indexing
+		createdAt: integer("created_at", { mode: "timestamp" })
+			.notNull()
+			.$defaultFn(() => new Date()),
+	},
+	(table) => ({
+		valueTypeValueIdx: index("workflow_termination_screening_value_type_value_idx").on(
+			table.valueType,
+			table.value
+		),
+		denyListIdIdx: index("workflow_termination_screening_deny_list_id_idx").on(table.denyListId),
+	})
+);
 
 /**
  * Re-Applicant Attempt Log - Records when a re-applicant is detected and denied

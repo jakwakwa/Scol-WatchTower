@@ -11,7 +11,7 @@
  * Screening values stored in workflow_termination_screening for Turso FTS/vertex search.
  */
 
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, or } from "drizzle-orm";
 import { getDatabaseClient } from "@/app/utils";
 import {
 	applicantSubmissions,
@@ -22,6 +22,7 @@ import {
 	workflowTerminationDenyList,
 	workflowTerminationScreening,
 } from "@/db/schema";
+import type { ScreeningValueType } from "@/db/schema";
 import type { KillSwitchReason } from "./kill-switch.service";
 
 // ============================================
@@ -39,12 +40,7 @@ export interface DenyListIdentifiers {
 	boardMemberNames: string[];
 }
 
-export type ReApplicantMatchOn =
-	| "id_number"
-	| "board_member_id"
-	| "cellphone"
-	| "bank_account"
-	| "board_member_name";
+export type ReApplicantMatchOn = ScreeningValueType;
 
 export interface ReApplicantMatch {
 	matchedDenyListId: number;
@@ -427,27 +423,32 @@ export async function checkReApplicant(
 		}
 	}
 
-	for (const { type, value } of allValues) {
-		const matches = await db
-			.select({
-				denyListId: workflowTerminationScreening.denyListId,
-			})
-			.from(workflowTerminationScreening)
-			.where(
-				and(
-					eq(workflowTerminationScreening.valueType, type),
-					eq(workflowTerminationScreening.value, value)
-				)
-			)
-			.limit(1);
+	const conditions = allValues.map(({ type, value }) =>
+		and(
+			eq(workflowTerminationScreening.valueType, type),
+			eq(workflowTerminationScreening.value, value)
+		)
+	);
 
-		if (matches.length > 0) {
-			return {
-				matchedDenyListId: matches[0].denyListId,
-				matchedOn: type,
-				matchedValue: value,
-			};
-		}
+	if (conditions.length === 0) return null;
+
+	const matches = await db
+		.select({
+			denyListId: workflowTerminationScreening.denyListId,
+			valueType: workflowTerminationScreening.valueType,
+			value: workflowTerminationScreening.value,
+		})
+		.from(workflowTerminationScreening)
+		.where(or(...conditions))
+		.limit(1);
+
+	if (matches.length > 0) {
+		const m = matches[0];
+		return {
+			matchedDenyListId: m.denyListId,
+			matchedOn: m.valueType as ReApplicantMatchOn,
+			matchedValue: m.value,
+		};
 	}
 
 	return null;
