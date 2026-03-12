@@ -110,8 +110,6 @@ export async function POST(
 			);
 		}
 
-		await acquireStateLock(workflowId, userId);
-
 		const result = await requestManualGreenLane(workflowId, applicantId, userId, notes);
 
 		if (!result.success) {
