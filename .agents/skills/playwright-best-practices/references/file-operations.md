@@ -83,7 +83,7 @@ test("download multiple files", async ({ page }) => {
   await page.getByRole("checkbox", { name: "Select All" }).check();
 
   // Collect all downloads
-  const downloads: Download[] = [];
+  const downloads = [];
   page.on("download", (download) => downloads.push(download));
 
   await page.getByRole("button", { name: "Download Selected" }).click();
