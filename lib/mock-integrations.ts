@@ -1,6 +1,13 @@
 import type { ITCCheckResult } from "@/lib/types";
 
-type MockProfile = "atlas" | "springvale" | "meridian" | "redline" | "default";
+type MockProfile =
+	| "atlas"
+	| "springvale"
+	| "meridian"
+	| "redline"
+	| "northstar"
+	| "harbor"
+	| "default";
 
 interface MockProfileInput {
 	applicantId?: number;
@@ -27,11 +34,7 @@ function selectMockProfile(input: MockProfileInput): MockProfile {
 		normalize(input.fileName),
 	].join(" ");
 
-	if (
-		applicantId === 1 ||
-		candidate.includes("atlas") ||
-		candidate.includes("184512")
-	) {
+	if (applicantId === 1 || candidate.includes("atlas") || candidate.includes("184512")) {
 		return "atlas";
 	}
 
@@ -59,8 +62,31 @@ function selectMockProfile(input: MockProfileInput): MockProfile {
 		return "redline";
 	}
 
+	if (
+		applicantId === 5 ||
+		candidate.includes("northstar") ||
+		candidate.includes("550321")
+	) {
+		return "northstar";
+	}
+
+	if (
+		applicantId === 6 ||
+		candidate.includes("harbor") ||
+		candidate.includes("770114")
+	) {
+		return "harbor";
+	}
+
 	if (applicantId > 0) {
-		const profileOrder: MockProfile[] = ["atlas", "springvale", "meridian", "redline"];
+		const profileOrder: MockProfile[] = [
+			"atlas",
+			"springvale",
+			"meridian",
+			"redline",
+			"northstar",
+			"harbor",
+		];
 		return profileOrder[(applicantId - 1) % profileOrder.length] ?? "default";
 	}
 
@@ -120,6 +146,18 @@ export function getMockProcureCheckVendorResults(vendorId: string | number) {
 			RiskSummary: { FailedChecks: 3, Status: "blocked" },
 			JudgementCheck: { Failed: true },
 			Flags: ["Sanctions evidence", "Procurement watchlist", "Adverse media"],
+			Source: "procurecheck-mock",
+		},
+		northstar: {
+			RiskSummary: { FailedChecks: 0, Status: "clear" },
+			JudgementCheck: { Failed: false },
+			Flags: [],
+			Source: "procurecheck-mock",
+		},
+		harbor: {
+			RiskSummary: { FailedChecks: 0, Status: "clear" },
+			JudgementCheck: { Failed: false },
+			Flags: [],
 			Source: "procurecheck-mock",
 		},
 		default: {
@@ -199,6 +237,26 @@ export function getMockITCResult(input: {
 			referenceNumber: `ITC-MOCK-REDLINE-${input.applicantId}`,
 			rawResponse: { source: "itc-mock", profile },
 		},
+		northstar: {
+			creditScore: 792,
+			riskCategory: "LOW",
+			passed: true,
+			recommendation: "AUTO_APPROVE",
+			adverseListings: [],
+			checkedAt,
+			referenceNumber: `ITC-MOCK-NORTHSTAR-${input.applicantId}`,
+			rawResponse: { source: "itc-mock", profile },
+		},
+		harbor: {
+			creditScore: 688,
+			riskCategory: "LOW",
+			passed: true,
+			recommendation: "AUTO_APPROVE",
+			adverseListings: [],
+			checkedAt,
+			referenceNumber: `ITC-MOCK-HARBOR-${input.applicantId}`,
+			rawResponse: { source: "itc-mock", profile },
+		},
 		default: {
 			creditScore: 690,
 			riskCategory: "LOW",
@@ -238,6 +296,15 @@ export function getMockFicaVerificationResult(input: {
 		return {
 			verificationStatus: "rejected" as const,
 			verificationNotes: "Mock verification flagged for enhanced manual review.",
+			verifiedBy: "fica_mock_service",
+			verifiedAt: new Date(),
+		};
+	}
+
+	if (profile === "harbor") {
+		return {
+			verificationStatus: "rejected" as const,
+			verificationNotes: "Mock verification failed: critical mismatches detected.",
 			verifiedBy: "fica_mock_service",
 			verifiedAt: new Date(),
 		};

@@ -1,10 +1,10 @@
 // lib/procurecheck.ts
 
+import { isMockEnvironmentEnabled } from "@/lib/mock-environment";
 import {
 	getMockProcureCheckVendorCreation,
 	getMockProcureCheckVendorResults,
 } from "@/lib/mock-integrations";
-import { isMockEnvironmentEnabled } from "@/lib/mock-environment";
 
 /**
  * ProcureCheck Integration

@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import {
 	isDevMockEnvironmentEnabled,
 	isLocalMockEnvironmentEnabled,
@@ -19,15 +19,31 @@ const RESET_KEYS = [
 	"NODE_ENV",
 ] as const;
 
-function resetEnv() {
+function restoreOriginalEnv() {
 	for (const key of RESET_KEYS) {
 		const originalValue = ORIGINAL_ENV[key];
+
+		if (originalValue === undefined) {
+			delete process.env[key];
+			continue;
+		}
+
 		process.env[key] = originalValue;
 	}
 }
 
+function clearTestEnv() {
+	for (const key of RESET_KEYS) {
+		delete process.env[key];
+	}
+}
+
+beforeEach(() => {
+	clearTestEnv();
+});
+
 afterEach(() => {
-	resetEnv();
+	restoreOriginalEnv();
 });
 
 describe("mock environment resolver", () => {

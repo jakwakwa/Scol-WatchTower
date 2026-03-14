@@ -13,8 +13,8 @@
 import { eq } from "drizzle-orm";
 import { getDatabaseClient } from "@/app/utils";
 import { applicants } from "@/db/schema";
-import { getMockITCResult } from "@/lib/mock-integrations";
 import { isMockEnvironmentEnabled } from "@/lib/mock-environment";
+import { getMockITCResult } from "@/lib/mock-integrations";
 import { ITC_THRESHOLDS, type ITCCheckResult } from "@/lib/types";
 import {
 	mapProcureCheckRiskCategory,

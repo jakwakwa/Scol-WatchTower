@@ -1,0 +1,752 @@
+import { and, desc, eq } from "drizzle-orm";
+import { getDatabaseClient } from "@/app/utils";
+import {
+	applicantMagiclinkForms,
+	applicantSubmissions,
+	applicants,
+	documentUploads,
+	quotes,
+	workflows,
+} from "@/db/schema";
+import { inngest } from "@/inngest/client";
+import { isMockEnvironmentEnabled } from "@/lib/mock-environment";
+import {
+	buildPersistedMockScenario,
+	persistWorkflowMockScenario,
+} from "@/lib/mock-scenario-state.server";
+import {
+	buildScenarioFacilityPayload,
+	getMockDelayMs,
+	getMockScenarioDefinition,
+	type MockDelayFamily,
+	type MockScenarioId,
+} from "@/lib/mock-scenarios";
+import { requestManualGreenLane } from "@/lib/services/green-lane.service";
+import {
+	recordFormDecision,
+	recordFormSubmission,
+} from "@/lib/services/form.service";
+import {
+	logWorkflowEventOnce,
+	markStage5GateOnce,
+} from "@/lib/services/workflow-command.service";
+
+const MOCK_ACTOR = "mock-scenario-runner";
+
+interface WorkflowSnapshot {
+	workflowId: number;
+	applicantId: number;
+	stage: number | null;
+	status: string | null;
+	preRiskRequired: boolean | null;
+	contractDraftReviewedAt: Date | null;
+	absaApprovalConfirmedAt: Date | null;
+	mandateRetryCount: number | null;
+	sanctionStatus: string | null;
+}
+
+interface WorkflowPollingStep {
+	run: (id: string, fn: () => Promise<WorkflowSnapshot>) => Promise<WorkflowSnapshot>;
+	sleep: (id: string, time: string) => Promise<void>;
+}
+
+interface SleepStep {
+	sleep: (id: string, time: string) => Promise<void>;
+}
+
+function toDuration(delayMs: number): string {
+	return `${Math.max(1, Math.ceil(delayMs / 1000))}s`;
+}
+
+async function readWorkflowSnapshot(workflowId: number): Promise<WorkflowSnapshot> {
+	const db = getDatabaseClient();
+	if (!db) {
+		throw new Error("Database connection failed");
+	}
+
+	const [row] = await db
+		.select({
+			workflowId: workflows.id,
+			applicantId: workflows.applicantId,
+			stage: workflows.stage,
+			status: workflows.status,
+			preRiskRequired: workflows.preRiskRequired,
+			contractDraftReviewedAt: workflows.contractDraftReviewedAt,
+			absaApprovalConfirmedAt: workflows.absaApprovalConfirmedAt,
+			mandateRetryCount: workflows.mandateRetryCount,
+			sanctionStatus: applicants.sanctionStatus,
+		})
+		.from(workflows)
+		.leftJoin(applicants, eq(workflows.applicantId, applicants.id))
+		.where(eq(workflows.id, workflowId))
+		.limit(1);
+
+	if (!row) {
+		throw new Error(`Workflow ${workflowId} not found`);
+	}
+
+	return row;
+}
+
+async function waitForWorkflowState(
+	step: WorkflowPollingStep,
+	workflowId: number,
+	label: string,
+	predicate: (snapshot: WorkflowSnapshot) => boolean,
+	attempts = 120
+): Promise<WorkflowSnapshot> {
+	for (let attempt = 1; attempt <= attempts; attempt += 1) {
+		const snapshot = await step.run(`${label}-snapshot-${attempt}`, () =>
+			readWorkflowSnapshot(workflowId)
+		);
+
+		if (predicate(snapshot)) {
+			return snapshot;
+		}
+
+		await step.sleep(`${label}-sleep-${attempt}`, "2s");
+	}
+
+	throw new Error(`Timed out waiting for workflow ${workflowId} during ${label}`);
+}
+
+async function applyScenarioDelay(
+	step: SleepStep,
+	scenarioId: MockScenarioId,
+	family: MockDelayFamily,
+	stepId: string
+) {
+	const delayMs = getMockDelayMs(scenarioId, family);
+	if (delayMs > 0) {
+		await step.sleep(stepId, toDuration(delayMs));
+	}
+}
+
+async function seedFicaDocuments(params: {
+	workflowId: number;
+	applicantId: number;
+	scenarioId: MockScenarioId;
+}) {
+	const db = getDatabaseClient();
+	if (!db) {
+		throw new Error("Database connection failed");
+	}
+
+	const [doc] = await db
+		.insert(documentUploads)
+		.values({
+			workflowId: params.workflowId,
+			category: "financial",
+			documentType: "BANK_STATEMENT",
+			fileName: `scenario-${params.scenarioId}-bank-statement.pdf`,
+			fileSize: 128000,
+			fileContent: "mock-scenario-document",
+			mimeType: "application/pdf",
+			storageKey: `mock-scenarios/${params.workflowId}/bank-statement.pdf`,
+			storageUrl: `https://mock-storage.local/${params.workflowId}/bank-statement.pdf`,
+			verificationStatus: "pending",
+			uploadedBy: MOCK_ACTOR,
+		})
+		.returning();
+
+	return doc;
+}
+
+async function markQuoteApproved(workflowId: number) {
+	const db = getDatabaseClient();
+	if (!db) {
+		throw new Error("Database connection failed");
+	}
+
+	const [quote] = await db
+		.select()
+		.from(quotes)
+		.where(eq(quotes.workflowId, workflowId))
+		.orderBy(desc(quotes.createdAt))
+		.limit(1);
+
+	if (!quote) {
+		throw new Error(`No quote found for workflow ${workflowId}`);
+	}
+
+	await db
+		.update(quotes)
+		.set({ status: "pending_signature", updatedAt: new Date() })
+		.where(eq(quotes.id, quote.id));
+
+	return quote;
+}
+
+async function approveDecisionForm(params: {
+	workflowId: number;
+	applicantId: number;
+	formType: "SIGNED_QUOTATION" | "AGREEMENT_CONTRACT";
+	data: Record<string, unknown>;
+}) {
+	const db = getDatabaseClient();
+	if (!db) {
+		throw new Error("Database connection failed");
+	}
+
+	const [form] = await db
+		.select()
+		.from(applicantMagiclinkForms)
+		.where(
+			and(
+				eq(applicantMagiclinkForms.workflowId, params.workflowId),
+				eq(applicantMagiclinkForms.formType, params.formType)
+			)
+		)
+		.orderBy(desc(applicantMagiclinkForms.createdAt))
+		.limit(1);
+
+	if (!form) {
+		throw new Error(`No ${params.formType} form found for workflow ${params.workflowId}`);
+	}
+
+	const existingSubmission = await db
+		.select({ id: applicantSubmissions.id })
+		.from(applicantSubmissions)
+		.where(eq(applicantSubmissions.applicantMagiclinkFormId, form.id))
+		.limit(1);
+
+	if (existingSubmission.length === 0) {
+		await recordFormSubmission({
+			applicantMagiclinkFormId: form.id,
+			applicantId: params.applicantId,
+			workflowId: params.workflowId,
+			formType: params.formType,
+			data: params.data,
+			submittedBy: MOCK_ACTOR,
+		});
+		}
+
+	await recordFormDecision({
+		formInstanceId: form.id,
+		outcome: "APPROVED",
+		reason: `Approved by ${MOCK_ACTOR}`,
+	});
+
+	return form;
+}
+
+/**
+ * Bridges the Inngest step object (which serialises Date→string and marks all
+ * properties optional via Serialized<T>) back to the WorkflowPollingStep
+ * contract expected by waitForWorkflowState.
+ */
+function asPollingStep(inngestStep: {
+	// biome-ignore lint/suspicious/noExplicitAny: Inngest Serialized<T> differs from T at the type level
+	run: <T>(id: string, fn: () => Promise<T>) => Promise<any>;
+	sleep: (id: string, time: string) => Promise<void>;
+}): WorkflowPollingStep {
+	return {
+		run: async (id, fn) => {
+			const raw = await inngestStep.run(id, fn);
+			return {
+				workflowId: raw.workflowId,
+				applicantId: raw.applicantId,
+				stage: raw.stage ?? null,
+				status: raw.status ?? null,
+				preRiskRequired: raw.preRiskRequired ?? null,
+				contractDraftReviewedAt: raw.contractDraftReviewedAt
+					? new Date(raw.contractDraftReviewedAt)
+					: null,
+				absaApprovalConfirmedAt: raw.absaApprovalConfirmedAt
+					? new Date(raw.absaApprovalConfirmedAt)
+					: null,
+				mandateRetryCount: raw.mandateRetryCount ?? null,
+				sanctionStatus: raw.sanctionStatus ?? null,
+			};
+		},
+		sleep: (id, time) => inngestStep.sleep(id, time),
+	};
+}
+
+export const mockScenarioRunner = inngest.createFunction(
+	{
+		id: "mock-scenario-runner",
+		name: "Mock Scenario Runner",
+		retries: 0,
+	},
+	{ event: "dev/mock-scenario.run" },
+	async ({ event, step }) => {
+		if (!isMockEnvironmentEnabled()) {
+			return { skipped: true, reason: "Mock environment disabled" };
+		}
+
+		const scenario = getMockScenarioDefinition(event.data.scenarioId);
+		if (!scenario) {
+			throw new Error(`Unsupported scenario ${event.data.scenarioId}`);
+		}
+
+		const polling = asPollingStep(step);
+
+		await step.run("persist-scenario", () =>
+			persistWorkflowMockScenario({
+				workflowId: event.data.workflowId,
+				scenario: buildPersistedMockScenario(event.data.scenarioId, {
+					source: "api",
+				}),
+			})
+		);
+
+		await waitForWorkflowState(
+			polling,
+			event.data.workflowId,
+			"wait-stage-2-facility",
+			snapshot => snapshot.stage === 2 && snapshot.status === "awaiting_human"
+		);
+		await applyScenarioDelay(step, event.data.scenarioId, "facility", "delay-facility");
+		await step.run("send-facility-submission", async () => {
+			await inngest.send({
+				name: "form/facility.submitted",
+				data: {
+					workflowId: event.data.workflowId,
+					applicantId: event.data.applicantId,
+					submissionId: 0,
+					formData: buildScenarioFacilityPayload(event.data.scenarioId),
+					submittedAt: new Date().toISOString(),
+				},
+			});
+		});
+
+		if (scenario.preRisk !== "skip") {
+			await waitForWorkflowState(
+				polling,
+				event.data.workflowId,
+				"wait-pre-risk",
+				snapshot =>
+					snapshot.stage === 2 &&
+					snapshot.status === "awaiting_human" &&
+					snapshot.preRiskRequired === true
+			);
+			await applyScenarioDelay(step, event.data.scenarioId, "preRisk", "delay-pre-risk");
+			await step.run("send-pre-risk-decision", async () => {
+				await inngest.send({
+					name: "risk/pre-approval.decided",
+					data: {
+						workflowId: event.data.workflowId,
+						applicantId: event.data.applicantId,
+						decision: {
+							outcome: scenario.preRisk === "reject" ? "REJECTED" : "APPROVED",
+							reason:
+								scenario.preRisk === "reject"
+									? "Scenario forced pre-risk rejection"
+									: "Scenario forced pre-risk approval",
+							requiresPreRiskEvaluation: false,
+							decidedBy: MOCK_ACTOR,
+							timestamp: new Date().toISOString(),
+						},
+					},
+				});
+			});
+
+			if (scenario.preRisk === "reject") {
+				return { completed: true, terminalStage: 2, scenarioId: event.data.scenarioId };
+			}
+		}
+
+		await waitForWorkflowState(
+			polling,
+			event.data.workflowId,
+			"wait-quote-approval",
+			snapshot => snapshot.stage === 2 && snapshot.status === "awaiting_human"
+		);
+		await applyScenarioDelay(
+			step,
+			event.data.scenarioId,
+			"quoteApproval",
+			"delay-quote-approval"
+		);
+		await step.run("approve-quote", async () => {
+			const quote = await markQuoteApproved(event.data.workflowId);
+			await inngest.send({
+				name: "quote/approved",
+				data: {
+					workflowId: event.data.workflowId,
+					applicantId: event.data.applicantId,
+					quoteId: quote.id,
+					approvedAt: new Date().toISOString(),
+				},
+			});
+		});
+
+		await waitForWorkflowState(
+			polling,
+			event.data.workflowId,
+			"wait-quote-signature",
+			snapshot => snapshot.stage === 2 && snapshot.status === "awaiting_human"
+		);
+		await applyScenarioDelay(
+			step,
+			event.data.scenarioId,
+			"quoteSignature",
+			"delay-quote-signature"
+		);
+		await step.run("sign-quote", async () => {
+			await approveDecisionForm({
+				workflowId: event.data.workflowId,
+				applicantId: event.data.applicantId,
+				formType: "SIGNED_QUOTATION",
+				data: {
+					signedBy: "Scenario Tester",
+					scenarioId: event.data.scenarioId,
+				},
+			});
+
+			const db = getDatabaseClient();
+			if (!db) {
+				throw new Error("Database connection failed");
+			}
+			const [quote] = await db
+				.select()
+				.from(quotes)
+				.where(eq(quotes.workflowId, event.data.workflowId))
+				.orderBy(desc(quotes.createdAt))
+				.limit(1);
+
+			if (quote) {
+				await db
+					.update(quotes)
+					.set({ status: "approved", updatedAt: new Date() })
+					.where(eq(quotes.id, quote.id));
+
+				await inngest.send({
+					name: "quote/responded",
+					data: {
+						workflowId: event.data.workflowId,
+						applicantId: event.data.applicantId,
+						quoteId: quote.id,
+						decision: "APPROVED",
+						respondedAt: new Date().toISOString(),
+					},
+				});
+
+				await inngest.send({
+					name: "quote/signed",
+					data: {
+						workflowId: event.data.workflowId,
+						applicantId: event.data.applicantId,
+						quoteId: quote.id,
+						signedAt: new Date().toISOString(),
+					},
+				});
+			}
+		});
+
+		await waitForWorkflowState(
+			polling,
+			event.data.workflowId,
+			"wait-mandate-upload",
+			snapshot =>
+				snapshot.stage === 2 &&
+				snapshot.status === "awaiting_human" &&
+				(snapshot.mandateRetryCount ?? 0) >= 1
+		);
+		await applyScenarioDelay(
+			step,
+			event.data.scenarioId,
+			"mandateUpload",
+			"delay-mandate-upload"
+		);
+		await step.run("upload-mandate-docs", async () => {
+			await seedFicaDocuments({
+				workflowId: event.data.workflowId,
+				applicantId: event.data.applicantId,
+				scenarioId: event.data.scenarioId,
+			});
+
+			await inngest.send({
+				name: "upload/fica.received",
+				data: {
+					workflowId: event.data.workflowId,
+					applicantId: event.data.applicantId,
+					documents: [
+						{
+							type: "BANK_STATEMENT",
+							filename: `scenario-${event.data.scenarioId}-bank-statement.pdf`,
+							url: `https://mock-storage.local/${event.data.workflowId}/bank-statement.pdf`,
+							uploadedAt: new Date().toISOString(),
+						},
+					],
+					uploadedBy: MOCK_ACTOR,
+				},
+			});
+		});
+
+		if (scenario.sanctions === "blocked") {
+			await waitForWorkflowState(
+				polling,
+				event.data.workflowId,
+				"wait-sanctions-pause",
+				snapshot => snapshot.stage === 3 && snapshot.status === "paused"
+			);
+			await applyScenarioDelay(step, event.data.scenarioId, "sanctions", "delay-sanctions-hit");
+			await step.run("confirm-sanctions-hit", async () => {
+				const db = getDatabaseClient();
+				if (!db) {
+					throw new Error("Database connection failed");
+				}
+
+				await db
+					.update(applicants)
+					.set({ sanctionStatus: "confirmed_hit" })
+					.where(eq(applicants.id, event.data.applicantId));
+
+				await inngest.send({
+					name: "sanction/adjudicated",
+					data: {
+						workflowId: event.data.workflowId,
+						applicantId: event.data.applicantId,
+						action: "confirm",
+						officerId: MOCK_ACTOR,
+						reason: "Scenario forced sanctions confirmation",
+						timestamp: new Date().toISOString(),
+					},
+				});
+			});
+
+			return { completed: true, terminalStage: 3, scenarioId: event.data.scenarioId };
+		}
+
+		await waitForWorkflowState(
+			polling,
+			event.data.workflowId,
+			"wait-stage-4",
+			snapshot => snapshot.stage === 4 && snapshot.status === "awaiting_human"
+		);
+		await applyScenarioDelay(step, event.data.scenarioId, "stage4", "delay-stage-4");
+		if (scenario.riskPath === "green_lane") {
+			await step.run("grant-green-lane", async () => {
+				await requestManualGreenLane(
+					event.data.workflowId,
+					event.data.applicantId,
+					MOCK_ACTOR,
+					"Scenario-driven Green Lane"
+				);
+
+				await inngest.send({
+					name: "risk/decision.received",
+					data: {
+						workflowId: event.data.workflowId,
+						applicantId: event.data.applicantId,
+						decision: {
+							outcome: "APPROVED",
+							decidedBy: MOCK_ACTOR,
+							reason: "Manual Green Lane",
+							source: "manual_green_lane",
+							timestamp: new Date().toISOString(),
+						},
+					},
+				});
+			});
+		} else {
+			await step.run("approve-risk-review", async () => {
+				await inngest.send({
+					name: "risk/decision.received",
+					data: {
+						workflowId: event.data.workflowId,
+						applicantId: event.data.applicantId,
+						decision: {
+							outcome: "APPROVED",
+							decidedBy: MOCK_ACTOR,
+							reason: `Scenario approved ${event.data.scenarioId}`,
+							timestamp: new Date().toISOString(),
+						},
+					},
+				});
+			});
+		}
+
+		await waitForWorkflowState(
+			polling,
+			event.data.workflowId,
+			"wait-stage-5-review",
+			snapshot =>
+				snapshot.stage === 5 &&
+				snapshot.status === "awaiting_human" &&
+				snapshot.contractDraftReviewedAt === null
+		);
+		await applyScenarioDelay(step, event.data.scenarioId, "stage5", "delay-stage-5-review");
+		await step.run("review-contract", async () => {
+			await markStage5GateOnce({
+				workflowId: event.data.workflowId,
+				gate: "contract_reviewed",
+				actorId: MOCK_ACTOR,
+			});
+
+			await logWorkflowEventOnce({
+				workflowId: event.data.workflowId,
+				eventType: "contract_draft_reviewed",
+				payload: {
+					reviewedBy: MOCK_ACTOR,
+					reviewNotes: "Scenario-reviewed contract draft",
+					timestamp: new Date().toISOString(),
+				},
+				actorType: "platform",
+				actorId: MOCK_ACTOR,
+			});
+
+			await inngest.send({
+				name: "contract/draft.reviewed",
+				data: {
+					workflowId: event.data.workflowId,
+					applicantId: event.data.applicantId,
+					reviewedBy: MOCK_ACTOR,
+					reviewedAt: new Date().toISOString(),
+				},
+			});
+		});
+
+		await waitForWorkflowState(
+			polling,
+			event.data.workflowId,
+			"wait-stage-5-absa",
+			snapshot =>
+				snapshot.stage === 5 &&
+				snapshot.status === "awaiting_human" &&
+				snapshot.contractDraftReviewedAt !== null &&
+				snapshot.absaApprovalConfirmedAt === null
+		);
+		await applyScenarioDelay(step, event.data.scenarioId, "stage5", "delay-stage-5-absa");
+		await step.run("complete-absa-gates", async () => {
+			const db = getDatabaseClient();
+			if (!db) {
+				throw new Error("Database connection failed");
+			}
+
+			await db.insert(documentUploads).values({
+				workflowId: event.data.workflowId,
+				category: "financial",
+				documentType: "ABSA_6995_PDF",
+				fileName: `scenario-${event.data.workflowId}-absa.pdf`,
+				fileSize: 64000,
+				fileContent: "mock-absa-pdf",
+				mimeType: "application/pdf",
+				storageKey: `mock-scenarios/${event.data.workflowId}/absa.pdf`,
+				storageUrl: `https://mock-storage.local/${event.data.workflowId}/absa.pdf`,
+				verificationStatus: "verified",
+				uploadedBy: MOCK_ACTOR,
+			});
+
+			await markStage5GateOnce({
+				workflowId: event.data.workflowId,
+				gate: "absa_packet_sent",
+				actorId: MOCK_ACTOR,
+			});
+			await markStage5GateOnce({
+				workflowId: event.data.workflowId,
+				gate: "absa_approval_confirmed",
+				actorId: MOCK_ACTOR,
+			});
+
+			await logWorkflowEventOnce({
+				workflowId: event.data.workflowId,
+				eventType: "absa_packet_sent",
+				payload: {
+					sentBy: MOCK_ACTOR,
+					sentAt: new Date().toISOString(),
+				},
+				actorType: "platform",
+				actorId: MOCK_ACTOR,
+			});
+			await logWorkflowEventOnce({
+				workflowId: event.data.workflowId,
+				eventType: "absa_approval_confirmed",
+				payload: {
+					confirmedBy: MOCK_ACTOR,
+					timestamp: new Date().toISOString(),
+				},
+				actorType: "platform",
+				actorId: MOCK_ACTOR,
+			});
+
+			await inngest.send({
+				name: "form/absa-6995.completed",
+				data: {
+					workflowId: event.data.workflowId,
+					applicantId: event.data.applicantId,
+					completedAt: new Date().toISOString(),
+				},
+			});
+		});
+
+		await waitForWorkflowState(
+			polling,
+			event.data.workflowId,
+			"wait-stage-6",
+			snapshot => snapshot.stage === 6 && snapshot.status === "awaiting_human"
+		);
+		await applyScenarioDelay(step, event.data.scenarioId, "stage6", "delay-stage-6");
+		await step.run("send-final-approvals", async () => {
+			const approvedAt = new Date().toISOString();
+			await inngest.send([
+				{
+					name: "approval/risk-manager.received",
+					data: {
+						workflowId: event.data.workflowId,
+						applicantId: event.data.applicantId,
+						approvedBy: MOCK_ACTOR,
+						decision: "APPROVED",
+						timestamp: approvedAt,
+					},
+				},
+				{
+					name: "approval/account-manager.received",
+					data: {
+						workflowId: event.data.workflowId,
+						applicantId: event.data.applicantId,
+						approvedBy: MOCK_ACTOR,
+						decision: "APPROVED",
+						timestamp: approvedAt,
+					},
+				},
+			]);
+		});
+
+		await waitForWorkflowState(
+			polling,
+			event.data.workflowId,
+			"wait-contract-form",
+			snapshot => snapshot.stage === 6 && snapshot.status === "awaiting_human"
+		);
+		await applyScenarioDelay(step, event.data.scenarioId, "stage6", "delay-contract-sign");
+		await step.run("sign-final-contract", async () => {
+			await approveDecisionForm({
+				workflowId: event.data.workflowId,
+				applicantId: event.data.applicantId,
+				formType: "AGREEMENT_CONTRACT",
+				data: {
+					signedBy: "Scenario Tester",
+					scenarioId: event.data.scenarioId,
+				},
+			});
+
+			await inngest.send({
+				name: "form/decision.responded",
+				data: {
+					workflowId: event.data.workflowId,
+					applicantId: event.data.applicantId,
+					formType: "AGREEMENT_CONTRACT",
+					decision: "APPROVED",
+					respondedAt: new Date().toISOString(),
+				},
+			});
+
+			await inngest.send({
+				name: "contract/signed",
+				data: {
+					workflowId: event.data.workflowId,
+					signedAt: new Date().toISOString(),
+				},
+			});
+		});
+
+		return {
+			completed: true,
+			scenarioId: event.data.scenarioId,
+			workflowId: event.data.workflowId,
+		};
+	}
+);

@@ -1,5 +1,5 @@
-import { Pool } from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
+import { Pool } from "pg";
 import * as schema from "@/db/schema";
 import { resolveDatabaseConfig } from "@/lib/mock-environment";
 

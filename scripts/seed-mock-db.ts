@@ -5,8 +5,9 @@ import "../envConfig";
 import { createHash } from "node:crypto";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
-import * as schema from "../db/schema";
 import { resolveRequiredDatabaseUrl } from "@/lib/mock-environment";
+import * as schema from "../db/schema";
+import { runMockDashboardSmokeChecks, waitForDatabaseReady } from "./mock-db-utils";
 
 const pool = new Pool({ connectionString: resolveRequiredDatabaseUrl("mock") });
 const db = drizzle(pool, { schema });
@@ -29,8 +30,16 @@ function hashToken(value: string): string {
 
 async function seed() {
 	console.info("🌱 Seeding mock database...");
+	await waitForDatabaseReady(resolveRequiredDatabaseUrl("mock"), { label: "Mock database" });
 
-	const [atlasApplicant, springvaleApplicant, meridianApplicant, redlineApplicant] =
+	const [
+		atlasApplicant,
+		springvaleApplicant,
+		meridianApplicant,
+		redlineApplicant,
+		northstarApplicant,
+		harborApplicant,
+	] =
 		await db
 			.insert(schema.applicants)
 			.values([
@@ -138,6 +147,58 @@ async function seed() {
 					createdAt: daysAgo(16),
 					updatedAt: daysAgo(2),
 				},
+				{
+					companyName: "Northstar Office Supplies Pty Ltd",
+					tradingName: "Northstar Office Supplies",
+					registrationNumber: "2022/550321/07",
+					contactName: "Lerato Molefe",
+					idNumber: "9105156400080",
+					email: "lerato@northstar.mock",
+					phone: "+27825550105",
+					businessType: "COMPANY",
+					entityType: "company",
+					productType: "standard",
+					industry: "Office Supplies",
+					employeeCount: 58,
+					mandateType: "DEBIT_ORDER",
+					mandateVolume: 6400000,
+					estimatedTransactionsPerMonth: 265,
+					status: "qualified",
+					riskLevel: "green",
+					itcScore: 792,
+					itcStatus: "clear",
+					sanctionStatus: "clear",
+					accountExecutive: "ae_green_lane_mock",
+					notes: "Manual testing seed: green lane candidate",
+					createdAt: daysAgo(11),
+					updatedAt: hoursAgo(2),
+				},
+				{
+					companyName: "Harbor Community Services",
+					tradingName: "Harbor Community Services",
+					registrationNumber: "2023/770114/08",
+					contactName: "Zanele Jacobs",
+					idNumber: "9308087300089",
+					email: "zanele@harbor.mock",
+					phone: "+27825550106",
+					businessType: "NPO",
+					entityType: "npo",
+					productType: "standard",
+					industry: "Community Services",
+					employeeCount: 19,
+					mandateType: "EFT",
+					mandateVolume: 1900000,
+					estimatedTransactionsPerMonth: 60,
+					status: "documents_pending",
+					riskLevel: "amber",
+					itcScore: 688,
+					itcStatus: "clear",
+					sanctionStatus: "clear",
+					accountExecutive: "ae_fica_mock",
+					notes: "Manual testing seed: FICA red/manual review",
+					createdAt: daysAgo(7),
+					updatedAt: hoursAgo(1),
+				},
 			])
 			.returning();
 
@@ -201,8 +262,14 @@ async function seed() {
 			aiAnalysisComplete: true,
 			mandateRetryCount: 1,
 			mandateLastSentAt: daysAgo(6),
-			riskManagerApproval: toJson({ approvedBy: "risk_manager_mock", decision: "approved" }),
-			accountManagerApproval: toJson({ approvedBy: "account_manager_mock", decision: "approved" }),
+			riskManagerApproval: toJson({
+				approvedBy: "risk_manager_mock",
+				decision: "approved",
+			}),
+			accountManagerApproval: toJson({
+				approvedBy: "account_manager_mock",
+				decision: "approved",
+			}),
 			contractDraftReviewedBy: "legal_mock",
 			absaPacketSentAt: daysAgo(4),
 			absaPacketSentBy: "ops_mock",
@@ -245,6 +312,52 @@ async function seed() {
 			targetResource: "/api/sanctions",
 			stateLockVersion: 5,
 			metadata: toJson({ seedProfile: "manual-terminated" }),
+		})
+		.returning();
+
+	const [northstarWorkflow] = await db
+		.insert(schema.workflows)
+		.values({
+			applicantId: northstarApplicant.id,
+			stage: 4,
+			status: "awaiting_human",
+			startedAt: daysAgo(11),
+			procurementCleared: true,
+			documentsComplete: true,
+			aiAnalysisComplete: true,
+			salesEvaluationStatus: "approved",
+			preRiskRequired: false,
+			preRiskOutcome: "skipped",
+			stageName: "Risk Review",
+			currentAgent: "reporter",
+			reviewType: "general",
+			decisionType: "risk_review",
+			targetResource: "/api/risk-review",
+			stateLockVersion: 3,
+			metadata: toJson({ seedProfile: "green-lane-candidate" }),
+		})
+		.returning();
+
+	const [harborWorkflow] = await db
+		.insert(schema.workflows)
+		.values({
+			applicantId: harborApplicant.id,
+			stage: 3,
+			status: "processing",
+			startedAt: daysAgo(7),
+			procurementCleared: true,
+			documentsComplete: false,
+			aiAnalysisComplete: false,
+			salesEvaluationStatus: "approved",
+			preRiskRequired: false,
+			preRiskOutcome: "skipped",
+			stageName: "FICA Collection",
+			currentAgent: "validation",
+			reviewType: "general",
+			decisionType: "document_review",
+			targetResource: "/api/onboarding/documents/upload",
+			stateLockVersion: 2,
+			metadata: toJson({ seedProfile: "fica-red" }),
 		})
 		.returning();
 
@@ -326,6 +439,44 @@ async function seed() {
 			reviewedAt: daysAgo(2),
 			notes: "Terminated due to sanctions evidence match.",
 			createdAt: daysAgo(10),
+		},
+		{
+			applicantId: northstarApplicant.id,
+			overallScore: 94,
+			overallStatus: "COMPLIANT",
+			overallRisk: "green",
+			procurementData: toJson({ status: "mock_clear", provider: "procurecheck-mock" }),
+			itcData: toJson({ status: "clear", score: 792, provider: "itc-mock" }),
+			sanctionsData: toJson({ status: "clear", provider: "sanctions-mock" }),
+			ficaData: toJson({ status: "verified", provider: "fica-mock" }),
+			cashFlowConsistency: "strong",
+			dishonouredPayments: 0,
+			averageDailyBalance: 228000,
+			accountMatchVerified: "yes",
+			letterheadVerified: "yes",
+			aiAnalysis: toJson({ recommendation: "APPROVE", confidence: 96 }),
+			reviewedBy: "risk_manager_mock",
+			reviewedAt: daysAgo(4),
+			notes: "Green Lane candidate with all four checks clean.",
+			createdAt: daysAgo(8),
+		},
+		{
+			applicantId: harborApplicant.id,
+			overallScore: 52,
+			overallStatus: "REVIEW_REQUIRED",
+			overallRisk: "amber",
+			procurementData: toJson({ status: "mock_clear", provider: "procurecheck-mock" }),
+			itcData: toJson({ status: "clear", score: 688, provider: "itc-mock" }),
+			sanctionsData: toJson({ status: "clear", provider: "sanctions-mock" }),
+			ficaData: toJson({ status: "rejected", provider: "fica-mock" }),
+			cashFlowConsistency: "regular",
+			dishonouredPayments: 0,
+			averageDailyBalance: 71200,
+			accountMatchVerified: "no",
+			letterheadVerified: "no",
+			aiAnalysis: toJson({ recommendation: "MANUAL_REVIEW", confidence: 68 }),
+			notes: "FICA mismatch scenario for manual testing.",
+			createdAt: daysAgo(5),
 		},
 	]);
 
@@ -546,6 +697,138 @@ async function seed() {
 			startedAt: daysAgo(5),
 			completedAt: daysAgo(5),
 		},
+		{
+			workflowId: northstarWorkflow.id,
+			applicantId: northstarApplicant.id,
+			checkType: "PROCUREMENT",
+			machineState: "completed",
+			reviewState: "approved",
+			provider: "procurecheck-mock",
+			externalCheckId: "PROC-MOCK-NORTHSTAR-001",
+			payload: toJson({ anomalies: [], riskScore: 96, recommendedAction: "APPROVE" }),
+			rawPayload: toJson({ source: "mock", flags: [] }),
+			startedAt: daysAgo(9),
+			completedAt: daysAgo(9),
+		},
+		{
+			workflowId: northstarWorkflow.id,
+			applicantId: northstarApplicant.id,
+			checkType: "ITC",
+			machineState: "completed",
+			reviewState: "approved",
+			provider: "itc-mock",
+			externalCheckId: "ITC-MOCK-NORTHSTAR-001",
+			payload: toJson({
+				recommendation: "AUTO_APPROVE",
+				creditScore: 792,
+				riskCategory: "LOW",
+				adverseListings: [],
+			}),
+			rawPayload: toJson({
+				source: "mock",
+				adverseListings: [],
+				creditProfile: { riskCategory: "LOW" },
+			}),
+			startedAt: daysAgo(9),
+			completedAt: daysAgo(9),
+		},
+		{
+			workflowId: northstarWorkflow.id,
+			applicantId: northstarApplicant.id,
+			checkType: "SANCTIONS",
+			machineState: "completed",
+			reviewState: "approved",
+			provider: "sanctions-mock",
+			externalCheckId: "SAN-MOCK-NORTHSTAR-001",
+			payload: toJson({ riskLevel: "CLEAR", isBlocked: false }),
+			rawPayload: toJson({ source: "mock", matchCount: 0 }),
+			startedAt: daysAgo(9),
+			completedAt: daysAgo(9),
+		},
+		{
+			workflowId: northstarWorkflow.id,
+			applicantId: northstarApplicant.id,
+			checkType: "FICA",
+			machineState: "completed",
+			reviewState: "approved",
+			provider: "fica-mock",
+			externalCheckId: "FICA-MOCK-NORTHSTAR-001",
+			payload: toJson({
+				summary: { overallRecommendation: "PROCEED", criticalMismatchCount: 0 },
+				verificationStatus: "verified",
+			}),
+			rawPayload: toJson({ source: "mock", bankStatementVerified: true }),
+			startedAt: daysAgo(8),
+			completedAt: daysAgo(8),
+		},
+		{
+			workflowId: harborWorkflow.id,
+			applicantId: harborApplicant.id,
+			checkType: "PROCUREMENT",
+			machineState: "completed",
+			reviewState: "approved",
+			provider: "procurecheck-mock",
+			externalCheckId: "PROC-MOCK-HARBOR-001",
+			payload: toJson({ anomalies: [], riskScore: 89, recommendedAction: "APPROVE" }),
+			rawPayload: toJson({ source: "mock", flags: [] }),
+			startedAt: daysAgo(6),
+			completedAt: daysAgo(6),
+		},
+		{
+			workflowId: harborWorkflow.id,
+			applicantId: harborApplicant.id,
+			checkType: "ITC",
+			machineState: "completed",
+			reviewState: "approved",
+			provider: "itc-mock",
+			externalCheckId: "ITC-MOCK-HARBOR-001",
+			payload: toJson({
+				recommendation: "AUTO_APPROVE",
+				creditScore: 688,
+				riskCategory: "LOW",
+				adverseListings: [],
+			}),
+			rawPayload: toJson({
+				source: "mock",
+				adverseListings: [],
+				creditProfile: { riskCategory: "LOW" },
+			}),
+			startedAt: daysAgo(6),
+			completedAt: daysAgo(6),
+		},
+		{
+			workflowId: harborWorkflow.id,
+			applicantId: harborApplicant.id,
+			checkType: "SANCTIONS",
+			machineState: "completed",
+			reviewState: "approved",
+			provider: "sanctions-mock",
+			externalCheckId: "SAN-MOCK-HARBOR-001",
+			payload: toJson({ riskLevel: "CLEAR", isBlocked: false }),
+			rawPayload: toJson({ source: "mock", matchCount: 0 }),
+			startedAt: daysAgo(6),
+			completedAt: daysAgo(6),
+		},
+		{
+			workflowId: harborWorkflow.id,
+			applicantId: harborApplicant.id,
+			checkType: "FICA",
+			machineState: "manual_required",
+			reviewState: "pending",
+			provider: "fica-mock",
+			externalCheckId: "FICA-MOCK-HARBOR-001",
+			payload: toJson({
+				summary: { overallRecommendation: "HOLD", criticalMismatchCount: 2 },
+				verificationStatus: "rejected",
+			}),
+			rawPayload: toJson({
+				source: "mock",
+				reasons: ["name_mismatch", "address_mismatch"],
+			}),
+			startedAt: daysAgo(5),
+			completedAt: daysAgo(5),
+			errorDetails: "Critical FICA mismatches detected.",
+		},
 	]);
 
 	await db.insert(schema.quotes).values([
@@ -574,6 +857,19 @@ async function seed() {
 			generatedBy: "gemini",
 			createdAt: daysAgo(14),
 			updatedAt: daysAgo(3),
+		},
+		{
+			applicantId: northstarApplicant.id,
+			workflowId: northstarWorkflow.id,
+			amount: 112000,
+			baseFeePercent: 145,
+			adjustedFeePercent: 145,
+			details: toJson({ monthlyVolumeBand: "mid", riskAdjustment: "green" }),
+			rationale: "Green Lane candidate with all checks cleared.",
+			status: "approved",
+			generatedBy: "gemini",
+			createdAt: daysAgo(8),
+			updatedAt: daysAgo(2),
 		},
 	]);
 
@@ -605,6 +901,20 @@ async function seed() {
 			payload: toJson({ reason: "SANCTIONS_EXTERNAL_BLOCKED" }),
 			timestamp: daysAgo(2),
 			actorType: "system",
+		},
+		{
+			workflowId: northstarWorkflow.id,
+			eventType: "signed_quote_received",
+			payload: toJson({ source: "mock_seed" }),
+			timestamp: daysAgo(8),
+			actorType: "platform",
+		},
+		{
+			workflowId: harborWorkflow.id,
+			eventType: "fica_check_completed",
+			payload: toJson({ outcome: "manual_required", reason: "critical_mismatch" }),
+			timestamp: daysAgo(5),
+			actorType: "platform",
 		},
 	]);
 
@@ -653,9 +963,31 @@ async function seed() {
 			groupKey: "terminated-sanctions",
 			createdAt: daysAgo(2),
 		},
+		{
+			workflowId: northstarWorkflow.id,
+			applicantId: northstarApplicant.id,
+			type: "green_lane_candidate",
+			message: "Northstar Office Supplies is ready for Green Lane testing.",
+			read: false,
+			actionable: true,
+			severity: "medium",
+			groupKey: "green-lane-candidate",
+			createdAt: hoursAgo(2),
+		},
+		{
+			workflowId: harborWorkflow.id,
+			applicantId: harborApplicant.id,
+			type: "fica_manual_review_required",
+			message: "Harbor Community Services failed FICA and needs manual review.",
+			read: false,
+			actionable: true,
+			severity: "high",
+			groupKey: "fica-red",
+			createdAt: hoursAgo(1),
+		},
 	]);
 
-	const [springvaleForm, meridianForm] = await db
+	const [springvaleForm, meridianForm, harborForm] = await db
 		.insert(schema.internalForms)
 		.values([
 			{
@@ -680,6 +1012,17 @@ async function seed() {
 				reviewNotes: "Approved and dispatched.",
 				createdAt: daysAgo(7),
 				updatedAt: daysAgo(4),
+			},
+			{
+				workflowId: harborWorkflow.id,
+				formType: "fica_documents",
+				status: "revision_required",
+				currentStep: 3,
+				totalSteps: 4,
+				submittedAt: daysAgo(5),
+				reviewNotes: "Name and address mismatches require resubmission.",
+				createdAt: daysAgo(6),
+				updatedAt: hoursAgo(1),
 			},
 		])
 		.returning();
@@ -707,6 +1050,18 @@ async function seed() {
 			}),
 			isDraft: false,
 			submittedBy: "ops_mock",
+			createdAt: daysAgo(5),
+		},
+		{
+			internalFormId: harborForm.id,
+			version: 1,
+			formData: toJson({
+				organisationType: "NPO",
+				uploadedDocuments: ["BANK_STATEMENT", "PROOF_OF_ADDRESS"],
+				finding: "critical_fica_mismatch",
+			}),
+			isDraft: false,
+			submittedBy: "client_mock",
 			createdAt: daysAgo(5),
 		},
 	]);
@@ -746,6 +1101,24 @@ async function seed() {
 			verifiedBy: "ops_mock",
 			verifiedAt: daysAgo(4),
 			uploadedBy: "ops_mock",
+			uploadedAt: daysAgo(5),
+		},
+		{
+			workflowId: harborWorkflow.id,
+			internalFormId: harborForm.id,
+			category: "financial",
+			documentType: "BANK_STATEMENT",
+			fileName: "harbor-bank-statement.pdf",
+			fileSize: 173100,
+			fileContent: "mock-pdf-content",
+			mimeType: "application/pdf",
+			storageKey: "mock/harbor/bank-statement.pdf",
+			storageUrl: "https://mock-storage.local/harbor/bank-statement.pdf",
+			verificationStatus: "rejected",
+			verificationNotes: "Critical mismatches detected in mock FICA review.",
+			verifiedBy: "fica_mock_service",
+			verifiedAt: daysAgo(5),
+			uploadedBy: "client_mock",
 			uploadedAt: daysAgo(5),
 		},
 	]);
@@ -794,6 +1167,20 @@ async function seed() {
 			mimeType: "application/pdf",
 			notes: "Expected but not yet uploaded in seeded scenario.",
 		},
+		{
+			applicantId: harborApplicant.id,
+			type: "FICA_EXCEPTION_MEMO",
+			status: "pending",
+			category: "risk_based",
+			source: "system",
+			fileName: "harbor-fica-exception.json",
+			fileContent: toJson({ criticalMismatchCount: 2, recommendation: "manual_review" }),
+			mimeType: "application/json",
+			storageUrl: "https://mock-storage.local/harbor/fica-exception.json",
+			uploadedBy: "system",
+			uploadedAt: hoursAgo(1),
+			notes: "Generated from seeded FICA red scenario.",
+		},
 	]);
 
 	await db.insert(schema.applicantMagiclinkForms).values([
@@ -823,6 +1210,23 @@ async function seed() {
 			viewedAt: daysAgo(8),
 			expiresAt: daysAgo(-5),
 			decisionStatus: "pending",
+			createdAt: daysAgo(9),
+		},
+		{
+			applicantId: northstarApplicant.id,
+			workflowId: northstarWorkflow.id,
+			formType: "SIGNED_QUOTATION",
+			status: "submitted",
+			tokenHash: hashToken("northstar-quote-form"),
+			token: "northstar-quote-form-token",
+			tokenPrefix: "nstarq",
+			sentAt: daysAgo(9),
+			viewedAt: daysAgo(9),
+			expiresAt: daysAgo(-5),
+			submittedAt: daysAgo(8),
+			decisionStatus: "responded",
+			decisionOutcome: "approved",
+			decisionAt: daysAgo(8),
 			createdAt: daysAgo(9),
 		},
 	]);
@@ -869,6 +1273,26 @@ async function seed() {
 			rawOutput: toJson({ recommendation: "APPROVE" }),
 			createdAt: daysAgo(3),
 		},
+		{
+			applicantId: northstarApplicant.id,
+			workflowId: northstarWorkflow.id,
+			agentName: "reporter",
+			promptVersionId: "mock-seed-v1",
+			confidenceScore: 96,
+			narrative: "All Green Lane checks are satisfied. Workflow is eligible for bypass.",
+			rawOutput: toJson({ recommendation: "APPROVE", greenLaneEligible: true }),
+			createdAt: hoursAgo(2),
+		},
+		{
+			applicantId: harborApplicant.id,
+			workflowId: harborWorkflow.id,
+			agentName: "reporter",
+			promptVersionId: "mock-seed-v1",
+			confidenceScore: 68,
+			narrative: "FICA comparison found critical mismatches and requires intervention.",
+			rawOutput: toJson({ recommendation: "MANUAL_REVIEW", criticalMismatchCount: 2 }),
+			createdAt: hoursAgo(1),
+		},
 	]);
 
 	await db.insert(schema.activityLogs).values([
@@ -886,13 +1310,31 @@ async function seed() {
 			performedBy: "risk_manager_mock",
 			createdAt: daysAgo(2),
 		},
+		{
+			applicantId: northstarApplicant.id,
+			action: "green_lane_candidate_ready",
+			description: "Seeded workflow is ready for manual Green Lane testing.",
+			performedBy: "system",
+			createdAt: hoursAgo(2),
+		},
+		{
+			applicantId: harborApplicant.id,
+			action: "fica_manual_review_required",
+			description: "Seeded workflow requires manual FICA review due to mismatches.",
+			performedBy: "system",
+			createdAt: hoursAgo(1),
+		},
 	]);
 
 	await db.insert(schema.todos).values([
 		{ description: "Review Atlas Facilities manual pricing decision", completed: false },
 		{ description: "Follow up Springvale missing proof of address", completed: false },
+		{ description: "Grant Green Lane to Northstar Office Supplies", completed: false },
+		{ description: "Review Harbor Community Services FICA exception", completed: false },
 		{ description: "Archive Redline sanctions termination record", completed: true },
 	]);
+
+	await runMockDashboardSmokeChecks(resolveRequiredDatabaseUrl("mock"));
 
 	console.info("✅ Mock database seeded");
 }

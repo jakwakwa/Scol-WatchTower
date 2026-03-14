@@ -6,6 +6,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { Pool } from "pg";
 import { resolveRequiredDatabaseUrl } from "@/lib/mock-environment";
+import { waitForDatabaseReady } from "./mock-db-utils";
 
 const url = resolveRequiredDatabaseUrl("mock");
 
@@ -30,6 +31,7 @@ function getMigrationStatements(): string[] {
 
 async function reset() {
 	console.info("🧹 Resetting mock database...");
+	await waitForDatabaseReady(url, { label: "Mock database" });
 	const pool = new Pool({ connectionString: url });
 
 	await pool.query("DROP SCHEMA public CASCADE;");
