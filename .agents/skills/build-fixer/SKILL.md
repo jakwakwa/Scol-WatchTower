@@ -1,5 +1,5 @@
 ---
-name: build-fix
+name: build-fixer
 description: Fix build and TypeScript errors with minimal changes
 ---
 

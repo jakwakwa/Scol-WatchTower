@@ -264,8 +264,8 @@ test("focus trapped in modal", async ({ page }) => {
   // Tab through all elements, should stay in modal
   for (let i = 0; i < count + 1; i++) {
     await page.keyboard.press("Tab");
-    const focused = page.locator(":focus");
-    await expect(modal).toContainText((await focused.textContent()) || "");
+    const focusedInModal = modal.locator(":focus");
+    await expect(focusedInModal).toHaveCount(1);
   }
 });
 ```
