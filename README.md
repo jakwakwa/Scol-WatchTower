@@ -18,8 +18,8 @@
 | **Framework** | [Next.js 16](https://nextjs.org/) (App Router, Turbo) |
 | **Language** | [TypeScript](https://www.typescriptlang.org/) |
 | **Package manager** | [Bun](https://bun.sh/) (recommended) |
-| **Database** | [Turso](https://turso.tech/) (LibSQL) |
-| **ORM** | [Drizzle ORM](https://orm.drizzle.team/) |
+| **Database** | [PostgreSQL 16](https://www.postgresql.org/) |
+| **ORM** | [Drizzle ORM](https://orm.drizzle.team/) (`pg-core`, `pg` driver) |
 | **Auth** | [Clerk](https://clerk.com/) |
 | **Background jobs** | [Inngest](https://www.inngest.com/) |
 | **Styling** | [Tailwind CSS 4](https://tailwindcss.com/), [Shadcn UI](https://ui.shadcn.com/) |
@@ -37,7 +37,7 @@
 ### Prerequisites
 
 - [Bun](https://bun.sh/) v1.0+ (or Node.js v20+)
-- [Turso CLI](https://docs.turso.tech/cli) for database creation and tokens
+- [PostgreSQL 16](https://www.postgresql.org/) (or [Docker](https://www.docker.com/) & Docker Compose for local DB)
 - [Clerk](https://clerk.com/) account for authentication
 
 ### Installation
@@ -58,10 +58,14 @@
    ```bash
    cp .env.example .env.local
    ```
-   Configure at least: Clerk (`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `CLERK_WEBHOOK_SECRET`), Turso (`TURSO_*`), OpenSanctions (`OPENSANCTIONS_*`), and for webhooks/callbacks `GAS_WEBHOOK_SECRET` / `CRON_SECRET`. Add Inngest keys when running in production.
+   Configure at least: Clerk (`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `CLERK_WEBHOOK_SECRET`), PostgreSQL (`DATABASE_URL`), OpenSanctions (`OPENSANCTIONS_*`), and for webhooks/callbacks `GAS_WEBHOOK_SECRET` / `CRON_SECRET`. Add Inngest keys when running in production.
 
 4. **Database**
-   Create your Turso DB and apply migrations:
+   (Optional) Start PostgreSQL via Docker:
+   ```bash
+   docker compose up -d db
+   ```
+   Set `DATABASE_URL` (e.g. `postgresql://postgres:postgres@localhost:5432/controltower`) and apply migrations:
    ```bash
    bun run db:migrate
    ```
@@ -78,6 +82,8 @@
 | `bun run db:migrate` | Run migrations |
 | `bun run db:studio` | Open Drizzle Studio |
 | `bun run test:e2e` | Run Playwright E2E tests |
+| `bun run test:e2e:banner-prod` | E2E: verify no UAT banner in production |
+| `bun run test:e2e:banner-dev` | E2E: verify UAT banner in preview env |
 
 ### GitHub MCP (Cursor)
 

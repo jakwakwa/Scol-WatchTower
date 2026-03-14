@@ -14,12 +14,11 @@ const authToken = process.env.TEST_TURSO_GROUP_AUTH_TOKEN;
 export default defineConfig({
 	schema: "./db/schema.ts",
 	out: "./migrations",
-	dialect: "turso",
+	dialect: "postgresql",
 	...(url
 		? {
 				dbCredentials: {
 					url,
-					authToken: authToken || "",
 				},
 			}
 		: {}),

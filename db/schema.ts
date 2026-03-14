@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { index, integer, pgTable, text, serial, timestamp, boolean } from "drizzle-orm/pg-core";
 
 // ============================================
 // Core Onboarding Tables
@@ -24,8 +24,8 @@ export type BusinessType = (typeof BUSINESS_TYPES)[number];
 /**
  * Applicants table - Central entity for onboarding
  */
-export const applicants = sqliteTable("applicants", {
-	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+export const applicants = pgTable("applicants", {
+	id: serial("id").primaryKey(),
 
 	// Company Info
 	companyName: text("company_name").notNull(),
@@ -58,8 +58,8 @@ export const applicants = sqliteTable("applicants", {
 
 	// SOP v3.1.0: Tiered Escalation & Sanctions
 	escalationTier: integer("escalation_tier").default(1), // 1=Normal, 2=Manager Alert, 3=Salvage
-	salvageDeadline: integer("salvage_deadline", { mode: "timestamp" }),
-	isSalvaged: integer("is_salvaged", { mode: "boolean" }).default(false),
+	salvageDeadline: timestamp("salvage_deadline"),
+	isSalvaged: boolean("is_salvaged").default(false),
 	sanctionStatus: text("sanction_status", {
 		enum: ["clear", "flagged", "confirmed_hit"],
 	}).default("clear"),
@@ -67,10 +67,10 @@ export const applicants = sqliteTable("applicants", {
 	// System
 	accountExecutive: text("account_executive"),
 	notes: text("notes"),
-	createdAt: integer("created_at", { mode: "timestamp" })
+	createdAt: timestamp("created_at")
 		.notNull()
 		.$defaultFn(() => new Date()),
-	updatedAt: integer("updated_at", { mode: "timestamp" })
+	updatedAt: timestamp("updated_at")
 		.notNull()
 		.$defaultFn(() => new Date()),
 });
@@ -78,8 +78,8 @@ export const applicants = sqliteTable("applicants", {
 /**
  * Documents table - Dedicated document tracking
  */
-export const documents = sqliteTable("documents", {
-	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+export const documents = pgTable("documents", {
+	id: serial("id").primaryKey(),
 	applicantId: integer("applicant_id")
 		.notNull()
 		.references(() => applicants.id),
@@ -92,9 +92,9 @@ export const documents = sqliteTable("documents", {
 	mimeType: text("mime_type"),
 	storageUrl: text("storage_url"),
 	uploadedBy: text("uploaded_by"),
-	uploadedAt: integer("uploaded_at", { mode: "timestamp" }),
-	verifiedAt: integer("verified_at", { mode: "timestamp" }),
-	processedAt: integer("processed_at", { mode: "timestamp" }),
+	uploadedAt: timestamp("uploaded_at"),
+	verifiedAt: timestamp("verified_at"),
+	processedAt: timestamp("processed_at"),
 	processingStatus: text("processing_status"),
 	processingResult: text("processing_result"),
 	notes: text("notes"),
@@ -103,8 +103,8 @@ export const documents = sqliteTable("documents", {
 /**
  * Risk Assessments table - Application risk Profiles
  */
-export const riskAssessments = sqliteTable("risk_assessments", {
-	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+export const riskAssessments = pgTable("risk_assessments", {
+	id: serial("id").primaryKey(),
 	applicantId: integer("applicant_id")
 		.notNull()
 		.references(() => applicants.id),
@@ -126,23 +126,23 @@ export const riskAssessments = sqliteTable("risk_assessments", {
 
 	aiAnalysis: text("ai_analysis"), // JSON string, equivalent to jsonb
 	reviewedBy: text("reviewed_by"),
-	reviewedAt: integer("reviewed_at", { mode: "timestamp" }),
+	reviewedAt: timestamp("reviewed_at"),
 	notes: text("notes"),
-	createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
+	createdAt: timestamp("created_at").default(new Date()),
 });
 
 /**
  * Activity Logs - General audits
  */
-export const activityLogs = sqliteTable("activity_logs", {
-	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+export const activityLogs = pgTable("activity_logs", {
+	id: serial("id").primaryKey(),
 	applicantId: integer("applicant_id")
 		.notNull()
 		.references(() => applicants.id),
 	action: text("action").notNull(),
 	description: text("description").notNull(),
 	performedBy: text("performed_by"),
-	createdAt: integer("created_at", { mode: "timestamp" }).default(new Date()),
+	createdAt: timestamp("created_at").default(new Date()),
 });
 
 // ============================================
@@ -170,51 +170,47 @@ export type WorkflowStatus = (typeof WORKFLOW_STATUSES)[number];
  * Workflows table - Tracks onboarding workflow state
  * PRD: Kill switch sets status to 'terminated'
  */
-export const workflows = sqliteTable("workflows", {
-	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+export const workflows = pgTable("workflows", {
+	id: serial("id").primaryKey(),
 	applicantId: integer("applicant_id")
 		.notNull()
 		.references(() => applicants.id),
-	stage: integer("stage", { mode: "number" }).default(1),
+	stage: integer("stage").default(1),
 	status: text("status").default("pending"),
-	startedAt: integer("started_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
-	completedAt: integer("completed_at", { mode: "timestamp" }),
+	startedAt: timestamp("started_at").$defaultFn(() => new Date()),
+	completedAt: timestamp("completed_at"),
 
 	// Kill Switch tracking (PRD Critical)
-	terminatedAt: integer("terminated_at", { mode: "timestamp" }),
+	terminatedAt: timestamp("terminated_at"),
 	terminatedBy: text("terminated_by"),
 	terminationReason: text("termination_reason"),
 
 	// Parallel processing state
-	procurementCleared: integer("procurement_cleared", { mode: "boolean" }),
-	documentsComplete: integer("documents_complete", { mode: "boolean" }),
-	aiAnalysisComplete: integer("ai_analysis_complete", { mode: "boolean" }),
+	procurementCleared: boolean("procurement_cleared"),
+	documentsComplete: boolean("documents_complete"),
+	aiAnalysisComplete: boolean("ai_analysis_complete"),
 
 	// Mandate retry tracking (SOP: 7-day timeout, max 8 retries)
 	mandateRetryCount: integer("mandate_retry_count").default(0),
-	mandateLastSentAt: integer("mandate_last_sent_at", { mode: "timestamp" }),
+	mandateLastSentAt: timestamp("mandate_last_sent_at"),
 
 	// Two-factor approval tracking (Stage 6)
 	riskManagerApproval: text("risk_manager_approval"), // JSON: { approvedBy, timestamp, decision }
 	accountManagerApproval: text("account_manager_approval"), // JSON: { approvedBy, timestamp, decision }
 	// Stage 5 one-shot gate tracking (atomic idempotency)
-	contractDraftReviewedAt: integer("contract_draft_reviewed_at", {
-		mode: "timestamp",
-	}),
+	contractDraftReviewedAt: timestamp("contract_draft_reviewed_at"),
 	contractDraftReviewedBy: text("contract_draft_reviewed_by"),
-	absaPacketSentAt: integer("absa_packet_sent_at", { mode: "timestamp" }),
+	absaPacketSentAt: timestamp("absa_packet_sent_at"),
 	absaPacketSentBy: text("absa_packet_sent_by"),
-	absaApprovalConfirmedAt: integer("absa_approval_confirmed_at", {
-		mode: "timestamp",
-	}),
+	absaApprovalConfirmedAt: timestamp("absa_approval_confirmed_at"),
 	absaApprovalConfirmedBy: text("absa_approval_confirmed_by"),
 	// Stage 2 sales/pre-risk + applicant decision tracking
 	salesEvaluationStatus: text("sales_evaluation_status"), // pending, approved, issues_found
 	salesIssuesSummary: text("sales_issues_summary"),
 	issueFlaggedBy: text("issue_flagged_by"), // account_manager, ai, system
-	preRiskRequired: integer("pre_risk_required", { mode: "boolean" }),
+	preRiskRequired: boolean("pre_risk_required"),
 	preRiskOutcome: text("pre_risk_outcome"), // approved, rejected, skipped
-	preRiskEvaluatedAt: integer("pre_risk_evaluated_at", { mode: "timestamp" }),
+	preRiskEvaluatedAt: timestamp("pre_risk_evaluated_at"),
 	applicantDecisionOutcome: text("applicant_decision_outcome"), // approved, declined
 	applicantDeclineReason: text("applicant_decline_reason"),
 
@@ -228,15 +224,15 @@ export const workflows = sqliteTable("workflows", {
 	// Incremented atomically on every finalized state change (human decision, kill switch, etc.)
 	// Background processes must check this version before writing to detect collisions.
 	stateLockVersion: integer("state_lock_version").default(0),
-	stateLockedAt: integer("state_locked_at", { mode: "timestamp" }),
+	stateLockedAt: timestamp("state_locked_at"),
 	stateLockedBy: text("state_locked_by"), // User ID or "system"
 
 	// Green Lane — Manual AM-triggered bypass (same path as automatic Green Lane)
-	greenLaneRequestedAt: integer("green_lane_requested_at", { mode: "timestamp" }),
+	greenLaneRequestedAt: timestamp("green_lane_requested_at"),
 	greenLaneRequestedBy: text("green_lane_requested_by"),
 	greenLaneRequestNotes: text("green_lane_request_notes"),
 	greenLaneRequestSource: text("green_lane_request_source"), // manual_am | automatic
-	greenLaneConsumedAt: integer("green_lane_consumed_at", { mode: "timestamp" }),
+	greenLaneConsumedAt: timestamp("green_lane_consumed_at"),
 
 	// System
 	metadata: text("metadata"),
@@ -275,8 +271,8 @@ export const RISK_CHECK_REVIEW_STATES = [
 
 export type RiskCheckReviewState = (typeof RISK_CHECK_REVIEW_STATES)[number];
 
-export const riskCheckResults = sqliteTable("risk_check_results", {
-	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+export const riskCheckResults = pgTable("risk_check_results", {
+	id: serial("id").primaryKey(),
 	workflowId: integer("workflow_id")
 		.notNull()
 		.references(() => workflows.id),
@@ -295,41 +291,41 @@ export const riskCheckResults = sqliteTable("risk_check_results", {
 	rawPayload: text("raw_payload"), // JSON: raw provider response snapshot
 	errorDetails: text("error_details"),
 
-	startedAt: integer("started_at", { mode: "timestamp" }),
-	completedAt: integer("completed_at", { mode: "timestamp" }),
+	startedAt: timestamp("started_at"),
+	completedAt: timestamp("completed_at"),
 
 	reviewedBy: text("reviewed_by"),
-	reviewedAt: integer("reviewed_at", { mode: "timestamp" }),
+	reviewedAt: timestamp("reviewed_at"),
 	reviewNotes: text("review_notes"),
 
-	createdAt: integer("created_at", { mode: "timestamp" })
+	createdAt: timestamp("created_at")
 		.$defaultFn(() => new Date()),
-	updatedAt: integer("updated_at", { mode: "timestamp" })
+	updatedAt: timestamp("updated_at")
 		.$defaultFn(() => new Date()),
 });
 
 export const NOTIFICATION_SEVERITIES = ["low", "medium", "high", "critical"] as const;
 export type NotificationSeverity = (typeof NOTIFICATION_SEVERITIES)[number];
 
-export const notifications = sqliteTable("notifications", {
-	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+export const notifications = pgTable("notifications", {
+	id: serial("id").primaryKey(),
 	workflowId: integer("workflow_id").references(() => workflows.id),
 	applicantId: integer("applicant_id").references(() => applicants.id),
 	type: text("type").notNull(),
 	message: text("message").notNull(),
-	read: integer("read", { mode: "boolean" }).default(false),
-	createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
-	actionable: integer("actionable", { mode: "boolean" }).default(false),
+	read: boolean("read").default(false),
+	createdAt: timestamp("created_at").$defaultFn(() => new Date()),
+	actionable: boolean("actionable").default(false),
 	severity: text("severity").default("medium"), // low | medium | high | critical
 	groupKey: text("group_key"), // batch grouping key, e.g. "batch_failure:workflow:42"
 });
 
-export const workflowEvents = sqliteTable("workflow_events", {
-	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+export const workflowEvents = pgTable("workflow_events", {
+	id: serial("id").primaryKey(),
 	workflowId: integer("workflow_id").references(() => workflows.id),
 	eventType: text("event_type").notNull(),
 	payload: text("payload"),
-	timestamp: integer("timestamp", { mode: "timestamp" }).$defaultFn(() => new Date()),
+	timestamp: timestamp("timestamp").$defaultFn(() => new Date()),
 	actorType: text("actor_type").default("platform"),
 	actorId: text("actor_id"),
 });
@@ -341,8 +337,8 @@ export const workflowEvents = sqliteTable("workflow_events", {
  * Every human override becomes a retrainable data point.
  * Divergence metrics enable prioritized retraining queues.
  */
-export const aiFeedbackLogs = sqliteTable("ai_feedback_logs", {
-	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+export const aiFeedbackLogs = pgTable("ai_feedback_logs", {
+	id: serial("id").primaryKey(),
 	workflowId: integer("workflow_id")
 		.notNull()
 		.references(() => workflows.id),
@@ -362,13 +358,13 @@ export const aiFeedbackLogs = sqliteTable("ai_feedback_logs", {
 	overrideDetails: text("override_details"), // Optional free text for "OTHER"
 
 	// Divergence metrics
-	isDivergent: integer("is_divergent", { mode: "boolean" }).notNull(),
+	isDivergent: boolean("is_divergent").notNull(),
 	divergenceWeight: integer("divergence_weight"), // 1-10 priority for retraining
 	divergenceType: text("divergence_type"), // "false_positive" | "false_negative" | "severity_mismatch"
 
 	// Actor
 	decidedBy: text("decided_by").notNull(),
-	decidedAt: integer("decided_at", { mode: "timestamp" })
+	decidedAt: timestamp("decided_at")
 		.notNull()
 		.$defaultFn(() => new Date()),
 
@@ -378,17 +374,17 @@ export const aiFeedbackLogs = sqliteTable("ai_feedback_logs", {
 	),
 
 	// Retraining status
-	consumedForRetraining: integer("consumed_for_retraining", { mode: "boolean" }).default(
+	consumedForRetraining: boolean("consumed_for_retraining").default(
 		false
 	),
-	consumedAt: integer("consumed_at", { mode: "timestamp" }),
+	consumedAt: timestamp("consumed_at"),
 });
 
 /**
  * Applicant Magic Link Forms - Magic link tracking
  */
-export const applicantMagiclinkForms = sqliteTable("applicant_magiclink_forms", {
-	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+export const applicantMagiclinkForms = pgTable("applicant_magiclink_forms", {
+	id: serial("id").primaryKey(),
 	applicantId: integer("applicant_id")
 		.notNull()
 		.references(() => applicants.id),
@@ -398,15 +394,15 @@ export const applicantMagiclinkForms = sqliteTable("applicant_magiclink_forms", 
 	tokenHash: text("token_hash").notNull().unique(),
 	token: text("token"),
 	tokenPrefix: text("token_prefix"),
-	sentAt: integer("sent_at", { mode: "timestamp" }),
-	viewedAt: integer("viewed_at", { mode: "timestamp" }),
-	expiresAt: integer("expires_at", { mode: "timestamp" }),
-	submittedAt: integer("submitted_at", { mode: "timestamp" }),
+	sentAt: timestamp("sent_at"),
+	viewedAt: timestamp("viewed_at"),
+	expiresAt: timestamp("expires_at"),
+	submittedAt: timestamp("submitted_at"),
 	decisionStatus: text("decision_status"), // pending, responded
 	decisionOutcome: text("decision_outcome"), // approved, declined
 	decisionReason: text("decision_reason"),
-	decisionAt: integer("decision_at", { mode: "timestamp" }),
-	createdAt: integer("created_at", { mode: "timestamp" })
+	decisionAt: timestamp("decision_at"),
+	createdAt: timestamp("created_at")
 		.notNull()
 		.$defaultFn(() => new Date()),
 });
@@ -414,8 +410,8 @@ export const applicantMagiclinkForms = sqliteTable("applicant_magiclink_forms", 
 /**
  * Applicant Submissions - Stored form payloads
  */
-export const applicantSubmissions = sqliteTable("applicant_submissions", {
-	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+export const applicantSubmissions = pgTable("applicant_submissions", {
+	id: serial("id").primaryKey(),
 	applicantMagiclinkFormId: integer("applicant_magiclink_form_id")
 		.notNull()
 		.references(() => applicantMagiclinkForms.id),
@@ -427,7 +423,7 @@ export const applicantSubmissions = sqliteTable("applicant_submissions", {
 	data: text("data").notNull(), // JSON string
 	submittedBy: text("submitted_by"),
 	version: integer("version").default(1),
-	submittedAt: integer("submitted_at", { mode: "timestamp" })
+	submittedAt: timestamp("submitted_at")
 		.notNull()
 		.$defaultFn(() => new Date()),
 });
@@ -440,8 +436,8 @@ export const applicantSubmissions = sqliteTable("applicant_submissions", {
  * under a different business or director's name. Matching is by ID, bank account,
  * or cellphone number — no AI, only a smart algorithm.
  */
-export const workflowTerminationDenyList = sqliteTable("workflow_termination_deny_list", {
-	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+export const workflowTerminationDenyList = pgTable("workflow_termination_deny_list", {
+	id: serial("id").primaryKey(),
 	workflowId: integer("workflow_id")
 		.notNull()
 		.references(() => workflows.id),
@@ -458,10 +454,10 @@ export const workflowTerminationDenyList = sqliteTable("workflow_termination_den
 
 	// Metadata
 	terminationReason: text("termination_reason").notNull(),
-	terminatedAt: integer("terminated_at", { mode: "timestamp" })
+	terminatedAt: timestamp("terminated_at")
 		.notNull()
 		.$defaultFn(() => new Date()),
-	createdAt: integer("created_at", { mode: "timestamp" })
+	createdAt: timestamp("created_at")
 		.notNull()
 		.$defaultFn(() => new Date()),
 });
@@ -483,10 +479,10 @@ export const SCREENING_VALUE_TYPES = [
 
 export type ScreeningValueType = (typeof SCREENING_VALUE_TYPES)[number];
 
-export const workflowTerminationScreening = sqliteTable(
+export const workflowTerminationScreening = pgTable(
 	"workflow_termination_screening",
 	{
-		id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+		id: serial("id").primaryKey(),
 		denyListId: integer("deny_list_id")
 			.notNull()
 			.references(() => workflowTerminationDenyList.id, { onDelete: "cascade" }),
@@ -494,7 +490,7 @@ export const workflowTerminationScreening = sqliteTable(
 			enum: SCREENING_VALUE_TYPES,
 		}).notNull(),
 		value: text("value").notNull(), // Normalized value for exact match and FTS indexing
-		createdAt: integer("created_at", { mode: "timestamp" })
+		createdAt: timestamp("created_at")
 			.notNull()
 			.$defaultFn(() => new Date()),
 	},
@@ -510,8 +506,8 @@ export const workflowTerminationScreening = sqliteTable(
 /**
  * Re-Applicant Attempt Log - Records when a re-applicant is detected and denied
  */
-export const reApplicantAttempts = sqliteTable("re_applicant_attempts", {
-	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+export const reApplicantAttempts = pgTable("re_applicant_attempts", {
+	id: serial("id").primaryKey(),
 	applicantId: integer("applicant_id")
 		.notNull()
 		.references(() => applicants.id),
@@ -523,7 +519,7 @@ export const reApplicantAttempts = sqliteTable("re_applicant_attempts", {
 		.references(() => workflowTerminationDenyList.id),
 	matchedOn: text("matched_on").notNull(), // "id_number" | "board_member_id" | "cellphone" | "bank_account" | "board_member_name"
 	matchedValue: text("matched_value").notNull(),
-	deniedAt: integer("denied_at", { mode: "timestamp" })
+	deniedAt: timestamp("denied_at")
 		.notNull()
 		.$defaultFn(() => new Date()),
 });
@@ -547,8 +543,8 @@ export const applicantsRelations = relations(applicants, ({ many, one }) => ({
 /**
  * Agent Registry - Track available external agents
  */
-export const agents = sqliteTable("agents", {
-	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+export const agents = pgTable("agents", {
+	id: serial("id").primaryKey(),
 	agentId: text("agent_id").notNull().unique(), // e.g., "xt_risk_agent_v2"
 	name: text("name").notNull(),
 	description: text("description"),
@@ -565,10 +561,10 @@ export const agents = sqliteTable("agents", {
 	status: text("status", { enum: ["active", "inactive", "error"] })
 		.notNull()
 		.default("active"),
-	lastCallbackAt: integer("last_callback_at", { mode: "timestamp" }),
+	lastCallbackAt: timestamp("last_callback_at"),
 	callbackCount: integer("callback_count").notNull().default(0),
 	errorCount: integer("error_count").notNull().default(0),
-	createdAt: integer("created_at", { mode: "timestamp" })
+	createdAt: timestamp("created_at")
 		.notNull()
 		.$defaultFn(() => new Date()),
 });
@@ -576,8 +572,8 @@ export const agents = sqliteTable("agents", {
 /**
  * external Callbacks - Agent callback records
  */
-export const agentCallbacks = sqliteTable("xt_callbacks", {
-	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+export const agentCallbacks = pgTable("xt_callbacks", {
+	id: serial("id").primaryKey(),
 	workflowId: integer("workflow_id")
 		.notNull()
 		.references(() => workflows.id),
@@ -595,8 +591,8 @@ export const agentCallbacks = sqliteTable("xt_callbacks", {
 	rawPayload: text("raw_payload").notNull(), // Complete incoming JSON
 	validationErrors: text("validation_errors"), // Any Zod errors
 	humanActor: text("human_actor"), // Email of human who made decision
-	processedAt: integer("processed_at", { mode: "timestamp" }),
-	receivedAt: integer("received_at", { mode: "timestamp" })
+	processedAt: timestamp("processed_at"),
+	receivedAt: timestamp("received_at")
 		.notNull()
 		.$defaultFn(() => new Date()),
 });
@@ -604,8 +600,8 @@ export const agentCallbacks = sqliteTable("xt_callbacks", {
 /**
  * Quotes table - Generated fee structures
  */
-export const quotes = sqliteTable("quotes", {
-	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+export const quotes = pgTable("quotes", {
+	id: serial("id").primaryKey(),
 	applicantId: integer("applicant_id").references(() => applicants.id),
 	workflowId: integer("workflow_id")
 		.notNull()
@@ -621,10 +617,10 @@ export const quotes = sqliteTable("quotes", {
 		.notNull()
 		.default("draft"),
 	generatedBy: text("generated_by").notNull().default("platform"), // 'system' or 'gemini'
-	createdAt: integer("created_at", { mode: "timestamp" })
+	createdAt: timestamp("created_at")
 		.notNull()
 		.$defaultFn(() => new Date()),
-	updatedAt: integer("updated_at", { mode: "timestamp" })
+	updatedAt: timestamp("updated_at")
 		.notNull()
 		.$defaultFn(() => new Date()),
 });
@@ -768,10 +764,10 @@ export const aiFeedbackLogsRelations = relations(aiFeedbackLogs, ({ one }) => ({
 // Legacy table (kept for compatibility)
 // ============================================
 
-export const todos = sqliteTable("todos", {
-	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+export const todos = pgTable("todos", {
+	id: serial("id").primaryKey(),
 	description: text("description").notNull(),
-	completed: integer("completed", { mode: "boolean" }).notNull().default(false),
+	completed: boolean("completed").notNull().default(false),
 });
 
 // ============================================
@@ -793,8 +789,8 @@ export type FormType = (typeof FORM_TYPES)[number];
 /**
  * Internal Forms - Track form submission status per workflow
  */
-export const internalForms = sqliteTable("internal_forms", {
-	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+export const internalForms = pgTable("internal_forms", {
+	id: serial("id").primaryKey(),
 	workflowId: integer("workflow_id")
 		.notNull()
 		.references(() => workflows.id),
@@ -815,15 +811,15 @@ export const internalForms = sqliteTable("internal_forms", {
 		.default("not_started"),
 	currentStep: integer("current_step").notNull().default(1),
 	totalSteps: integer("total_steps").notNull().default(1),
-	lastSavedAt: integer("last_saved_at", { mode: "timestamp" }),
-	submittedAt: integer("submitted_at", { mode: "timestamp" }),
-	reviewedAt: integer("reviewed_at", { mode: "timestamp" }),
+	lastSavedAt: timestamp("last_saved_at"),
+	submittedAt: timestamp("submitted_at"),
+	reviewedAt: timestamp("reviewed_at"),
 	reviewedBy: text("reviewed_by"), // Clerk user ID
 	reviewNotes: text("review_notes"),
-	createdAt: integer("created_at", { mode: "timestamp" })
+	createdAt: timestamp("created_at")
 		.notNull()
 		.$defaultFn(() => new Date()),
-	updatedAt: integer("updated_at", { mode: "timestamp" })
+	updatedAt: timestamp("updated_at")
 		.notNull()
 		.$defaultFn(() => new Date()),
 });
@@ -831,16 +827,16 @@ export const internalForms = sqliteTable("internal_forms", {
 /**
  * Internal Submissions - Store form data with versioning
  */
-export const internalSubmissions = sqliteTable("internal_submissions", {
-	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+export const internalSubmissions = pgTable("internal_submissions", {
+	id: serial("id").primaryKey(),
 	internalFormId: integer("internal_form_id")
 		.notNull()
 		.references(() => internalForms.id),
 	version: integer("version").notNull().default(1),
 	formData: text("form_data").notNull(), // JSON string of form values
-	isDraft: integer("is_draft", { mode: "boolean" }).notNull().default(true),
+	isDraft: boolean("is_draft").notNull().default(true),
 	submittedBy: text("submitted_by"), // Clerk user ID
-	createdAt: integer("created_at", { mode: "timestamp" })
+	createdAt: timestamp("created_at")
 		.notNull()
 		.$defaultFn(() => new Date()),
 });
@@ -848,8 +844,8 @@ export const internalSubmissions = sqliteTable("internal_submissions", {
 /**
  * Document Uploads - FICA document metadata and verification status
  */
-export const documentUploads = sqliteTable("document_uploads", {
-	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+export const documentUploads = pgTable("document_uploads", {
+	id: serial("id").primaryKey(),
 	workflowId: integer("workflow_id")
 		.notNull()
 		.references(() => workflows.id),
@@ -871,11 +867,11 @@ export const documentUploads = sqliteTable("document_uploads", {
 		.default("pending"),
 	verificationNotes: text("verification_notes"),
 	verifiedBy: text("verified_by"),
-	verifiedAt: integer("verified_at", { mode: "timestamp" }),
-	expiresAt: integer("expires_at", { mode: "timestamp" }),
+	verifiedAt: timestamp("verified_at"),
+	expiresAt: timestamp("expires_at"),
 	metadata: text("metadata"),
 	uploadedBy: text("uploaded_by"),
-	uploadedAt: integer("uploaded_at", { mode: "timestamp" })
+	uploadedAt: timestamp("uploaded_at")
 		.notNull()
 		.$defaultFn(() => new Date()),
 });
@@ -883,8 +879,8 @@ export const documentUploads = sqliteTable("document_uploads", {
 /**
  * Signatures - Canvas signature data with timestamps
  */
-export const signatures = sqliteTable("signatures", {
-	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+export const signatures = pgTable("signatures", {
+	id: serial("id").primaryKey(),
 	workflowId: integer("workflow_id")
 		.notNull()
 		.references(() => workflows.id),
@@ -898,7 +894,7 @@ export const signatures = sqliteTable("signatures", {
 	signatureHash: text("signature_hash").notNull(), // SHA-256 hash for integrity
 	ipAddress: text("ip_address"),
 	userAgent: text("user_agent"),
-	signedAt: integer("signed_at", { mode: "timestamp" })
+	signedAt: timestamp("signed_at")
 		.notNull()
 		.$defaultFn(() => new Date()),
 });
@@ -953,8 +949,8 @@ export const signaturesRelations = relations(signatures, ({ one }) => ({
 /**
  * Sanction Clearance Table - Track manual clearance of sanction hits
  */
-export const sanctionClearance = sqliteTable("sanction_clearance", {
-	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+export const sanctionClearance = pgTable("sanction_clearance", {
+	id: serial("id").primaryKey(),
 	applicantId: integer("applicant_id")
 		.notNull()
 		.references(() => applicants.id),
@@ -964,8 +960,8 @@ export const sanctionClearance = sqliteTable("sanction_clearance", {
 	sanctionListId: text("sanction_list_id"), // External ID (e.g. OFAC-123)
 	clearedBy: text("cleared_by").notNull(), // User ID
 	clearanceReason: text("clearance_reason").notNull(), // Mandatory justification
-	isFalsePositive: integer("is_false_positive", { mode: "boolean" }).notNull(),
-	createdAt: integer("created_at", { mode: "timestamp" })
+	isFalsePositive: boolean("is_false_positive").notNull(),
+	createdAt: timestamp("created_at")
 		.notNull()
 		.$defaultFn(() => new Date()),
 });
@@ -973,8 +969,8 @@ export const sanctionClearance = sqliteTable("sanction_clearance", {
 /**
  * AI Analysis Logs - Detailed AI outputs
  */
-export const aiAnalysisLogs = sqliteTable("ai_analysis_logs", {
-	id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+export const aiAnalysisLogs = pgTable("ai_analysis_logs", {
+	id: serial("id").primaryKey(),
 	applicantId: integer("applicant_id")
 		.notNull()
 		.references(() => applicants.id),
@@ -1001,7 +997,7 @@ export const aiAnalysisLogs = sqliteTable("ai_analysis_logs", {
 	}),
 	narrative: text("narrative"), // The structured output or summary
 	rawOutput: text("raw_output"), // Full JSON output
-	createdAt: integer("created_at", { mode: "timestamp" })
+	createdAt: timestamp("created_at")
 		.notNull()
 		.$defaultFn(() => new Date()),
 });

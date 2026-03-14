@@ -16,7 +16,7 @@
 ## Learned Workspace Facts
 
 - `bun run lint` runs Biome (not next lint)
-- The repo uses Drizzle ORM with Turso (libSQL/SQLite), not Prisma; schema lives in `db/schema.ts`
+- The repo uses Drizzle ORM with PostgreSQL (pg-core, pg driver), not Prisma; schema lives in `db/schema.ts`
 - Inngest is the workflow orchestration engine; `cancelOn` only interrupts between steps, not mid-step
 - The onboarding workflow has exactly 4 risk check families: PROCUREMENT, ITC, SANCTIONS, and FICA — stored in `risk_check_results`; they must run 100% independently with no bundling in shared step.run or Promise.all pairs
 - External sanctions ingestion is the intended primary signal; the manual compliance route at `/api/sanctions` is the fallback/override

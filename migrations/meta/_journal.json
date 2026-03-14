@@ -1,26 +1,12 @@
 {
   "version": "7",
-  "dialect": "sqlite",
+  "dialect": "postgresql",
   "entries": [
     {
       "idx": 0,
-      "version": "6",
-      "when": 1773231325196,
-      "tag": "0000_giant_ezekiel",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1773239714539,
-      "tag": "0001_hesitant_ozymandias",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1773240000000,
-      "tag": "0002_green_lane_workflow_fields",
+      "version": "7",
+      "when": 1773470563904,
+      "tag": "0000_chubby_mad_thinker",
       "breakpoints": true
     }
   ]

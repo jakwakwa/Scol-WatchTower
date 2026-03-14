@@ -13,7 +13,6 @@ import { resolve } from "node:path";
 config({ path: resolve(process.cwd(), ".env.test"), override: true });
 
 const url = process.env.TEST_DATABASE_URL;
-const authToken = process.env.TEST_TURSO_GROUP_AUTH_TOKEN;
 
 if (!url) {
 	console.error("❌ TEST_DATABASE_URL is not defined in .env.test");
@@ -21,29 +20,18 @@ if (!url) {
 	process.exit(1);
 }
 
-const { createClient } = await import("@libsql/client");
-const client = createClient({ url, authToken });
+const { Pool } = await import("pg");
+const pool = new Pool({ connectionString: url });
 
 async function reset() {
 	console.info("🧹 Resetting test database...");
 
-	await client.execute("PRAGMA foreign_keys = OFF");
-
-	const objects = await client.execute(
-		"SELECT name, type FROM sqlite_master WHERE type IN ('table', 'view') AND name NOT LIKE 'sqlite_%'"
-	);
-
-	for (const row of objects.rows) {
-		if (typeof row.name !== "string" || typeof row.type !== "string") {
-			continue;
-		}
-
-		const keyword = row.type === "view" ? "VIEW" : "TABLE";
-		await client.execute(`DROP ${keyword} IF EXISTS "${row.name}"`);
-	}
-
-	await client.execute("PRAGMA foreign_keys = ON");
-	client.close();
+	await pool.query("DROP SCHEMA public CASCADE;");
+	await pool.query("CREATE SCHEMA public;");
+	await pool.query("GRANT ALL ON SCHEMA public TO postgres;");
+	await pool.query("GRANT ALL ON SCHEMA public TO public;");
+	
+	await pool.end();
 
 	// Run migrations against test DB (uses drizzle.test.config.ts)
 	execSync("bun run db:migrate:test", {

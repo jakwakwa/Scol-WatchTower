@@ -5,20 +5,20 @@
  * Creates a test applicant and workflow if they don't exist
  */
 
-import { createClient } from "@libsql/client";
-import { drizzle } from "drizzle-orm/libsql";
+import { Pool } from "pg";
+import { drizzle } from "drizzle-orm/node-postgres";
 import * as schema from "../db/schema";
 
 const url = process.env.DATABASE_URL;
-const authToken = process.env.TURSO_GROUP_AUTH_TOKEN;
-
 if (!url) {
 	console.error("❌ DATABASE_URL is not defined");
 	process.exit(1);
 }
 
-const client = createClient({ url, authToken });
-const db = drizzle(client, { schema });
+const pool = new Pool({
+	connectionString: url,
+});
+const db = drizzle(pool, { schema });
 
 async function setupTestData() {
 	try {

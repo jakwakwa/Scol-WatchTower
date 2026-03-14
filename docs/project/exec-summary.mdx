@@ -27,8 +27,8 @@ The system has recently transitioned from a Zapier-dependent architecture to a d
 
 **Backend & Data**
 
-- **Database**: [Turso](https://turso.tech/) (LibSQL)
-- **ORM**: [Drizzle ORM](https://orm.drizzle.team/)
+- **Database**: [PostgreSQL 16](https://www.postgresql.org/)
+- **ORM**: [Drizzle ORM](https://orm.drizzle.team/) with `drizzle-orm/node-postgres` and `pg` driver
 - **Auth**: [Clerk](https://clerk.com/)
 - **Background Jobs**: [Inngest](https://www.inngest.com/)
 
@@ -53,7 +53,7 @@ The platform follows a modern event-driven architecture:
 ### Prerequisites
 
 - **Node.js** (v20+) or **Bun** (v1.0+)
-- **Turso CLI** (for database management)
+- **Docker & Docker Compose** (optional, for local PostgreSQL)
 - **Clerk Account** (for authentication)
 
 ### Installation
@@ -80,10 +80,17 @@ The platform follows a modern event-driven architecture:
     cp .env.example .env.local
     ```
 
-    _You will need API keys for Clerk, Turso, and your Inngest signing key (if running in production)._
+    _You will need API keys for Clerk, a PostgreSQL connection string (`DATABASE_URL`), and your Inngest signing key (if running in production)._
 
 4.  **Database Setup**
-    Push the schema to your Turso database:
+    If using Docker for local development, start PostgreSQL:
+
+    ```bash
+    docker compose up -d db
+    ```
+
+    Set `DATABASE_URL` (e.g. `postgresql://postgres:postgres@localhost:5432/controltower`) in `.env.local`, then push the schema:
+
     ```bash
     bun run db:migrate
     ```

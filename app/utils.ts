@@ -1,13 +1,10 @@
-import { createClient } from "@libsql/client";
-import { drizzle } from "drizzle-orm/libsql";
+import { Pool } from "pg";
+import { drizzle } from "drizzle-orm/node-postgres";
 import * as schema from "@/db/schema";
 
 export function getDatabaseClient() {
 	const useTestDatabase = process.env.E2E_USE_TEST_DB === "1";
 	const url = useTestDatabase ? process.env.TEST_DATABASE_URL : process.env.DATABASE_URL;
-	const authToken = useTestDatabase
-		? process.env.TEST_TURSO_GROUP_AUTH_TOKEN
-		: process.env.TURSO_GROUP_AUTH_TOKEN;
 
 	if (!url) {
 		console.error(
@@ -17,12 +14,11 @@ export function getDatabaseClient() {
 	}
 
 	try {
-		const client = createClient({
-			url,
-			authToken,
+		const pool = new Pool({
+			connectionString: url,
 		});
 
-		return drizzle(client, { schema });
+		return drizzle(pool, { schema });
 	} catch (error) {
 		console.error("Failed to create database client:", error);
 	}

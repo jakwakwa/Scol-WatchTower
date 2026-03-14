@@ -1,0 +1,29 @@
+---
+title: "Changelog — 14 March 2026"
+description: "Database migration from Turso to PostgreSQL, Docker setup, UAT banner for preview deployments, and E2E banner tests."
+---
+
+# Changelog: 14 March 2026
+
+## Database Migration
+
+- Migrated from **Turso (libSQL/SQLite)** to **PostgreSQL 16**.
+- Drizzle schema now uses `drizzle-orm/pg-core`; connection via `pg` Pool and `drizzle-orm/node-postgres`.
+- Environment variables: `DATABASE_URL` and `TEST_DATABASE_URL` replace `TURSO_*` credentials.
+- Migrations reset and regenerated in PostgreSQL dialect.
+
+## Docker Setup
+
+- Added `docker-compose.yml` with PostgreSQL 16, Inngest dev server, web app, and dedicated test database.
+- Added `Dockerfile.dev` for containerized development.
+- Local development can use `docker compose up -d db` before `bun run db:migrate`.
+
+## UAT Banner
+
+- Red banner "UAT SANDBOX — DO NOT ENTER REAL APPLICANT DATA OR PII" appears when `NEXT_PUBLIC_VERCEL_ENV=preview` (Vercel preview deployments).
+- Warns users against entering real applicant data or PII in non-production environments.
+
+## E2E Testing
+
+- New `banner.app.spec.ts` validates banner visibility in production vs preview environments.
+- Scripts `test:e2e:banner-prod` and `test:e2e:banner-dev` for environment-specific banner assertions.

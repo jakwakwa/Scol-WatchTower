@@ -12,13 +12,8 @@ const hasCredentials =
 export default defineConfig({
 	schema: "./db/schema.ts",
 	out: "./migrations",
-	dialect: "turso",
-	...(hasCredentials
-		? {
-				dbCredentials: {
-					url: process.env.DATABASE_URL!,
-					authToken: process.env.TURSO_GROUP_AUTH_TOKEN,
-				},
-			}
-		: {}),
+	dialect: "postgresql",
+	dbCredentials: {
+		url: process.env.DATABASE_URL!,
+	},
 });

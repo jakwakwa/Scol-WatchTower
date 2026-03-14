@@ -1,7 +1,6 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { DM_Sans, Inter } from "next/font/google";
-import DottedGridHeightSync from "@/components/layout/dotted-grid-height-sync";
 
 import "./globals.css";
 
@@ -30,6 +29,11 @@ export default function RootLayout({
 				<body
 					className={`bg-background  overscroll-none  ${inter.className} override-padding-reset`}
 					suppressHydrationWarning>
+					{process.env.NEXT_PUBLIC_VERCEL_ENV === "preview" && (
+						<div className="bg-red-600 text-white text-center py-1 text-sm font-bold z-50">
+							UAT SANDBOX — DO NOT ENTER REAL APPLICANT DATA OR PII
+						</div>
+					)}
 					{children}
 				</body>
 			</html>
